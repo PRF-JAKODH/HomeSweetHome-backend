@@ -1,7 +1,7 @@
-name: 기능 구현
-description: API 구현 작업을 위한 템플릿
-title: "[Feat]: "
-labels: ["feat"]
+name: 설정 작업 (Setting)
+description: 환경/구성(Settings) 변경 작업을 위한 템플릿
+title: "[Setting]: "
+labels: ["setting"]
 body:
   - type: input
     id: branch_keyword
@@ -11,31 +11,23 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: implementation
+  - type: input
+    id: setting_title
     attributes:
-      label: "구현할 기능"
-      description: "어떤 기능을 구현할지 간략하게 설명해주세요"
+      label: "설정 제목"
+      description: "이번에 무엇을 세팅/변경하나요?"
+      placeholder: "프로덕션 환경 변수 정리"
     validations:
       required: true
 
   - type: textarea
-    id: api_spec
+    id: setting_summary
     attributes:
-      label: "API 명세 참조"
-      description: "구현할 API의 정보를 명시해주세요 (openapi.json 기준)"
-      value: |
-        ### 엔드포인트
-        - [HTTP 메서드] /api/[경로]
-        - [HTTP 메서드] /api/[경로]
-        - [HTTP 메서드] /api/[경로]
-
-  - type: textarea
-    id: test_plan
-    attributes:
-      label: "테스트 계획"
-      description: "기능 검증을 위한 테스트 계획을 작성해주세요"
-      value: |
-        - [ ] 단위 테스트
-        - [ ] 통합 테스트
-        - [ ] API 테스트
+      label: "설정 내용(간단히)"
+      description: "무엇을, 왜, 어디에 세팅할지 짧게 적어주세요."
+      placeholder: |
+        - 대상: prod / dev
+        - 항목: SPRING_PROFILES_ACTIVE, LOG_LEVEL, CORS 도메인
+        - 목적: 배포 전 환경 정합성 확보
+    validations:
+      required: true
