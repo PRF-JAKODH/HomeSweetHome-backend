@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: homesweet-back
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
