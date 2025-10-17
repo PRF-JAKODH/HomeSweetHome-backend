@@ -93,34 +93,6 @@ jobs:
           branch: ${{ steps.decide.outputs.branch }}
           from_branch: ${{ steps.decide.outputs.from_branch }}
 
-      - name: Create PR
-        id: create_pr
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const issue = context.payload.issue;
-            const head = '${{ steps.decide.outputs.branch }}';
-            const base = '${{ steps.decide.outputs.pr_base }}';
-            const type = '${{ steps.decide.outputs.type }}';
-            const title = `[${type}] ${issue.title}`;
-            const body = `Closes #${issue.number}\n\n자동 생성 브랜치에서 시작된 PR입니다.`;
-
-            try {
-              const { data: pr } = await github.rest.pulls.create({
-                owner, repo, head, base, title, body, draft: false
-              });
-              core.setOutput('pr_url', pr.html_url);
-              core.setOutput('pr_number', pr.number);
-            } catch (e) {
-              if (e.status === 422) {
-                // 이미 동일한 PR이 있거나 변경이 없어 PR 생성 불가한 경우
-                core.warning(`PR 생성 스킵: ${e.message}`);
-              } else {
-                throw e;
-              }
-            }
-
       - name: Comment on issue with results
         if: always()
         uses: actions/github-script@v7
