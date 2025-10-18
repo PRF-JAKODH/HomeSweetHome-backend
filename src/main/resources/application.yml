@@ -1,6 +1,9 @@
 spring:
   application:
     name: homesweet-back
+  profiles:
+    active:
+      - dev
   flyway:
     enabled: true
     baseline-on-migrate: true

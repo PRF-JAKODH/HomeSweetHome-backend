@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: homesweet-back
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+# 임시적으로 로그는 파일에 저장
+log:
+  config:
+    error:
+      path: logs/dev/error
+      filename: application-dev-error
+    trace:
+      path: logs/dev/trace
+      filename: trace
+    maxHistory: 30
+    totalSizeCap: 1GB
