@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: homesweet-back
+  datasource:
+    url: jdbc:mysql://localhost:3306/homesweet
+    username: user
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+# 임시적으로 로그는 파일에 저장
+log:
+  config:
+    error:
+      path: logs/dev/error
+      filename: application-dev-error
+    trace:
+      path: logs/dev/trace
+      filename: trace
+    maxHistory: 30
+    totalSizeCap: 1GB
