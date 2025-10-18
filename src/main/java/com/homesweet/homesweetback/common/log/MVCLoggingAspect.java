@@ -55,10 +55,10 @@ public class MVCLoggingAspect {
         String argsJson = toJson(args);
 
         if (isRoot) {
-            log.info("{} ============================== [START REQUEST] {}.{} ==============================", getTraceId(), className, methodName);
+            log.info("{} ============================== [요청을 보냅니다] {}.{} ==============================", getTraceId(), className, methodName);
         }
 
-        log.info("{} {} [Request] ClassName: {}.{} - Method: {}() - Args: {}", getTraceId(),
+        log.info("{} {} [요청] ClassName: {}.{} - Method: {}() - Args: {}", getTraceId(),
                 prefixStart, layerTag,
                 className, methodName, argsJson);
 
@@ -68,22 +68,22 @@ public class MVCLoggingAspect {
             long duration = System.currentTimeMillis() - startTime;
 
             String resultJson = toJson(result);
-            log.info("{} {} [Response] ClassName: {}.{} - Method: {}() - Result: {} ({} ms)",
+            log.info("{} {} [응답] ClassName: {}.{} - Method: {}() - Result: {} ({} ms)",
                     getTraceId(),
                     prefixComplete, layerTag, className, methodName, resultJson, duration);
 
             if (isRoot) {
-                log.info("{} ============================== [END REQUEST] {}.{} ==============================", getTraceId(), className, methodName);
+                log.info("{} ============================== [요청이 완료되었습니다] {}.{} ==============================", getTraceId(), className, methodName);
                 clearTraceIdIfRootLayer(className);
             }
             return result;
         } catch (Exception e) {
-            log.error("{} {} [Exception] ClassName: {}.{} - Method: {} - ErrorMessage: {}", getTraceId(),
+            log.error("{} {} [예외] ClassName: {}.{} - Method: {} - ErrorMessage: {}", getTraceId(),
                     PREFIX_COMPLETE_ERROR, layerTag, className,
-                    methodName, e.toString(), e);
+                    methodName, e.getMessage());
 
             if (isRoot) {
-                log.info("{} ============================== [END REQUEST WITH ERROR] {}.{} ==============================", getTraceId(), className, methodName);
+                log.info("{} ============================== [요청이 에러와 함께 완료되었습니다] {}.{} ==============================", getTraceId(), className, methodName);
                 clearTraceIdIfRootLayer(className);
             }
             throw e;
