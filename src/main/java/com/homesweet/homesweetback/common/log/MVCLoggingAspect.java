@@ -29,9 +29,6 @@ public class MVCLoggingAspect {
     private static final String PREFIX_COMPLETE_ERROR = "<-X-";
     private static final String MDC_DEPTH = "traceDepth";
 
-    /**
-     * Controller, Service, Repository 메서드를 모두 감싼 포인트컷
-     */
     @Around("execution(* com.homesweet.homesweetback..*Controller.*(..)) || " +
             "execution(* com.homesweet.homesweetback..*Service.*(..)) || " +
             "execution(* com.homesweet.homesweetback..*Repository.*(..))")
@@ -50,17 +47,18 @@ public class MVCLoggingAspect {
 
         String prefixStart = addIndent(PREFIX_START, indentLevel);
         String prefixComplete = addIndent(PREFIX_COMPLETE, indentLevel);
+        String prefixError = addIndent(PREFIX_COMPLETE_ERROR, indentLevel);
 
         Object[] args = joinPoint.getArgs();
         String argsJson = toJson(args);
 
         if (isRoot) {
-            log.info("{} ============================== [요청을 보냅니다] {}.{} ==============================", getTraceId(), className, methodName);
+            log.info("{} ============================== [요청을 보냅니다] {}.{} ==============================",
+                    getTraceId(), className, methodName);
         }
 
-        log.info("{} {} [요청] ClassName: {}.{} - Method: {}() - Args: {}", getTraceId(),
-                prefixStart, layerTag,
-                className, methodName, argsJson);
+        log.info("{} {} [요청] ClassName: {}.{} - Method: {}() - Args: {}",
+                getTraceId(), prefixStart, layerTag, className, methodName, argsJson);
 
         try {
             long startTime = System.currentTimeMillis();
@@ -69,45 +67,44 @@ public class MVCLoggingAspect {
 
             String resultJson = toJson(result);
             log.info("{} {} [응답] ClassName: {}.{} - Method: {}() - Result: {} ({} ms)",
-                    getTraceId(),
-                    prefixComplete, layerTag, className, methodName, resultJson, duration);
+                    getTraceId(), prefixComplete, layerTag, className, methodName, resultJson, duration);
 
             if (isRoot) {
-                log.info("{} ============================== [요청이 완료되었습니다] {}.{} ==============================", getTraceId(), className, methodName);
-                clearTraceIdIfRootLayer(className);
+                log.info("{} ============================== [요청이 완료되었습니다] {}.{} ==============================",
+                        getTraceId(), className, methodName);
             }
             return result;
+
         } catch (Exception e) {
-            log.error("{} {} [예외] ClassName: {}.{} - Method: {} - ErrorMessage: {}", getTraceId(),
-                    PREFIX_COMPLETE_ERROR, layerTag, className,
-                    methodName, e.getMessage());
+            // 에러 로그에 올바른 들여쓰기 적용
+            log.error("{} {} [예외] ClassName: {}.{} - Method: {}() - ErrorMessage: {} - ErrorType: {}",
+                    getTraceId(), prefixError, layerTag, className, methodName,
+                    e.getMessage(), e.getClass().getSimpleName());
 
             if (isRoot) {
-                log.info("{} ============================== [요청이 에러와 함께 완료되었습니다] {}.{} ==============================", getTraceId(), className, methodName);
-                clearTraceIdIfRootLayer(className);
+                log.error("{} ============================== [요청이 에러와 함께 완료되었습니다] {}.{} ==============================",
+                        getTraceId(), className, methodName);
             }
             throw e;
+
         } finally {
             decDepth();
+            // Root 레벨에서만 MDC 정리
+            if (isRoot) {
+                clearTraceId();
+            }
         }
     }
 
-    /**
-     * 로그에 표시할 TraceId를 MDC에서 가져오거나, 없으면 새로 생성해 세팅
-     */
     private void initTraceIdIfAbsent() {
         if (MDC.get(TRACE_ID) == null) {
             MDC.put(TRACE_ID, UUID.randomUUID().toString());
         }
     }
 
-    /**
-     * 요청이 최상위 계층(컨트롤러)에서 끝났으면 MDC에서 TraceId 제거
-     */
-    private void clearTraceIdIfRootLayer(String className) {
-        if (className.contains("Controller")) {
-            MDC.remove(TRACE_ID);
-        }
+    private void clearTraceId() {
+        MDC.remove(TRACE_ID);
+        MDC.remove(MDC_DEPTH);
     }
 
     private String getTraceId() {
@@ -165,7 +162,10 @@ public class MVCLoggingAspect {
         String v = MDC.get(MDC_DEPTH);
         if (v == null) return;
         int d = Integer.parseInt(v) - 1;
-        if (d <= 0) MDC.remove(MDC_DEPTH);
-        else MDC.put(MDC_DEPTH, Integer.toString(d));
+        if (d <= 0) {
+            MDC.remove(MDC_DEPTH);
+        } else {
+            MDC.put(MDC_DEPTH, Integer.toString(d));
+        }
     }
 }
