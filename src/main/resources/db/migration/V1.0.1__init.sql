@@ -4,8 +4,8 @@
 
 CREATE TABLE `grade` (
                          `grade_id` INT NOT NULL AUTO_INCREMENT,
-                         `grade` VARCHAR(10) NULL,
-                         `fee_rate` DECIMAL(5,2) NULL,
+                         `grade` VARCHAR(10) NOT NULL,
+                         `fee_rate` DECIMAL(5,2) NOT NULL,
                          PRIMARY KEY (`grade_id`)
 );
 
@@ -358,7 +358,7 @@ CREATE TABLE `chat_message` (
                                 `room_id` BIGINT NOT NULL,
                                 `sender_id` BIGINT NOT NULL,
                                 `message_type` VARCHAR(100) NOT NULL,
-                                `message_content` TEXT NOT NULL,
+                                `message_content` TEXT NULL,
                                 `sent_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 `image_id` BIGINT NULL,
                                 PRIMARY KEY (`chat_message_id`),
