@@ -1,0 +1,29 @@
+name: develop 브랜치에 변경 사항 감지 시 디스코드로 알림
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: Ilshidur/action-discord@v2
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          args: |
+            **🚨 develop 브랜치에 변경 사항이 발생했습니다!**  
+            팀원 여러분, 작업 브랜치에 develop을 병합해 최신 상태를 유지해주세요.  
+            
+            **수행할 작업 단계:**  
+            1. `git checkout develop`  
+            2. `git pull origin develop`  
+            3. `git checkout <작업 브랜치>`  
+            4. `git merge develop`  
+            5. **충돌 발생 시 해결 후 커밋/푸시**  
+            
+            변경 사항: ${{ github.event.head_commit.message }} (커밋: ${{ github.sha }})  
+            작성자: ${{ github.actor }}  
+            [리포지토리 보기](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
