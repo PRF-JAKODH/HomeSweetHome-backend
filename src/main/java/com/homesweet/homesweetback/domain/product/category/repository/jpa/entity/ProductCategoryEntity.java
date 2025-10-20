@@ -1,18 +1,13 @@
 package com.homesweet.homesweetback.domain.product.category.repository.jpa.entity;
 
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * 제품 카테고리 엔티티
  *
