@@ -1,0 +1,6 @@
+                    __
+ |_|  _  ._ _   _  (_        _   _ _|_
+ | | (_) | | | (/_ __) \/\/ (/_ (/_ |_
+
+Welcome homesweet project
+Powered by Spring Boot 3.5.6
