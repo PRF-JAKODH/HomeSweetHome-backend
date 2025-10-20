@@ -38,9 +38,6 @@ public class ProductCategoryEntity {
 
     private Integer depth;
 
-    @OneToMany(mappedBy = "category")
-    private List<ProductEntity> products = new ArrayList<>();
-
     @CreatedDate
     private LocalDateTime createdAt;
 

@@ -68,18 +68,6 @@ public class ProductEntity {
     @Column(nullable = false, length = 12)
     private ProductStatus status;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductDetailImageEntity> detailImages = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductOptionEntity> options = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SkuEntity> skus = new ArrayList<>();
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductReviewEntity> reviews = new ArrayList<>();
-
     @CreatedDate
     private LocalDateTime createdAt;
 

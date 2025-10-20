@@ -38,9 +38,6 @@ public class ProductOptionEntity {
     @Column(nullable = false, length = 12)
     private String value;
 
-    @OneToMany(mappedBy = "option")
-    private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
-
     @CreatedDate
     private LocalDateTime createdAt;
 }

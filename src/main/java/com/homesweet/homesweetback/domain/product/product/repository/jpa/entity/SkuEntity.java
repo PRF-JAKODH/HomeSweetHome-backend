@@ -35,10 +35,4 @@ public class SkuEntity {
     @Column(name = "stock_quantity")
     private Integer stockQuantity = 0;
 
-    @OneToMany(mappedBy = "sku", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sku")
-    private List<CartEntity> carts = new ArrayList<>();
-
 }
