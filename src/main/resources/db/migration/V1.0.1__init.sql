@@ -4,8 +4,8 @@
 
 CREATE TABLE `grade` (
                          `grade_id` INT NOT NULL AUTO_INCREMENT,
-                         `grade` VARCHAR(10) NULL,
-                         `fee_rate` DECIMAL(5,2) NULL,
+                         `grade` VARCHAR(10) NOT NULL,
+                         `fee_rate` DECIMAL(5,2) NOT NULL,
                          PRIMARY KEY (`grade_id`)
 );
 
