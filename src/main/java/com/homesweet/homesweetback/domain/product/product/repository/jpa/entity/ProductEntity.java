@@ -3,7 +3,6 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity
 import com.homesweet.homesweetback.domain.mock.UserEntity;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.ProductReviewEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,8 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 상품 엔티티
