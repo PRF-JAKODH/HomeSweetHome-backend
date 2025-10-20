@@ -39,7 +39,7 @@ public class ProductOptionEntity {
     private String value;
 
     @OneToMany(mappedBy = "option")
-    private List<ProductSkuOption> skuOptions = new ArrayList<>();
+    private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;
