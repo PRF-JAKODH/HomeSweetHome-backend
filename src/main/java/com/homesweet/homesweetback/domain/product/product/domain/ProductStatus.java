@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.dto.type;
+package com.homesweet.homesweetback.domain.product.product.domain;
 
 import lombok.Getter;
 
