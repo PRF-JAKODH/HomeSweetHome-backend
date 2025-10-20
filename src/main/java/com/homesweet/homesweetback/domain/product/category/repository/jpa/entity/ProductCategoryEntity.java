@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -35,7 +36,6 @@ public class ProductCategoryEntity {
     
     private Long parentId;
 
-    @Column
     private Integer depth;
 
     @OneToMany(mappedBy = "category")

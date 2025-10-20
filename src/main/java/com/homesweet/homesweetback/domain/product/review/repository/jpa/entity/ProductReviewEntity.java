@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.review.repository.jpa.entity;
 
+import com.homesweet.homesweetback.domain.mock.UserEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -34,7 +35,7 @@ public class ProductReviewEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private UserEntity user;
 
     @Column(nullable = false)
     private Integer rating;
