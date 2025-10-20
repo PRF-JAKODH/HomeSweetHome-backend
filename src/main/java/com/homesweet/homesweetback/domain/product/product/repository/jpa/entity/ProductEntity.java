@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity;
 
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
-import com.homesweet.homesweetback.domain.product.product.dto.type.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.ProductReviewEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
