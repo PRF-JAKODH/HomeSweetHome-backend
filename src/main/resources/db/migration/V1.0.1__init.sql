@@ -333,6 +333,8 @@ CREATE TABLE `room_member` (
                                `user_id` BIGINT NOT NULL,
                                `room_id` BIGINT NOT NULL,
                                `role` VARCHAR(100) NOT NULL,
+                               `is_exit` BOOLEAN NOT NULL DEFAULT FALSE,
+                               `last_read_message_id` BIGINT NULL,
                                PRIMARY KEY (`room_member_id`),
                                FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
                                FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`room_id`) ON DELETE CASCADE,
