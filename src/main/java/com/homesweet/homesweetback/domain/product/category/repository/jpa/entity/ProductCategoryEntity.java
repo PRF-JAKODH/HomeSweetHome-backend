@@ -3,6 +3,8 @@ package com.homesweet.homesweetback.domain.product.category.repository.jpa.entit
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -19,7 +21,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "product_category")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class ProductCategoryEntity {
 
@@ -30,7 +32,7 @@ public class ProductCategoryEntity {
 
     @Column(nullable = false, length = 50)
     private String name;
-    
+
     private Long parentId;
 
     @Column(nullable = false)
@@ -43,4 +45,11 @@ public class ProductCategoryEntity {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Builder
+    public ProductCategoryEntity(String name, Long parentId, Integer depth) {
+        this.name = name;
+        this.parentId = parentId;
+        this.depth = depth;
+    }
 }

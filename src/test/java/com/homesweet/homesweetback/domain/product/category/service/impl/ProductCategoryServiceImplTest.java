@@ -1,11 +1,13 @@
 package com.homesweet.homesweetback.domain.product.category.service.impl;
 
+import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
@@ -19,6 +21,9 @@ class ProductCategoryServiceImplTest {
 
     @InjectMocks
     private ProductCategoryService productCategoryService;
+
+    @Mock
+    private ProductCategoryRepository productCategoryRepository;
 
     @Nested
     @DisplayName("카테고리 생성 테스트")
