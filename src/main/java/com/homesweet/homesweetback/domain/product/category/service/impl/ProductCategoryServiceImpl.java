@@ -1,5 +1,10 @@
 package com.homesweet.homesweetback.domain.product.category.service.impl;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
+import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
+import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
+import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +20,33 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProductCategoryServiceImpl implements ProductCategoryService {
 
-    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductCategoryRepository repository;
 
+
+    @Override
+    public CategoryResponse createCategory(CategoryCreateRequest request) {
+
+        repository.findByName(request.name())
+                .ifPresent(c -> {
+                    throw new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR);
+                });
+
+        int depth = 0;
+        if (request.parentId() != null) {
+            ProductCategory parent = repository.findById(request.parentId())
+                    .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR));
+
+            depth = parent.depth() + 1;
+
+            if (depth > ProductCategory.MAX_DEPTH) {
+                throw new ProductCategoryException(ErrorCode.CATEGORY_DEPTH_EXCEEDED_ERROR);
+            }
+        }
+
+        ProductCategory category = ProductCategory.createCategory(request.name(), request.parentId(), depth);
+
+        ProductCategory domain = repository.save(category);
+
+        return CategoryResponse.from(domain);
+    }
 }

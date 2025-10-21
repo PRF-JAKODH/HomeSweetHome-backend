@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.domain.product.category.service;
 
+import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
+import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
+
 /**
  * 제품 카테고리 서비스 인터페이스
  *
@@ -7,4 +10,6 @@ package com.homesweet.homesweetback.domain.product.category.service;
  * @date 25. 10. 21.
  */
 public interface ProductCategoryService {
+
+    CategoryResponse createCategory(CategoryCreateRequest request);
 }
