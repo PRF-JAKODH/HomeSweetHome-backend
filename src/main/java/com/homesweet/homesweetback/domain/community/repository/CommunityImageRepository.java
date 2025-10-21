@@ -1,6 +1,7 @@
 
 package com.homesweet.homesweetback.domain.community.repository;
 
+import com.homesweet.homesweetback.domain.community.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

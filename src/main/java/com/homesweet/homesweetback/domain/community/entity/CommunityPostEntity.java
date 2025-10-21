@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.community.repository;
+package com.homesweet.homesweetback.domain.community.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

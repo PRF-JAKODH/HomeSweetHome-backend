@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.community.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import com.homesweet.homesweetback.domain.community.entity.*;
 
 /**
  * CommunityCommentLike 레포

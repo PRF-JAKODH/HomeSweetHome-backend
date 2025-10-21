@@ -4,10 +4,10 @@ import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 
 /**
- * Hello 도메인 예외
+ * Community 도메인 예외
  *
- * @author junnukim1007gmail.com
- * @date 25. 10. 18.
+ * @author ohhalim777@gmail.com
+ * @date 25. 10. 21.
  */
 public class CommunityException extends BusinessException {
 
