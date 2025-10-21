@@ -11,6 +11,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * 상품 카테고리 서비스 구현 코드
  *
@@ -49,5 +52,19 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         ProductCategory domain = repository.save(category);
 
         return CategoryResponse.from(domain);
+    }
+
+    @Override
+    public List<CategoryResponse> getCategoriesByParentId(Long parentId) {
+        return repository.findByParentId(parentId).stream()
+                .map(CategoryResponse::from)
+                .toList();
+    }
+
+    @Override
+    public List<CategoryResponse> getCategoriesByDepth(Integer depth) {
+        return repository.findByDepth(depth).stream()
+                .map(CategoryResponse::from)
+                .toList();
     }
 }
