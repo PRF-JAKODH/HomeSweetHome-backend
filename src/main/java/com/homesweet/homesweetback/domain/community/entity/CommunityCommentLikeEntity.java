@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.community.entity;
 
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,12 +40,9 @@ public class CommunityCommentLikeEntity {
     @JoinColumn(name = "comment_id", nullable = false)
     private CommunityCommentEntity comment;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-    //    TODO: 유저 엔티티 만들어지면 수정
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "user_id", nullable = false)
-    //    private UserEntity user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

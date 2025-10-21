@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.community.entity;
 
+import com.homesweet.homesweetback.common.BaseEntity;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +27,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunityCommentEntity {
+public class CommunityCommentEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,12 +38,9 @@ public class CommunityCommentEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private CommunityPostEntity post;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-    //    TODO: 유저 엔티티 만들어지면 수정
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "user_id", nullable = false)
-    //    private UserEntity user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
     @Column(name = "parent_comment_id", columnDefinition = "BIGINT")
     private Long parentCommentId;
@@ -52,13 +51,6 @@ public class CommunityCommentEntity {
     @Column(nullable = false)
     @Builder.Default
     private Integer likeCount = 0;
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
     @Column(nullable = false)
     @Builder.Default
