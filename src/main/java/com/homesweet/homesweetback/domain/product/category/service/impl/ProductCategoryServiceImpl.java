@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.ProductCategor
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +23,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     private final ProductCategoryRepository repository;
 
-
     @Override
+    @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
         repository.findByName(request.name())
