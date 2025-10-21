@@ -20,7 +20,7 @@ public record CreateOrderRequest(
         String recipientName,
 
         @NotBlank(message = "수령인 연락처가 비어있습니다.")
-        String recipientPhone,
+        String recipientPhone
 ){
     public record OrderItemRequest(
             @NotNull(message = "상품 ID가 필요합니다.")
