@@ -20,11 +20,4 @@ jobs:
             **작성자**: ${{ github.event.pull_request.user.login }}
             **PR 링크**: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})
 
-            **작업 브랜치 최신화 안내(머지 이후 진행):**
-            1. `git checkout develop`
-            2. `git pull origin develop`
-            3. `git checkout <작업 브랜치>`
-            4. `git merge develop`
-            5. 충돌 해결 후 커밋/푸시
-
-            @everyone, 신규 PR을 확인해 주세요! 🙌
+            리뷰어는 PR을 확인 이후 코드 리뷰를 진행해주세요 🙌
