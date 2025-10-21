@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.order.entity;
 
-import jakarta.persistence;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
