@@ -20,21 +20,12 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
           cache: 'gradle'
-          cache-key: ${{ runner.os }}-gradle-${{ github.ref_name }}
-      
-      - name: 🧹 Clean Gradle caches
-        run: |
-          rm -rf ~/.gradle/caches
-          rm -rf ~/.gradle/daemon
-          rm -rf ~/.gradle/native
-          rm -rf ~/.gradle/wrapper
-          rm -rf build
 
       - name: 빌드 권한 부여
         run: chmod +x ./gradlew
 
       - name: 테스트 돌리기
-        run: ./gradlew clean test -i
+        run: ./gradlew clean test
 
       - name: 테스트 결과 보고서 업로드
         if: always()
