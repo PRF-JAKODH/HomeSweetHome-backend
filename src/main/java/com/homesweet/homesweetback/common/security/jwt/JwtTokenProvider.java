@@ -1,7 +1,6 @@
 package com.homesweet.homesweetback.common.security.jwt;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -9,7 +8,14 @@ import org.springframework.stereotype.Component;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.SecretKeySpec;
+
 import java.util.Date;
 
 /**
@@ -26,7 +32,7 @@ public class JwtTokenProvider {
     public JwtTokenProvider(@Value("${jwt.secret}") String secret,
                            @Value("${jwt.access-token-expiration}") long accessTokenExpiration,
                            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+        this.secretKey = new SecretKeySpec(secret.getBytes(), "HMACSHA256");
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
@@ -46,7 +52,7 @@ public class JwtTokenProvider {
             .claim("role", user.getRole().name())
             .setIssuedAt(now)
             .setExpiration(expiryDate)
-            .signWith(secretKey, SignatureAlgorithm.HS256)
+            .signWith(SignatureAlgorithm.HS256, secretKey.getEncoded())
             .compact();
     }
 
@@ -62,7 +68,7 @@ public class JwtTokenProvider {
             .claim("type", "refresh")
             .setIssuedAt(now)
             .setExpiration(expiryDate)
-            .signWith(secretKey, SignatureAlgorithm.HS256)
+            .signWith(SignatureAlgorithm.HS256, secretKey.getEncoded())
             .compact();
     }
 
@@ -70,9 +76,8 @@ public class JwtTokenProvider {
      * 토큰에서 사용자 ID 추출
      */
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parser()
             .setSigningKey(secretKey)
-            .build()
             .parseClaimsJws(token)
             .getBody();
 
@@ -83,9 +88,8 @@ public class JwtTokenProvider {
      * 토큰에서 이메일 추출
      */
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(secretKey)
-            .build()
+        Claims claims = Jwts.parser()
+            .setSigningKey(secretKey.getEncoded())
             .parseClaimsJws(token)
             .getBody();
 
@@ -96,9 +100,8 @@ public class JwtTokenProvider {
      * 토큰에서 역할(Role) 추출
      */
     public UserRole getRoleFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(secretKey)
-            .build()
+        Claims claims = Jwts.parser()
+            .setSigningKey(secretKey.getEncoded())
             .parseClaimsJws(token)
             .getBody();
 
@@ -111,12 +114,12 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
+            Jwts.parser()
                 .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token);
+                .parseClaimsJws(token)
+                .getBody();
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
             log.error("Invalid JWT token: {}", e.getMessage());
             return false;
         }
@@ -127,14 +130,14 @@ public class JwtTokenProvider {
      */
     public boolean isTokenExpired(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
+            Claims claims = Jwts.parser()
                 .setSigningKey(secretKey)
-                .build()
                 .parseClaimsJws(token)
                 .getBody();
             
-            return claims.getExpiration().before(new Date());
-        } catch (JwtException | IllegalArgumentException e) {
+            return claims.getExpiration().before(new Date()) || claims.getExpiration().equals(new Date());
+        } catch (Exception e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
             return true;
         }
     }
@@ -144,15 +147,15 @@ public class JwtTokenProvider {
      */
     public boolean isRefreshToken(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
+            Claims claims = Jwts.parser()
+                .setSigningKey(secretKey.getEncoded())
                 .parseClaimsJws(token)
                 .getBody();
             
             String type = claims.get("type", String.class);
             return "refresh".equals(type);
-        } catch (JwtException | IllegalArgumentException e) {
+            } catch (Exception e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
             return false;
         }
     }
