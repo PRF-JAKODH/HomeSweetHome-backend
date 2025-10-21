@@ -4,8 +4,8 @@
 
 CREATE TABLE `grade` (
                          `grade_id` INT NOT NULL AUTO_INCREMENT,
-                         `grade` VARCHAR(10) NULL,
-                         `fee_rate` DECIMAL(5,2) NULL,
+                         `grade` VARCHAR(10) NOT NULL,
+                         `fee_rate` DECIMAL(5,2) NOT NULL,
                          PRIMARY KEY (`grade_id`)
 );
 
@@ -32,7 +32,7 @@ CREATE TABLE `product_category` (
                                     `category_id` BIGINT NOT NULL AUTO_INCREMENT,
                                     `name` VARCHAR(50) NOT NULL,
                                     `parent_id` BIGINT NULL,
-                                    `depth` TINYINT NULL,
+                                    `depth` INT NULL,
                                     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                     `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                     PRIMARY KEY (`category_id`),
@@ -103,7 +103,7 @@ CREATE TABLE `products_reviews` (
                                     `review_id` BIGINT NOT NULL AUTO_INCREMENT,
                                     `product_id` BIGINT NOT NULL,
                                     `user_id` BIGINT NOT NULL,
-                                    `rating` SMALLINT NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
+                                    `rating` INT NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
                                     `comment` VARCHAR(150) NULL,
                                     `image_url` VARCHAR(255) NULL,
                                     `like_count` INT NULL DEFAULT 0,
