@@ -1,12 +1,14 @@
+server:
+  port: 8080
+
 spring:
+  application:
+    name: homesweet-back
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
-  h2:
-    console:
-      enabled: true
+    url: jdbc:mysql://localhost:3306/homesweet
+    username: user
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: validate
@@ -50,3 +52,15 @@ app:
     redirect-uri-on-register: http://localhost:3000/signup/callback
   cors:
     allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+
+# 임시적으로 로그는 파일에 저장
+log:
+  config:
+    error:
+      path: logs/dev/error
+      filename: application-dev-error
+    trace:
+      path: logs/dev/trace
+      filename: trace
+    maxHistory: 30
+    totalSizeCap: 1GB
