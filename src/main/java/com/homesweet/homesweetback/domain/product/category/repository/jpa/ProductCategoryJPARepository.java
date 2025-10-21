@@ -18,5 +18,5 @@ public interface ProductCategoryJPARepository extends JpaRepository<ProductCateg
 
     List<ProductCategoryEntity> findByParentId(Long parentId);
 
-    List<ProductCategoryEntity> findByDepth(Integer depth);
+    List<ProductCategoryEntity> findByParentIdIsNull();
 }

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,7 @@ import static org.mockito.BDDMockito.given;
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.
  */
+@ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("제품 카테고리 서비스 단위 테스트")
 class ProductCategoryServiceImplTest {
@@ -245,29 +247,6 @@ class ProductCategoryServiceImplTest {
                 List<CategoryResponse> responses = service.getCategoriesByParentId(parentId);
 
                 assertThat(responses).hasSize(3);
-            }
-
-            @Test
-            @DisplayName("depth 깊이에 해당하는 카테고리를 조회할 수 있다")
-            void getCategoriesByDepth() {
-                // given
-                Integer depth = 1;
-
-                List<ProductCategory> categories = List.of(
-                        new ProductCategory(2L, "침실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
-                        new ProductCategory(3L, "거실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
-                        new ProductCategory(5L, "욕실가구", 4L, 1, LocalDateTime.now(), LocalDateTime.now())
-                );
-
-                given(repository.findByDepth(depth)).willReturn(categories);
-
-                // when
-                List<CategoryResponse> responses = service.getCategoriesByDepth(depth);
-
-                // then
-                assertThat(responses).hasSize(3);
-                assertThat(responses).extracting("name")
-                        .containsExactlyInAnyOrder("침실가구", "거실가구", "욕실가구");
             }
         }
     }

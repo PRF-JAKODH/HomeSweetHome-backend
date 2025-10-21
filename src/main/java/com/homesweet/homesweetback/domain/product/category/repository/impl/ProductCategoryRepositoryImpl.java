@@ -50,8 +50,8 @@ public class ProductCategoryRepositoryImpl implements ProductCategoryRepository 
     }
 
     @Override
-    public List<ProductCategory> findByDepth(Integer depth) {
-        return jpaRepository.findByDepth(depth).stream()
+    public List<ProductCategory> findTopLevelCategories() {
+        return jpaRepository.findByParentIdIsNull().stream()
                 .map(mapper::toDomain)
                 .toList();
     }
