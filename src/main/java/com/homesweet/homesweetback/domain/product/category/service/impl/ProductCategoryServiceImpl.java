@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.product.category.service.impl;
 
+import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -10,5 +12,9 @@ import org.springframework.stereotype.Service;
  * @date 25. 10. 21.
  */
 @Service
+@RequiredArgsConstructor
 public class ProductCategoryServiceImpl implements ProductCategoryService {
+
+    private final ProductCategoryRepository productCategoryRepository;
+
 }

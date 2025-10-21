@@ -1,0 +1,13 @@
+package com.homesweet.homesweetback.domain.product.category.repository.jpa;
+
+import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/**
+ * 제품 카테고리 JPA 레포
+ *
+ * @author junnukim1007gmail.com
+ * @date 25. 10. 21.
+ */
+public interface ProductCategoryJPARepository extends JpaRepository<ProductCategoryEntity, Long> {
+}
