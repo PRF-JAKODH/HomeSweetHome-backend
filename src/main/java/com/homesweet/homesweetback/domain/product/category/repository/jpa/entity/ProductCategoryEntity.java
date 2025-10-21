@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.product.category.repository.jpa.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -31,6 +33,9 @@ public class ProductCategoryEntity {
     
     private Long parentId;
 
+    @Column(nullable = false)
+    @Min(0)
+    @Max(2)
     private Integer depth;
 
     @CreatedDate
