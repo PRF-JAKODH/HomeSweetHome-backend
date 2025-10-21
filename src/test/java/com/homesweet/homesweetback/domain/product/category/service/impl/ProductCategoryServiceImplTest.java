@@ -248,6 +248,29 @@ class ProductCategoryServiceImplTest {
 
                 assertThat(responses).hasSize(3);
             }
+
+            @Test
+            @DisplayName("최상위 카테고리(depth 0) 목록을 조회할 수 있다")
+            void getTopLevelCategories() {
+                // given
+                List<ProductCategory> topLevelCategories = List.of(
+                        new ProductCategory(1L, "가구", null, 0, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(5L, "조명", null, 0, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(10L, "패브릭", null, 0, LocalDateTime.now(), LocalDateTime.now())
+                );
+
+                given(repository.findTopLevelCategories()).willReturn(topLevelCategories);
+
+                // when
+                List<CategoryResponse> responses = service.getTopLevelCategories();
+
+                // then
+                assertThat(responses).hasSize(3);
+                assertThat(responses).extracting("parentId")
+                        .containsOnly((Long) null);
+                assertThat(responses).extracting("depth")
+                        .containsOnly(0);
+            }
         }
     }
 }
