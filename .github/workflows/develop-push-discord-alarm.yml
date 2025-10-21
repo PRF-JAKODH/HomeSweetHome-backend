@@ -1,29 +1,31 @@
-name: develop 브랜치에 변경 사항 감지 시 디스코드로 알림
+name: Notify Discord on PR Merge to Develop
 
 on:
-  push:
+  pull_request:
+    types: [closed]  # PR이 닫힐 때(머지 또는 취소) 트리거
     branches:
-      - develop
+      - develop  # develop 브랜치로의 PR만 대상
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true  # 머지된 경우에만 실행
     steps:
       - name: Send Discord Notification
-        uses: Ilshidur/action-discord@v2
+        uses: appleboy/discord-action@v0.1.10  # 안정적인 액션
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          args: |
-            **🚨 develop 브랜치에 변경 사항이 발생했습니다!**  
-            팀원 여러분, 작업 브랜치에 develop을 병합해 최신 상태를 유지해주세요.  
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          message: |
+            **🚨 develop 브랜치에 PR이 머지되었습니다!**
+            **PR 제목**: ${{ github.event.pull_request.title }}
+            **작성자**: ${{ github.event.pull_request.user.login }}
+            **PR 링크**: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})
             
-            **수행할 작업 단계:**  
-            1. `git checkout develop`  
-            2. `git pull origin develop`  
-            3. `git checkout <작업 브랜치>`  
-            4. `git merge develop`  
-            5. **충돌 발생 시 해결 후 커밋/푸시**  
+            **작업 브랜치 최신화 안내**:
+            1. `git checkout develop`
+            2. `git pull origin develop`
+            3. `git checkout <작업 브랜치>`
+            4. `git merge develop`
+            5. 충돌 해결 후 커밋/푸시
             
-            변경 사항: ${{ github.event.head_commit.message }} (커밋: ${{ github.sha }})  
-            작성자: ${{ github.actor }}  
-            [리포지토리 보기](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            @everyone, 작업 브랜치를 최신화해주세요! 🙌
