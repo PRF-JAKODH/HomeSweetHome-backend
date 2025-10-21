@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity;
 
-import com.homesweet.homesweetback.domain.mock.UserEntity;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -31,7 +31,7 @@ public class CartEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sku_id", nullable = false)
