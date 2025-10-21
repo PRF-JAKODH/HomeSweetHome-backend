@@ -1,10 +1,13 @@
 package com.homesweet.homesweetback.domain.community.dto;
 
 /**
- * Hello 응답 DTO
+ * Community 응답 DTO
  *
- * @author junnukim1007gmail.com
- * @date 25. 10. 18.
+ * @author ohhalim777@gmail.com
+ * @date 25. 10. 21.
  */
-public record CommunityResponse(Long id, String greeting) {
+public record CommunityResponse(
+        // TODO: 실제 필드 정의
+        Long id
+) {
 }
