@@ -21,6 +21,6 @@ public interface ProductCategoryRepository {
 
     List<ProductCategory> findByParentId(Long parentId);
 
-    List<ProductCategory> findByDepth(Integer depth);
+    List<ProductCategory> findTopLevelCategories();
 
 }

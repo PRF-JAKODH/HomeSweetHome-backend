@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 상품 카테고리 서비스 구현 코드
@@ -62,8 +61,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     }
 
     @Override
-    public List<CategoryResponse> getCategoriesByDepth(Integer depth) {
-        return repository.findByDepth(depth).stream()
+    public List<CategoryResponse> getTopLevelCategories() {
+        return repository.findTopLevelCategories().stream()
                 .map(CategoryResponse::from)
                 .toList();
     }

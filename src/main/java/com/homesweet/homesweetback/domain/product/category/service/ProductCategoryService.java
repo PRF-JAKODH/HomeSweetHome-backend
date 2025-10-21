@@ -17,5 +17,5 @@ public interface ProductCategoryService {
 
     List<CategoryResponse> getCategoriesByParentId(Long parentId);
 
-    List<CategoryResponse> getCategoriesByDepth(Integer depth);
+    List<CategoryResponse> getTopLevelCategories();
 }
