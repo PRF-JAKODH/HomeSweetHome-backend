@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.community.entity;
 
+import com.homesweet.homesweetback.common.BaseEntity;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,20 +27,16 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunityPostEntity {
+public class CommunityPostEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
     private Long postId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-
-    //    TODO: 유저 엔티티 만들어지면 수정
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "user_id", nullable = false)
-    //    private UserEntity user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
     @Column(nullable = false, length = 100)
     private String title;
@@ -57,13 +55,6 @@ public class CommunityPostEntity {
     @Column(nullable = false)
     @Builder.Default
     private Integer commentCount = 0;
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
     @Column(nullable = false)
     @Builder.Default
