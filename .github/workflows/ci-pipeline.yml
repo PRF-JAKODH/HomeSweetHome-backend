@@ -14,15 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'corretto'
           cache: 'gradle'
-
-      - name: Gradle 캐싱
-        uses: gradle/actions/setup-gradle@v3
+          cache-key: ${{ runner.os }}-gradle-${{ github.ref_name }}
 
       - name: 빌드 권한 부여
         run: chmod +x ./gradlew
