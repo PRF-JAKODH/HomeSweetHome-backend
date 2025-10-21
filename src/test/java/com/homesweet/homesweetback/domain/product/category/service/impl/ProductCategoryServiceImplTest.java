@@ -231,6 +231,8 @@ class ProductCategoryServiceImplTest {
             @DisplayName("부모 ID를 이용하여 하위 카테고리들을 조회할 수 있다")
             void getCategoriesByParentId() {
 
+                Long parentId = 1L;
+
             }
 
             @Test

@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * 제품 카테고리 레포 구현 코드 -> JPA 사용
@@ -47,13 +46,13 @@ public class ProductCategoryRepositoryImpl implements ProductCategoryRepository 
     public List<ProductCategory> findByParentId(Long parentId) {
         return jpaRepository.findByParentId(parentId).stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<ProductCategory> findByDepth(Integer depth) {
         return jpaRepository.findByDepth(depth).stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
