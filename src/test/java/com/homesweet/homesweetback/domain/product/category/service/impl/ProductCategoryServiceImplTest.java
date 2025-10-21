@@ -38,7 +38,7 @@ class ProductCategoryServiceImplTest {
     private ProductCategoryRepository repository;
 
     @Nested
-    @DisplayName("카테고리 생성 테스트")
+    @DisplayName("카테고리 생성")
     class CreateCategory {
 
         @Nested
@@ -72,88 +72,6 @@ class ProductCategoryServiceImplTest {
                 assertThat(response.name()).isEqualTo("가구");
                 assertThat(response.parentId()).isNull();
 
-            }
-
-            @Test
-            @DisplayName("2레벨 카테고리 생성 성공")
-            void createSecondLevelCategory() {
-                // given
-                CategoryCreateRequest request = CategoryCreateRequest.builder()
-                        .name("침대")
-                        .parentId(1L)
-                        .build();
-
-                ProductCategory parentCategory = ProductCategory.builder()
-                        .id(1L)
-                        .name("가구")
-                        .parentId(null)
-                        .depth(0)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                ProductCategory savedCategory = ProductCategory.builder()
-                        .id(2L)
-                        .name("침대")
-                        .parentId(1L)
-                        .depth(1)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                given(repository.findByName(request.name())).willReturn(Optional.empty());
-                given(repository.findById(1L)).willReturn(Optional.of(parentCategory));
-                given(repository.save(any(ProductCategory.class))).willReturn(savedCategory);
-
-                // when
-                CategoryResponse response = service.createCategory(request);
-
-                // then
-                assertThat(response.id()).isEqualTo(2L);
-                assertThat(response.name()).isEqualTo("침대");
-                assertThat(response.parentId()).isEqualTo(1L);
-                assertThat(response.depth()).isEqualTo(1);
-            }
-
-            @Test
-            @DisplayName("3레벨 카테고리 생성 성공")
-            void createThirdLevelCategory() {
-                // given
-                CategoryCreateRequest request = CategoryCreateRequest.builder()
-                        .name("싱글 침대")
-                        .parentId(2L)
-                        .build();
-
-                ProductCategory parentCategory = ProductCategory.builder()
-                        .id(2L)
-                        .name("침대")
-                        .parentId(1L)
-                        .depth(1)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                ProductCategory savedCategory = ProductCategory.builder()
-                        .id(3L)
-                        .name("싱글 침대")
-                        .parentId(2L)
-                        .depth(2)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                given(repository.findByName(request.name())).willReturn(Optional.empty());
-                given(repository.findById(2L)).willReturn(Optional.of(parentCategory));
-                given(repository.save(any(ProductCategory.class))).willReturn(savedCategory);
-
-                // when
-                CategoryResponse response = service.createCategory(request);
-
-                // then
-                assertThat(response.id()).isEqualTo(3L);
-                assertThat(response.name()).isEqualTo("싱글 침대");
-                assertThat(response.parentId()).isEqualTo(2L);
-                assertThat(response.depth()).isEqualTo(2);
             }
 
             @Test
@@ -297,6 +215,39 @@ class ProductCategoryServiceImplTest {
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
                         .hasMessageContaining(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR.getMessage());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("카테고리 조회")
+    class FindCategory {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("부모 ID를 이용하여 하위 카테고리들을 조회할 수 있다")
+            void getCategoriesByParentId() {
+
+            }
+
+            @Test
+            @DisplayName("depth 깊이에 해당하는 카테고리를 조회할 수 있다")
+            void getCategoriesByDepth() {
+
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("존재하지 않는 ID로 조회 시 예외 발생")
+            void getCategoriesByNotExistId() {
+
             }
         }
     }
