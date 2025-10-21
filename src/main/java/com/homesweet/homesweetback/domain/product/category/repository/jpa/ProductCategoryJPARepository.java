@@ -3,6 +3,9 @@ package com.homesweet.homesweetback.domain.product.category.repository.jpa;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * 제품 카테고리 JPA 레포
  *
@@ -10,4 +13,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @date 25. 10. 21.
  */
 public interface ProductCategoryJPARepository extends JpaRepository<ProductCategoryEntity, Long> {
+
+    Optional<ProductCategoryEntity> findById(Long id);
+
+    Optional<ProductCategoryEntity> findByName(String name);
+
+    List<ProductCategoryEntity> findByParentId(Long parentId);
+
+    List<ProductCategoryEntity> findByDepth(Integer depth);
 }
