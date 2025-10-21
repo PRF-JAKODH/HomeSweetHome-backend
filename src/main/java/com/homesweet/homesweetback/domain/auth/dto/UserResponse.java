@@ -16,7 +16,8 @@ public record UserResponse(
     Grade grade,
     UserRole role,
     String phoneNumber,
-    LocalDate birthDate
+    LocalDate birthDate,
+    String address
 ) {
     public static UserResponse of(User user) {
         return new UserResponse(
@@ -27,7 +28,8 @@ public record UserResponse(
             user.getGradeOptional().orElse(null), // Optional 패턴 활용
             user.getRole(),
             user.getPhoneNumber(),
-            user.getBirthDate()
+            user.getBirthDate(),
+            user.getAddress()
         );
     }
 }

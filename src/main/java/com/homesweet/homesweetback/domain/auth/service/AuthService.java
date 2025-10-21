@@ -4,7 +4,9 @@ import com.homesweet.homesweetback.common.security.jwt.JwtTokenProvider;
 import com.homesweet.homesweetback.common.util.CookieUtil;
 import com.homesweet.homesweetback.domain.auth.dto.*;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +26,6 @@ public class AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    private final UserService userService;
     private final CookieUtil cookieUtil;
 
     /**
@@ -84,6 +85,37 @@ public class AuthService {
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+
+    /**
+     * OAuth2 사용자 정보 저장/업데이트
+     * 회원 가입시 사용
+     */
+    @Transactional
+    public User saveOrUpdateOAuth2User(User user) {
+        return userRepository.findByProviderAndProviderId(user.getProvider(), user.getProviderId())
+            .map(existingUser -> {
+                // 기존 사용자 정보 업데이트
+                existingUser.setEmail(user.getEmail());
+                existingUser.setName(user.getName());
+                existingUser.setProfileImageUrl(user.getProfileImageUrl());
+                // Grade는 Optional 패턴으로 안전하게 처리
+                user.getGradeOptional().ifPresent(existingUser::setGrade);
+                // Role은 기존 사용자의 것을 유지 (변경하지 않음)
+                
+                log.info("OAuth2 user updated: {}", existingUser.getEmail());
+                return userRepository.save(existingUser);
+            })
+            .orElseGet(() -> {
+                // 새 사용자 저장 - Role이 설정되지 않은 경우 기본값 USER로 설정
+                if (user.getRole() == null) {
+                    user.setRole(UserRole.USER);
+                }
+                User savedUser = userRepository.save(user);
+                log.info("OAuth2 user created: {}", savedUser.getEmail());
+                return savedUser;
+            });
+    }
+
     /**
      * 회원가입 완료 처리
      */
@@ -92,15 +124,25 @@ public class AuthService {
         // Refresh Token으로 사용자 조회
         User user = getUserFromRefreshToken(request);
         
-        // 회원가입 완료 처리
-        UserResponse updatedUser = userService.completeSignup(user.getId(), signupRequest);
+        // 핸드폰 번호 검증
+        if (!PhoneNumberValidator.isValid(signupRequest.phoneNumber())) {
+            throw new IllegalArgumentException("올바른 핸드폰 번호 형식이 아닙니다");
+        }
         
-        // 새로운 토큰 발급 (업데이트된 사용자 정보로)
-        User updatedUserEntity = userRepository.findById(user.getId())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        // 생일 검증 (미래 날짜 불가)
+        if (signupRequest.birthDate().isAfter(java.time.LocalDate.now())) {
+            throw new IllegalArgumentException("생일은 미래 날짜가 될 수 없습니다");
+        }
         
-        String newAccessToken = jwtTokenProvider.createAccessToken(updatedUserEntity);
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(updatedUserEntity);
+        // 사용자 정보 업데이트
+        user.setPhoneNumber(PhoneNumberValidator.format(signupRequest.phoneNumber()));
+        user.setBirthDate(signupRequest.birthDate());
+        user.setAddress(signupRequest.address());
+        
+        User updatedUser = userRepository.save(user);
+        
+        String newAccessToken = jwtTokenProvider.createAccessToken(updatedUser);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(updatedUser);
         
         // 새로운 Refresh Token을 Cookie에 설정
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(newRefreshToken);
@@ -108,16 +150,9 @@ public class AuthService {
         
         log.info("User signup completed successfully: {}", user.getEmail());
         
-        return new SignUpResponse(newAccessToken, updatedUser);
+        return new SignUpResponse(newAccessToken, UserResponse.of(updatedUser));
     }
 
-    @Transactional
-    public UserResponse updateUserRole(Long userId, UpdateUserRoleRequest request) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setRole(request.role());
-        return UserResponse.of(userRepository.save(user));
-    }
 
     /**
      * 로그아웃 처리

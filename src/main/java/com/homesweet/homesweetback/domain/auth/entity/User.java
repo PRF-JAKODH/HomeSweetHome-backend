@@ -3,7 +3,6 @@ package com.homesweet.homesweetback.domain.auth.entity;
 import com.homesweet.homesweetback.common.BaseEntity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.Cascade;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

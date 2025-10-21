@@ -142,11 +142,11 @@ public class JwtTokenProvider {
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token);
-
+            log.info("claims: {}", claims.getPayload());
             String type = claims.getPayload().get("type", String.class).toString();
             
             return "refresh".equals(type);
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException | NullPointerException e) {
             return false;
         }
     }

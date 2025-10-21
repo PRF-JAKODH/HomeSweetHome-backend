@@ -1,19 +1,15 @@
 package com.homesweet.homesweetback.domain.auth.controller;
 
-import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.service.AuthService;
 import com.homesweet.homesweetback.domain.auth.dto.AccessTokenResponse;
-import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
 import com.homesweet.homesweetback.domain.auth.dto.SignUpResponse;
 import com.homesweet.homesweetback.domain.auth.dto.SignupRequest;
-import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -43,28 +39,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * 현재 사용자 정보 조회 API
-     * JWT 토큰을 통해 인증된 사용자의 정보를 반환합니다.
-     */
-    @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
-        try {
-            // JWT 인증 필터에서 설정된 User 엔티티를 직접 사용
-            User currentUser = (User) authentication.getPrincipal();
-            
-            UserResponse userResponse = UserResponse.of(currentUser);
-            
-            log.info("User info retrieved: {}", currentUser.getEmail());
-            
-            return ResponseEntity.ok(userResponse);
-            
-        } catch (Exception e) {
-            log.error("Failed to get user info: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                .body(null);
-        }
-    }
 
     /**
      * 로그아웃 API
@@ -98,25 +72,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             log.error("Failed to complete signup: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
-
-    @PutMapping("/role")
-    public ResponseEntity<UserResponse> updateUserRole(
-            @Valid @RequestBody UpdateUserRoleRequest request,
-            Authentication authentication) {
-        try {
-            User currentUser = (User) authentication.getPrincipal();
-            UserResponse userResponse = authService.updateUserRole(currentUser.getId(), request);
-            return ResponseEntity.ok(userResponse);
-        }
-        catch (IllegalArgumentException e) {
-            log.error("Invalid update user role data: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(null);
-        }
-        catch (Exception e) {
-            log.error("Failed to update user role: {}", e.getMessage());
             return ResponseEntity.badRequest().body(null);
         }
     }

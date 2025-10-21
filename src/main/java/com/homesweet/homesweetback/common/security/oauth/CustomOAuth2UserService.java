@@ -1,10 +1,10 @@
 package com.homesweet.homesweetback.common.security.oauth;
 
-import com.homesweet.homesweetback.domain.auth.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.service.UserService;
+import com.homesweet.homesweetback.domain.auth.entity.UserRole;
+import com.homesweet.homesweetback.domain.auth.service.AuthService;
 import com.homesweet.homesweetback.domain.auth.util.OAuth2UserInfoExtractor;
 import com.homesweet.homesweetback.domain.auth.util.OAuth2UserInfoExtractorFactory;
 
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Random;
 
 /**
  * OAuth2 사용자 정보를 처리하는 커스텀 서비스
@@ -30,7 +29,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final UserService userService;
+    private final AuthService authService;
     private final OAuth2UserInfoExtractorFactory extractorFactory;
 
     @Override
@@ -85,9 +84,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .email(email)
             .name(name)
             .profileImageUrl(profileImageUrl)
+            .role(UserRole.USER)
             .build();
         
-        user = userService.saveOrUpdateOAuth2User(user);
+        user = authService.saveOrUpdateOAuth2User(user);
 
         log.info("OAuth2 login successful for user: {} (provider: {})", email, provider);
         return new OAuth2UserPrincipal(user, attributes);
