@@ -17,10 +17,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Setter
-@Table(name = "users", uniqueConstraints = {
-	@UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
-	@UniqueConstraint(name = "uk_user_provider_id", columnNames = {"provider", "provider_id"})
-})
+@Table(name = "users")
 public class User extends BaseEntity {
 
 	@Id
