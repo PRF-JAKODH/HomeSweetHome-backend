@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.category.controller;
 
+import com.homesweet.homesweetback.domain.product.category.controller.api.ProductCategoryApi;
 import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
 import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
-public class ProductCategoryController {
+public class ProductCategoryController implements ProductCategoryApi {
 
     private final ProductCategoryService service;
 
