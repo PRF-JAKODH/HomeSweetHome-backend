@@ -24,11 +24,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: false
-  # sql:
-  #   init:
-  #     mode: always
-  #     schema-locations: classpath:db/schema.sql
-  #     data-locations: classpath:db/data.sql
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+      data-locations: classpath:db/data.sql
   security:
     oauth2:
       client:
