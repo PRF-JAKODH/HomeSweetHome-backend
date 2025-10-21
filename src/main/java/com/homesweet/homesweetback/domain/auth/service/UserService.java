@@ -1,10 +1,9 @@
 package com.homesweet.homesweetback.domain.auth.service;
 
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
+import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
-import com.homesweet.homesweetback.domain.auth.dto.SignupRequest;
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
@@ -41,7 +40,7 @@ public class UserService {
      * 사용자 정보 수정
      */
     @Transactional
-    public UserResponse updateUser(Long userId, UpdateUserRequest request) {
+    public UserResponse updateUserInfo(Long userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
@@ -66,6 +65,10 @@ public class UserService {
             user.setBirthDate(request.birthDate());
         }
         
+        if (request.address() != null) {
+            user.setAddress(request.address());
+        }
+        
         User updatedUser = userRepository.save(user);
         log.info("User info updated: {}", updatedUser.getEmail());
         
@@ -85,63 +88,14 @@ public class UserService {
     }   
 
     /**
-     * OAuth2 사용자 정보 저장/업데이트
-     * 회원 가입시 사용
+     * 사용자 역할 수정
      */
     @Transactional
-    public User saveOrUpdateOAuth2User(User user) {
-        return userRepository.findByProviderAndProviderId(user.getProvider(), user.getProviderId())
-            .map(existingUser -> {
-                // 기존 사용자 정보 업데이트
-                existingUser.setEmail(user.getEmail());
-                existingUser.setName(user.getName());
-                existingUser.setProfileImageUrl(user.getProfileImageUrl());
-                // Grade는 Optional 패턴으로 안전하게 처리
-                user.getGradeOptional().ifPresent(existingUser::setGrade);
-                // Role은 기존 사용자의 것을 유지 (변경하지 않음)
-                
-                log.info("OAuth2 user updated: {}", existingUser.getEmail());
-                return userRepository.save(existingUser);
-            })
-            .orElseGet(() -> {
-                // 새 사용자 저장 - Role이 설정되지 않은 경우 기본값 USER로 설정
-                if (user.getRole() == null) {
-                    user.setRole(UserRole.USER);
-                }
-                User savedUser = userRepository.save(user);
-                log.info("OAuth2 user created: {}", savedUser.getEmail());
-                return savedUser;
-            });
-    }
-
-    /**
-     * 회원가입 완료 (핸드폰 번호, 생일, 역할 설정)
-     */
-    @Transactional
-    public UserResponse completeSignup(Long userId, SignupRequest request) {
+    public UserResponse updateUserRole(Long userId, UpdateUserRoleRequest request) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        
-        // 핸드폰 번호 검증
-        if (!PhoneNumberValidator.isValid(request.phoneNumber())) {
-            throw new IllegalArgumentException("올바른 핸드폰 번호 형식이 아닙니다");
-        }
-        
-        // 생일 검증 (미래 날짜 불가)
-        if (request.birthDate().isAfter(java.time.LocalDate.now())) {
-            throw new IllegalArgumentException("생일은 미래 날짜가 될 수 없습니다");
-        }
-        
-        // 사용자 정보 업데이트
-        user.setPhoneNumber(PhoneNumberValidator.format(request.phoneNumber()));
-        user.setBirthDate(request.birthDate());
-        
-        User updatedUser = userRepository.save(user);
-        log.info("User signup completed: {} (phone: {}, birthDate: {})", 
-                updatedUser.getEmail(), updatedUser.getPhoneNumber(), 
-                updatedUser.getBirthDate());
-        
-        return UserResponse.of(updatedUser);
+        user.setRole(request.role());
+        return UserResponse.of(userRepository.save(user));
     }
 
     /**
