@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity;
 
-import com.homesweet.homesweetback.domain.mock.UserEntity;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import jakarta.persistence.*;
@@ -38,7 +38,7 @@ public class ProductEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity seller;
+    private User seller;
 
     @Column(nullable = false, length = 30)
     private String name;
