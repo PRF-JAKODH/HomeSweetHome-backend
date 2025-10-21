@@ -6,6 +6,8 @@ import com.homesweet.homesweetback.domain.auth.dto.AccessTokenResponse;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
 import com.homesweet.homesweetback.domain.auth.dto.SignUpResponse;
 import com.homesweet.homesweetback.domain.auth.dto.SignupRequest;
+import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -96,6 +98,25 @@ public class AuthController {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             log.error("Failed to complete signup: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PutMapping("/role")
+    public ResponseEntity<UserResponse> updateUserRole(
+            @Valid @RequestBody UpdateUserRoleRequest request,
+            Authentication authentication) {
+        try {
+            User currentUser = (User) authentication.getPrincipal();
+            UserResponse userResponse = authService.updateUserRole(currentUser.getId(), request);
+            return ResponseEntity.ok(userResponse);
+        }
+        catch (IllegalArgumentException e) {
+            log.error("Invalid update user role data: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        }
+        catch (Exception e) {
+            log.error("Failed to update user role: {}", e.getMessage());
             return ResponseEntity.badRequest().body(null);
         }
     }

@@ -111,6 +111,14 @@ public class AuthService {
         return new SignUpResponse(newAccessToken, updatedUser);
     }
 
+    @Transactional
+    public UserResponse updateUserRole(Long userId, UpdateUserRoleRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setRole(request.role());
+        return UserResponse.of(userRepository.save(user));
+    }
+
     /**
      * 로그아웃 처리
      */
