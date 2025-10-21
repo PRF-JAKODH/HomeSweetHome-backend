@@ -1,31 +1,30 @@
-name: Notify Discord on PR Merge to Develop
+name: Notify Discord on PR Opened to develop
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened]       # PR이 생성되었을 때만
     branches:
-      - develop
+      - develop           # base 브랜치가 develop인 PR만
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - name: Send Discord Notification
         uses: appleboy/discord-action@v1.2.0
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           message: |
-            **🚨 develop 브랜치에 PR이 머지되었습니다!**
+            **🆕 develop 브랜치에 PR이 생성되었습니다!**
             **PR 제목**: ${{ github.event.pull_request.title }}
             **작성자**: ${{ github.event.pull_request.user.login }}
             **PR 링크**: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})
-            
-            **작업 브랜치 최신화 안내**:
+
+            **작업 브랜치 최신화 안내(머지 이후 진행):**
             1. `git checkout develop`
             2. `git pull origin develop`
             3. `git checkout <작업 브랜치>`
             4. `git merge develop`
             5. 충돌 해결 후 커밋/푸시
-            
-            @everyone, 작업 브랜치를 최신화해주세요! 🙌
+
+            @everyone, 신규 PR을 확인해 주세요! 🙌
