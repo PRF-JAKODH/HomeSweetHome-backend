@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -233,23 +234,40 @@ class ProductCategoryServiceImplTest {
 
                 Long parentId = 1L;
 
+                List<ProductCategory> children = List.of(
+                        new ProductCategory(2L, "침실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(3L, "거실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(4L, "주방가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now())
+                );
+
+                given(repository.findByParentId(parentId)).willReturn(children);
+
+                List<CategoryResponse> responses = service.getCategoriesByParentId(parentId);
+
+                assertThat(responses).hasSize(3);
             }
 
             @Test
             @DisplayName("depth 깊이에 해당하는 카테고리를 조회할 수 있다")
             void getCategoriesByDepth() {
+                // given
+                Integer depth = 1;
 
-            }
-        }
+                List<ProductCategory> categories = List.of(
+                        new ProductCategory(2L, "침실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(3L, "거실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(5L, "욕실가구", 4L, 1, LocalDateTime.now(), LocalDateTime.now())
+                );
 
-        @Nested
-        @DisplayName("실패 케이스")
-        class Fail {
+                given(repository.findByDepth(depth)).willReturn(categories);
 
-            @Test
-            @DisplayName("존재하지 않는 ID로 조회 시 예외 발생")
-            void getCategoriesByNotExistId() {
+                // when
+                List<CategoryResponse> responses = service.getCategoriesByDepth(depth);
 
+                // then
+                assertThat(responses).hasSize(3);
+                assertThat(responses).extracting("name")
+                        .containsExactlyInAnyOrder("침실가구", "거실가구", "욕실가구");
             }
         }
     }
