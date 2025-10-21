@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.common.security.oauth;
 
+import com.homesweet.homesweetback.domain.auth.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.auth.entity.User;
@@ -77,15 +78,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Missing required user information from " + provider);
         }
 
-        // 랜덤 등금 생성
-        String grade = switch (new Random().nextInt(0, 4)) {
-            case 0 -> "VVIP";
-            case 1 -> "VIP";
-            case 2 -> "GOLD";
-            case 3 -> "SILVER";
-            default -> throw new IllegalStateException("Unexpected value");
-        };
-        
         // UserService를 통해 사용자 저장/업데이트
         User user = User.builder()
             .provider(provider)
@@ -93,7 +85,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .email(email)
             .name(name)
             .profileImageUrl(profileImageUrl)
-            .grade(grade) // 등급 랜덤 생성
             .build();
         
         user = userService.saveOrUpdateOAuth2User(user);

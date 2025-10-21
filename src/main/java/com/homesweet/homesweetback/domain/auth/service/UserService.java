@@ -1,13 +1,14 @@
 package com.homesweet.homesweetback.domain.auth.service;
 
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
-import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
 import com.homesweet.homesweetback.domain.auth.dto.SignupRequest;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
+import com.homesweet.homesweetback.domain.auth.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,7 +96,8 @@ public class UserService {
                 existingUser.setEmail(user.getEmail());
                 existingUser.setName(user.getName());
                 existingUser.setProfileImageUrl(user.getProfileImageUrl());
-                existingUser.setGrade(user.getGrade());
+                // Grade는 Optional 패턴으로 안전하게 처리
+                user.getGradeOptional().ifPresent(existingUser::setGrade);
                 // Role은 기존 사용자의 것을 유지 (변경하지 않음)
                 
                 log.info("OAuth2 user updated: {}", existingUser.getEmail());
@@ -133,13 +135,55 @@ public class UserService {
         // 사용자 정보 업데이트
         user.setPhoneNumber(PhoneNumberValidator.format(request.phoneNumber()));
         user.setBirthDate(request.birthDate());
-        user.setRole(request.role());
         
         User updatedUser = userRepository.save(user);
-        log.info("User signup completed: {} (phone: {}, birthDate: {}, role: {})", 
+        log.info("User signup completed: {} (phone: {}, birthDate: {})", 
                 updatedUser.getEmail(), updatedUser.getPhoneNumber(), 
-                updatedUser.getBirthDate(), updatedUser.getRole());
+                updatedUser.getBirthDate());
         
         return UserResponse.of(updatedUser);
+    }
+
+    /**
+     * 사용자의 등급 정보를 조회합니다.
+     * 등급이 없는 경우 null을 반환합니다.
+     */
+    public Optional<Grade> getUserGrade(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        return user.getGradeOptional();
+    }
+
+    /**
+     * 사용자의 등급 이름을 조회합니다.
+     * 등급이 없는 경우 "등급 없음"을 반환합니다.
+     */
+    public String getUserGradeName(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        return user.getGradeName();
+    }
+
+    /**
+     * 사용자의 수수료율을 조회합니다.
+     * 등급이 없는 경우 0.0을 반환합니다.
+     */
+    public Double getUserFeeRate(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        return user.getFeeRate();
+    }
+
+    /**
+     * 사용자가 등급을 가지고 있는지 확인합니다.
+     */
+    public boolean hasUserGrade(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        return user.hasGrade();
     }
 }

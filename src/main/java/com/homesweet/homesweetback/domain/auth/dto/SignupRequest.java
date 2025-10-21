@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.auth.dto;
 
-import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -16,9 +15,6 @@ public record SignupRequest(
     String phoneNumber,
     
     @NotNull(message = "생일은 필수입니다")
-    LocalDate birthDate,
-    
-    @NotNull(message = "역할은 필수입니다")
-    UserRole role
+    LocalDate birthDate
 ) {
 }
