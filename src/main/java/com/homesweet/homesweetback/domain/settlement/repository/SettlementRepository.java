@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
+
     // 특정 사용자의 정산 내역을 주문 일시(거래 일시 Order.orderDate)로 내역 조회
     @Query(value = "SELECT s FROM Settlement s " +
             "JOIN s.order o WHERE s.userId = :userId AND o.orderDate BETWEEN :startDate AND :endDate " +
