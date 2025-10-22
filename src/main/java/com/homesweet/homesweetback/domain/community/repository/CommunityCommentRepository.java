@@ -16,14 +16,14 @@ import java.util.List;
 
 public interface CommunityCommentRepository extends JpaRepository<CommunityCommentEntity, Long> {
 
-    // 삭제되지 않은 모든 게시글 조회
+    // 삭제되지 않은 모든 댓글 조회
     List<CommunityCommentEntity> findByIsDeletedFalse();
 
-    // 특정 게시글 조회
-    List<CommunityCommentEntity> findByPostIdAndIsDeletedFalse(Long postId);
+    // 특정 게시글의 댓글 조회
+    List<CommunityCommentEntity> findByPost_PostIdAndIsDeletedFalse(Long postId);
 
-    // 특정 사용자의 게시글 조회
-    List<CommunityCommentEntity> findByUserIdAndIsDeletedFalse(Long userId);
+    // 특정 사용자의 댓글 조회
+    List<CommunityCommentEntity> findByAuthor_IdAndIsDeletedFalse(Long userId);
 
     // 내용으로 검색
     List<CommunityCommentEntity> findByContentContainingAndIsDeletedFalse(String keyword);

@@ -34,9 +34,13 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(name = "post_id")
     private Long postId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User author;
+    // TODO: Grade 엔티티 컬럼 매핑 이슈로 임시 주석처리
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "user_id", nullable = false)
+    // private User author;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(nullable = false, length = 100)
     private String title;
@@ -59,6 +63,10 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isModified = false;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     private LocalDateTime modifiedAt;
 
