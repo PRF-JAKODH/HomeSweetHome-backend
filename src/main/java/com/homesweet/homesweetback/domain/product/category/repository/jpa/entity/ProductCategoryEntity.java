@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+
 /**
  * 제품 카테고리 엔티티
  *
@@ -47,7 +48,8 @@ public class ProductCategoryEntity {
     private LocalDateTime updatedAt;
 
     @Builder
-    public ProductCategoryEntity(String name, Long parentId, Integer depth) {
+    public ProductCategoryEntity(Long id, String name, Long parentId, Integer depth) {
+        this.id = id;
         this.name = name;
         this.parentId = parentId;
         this.depth = depth;

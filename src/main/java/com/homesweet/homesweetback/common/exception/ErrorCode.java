@@ -18,7 +18,11 @@ public enum ErrorCode {
     // Product
     DUPLICATED_CATEGORY_NAME_ERROR(HttpStatus.CONFLICT, "이미 해당하는 카테고리 이름이 존재합니다"),
     CANNOT_FOUND_PARENT_CATEGORY_ERROR(HttpStatus.NOT_FOUND, "부모 카테고리를 찾을 수 없습니다"),
-    CATEGORY_DEPTH_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST, "카테고리 기준 깊이를 넘었습니다");
+    CATEGORY_DEPTH_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST, "카테고리 기준 깊이를 넘었습니다"),
+    DUPLICATED_PRODUCT_NAME_ERROR(HttpStatus.CONFLICT, "동일한 제품명을 사용할 수 없습니다"),
+    CANNOT_FOUND_CATEGORY_ERROR(HttpStatus.NOT_FOUND, "해당하는 카테고리를 찾을 수 없습니다"),
+    OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다"),
+    OUT_OF_OPTION_INDEX(HttpStatus.BAD_REQUEST, "잘못된 옵션 인덱스를 입력했습니다");
 
     private final HttpStatus status;
     private final String message;
