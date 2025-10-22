@@ -25,4 +25,27 @@ public class ProductOptionGroup {
 
     @Builder.Default
     private List<ProductOptionValue> values = new ArrayList<>();
+
+    public static List<ProductOptionGroup> createOptionGroups(
+            List<ProductCreateRequest.ProductOptionGroupRequest> groupRequests
+    ) {
+        if (groupRequests == null || groupRequests.isEmpty()) {
+            return List.of();
+        }
+
+        return groupRequests.stream()
+                .map(groupReq -> ProductOptionGroup.builder()
+                        .groupName(groupReq.groupName())
+                        .values(
+                                groupReq.values().stream()
+                                        .map(value -> ProductOptionValue.builder()
+                                                .value(value)
+                                                .build()
+                                        )
+                                        .toList()
+                        )
+                        .build()
+                )
+                .toList();
+    }
 }

@@ -68,14 +68,23 @@ CREATE TABLE `products_detail_image` (
                                          FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
 );
 
-CREATE TABLE `product_option` (
-                                  `option_id` BIGINT NOT NULL AUTO_INCREMENT,
-                                  `product_id` BIGINT NOT NULL,
-                                  `option_name` VARCHAR(12) NOT NULL,
-                                  `value` VARCHAR(12) NOT NULL,
-                                  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                  PRIMARY KEY (`option_id`),
-                                  FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+CREATE TABLE `product_option_group` (
+                                        `option_group_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                        `product_id` BIGINT NOT NULL,
+                                        `group_name` VARCHAR(30) NOT NULL,
+                                        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                        PRIMARY KEY (`option_group_id`),
+                                        FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `product_option_value` (
+                                        `option_value_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                        `option_group_id` BIGINT NOT NULL,
+                                        `value` VARCHAR(50) NOT NULL,
+                                        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        PRIMARY KEY (`option_value_id`),
+                                        FOREIGN KEY (`option_group_id`) REFERENCES `product_option_group` (`option_group_id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `sku` (
@@ -92,12 +101,13 @@ CREATE TABLE `sku` (
 CREATE TABLE `product_sku_option` (
                                       `sku_option_id` BIGINT NOT NULL AUTO_INCREMENT,
                                       `sku_id` BIGINT NOT NULL,
-                                      `option_id` BIGINT NOT NULL,
+                                      `option_value_id` BIGINT NOT NULL,
                                       `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                       PRIMARY KEY (`sku_option_id`),
                                       FOREIGN KEY (`sku_id`) REFERENCES `sku` (`sku_id`) ON DELETE CASCADE,
-                                      FOREIGN KEY (`option_id`) REFERENCES `product_option` (`option_id`) ON DELETE CASCADE
+                                      FOREIGN KEY (`option_value_id`) REFERENCES `product_option_value` (`option_value_id`) ON DELETE CASCADE
 );
+
 
 CREATE TABLE `products_reviews` (
                                     `review_id` BIGINT NOT NULL AUTO_INCREMENT,
