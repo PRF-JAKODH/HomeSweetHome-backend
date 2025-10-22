@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,8 +36,18 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
+        // 판매자는 중복된 이름의 상품을 등록할 수 없다
         if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
             throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
+        }
+
+        if (mainImage == null || mainImage.isEmpty()) {
+            throw new ProductException(ErrorCode.INVALID_FILE_ERROR);
+        }
+
+        // 상세 이미지는 최대 5장까지 업로드 가능하다
+        if (detailImages.size() > 5) {
+            throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
         }
 
         ProductCategory category = categoryRepository.findById(request.categoryId())

@@ -36,14 +36,4 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus()).body(errorResponse);
     }
-
-    @ExceptionHandler(MissingServletRequestPartException.class)
-    public ResponseEntity<ErrorResponse> handleMissingPart(MissingServletRequestPartException ex) {
-        ErrorCode errorCode = ErrorCode.MISSING_INPUT_DATA;
-        ErrorResponse errorResponse = ErrorResponse.of(errorCode.getStatus(), errorCode.getMessage());
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(errorResponse);
-    }
 }
