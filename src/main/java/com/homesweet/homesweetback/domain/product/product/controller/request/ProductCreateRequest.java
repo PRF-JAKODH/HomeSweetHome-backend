@@ -20,10 +20,6 @@ public record ProductCreateRequest(
         @Size(max = 30, message = "제품명은 30자 이내로 입력해주세요.")
         String name,
 
-        @NotBlank(message = "이미지 URL은 필수입니다.")
-        @Size(max = 255, message = "이미지 URL은 255자 이내로 입력해주세요.")
-        String imageUrl,
-
         @NotBlank(message = "브랜드는 필수입니다.")
         @Size(max = 20, message = "브랜드는 20자 이내로 입력해주세요.")
         String brand,
@@ -42,8 +38,6 @@ public record ProductCreateRequest(
         @NotNull(message = "배송비는 필수입니다.")
         @Min(value = 0, message = "배송비는 0원 이상이어야 합니다.")
         Integer shippingPrice,
-
-        List<String> detailImageUrls,
 
         List<ProductOptionGroupRequest> optionGroups,
 
