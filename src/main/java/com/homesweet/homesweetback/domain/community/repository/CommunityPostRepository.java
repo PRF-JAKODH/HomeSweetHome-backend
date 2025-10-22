@@ -24,6 +24,7 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
     // 특정 사용자의 게시글 조회
+    // TODO: Grade 이슈 해결 후 Author_Id로 변경
     List<CommunityPostEntity> findByUserIdAndIsDeletedFalse(Long userId);
 
     // 제목으로 검색
@@ -43,5 +44,6 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     List<CommunityPostEntity> findByIsDeletedFalseOrderByCreatedAtDesc();
 
     // 특정 사용자의 게시글 개수
+    // TODO: Grade 이슈 해결 후 Author_Id로 변경
     Long countByUserIdAndIsDeletedFalse(Long userId);
 }
