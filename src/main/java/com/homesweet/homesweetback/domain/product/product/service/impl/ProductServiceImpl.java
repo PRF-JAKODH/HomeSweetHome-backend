@@ -6,17 +6,17 @@ import com.homesweet.homesweetback.domain.product.category.domain.exception.Prod
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductDetailImage;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductOptionGroup;
-import com.homesweet.homesweetback.domain.product.product.domain.Sku;
+import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,10 +31,11 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final ProductImageUploader productImageUploader;
 
     @Override
     @Transactional
-    public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request) {
+    public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
         if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
             throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
@@ -43,7 +44,9 @@ public class ProductServiceImpl implements ProductService {
         ProductCategory category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));
 
-        List<ProductDetailImage> detailImages = ProductDetailImage.createDetailImages(request.detailImageUrls());
+        ProductImages productImages = productImageUploader.uploadProductImages(mainImage, detailImages);
+
+        List<ProductDetailImage> detailImage = ProductDetailImage.createDetailImages(productImages.detailImageUrls());
 
         List<ProductOptionGroup> optionGroups = ProductOptionGroup.createOptionGroups(request.optionGroups());
 
@@ -53,13 +56,13 @@ public class ProductServiceImpl implements ProductService {
                 category.id(),
                 sellerId,
                 request.name(),
-                request.imageUrl(),
+                productImages.mainImageUrl(),
                 request.brand(),
                 request.basePrice(),
                 request.discountRate(),
                 request.description(),
                 request.shippingPrice(),
-                detailImages,
+                detailImage,
                 optionGroups,
                 skus
         );

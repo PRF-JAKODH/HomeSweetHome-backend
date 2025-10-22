@@ -10,7 +10,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 10. 22.
  */
-public interface ImageService {
+public interface ImageUploader {
 
     String upload(MultipartFile file, String fileName);
 

@@ -33,7 +33,7 @@ public class ProductDetailImageEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
-    @Column(name = "image_url", nullable = false, length = 255)
+    @Column(name = "image_url", nullable = false, length = 1000)
     private String imageUrl;
 
     @CreatedDate

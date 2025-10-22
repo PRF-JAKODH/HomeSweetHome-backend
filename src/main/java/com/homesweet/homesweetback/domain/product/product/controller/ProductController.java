@@ -34,14 +34,14 @@ public class ProductController implements ProductAPI {
     public ResponseEntity<ProductResponse> registerProduct(
             @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,
 //            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @Valid @RequestPart ProductCreateRequest request,
-            @RequestBody MultipartFile mainImage,
+            @Valid @RequestPart(value = "product") ProductCreateRequest request,
+            @RequestPart(value = "mainImage") MultipartFile mainImage,
             @RequestPart(value = "detailImages", required = false) List<MultipartFile> detailImages
             ) {
 
 //        Long sellerId = principal.getUserId();
 
-        ProductResponse response = service.registerProduct(sellerId, request);
+        ProductResponse response = service.registerProduct(sellerId, request, mainImage, detailImages);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
