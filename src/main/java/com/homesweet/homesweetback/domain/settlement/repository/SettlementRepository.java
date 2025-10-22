@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -14,12 +14,12 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     // 특정 사용자의 정산 내역을 주문 일시(거래 일시 Order.orderDate)로 내역 조회
     @Query(value = "SELECT s FROM Settlement s " +
-            "JOIN s.order o WHERE s.userId = :userId AND o.orderDate BETWEEN :startDate AND :endDate " +
-            "ORDER BY o.orderDate DESC")
+            "JOIN s.order o WHERE s.userId = :userId AND o.orderedAt BETWEEN :startDate AND :endDate " +
+            "ORDER BY o.orderedAt DESC")
     List<Settlement> findByOrderDate(
             @Param("userId") Long userId,
-            @Param("startDate")LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDate")LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
     );
 
     // 특정 사용자의 전체 정산 내역을 조회
