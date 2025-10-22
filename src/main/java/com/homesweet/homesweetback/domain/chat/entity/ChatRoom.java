@@ -1,8 +1,11 @@
 package com.homesweet.homesweetback.domain.chat.entity;
 
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 @Builder
 public class ChatRoom {
 
@@ -19,14 +23,15 @@ public class ChatRoom {
     @Column(name = "room_id", nullable = false)
     private Long id;
 
-    @Pattern(regexp = "INDIVIDUAL|GROUP", message = "채팅방 타입은 INDIVIDUAL 또는 GROUP 이어야 합니다.")
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 100)
-    private String type;
+    private ChatRoomType type;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "last_message_id", nullable = false)
@@ -34,7 +39,5 @@ public class ChatRoom {
 
     @Column(name = "thumbnail_url", nullable = false, length = 100)
     private String thumbnailUrl;
-
-
 
 }

@@ -3,6 +3,10 @@ package com.homesweet.homesweetback.domain.chat.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "chat_image")
@@ -10,6 +14,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class ChatImage {
 
     @Id
@@ -25,10 +30,10 @@ public class ChatImage {
     private String thumbUrl;
 
     @Column(nullable = false)
-    private int fileSize;
+    private Integer fileSize;
 
-    @Column(nullable = false)
-    private String uploaded_at;
+    @CreatedDate
+    private LocalDateTime uploadedAt;
 
     @Pattern(regexp = "jpg|png|gif|webp|mp4|webm", message = "허용되지 않는 파일 타입입니다.")
     @Column(nullable = false, length = 100)
