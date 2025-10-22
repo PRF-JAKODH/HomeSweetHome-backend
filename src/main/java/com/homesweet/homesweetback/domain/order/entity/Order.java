@@ -48,7 +48,7 @@ public class Order {
     @Column(name = "shipping_address", nullable = false, length = 100)
     private String shippingAddress;
 
-    @Column(name = "shipping_request", nullable = false, length = 255)
+    @Column(name = "shipping_request", nullable = true, length = 255)
     private String shippingRequest;
 
     // ===== 양방향 연관관계 =====
@@ -59,14 +59,22 @@ public class Order {
 
     // ===== 생성자 (Builder 패턴) =====
     @Builder
-    public Order(String merchantUid, Long totalAmount, Long usedPoint, String shippingAddress, Long userId, OrderStatus status) {
+    public Order(String merchantUid, OrderStatus status, Long totalAmount, Long usedPoint, Long userId,
+                 String recipientName, String recipientPhone, String shippingAddress, String shippingRequest) {
+
+        // --- 주문/결제 정보 ---
         this.merchantUid = merchantUid;
-        this.totalAmount = totalAmount;
-        this.usedPoint = usedPoint;
-        this.shippingAddress = shippingAddress;
-        this.userId = userId;
         this.status = status;
-        this.orderedAt = LocalDateTime.now();
+        this.totalAmount = totalAmount;
+        this.usedPoint = usedPoint; // (null일 수 있음)
+        this.userId = userId;
+        this.orderedAt = LocalDateTime.now(); // ★ 여기서 자동 생성
+
+        // --- 배송지 정보 (추가됨) ---
+        this.recipientName = recipientName;
+        this.recipientPhone = recipientPhone;
+        this.shippingAddress = shippingAddress;
+        this.shippingRequest = shippingRequest;
     }
 
     // ===== 연관관계 편의 메서드 =====
