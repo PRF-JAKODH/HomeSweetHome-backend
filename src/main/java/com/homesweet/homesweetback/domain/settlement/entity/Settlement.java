@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.settlement.entity;
 
-
+import com.homesweet.homesweetback.domain.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,7 +47,7 @@ public class Settlement {
     private Boolean orderCanceled;
 
     // 주문 정보 fk
-//    @ManyToOne
-//    @JoinColumn(name = "order_id")
-//    private Order order;
+   @ManyToOne
+   @JoinColumn(name = "order_id")
+   private Order order;
 }
