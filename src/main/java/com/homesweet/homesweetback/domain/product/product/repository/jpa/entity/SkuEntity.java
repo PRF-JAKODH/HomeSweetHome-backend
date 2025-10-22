@@ -2,9 +2,12 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity
 
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +20,8 @@ import java.util.List;
 @Entity
 @Table(name = "sku")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class SkuEntity {
 
     @Id
@@ -25,14 +29,34 @@ public class SkuEntity {
     @Column(name = "sku_id")
     private Long id;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
-    @Column(name = "price_adjustment")
+    @Column(name = "price_adjustment", nullable = false)
     private Integer priceAdjustment = 0;
 
-    @Column(name = "stock_quantity")
+    @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0;
 
+    @OneToMany(mappedBy = "sku", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+
+    @Builder
+    public SkuEntity(Integer priceAdjustment, Integer stockQuantity) {
+        this.priceAdjustment = priceAdjustment;
+        this.stockQuantity = stockQuantity;
+    }
+
+    public void addSkuOption(ProductSkuOptionEntity link) {
+        skuOptions.add(link);
+        link.setSku(this);
+    }
 }

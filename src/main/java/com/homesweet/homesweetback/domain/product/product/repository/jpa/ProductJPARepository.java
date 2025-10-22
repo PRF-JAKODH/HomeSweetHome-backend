@@ -10,4 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @date 25. 10. 21.
  */
 public interface ProductJPARepository extends JpaRepository<ProductEntity, Long> {
+
+    boolean existsBySellerIdAndName(Long sellerId, String name);
 }

@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import org.springframework.stereotype.Component;
 
 /**
- * 제품 카테고리 도메인 및 엔티티 변환 클래스
+ * 제품 카테고리 도메인 <-> 엔티티 변환 클래스
  *
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.

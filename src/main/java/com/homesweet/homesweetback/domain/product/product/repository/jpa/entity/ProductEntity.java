@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -12,6 +13,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 상품 엔티티
@@ -65,9 +68,47 @@ public class ProductEntity {
     @Column(nullable = false, length = 12)
     private ProductStatus status;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductDetailImageEntity> detailImages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductOptionEntity> options = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SkuEntity> skus = new ArrayList<>();
+
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Builder
+    public ProductEntity(ProductCategoryEntity category, User seller, String name, String imageUrl, String brand, Integer basePrice, BigDecimal discountRate, String description, Integer shippingPrice, ProductStatus status) {
+        this.category = category;
+        this.seller = seller;
+        this.name = name;
+        this.imageUrl = imageUrl;
+        this.brand = brand;
+        this.basePrice = basePrice;
+        this.discountRate = discountRate;
+        this.description = description;
+        this.shippingPrice = shippingPrice;
+        this.status = status;
+    }
+
+    public void addDetailImage(ProductDetailImageEntity image) {
+        this.detailImages.add(image);
+        image.setProduct(this);
+    }
+
+    public void addOption(ProductOptionEntity option) {
+        this.options.add(option);
+        option.setProduct(this);
+    }
+
+    public void addSku(SkuEntity sku) {
+        this.skus.add(sku);
+        sku.setProduct(this);
+    }
 }

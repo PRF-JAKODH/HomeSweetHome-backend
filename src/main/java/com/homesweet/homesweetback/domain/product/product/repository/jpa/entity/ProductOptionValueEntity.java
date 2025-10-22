@@ -6,41 +6,43 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 재고, 옵션 중간 테이블
+ * 상품 옵션 값 엔티티
  *
  * @author junnukim1007gmail.com
- * @date 25. 10. 20.
+ * @date 25. 10. 22.
  */
-
 @Entity
-@Table(name = "product_sku_option")
+@Table(name = "product_option_value")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class ProductSkuOptionEntity {
+public class ProductOptionValueEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "sku_option_id")
+    @Column(name = "option_value_id")
     private Long id;
+
+    @Column(nullable = false, length = 100)
+    private String value;
 
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sku_id", nullable = false)
-    private SkuEntity sku;
+    @JoinColumn(name = "option_group_id", nullable = false)
+    private ProductOptionGroupEntity group;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "option_value_id", nullable = false)
-    private ProductOptionValueEntity optionValue;
+    @OneToMany(mappedBy = "optionValue", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductSkuOptionEntity> skuLinks = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;
 
     @Builder
-    public ProductSkuOptionEntity(SkuEntity sku, ProductOptionValueEntity optionValue) {
-        this.sku = sku;
-        this.optionValue = optionValue;
+    public ProductOptionValueEntity(String value) {
+        this.value = value;
     }
 }
