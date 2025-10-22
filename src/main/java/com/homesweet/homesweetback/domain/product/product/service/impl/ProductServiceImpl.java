@@ -50,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
         }
 
+        // 제품 등록 시 -> 카테고리 설정, 대표 이미지 설정, 상세 이미지 설정, 옵션 그룹 생성, 옵션 그룹 별 재고 설정이 필요하다
         ProductCategory category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));
 
