@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.auth.dto;
 
-import com.homesweet.homesweetback.domain.auth.entity.Grade;
+import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import java.time.LocalDate;
