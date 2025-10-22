@@ -72,7 +72,7 @@ public class ProductEntity {
     private List<ProductDetailImageEntity> detailImages = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductOptionEntity> options = new ArrayList<>();
+    private List<ProductOptionGroupEntity> optionGroups = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SkuEntity> skus = new ArrayList<>();
@@ -102,9 +102,9 @@ public class ProductEntity {
         image.setProduct(this);
     }
 
-    public void addOption(ProductOptionEntity option) {
-        this.options.add(option);
-        option.setProduct(this);
+    public void addOption(ProductOptionGroupEntity optionGroup) {
+        this.optionGroups.add(optionGroup);
+        optionGroup.setProduct(this);
     }
 
     public void addSku(SkuEntity sku) {

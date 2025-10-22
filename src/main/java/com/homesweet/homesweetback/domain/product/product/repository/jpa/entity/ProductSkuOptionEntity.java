@@ -39,7 +39,7 @@ public class ProductSkuOptionEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public ProductSkuOptionEntity(SkuEntity sku, ProductOptionValueEntity optionValue) {
+    public ProductSkuOptionEntity(Long id, SkuEntity sku, ProductOptionValueEntity optionValue) {
         this.sku = sku;
         this.optionValue = optionValue;
     }

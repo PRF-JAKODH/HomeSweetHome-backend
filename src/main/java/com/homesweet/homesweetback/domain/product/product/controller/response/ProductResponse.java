@@ -57,7 +57,7 @@ public record ProductResponse(
             Integer stockQuantity,
             Integer finalPrice,
             boolean inStock,
-            List<Long> optionValueIds
+            List<Long> optionValueIndexes
     ) {}
 
     public static ProductResponse from(Product domain) {
@@ -85,7 +85,7 @@ public record ProductResponse(
                         sku.getStockQuantity(),
                         domain.getDiscountedPrice() + sku.getPriceAdjustment(),
                         sku.isInStock(),
-                        sku.getOptionValueIds()
+                        sku.getOptionValueIndexes()
                 ))
                 .toList();
 

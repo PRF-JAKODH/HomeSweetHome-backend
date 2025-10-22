@@ -8,6 +8,8 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductDetailImage;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductOptionGroup;
+import com.homesweet.homesweetback.domain.product.product.domain.Sku;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
@@ -43,7 +45,9 @@ public class ProductServiceImpl implements ProductService {
 
         List<ProductDetailImage> detailImages = ProductDetailImage.createDetailImages(request.detailImageUrls());
 
+        List<ProductOptionGroup> optionGroups = ProductOptionGroup.createOptionGroups(request.optionGroups());
 
+        List<Sku> skus = Sku.createSkus(request.skus(), optionGroups);
 
         Product product = Product.createProduct(
                 category.id(),
@@ -56,7 +60,7 @@ public class ProductServiceImpl implements ProductService {
                 request.description(),
                 request.shippingPrice(),
                 detailImages,
-                options,
+                optionGroups,
                 skus
         );
 

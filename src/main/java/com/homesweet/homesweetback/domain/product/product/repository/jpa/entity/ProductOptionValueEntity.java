@@ -42,7 +42,8 @@ public class ProductOptionValueEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public ProductOptionValueEntity(String value) {
+    public ProductOptionValueEntity(Long id, String value) {
+        this.id = id;
         this.value = value;
     }
 }

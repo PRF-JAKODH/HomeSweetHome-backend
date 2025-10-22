@@ -55,8 +55,8 @@ public class SkuEntity {
         this.stockQuantity = stockQuantity;
     }
 
-    public void addSkuOption(ProductSkuOptionEntity link) {
-        skuOptions.add(link);
-        link.setSku(this);
+    public void addSkuOption(ProductSkuOptionEntity skuOption) {
+        this.skuOptions.add(skuOption);
+        skuOption.setSku(this);
     }
 }

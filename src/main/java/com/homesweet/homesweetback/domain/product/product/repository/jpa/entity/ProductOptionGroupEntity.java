@@ -42,8 +42,11 @@ public class ProductOptionGroupEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public ProductOptionGroupEntity(String groupName) {
+    public ProductOptionGroupEntity(String groupName, List<ProductOptionValueEntity> values) {
         this.groupName = groupName;
+        if (values != null) {
+            values.forEach(this::addOptionValue);
+        }
     }
 
     public void addOptionValue(ProductOptionValueEntity value) {

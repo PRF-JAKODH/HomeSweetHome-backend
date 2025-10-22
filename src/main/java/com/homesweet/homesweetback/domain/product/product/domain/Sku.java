@@ -28,7 +28,7 @@ public class Sku {
     private LocalDateTime updatedAt;
 
     @Builder.Default
-    private List<Long> optionValueIds = new ArrayList<>();
+    private List<Long> optionValueIndexes = new ArrayList<>();
 
     /**
      * 재고 차감
@@ -52,5 +52,47 @@ public class Sku {
      */
     public boolean isInStock() {
         return stockQuantity > 0;
+    }
+
+    public static List<Sku> createSkus(
+            List<ProductCreateRequest.SkuRequest> skuRequests,
+            List<ProductOptionGroup> optionGroups
+    ) {
+        if (skuRequests == null || skuRequests.isEmpty()) {
+            return List.of();
+        }
+
+        // 전체 옵션 값 개수 (검증용)
+        int totalOptionValueCount = optionGroups.stream()
+                .mapToInt(group -> group.getValues().size())
+                .sum();
+
+        return skuRequests.stream()
+                .map(req -> {
+                    // 인덱스 검증
+                    if (req.optionIndexes() != null && !req.optionIndexes().isEmpty()) {
+                        for (Integer index : req.optionIndexes()) {
+                            if (index == null) {
+                                throw new IllegalArgumentException("옵션 인덱스에 null이 포함되어 있습니다.");
+                            }
+                            if (index < 0 || index >= totalOptionValueCount) {
+                                throw new ProductException(ErrorCode.OUT_OF_OPTION_INDEX);
+                            }
+                        }
+                    }
+
+                    List<Long> optionValueIndexes = req.optionIndexes() != null
+                            ? req.optionIndexes().stream()
+                            .map(Integer::longValue)  // 인덱스를 Long으로 변환
+                            .toList()
+                            : List.of();
+
+                    return Sku.builder()
+                            .priceAdjustment(req.priceAdjustment() != null ? req.priceAdjustment() : 0)
+                            .stockQuantity(req.stockQuantity())
+                            .optionValueIndexes(optionValueIndexes)
+                            .build();
+                })
+                .toList();
     }
 }
