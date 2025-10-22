@@ -2,7 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.controller.api.ProductAPI;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import jakarta.validation.Valid;
@@ -10,11 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 /**
  * 제품 컨트롤러
@@ -32,16 +29,15 @@ public class ProductController implements ProductAPI {
 
     @PostMapping
     public ResponseEntity<ProductResponse> registerProduct(
-            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,
-//            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @Valid @RequestPart(value = "product") ProductCreateRequest request,
-            @RequestPart(value = "mainImage") MultipartFile mainImage,
-            @RequestPart(value = "detailImages", required = false) List<MultipartFile> detailImages
+//            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,
+            @Valid @ModelAttribute ProductUploadRequest request
             ) {
 
-//        Long sellerId = principal.getUserId();
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        ProductResponse response = service.registerProduct(sellerId, request, mainImage, detailImages);
+        Long sellerId = principal.getUserId();
+
+        ProductResponse response = service.registerProduct(sellerId, request.product(), request.mainImage(), request.detailImages());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
