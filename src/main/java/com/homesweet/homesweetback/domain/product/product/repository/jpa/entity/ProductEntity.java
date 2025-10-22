@@ -46,7 +46,7 @@ public class ProductEntity {
     @Column(nullable = false, length = 30)
     private String name;
 
-    @Column(name = "image_url", nullable = false, length = 255)
+    @Column(name = "image_url", nullable = false, length = 1000)
     private String imageUrl;
 
     @Column(nullable = false, length = 20)

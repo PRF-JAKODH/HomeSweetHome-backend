@@ -44,7 +44,7 @@ CREATE TABLE `products` (
                             `category_id` BIGINT NOT NULL,
                             `user_id` BIGINT NOT NULL,
                             `name` VARCHAR(30) NOT NULL,
-                            `image_url` VARCHAR(255) NOT NULL,
+                            `image_url` VARCHAR(1000) NOT NULL,
                             `brand` VARCHAR(20) NOT NULL,
                             `base_price` INT NOT NULL DEFAULT 0,
                             `discount_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.0,
@@ -61,7 +61,7 @@ CREATE TABLE `products` (
 CREATE TABLE `products_detail_image` (
                                          `id` BIGINT NOT NULL AUTO_INCREMENT,
                                          `product_id` BIGINT NOT NULL,
-                                         `image_url` VARCHAR(255) NOT NULL,
+                                         `image_url` VARCHAR(1000) NOT NULL,
                                          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                          `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                          PRIMARY KEY (`id`),

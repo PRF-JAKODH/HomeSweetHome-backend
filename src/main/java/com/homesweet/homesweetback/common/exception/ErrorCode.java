@@ -16,6 +16,7 @@ public enum ErrorCode {
     // System
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러입니다"),
     FILE_STREAM_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "파일 스트림 처리 중 오류가 발생했습니다"),
+    MISSING_INPUT_DATA(HttpStatus.BAD_REQUEST, "필수적인 입력값을 전달받지 못했습니다"),
 
     // S3
     FAILED_UPLOAD_S3_ERROR(HttpStatus.BAD_REQUEST, "S3 저장소에 업로드를 실패했습니다"),

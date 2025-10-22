@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.common.s3.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.s3.ImageService;
+import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.common.s3.exception.CustomS3Exception;
 import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Exception;
@@ -28,11 +28,11 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class S3ImageService implements ImageService {
+public class S3ImageUploader implements ImageUploader {
 
     private final S3Template s3Template;
 
-    @Value("${cloud.aws.s3.bucket}")
+    @Value("${spring.cloud.aws.s3.bucket}")
     private String bucketName;
 
     /**
