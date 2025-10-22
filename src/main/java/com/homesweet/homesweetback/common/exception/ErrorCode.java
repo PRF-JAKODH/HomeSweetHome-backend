@@ -30,7 +30,8 @@ public enum ErrorCode {
     DUPLICATED_PRODUCT_NAME_ERROR(HttpStatus.CONFLICT, "동일한 제품명을 사용할 수 없습니다"),
     CANNOT_FOUND_CATEGORY_ERROR(HttpStatus.NOT_FOUND, "해당하는 카테고리를 찾을 수 없습니다"),
     OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다"),
-    OUT_OF_OPTION_INDEX(HttpStatus.BAD_REQUEST, "잘못된 옵션 인덱스를 입력했습니다");
+    OUT_OF_OPTION_INDEX(HttpStatus.BAD_REQUEST, "잘못된 옵션 인덱스를 입력했습니다"),
+    EXCEEDED_IMAGE_LIMIT_ERROR(HttpStatus.BAD_REQUEST, "상세 이미지는 최대 5장까지 업로드 가능합니다");
 
     private final HttpStatus status;
     private final String message;
