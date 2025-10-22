@@ -4,9 +4,11 @@ import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.entity.Grade;
+import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
+
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
@@ -124,7 +126,7 @@ public class UserService {
      * 사용자의 수수료율을 조회합니다.
      * 등급이 없는 경우 0.0을 반환합니다.
      */
-    public Double getUserFeeRate(Long userId) {
+    public BigDecimal getUserFeeRate(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
