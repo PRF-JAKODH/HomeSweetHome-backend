@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface GradeRepository extends JpaRepository<Grade, String> {
     // 등급 정보는 등급명으로 조회
     Grade findByGradeName(String gradeName);
+
 }
