@@ -25,4 +25,8 @@ public class ProductImageUploader {
         List<String> detailUrls = imageUploader.uploadFiles(detailImages, "product/detail");
         return new ProductImages(mainImageUrl, detailUrls);
     }
+
+    public String uploadProductReviewImage(MultipartFile image) {
+        return imageUploader.upload(image, "product/review");
+    }
 }
