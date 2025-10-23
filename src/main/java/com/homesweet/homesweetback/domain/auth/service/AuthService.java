@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.common.util.CookieUtil;
 import com.homesweet.homesweetback.domain.auth.dto.*;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
+import com.homesweet.homesweetback.domain.auth.repository.RefreshTokenRepository;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
 
@@ -27,7 +28,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final CookieUtil cookieUtil;
-
+    private final RefreshTokenRepository refreshTokenRepository;
     /**
      * Refresh Token으로 새로운 Access Token을 발급합니다.
      */
@@ -35,12 +36,17 @@ public class AuthService {
     public AccessTokenResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Cookie에서 Refresh Token 추출
         String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
-        
+        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
         if (refreshToken == null) {
             throw new IllegalArgumentException("Refresh token not found");
         }
         
         // Refresh Token 유효성 검증
+        String storedRefreshToken = refreshTokenRepository.findByEmail(email);
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new IllegalArgumentException("Invalid refresh token");
+        }
+
         if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
             // 유효하지 않은 refresh token인 경우 cookie 삭제
             Cookie deleteCookie = cookieUtil.createRefreshTokenCookieForDeletion();
@@ -52,10 +58,11 @@ public class AuthService {
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // 새로운 Access Token과 Refresh Token 생성
         String newAccessToken = jwtTokenProvider.createAccessToken(user);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user);
+        refreshTokenRepository.save(email, newRefreshToken);
         
         // 새로운 Refresh Token을 Cookie에 설정
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(newRefreshToken);
@@ -144,6 +151,9 @@ public class AuthService {
         String newAccessToken = jwtTokenProvider.createAccessToken(updatedUser);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(updatedUser);
         
+        // 새로운 Refresh Token을 Redis에 저장
+        refreshTokenRepository.save(user.getEmail(), newRefreshToken);
+        
         // 새로운 Refresh Token을 Cookie에 설정
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(newRefreshToken);
         response.addCookie(refreshTokenCookie);
@@ -168,6 +178,7 @@ public class AuthService {
                 String email = jwtTokenProvider.getEmailFromToken(accessToken);
                 
                 log.info("User logout successful: userId={}, email={}", userId, email);
+                refreshTokenRepository.deleteByEmail(email);
             }
         }
         
