@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 
@@ -19,4 +20,6 @@ public interface CustomProductRepository {
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 
     ProductPreviewResponse findProductDetailById(Long productId);
+
+    List<ProductManageResponse> findProductsForSeller(Long sellerId);
 }

@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
@@ -170,6 +172,45 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .from(product)
                 .where(product.id.eq(productId))
                 .fetchOne();
+    }
+
+    @Override
+    public List<ProductManageResponse> findProductsForSeller(Long sellerId) {
+
+        QProductEntity product = QProductEntity.productEntity;
+        QSkuEntity sku = QSkuEntity.skuEntity;
+        QProductCategoryEntity category = QProductCategoryEntity.productCategoryEntity;
+        QProductCategoryEntity parent = new QProductCategoryEntity("parent");
+        QProductCategoryEntity grandParent = new QProductCategoryEntity("grandParent");
+
+        return queryFactory
+                .select(Projections.constructor(ProductManageResponse.class,
+                        product.id,
+                        product.name,
+                        product.imageUrl,
+                        Expressions.stringTemplate(
+                                "concat_ws(' > ', {0}, {1}, {2})",
+                                grandParent.name,
+                                parent.name,
+                                category.name
+                        ),
+                        product.basePrice,
+                        product.discountRate,
+                        product.shippingPrice,
+                        JPAExpressions
+                                .select(sku.stockQuantity.sum().coalesce(0L))
+                                .from(sku)
+                                .where(sku.product.id.eq(product.id)),
+                        product.status,
+                        product.createdAt
+                ))
+                .from(product)
+                .join(product.category, category)
+                .leftJoin(parent).on(category.parentId.eq(parent.id))
+                .leftJoin(grandParent).on(parent.parentId.eq(grandParent.id))
+                .where(product.seller.id.eq(sellerId))
+                .orderBy(product.createdAt.desc())
+                .fetch();
     }
 
     // 카테고리를 선택하면 하위 카테고리에 해당하는 모든 상품이 조회되어야 한다

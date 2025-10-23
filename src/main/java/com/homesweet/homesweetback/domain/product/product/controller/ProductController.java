@@ -1,19 +1,20 @@
 package com.homesweet.homesweetback.domain.product.product.controller;
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 
 /**
@@ -73,6 +74,17 @@ public class ProductController {
     public ResponseEntity<List<SkuStockResponse>> getProductStock(@PathVariable Long productId) {
         List<SkuStockResponse> response = service.getProductStock(productId);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProductManageResponse>> getSellerProducts(
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId
+    ) {
+//        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        Long sellerId = principal.getUserId();
+
+        List<ProductManageResponse> response = service.getSellerProducts(sellerId);
         return ResponseEntity.ok(response);
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
  */
 public record SkuStockResponse(
         Long skuId,
-        Integer stockQuantity,
+        Long stockQuantity,
         Integer priceAdjustment,
         List<OptionCombinationResponse> options
 ) {
