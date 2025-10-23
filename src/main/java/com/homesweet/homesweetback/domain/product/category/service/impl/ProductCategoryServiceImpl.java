@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,10 +31,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
-        repository.findByName(request.name())
-                .ifPresent(c -> {
-                    throw new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR);
-                });
+        validateDuplicateCategoryName(request.name());
 
         int depth = 0;
         if (request.parentId() != null) {
@@ -67,5 +66,35 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         return repository.findTopLevelCategories().stream()
                 .map(CategoryResponse::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getCategoryHierarchy(Long categoryId) {
+        ProductCategory category = repository.findById(categoryId)
+                .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));
+
+        List<CategoryResponse> hierarchy = new ArrayList<>();
+
+        while (category != null) {
+            hierarchy.add(CategoryResponse.from(category));
+
+            if (category.parentId() == null) {
+                break;
+            }
+
+            category = repository.findById(category.parentId()).orElse(null);
+        }
+
+        Collections.reverse(hierarchy);
+
+        return hierarchy;
+    }
+
+    private void validateDuplicateCategoryName(String name) {
+        repository.findByName(name)
+                .ifPresent(c -> {
+                    throw new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR);
+                });
     }
 }
