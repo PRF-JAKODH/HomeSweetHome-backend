@@ -10,6 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +28,7 @@ jobs:
       - name: 빌드 권한 부여
         run: chmod +x ./gradlew
 
-      - name: 테스트 돌리기
+      - name: 테스트 실행
         run: ./gradlew clean test
 
       - name: 테스트 결과 보고서 업로드
