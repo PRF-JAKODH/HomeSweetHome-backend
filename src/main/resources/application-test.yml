@@ -65,3 +65,8 @@ app:
     redirect-uri-on-register: http://localhost:3000/signup/callback
   cors:
     allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+
+  # 토스 페이먼츠 시크릿 키
+  payments:
+    toss:
+      secretKey: ${TOSS_PAYMENTS_SECRET_KEY}
