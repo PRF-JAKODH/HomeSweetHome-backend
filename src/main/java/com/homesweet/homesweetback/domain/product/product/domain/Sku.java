@@ -23,7 +23,7 @@ public class Sku {
     private Long id;
     private Long productId;
     private Integer priceAdjustment;
-    private Integer stockQuantity;
+    private Long stockQuantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

@@ -6,10 +6,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.exception.Prod
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
@@ -95,12 +92,31 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductPreviewResponse getProductDetail(Long productId) {
+
+        validateExistsProduct(productId);
+
         return productRepository.findProductDetailById(productId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SkuStockResponse> getProductStock(Long productId) {
+
+        validateExistsProduct(productId);
+
         return productRepository.findSkuStocksByProductId(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductManageResponse> getSellerProducts(Long sellerId) {
+        return productRepository.findProductsForSeller(sellerId);
+    }
+
+    // 상품이 존재하는지 검증하는 로직
+    private void validateExistsProduct(Long productId) {
+        productRepository.findById(productId).orElseThrow(
+                () -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR)
+        );
     }
 }
