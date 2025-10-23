@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.service;
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,5 +19,7 @@ public interface ProductService {
 
     ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages);
 
-    ProductScrollResponse getProductPreview(Long cursorId, int size, String keyword, ProductSortType sortType);
+    ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
+
+    ProductPreviewResponse getProductDetail(Long productId);
 }

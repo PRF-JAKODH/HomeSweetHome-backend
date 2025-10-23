@@ -70,4 +70,4 @@ log:
 # 토스페이먼츠 설정
 payments:
   toss:
-    secretKey: ${TOSS_PAYMENTS_SECRET_KEY}
+    secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}

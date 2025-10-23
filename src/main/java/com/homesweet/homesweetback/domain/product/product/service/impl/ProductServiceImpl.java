@@ -76,23 +76,24 @@ public class ProductServiceImpl implements ProductService {
         return ProductResponse.from(save);
     }
 
-    /**
-     *
-     * 제품 프리뷰 조회 (스토어 > 제품 조회)
-     *
-     **/
     @Override
     @Transactional(readOnly = true)
-    public ProductScrollResponse getProductPreview(Long cursorId, int size, String keyword, ProductSortType sortType) {
-        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, size + 1, keyword, sortType);
+    public ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
 
-        boolean hasNext = products.size() > size;
+        boolean hasNext = products.size() > limit;
         if (hasNext) {
-            products = products.subList(0, size);
+            products = products.subList(0, limit);
         }
 
         Long nextCursorId = hasNext ? products.get(products.size() - 1).id() : null;
 
         return new ProductScrollResponse(products, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductPreviewResponse getProductDetail(Long productId) {
+        return null;
     }
 }

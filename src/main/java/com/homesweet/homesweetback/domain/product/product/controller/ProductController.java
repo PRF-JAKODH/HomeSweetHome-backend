@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.controller;
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
@@ -41,14 +42,25 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // 제품 프리뷰 조회 (스토어 > 제품 조회)
     @GetMapping("/previews")
     public ResponseEntity<ProductScrollResponse> getProductPreviews(
             @RequestParam(required = false) Long cursorId,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType
     ) {
-        ProductScrollResponse response = service.getProductPreview(cursorId, size, keyword, sortType);
+        ProductScrollResponse response = service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 제품 상세 페이지 조회
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductPreviewResponse> getProductDetail(@PathVariable Long productId) {
+
+        ProductPreviewResponse response = service.getProductDetail(productId);
 
         return ResponseEntity.ok(response);
     }
