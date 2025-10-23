@@ -58,8 +58,8 @@ public class UserController {
      * 사용자 정보 수정 API
      * JWT 토큰을 통해 인증된 사용자의 정보를 수정합니다.
      */
-    @PutMapping("/info")
-    public ResponseEntity<UserResponse> updateUserInfo(
+    @PutMapping("/update")
+    public ResponseEntity<UserResponse> updateUser(
         @Valid @RequestBody UpdateUserRequest request,
         Authentication authentication) {
         User currentUser = (User) authentication.getPrincipal();
