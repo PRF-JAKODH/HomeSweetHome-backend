@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
@@ -94,6 +95,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductPreviewResponse getProductDetail(Long productId) {
-        return null;
+        return productRepository.findProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SkuStockResponse> getProductStock(Long productId) {
+        return productRepository.findSkuStocksByProductId(productId);
     }
 }

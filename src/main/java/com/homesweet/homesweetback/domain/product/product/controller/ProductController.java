@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 제품 컨트롤러
@@ -61,6 +64,14 @@ public class ProductController {
     public ResponseEntity<ProductPreviewResponse> getProductDetail(@PathVariable Long productId) {
 
         ProductPreviewResponse response = service.getProductDetail(productId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 제품 옵션 별 재고 조회 -> 무옵션, 단일 옵션, 다중 옵션마다 달라야 할까?
+    @GetMapping("/{productId}/stocks")
+    public ResponseEntity<List<SkuStockResponse>> getProductStock(@PathVariable Long productId) {
+        List<SkuStockResponse> response = service.getProductStock(productId);
 
         return ResponseEntity.ok(response);
     }
