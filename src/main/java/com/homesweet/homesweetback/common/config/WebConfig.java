@@ -21,7 +21,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
-        // String → ProductCreateRequest 컨버터 등록
         registry.addConverter(String.class, ProductCreateRequest.class, source -> {
             try {
                 return objectMapper.readValue(source, ProductCreateRequest.class);
