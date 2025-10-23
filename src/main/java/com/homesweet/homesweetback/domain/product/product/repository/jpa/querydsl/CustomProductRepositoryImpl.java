@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.ProductCat
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.Tuple;
@@ -52,7 +53,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         BooleanExpression condition = Expressions.allOf(
                 buildKeywordCondition(product, keyword),
                 buildCursorCondition(product, cursorId, sortType),
-                buildCategoryCondition(product, allSubCategoryIds)
+                buildCategoryCondition(product, allSubCategoryIds),
+                buildStatusCondition(product)
         );
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
@@ -176,6 +178,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             return null;
         }
         return product.category.id.in(categoryIds);
+    }
+
+    // 판매 중지 상품은 조회되면 안 된다
+    private BooleanExpression buildStatusCondition(QProductEntity product) {
+        return product.status.ne(ProductStatus.SUSPENDED);
     }
 
     // 검색 조건 (제품명 or 브랜드)
