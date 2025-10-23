@@ -5,15 +5,18 @@ import com.homesweet.homesweetback.domain.product.category.domain.ProductCategor
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -71,5 +74,25 @@ public class ProductServiceImpl implements ProductService {
         Product save = productRepository.save(product);
 
         return ProductResponse.from(save);
+    }
+
+    /**
+     *
+     * 제품 프리뷰 조회 (스토어 > 제품 조회)
+     *
+     **/
+    @Override
+    @Transactional(readOnly = true)
+    public ProductScrollResponse getProductPreview(Long cursorId, int size, String keyword, ProductSortType sortType) {
+        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, size + 1, keyword, sortType);
+
+        boolean hasNext = products.size() > size;
+        if (hasNext) {
+            products = products.subList(0, size);
+        }
+
+        Long nextCursorId = hasNext ? products.get(products.size() - 1).id() : null;
+
+        return new ProductScrollResponse(products, nextCursorId, hasNext);
     }
 }
