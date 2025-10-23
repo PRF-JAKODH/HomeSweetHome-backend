@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.order.service;
 
 // (ObjectMapper, RestTemplate 등 기본)
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
 
 // (DTO - API 1)
@@ -53,6 +54,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.http.HttpEntity;
 
 // 1. Mockito 테스트 환경을 사용하겠다고 선언
+@ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
