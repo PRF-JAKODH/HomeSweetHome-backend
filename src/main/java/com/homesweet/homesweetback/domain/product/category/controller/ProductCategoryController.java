@@ -46,4 +46,10 @@ public class ProductCategoryController implements ProductCategoryApi {
         List<CategoryResponse> responses = service.getTopLevelCategories();
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/hierarchy/{categoryId}")
+    public ResponseEntity<List<CategoryResponse>> getCategoryHierarchy(@PathVariable Long categoryId) {
+        List<CategoryResponse> responses = service.getCategoryHierarchy(categoryId);
+        return ResponseEntity.ok(responses);
+    }
 }
