@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.auth.entity;
 
 import com.homesweet.homesweetback.common.BaseEntity;
+import com.homesweet.homesweetback.domain.grade.entity.Grade;
 
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -8,8 +9,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 @AllArgsConstructor
 @Builder
@@ -115,9 +119,9 @@ public class User extends BaseEntity {
 	 * 
 	 * @return 수수료율 또는 0.0
 	 */
-	public Double getFeeRate() {
+	public BigDecimal getFeeRate() {
 		return getGradeOptional()
 			.map(Grade::getFeeRate)
-			.orElse(0.0);
+			.orElse(BigDecimal.ZERO);
 	}
 }
