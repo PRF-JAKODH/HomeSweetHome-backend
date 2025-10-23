@@ -31,7 +31,7 @@ jobs:
       - name: test 용 Secret 주입
         uses: microsoft/variable-substitution@v1
         with:
-          files: ./src/test/resources/application.yaml
+          files: ./src/main/resources/application-test.yml
         env:
           payments.toss.secretKey : ${{ secrets.TOSS_PAYMENTS_SECRET_KEY }}
 
