@@ -8,7 +8,6 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.Product
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -40,7 +39,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<ProductPreviewResponse> findNextProducts(Long cursorId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
-        return jpaRepository.findNextProducts(cursorId, limit, keyword, sortType);
+    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
+        return jpaRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
     }
 }

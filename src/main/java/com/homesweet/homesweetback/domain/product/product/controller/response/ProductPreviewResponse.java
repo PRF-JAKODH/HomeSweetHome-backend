@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public record ProductPreviewResponse(
         Long id,
         Long categoryId,
+        Long sellerId,
         String name,
         String imageUrl,
         String brand,

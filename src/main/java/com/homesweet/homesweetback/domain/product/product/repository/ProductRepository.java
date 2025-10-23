@@ -4,7 +4,6 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
@@ -21,5 +20,5 @@ public interface ProductRepository {
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
 
-    List<ProductPreviewResponse> findNextProducts(Long cursorId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType);
+    List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType);
 }

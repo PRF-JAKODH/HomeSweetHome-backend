@@ -55,4 +55,9 @@ public class ProductCategoryRepositoryImpl implements ProductCategoryRepository 
                 .map(mapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<Long> findAllSubCategoryIds(Long categoryId) {
+        return jpaRepository.findAllSubCategoryIds(categoryId);
+    }
 }

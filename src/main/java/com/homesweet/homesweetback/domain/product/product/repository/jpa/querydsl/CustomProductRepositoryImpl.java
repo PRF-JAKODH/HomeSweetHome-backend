@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
+import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
@@ -26,15 +27,19 @@ import java.util.List;
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
+    private final ProductCategoryRepository categoryRepository;
 
     @Override
-    public List<ProductPreviewResponse> findNextProducts(Long cursorId, int size, String keyword, ProductSortType sortType) {
+    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         QProductEntity product = QProductEntity.productEntity;
         QProductReviewEntity review = QProductReviewEntity.productReviewEntity;
 
+        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
+
         BooleanExpression condition = Expressions.allOf(
                 buildKeywordCondition(product, keyword),
-                buildCursorCondition(product, cursorId, sortType)
+                buildCursorCondition(product, cursorId, sortType),
+                buildCategoryCondition(product, allSubCategoryIds)
         );
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
@@ -43,6 +48,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .select(Projections.constructor(ProductPreviewResponse.class,
                         product.id,
                         product.category.id,
+                        product.seller.id,
                         product.name,
                         product.imageUrl,
                         product.brand,
@@ -65,8 +71,16 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .from(product)
                 .where(condition)
                 .orderBy(orderSpecifier)
-                .limit(size + 1)
+                .limit(limit + 1)
                 .fetch();
+    }
+
+    // 카테고리를 선택하면 하위 카테고리에 해당하는 모든 상품이 조회되어야 한다
+    private BooleanExpression buildCategoryCondition(QProductEntity product, List<Long> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return null;
+        }
+        return product.category.id.in(categoryIds);
     }
 
     // 검색 조건 (제품명 or 브랜드)

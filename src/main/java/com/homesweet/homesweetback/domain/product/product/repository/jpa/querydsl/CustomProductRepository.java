@@ -13,5 +13,5 @@ import java.util.List;
  */
 public interface CustomProductRepository {
 
-    List<ProductPreviewResponse> findNextProducts(Long cursorId, int size, String keyword, ProductSortType sortType);
+    List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType);
 }
