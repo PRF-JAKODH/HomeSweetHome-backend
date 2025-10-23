@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 
 import java.util.List;
 
@@ -14,4 +15,8 @@ import java.util.List;
 public interface CustomProductRepository {
 
     List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType);
+
+    List<SkuStockResponse> findSkuStocksByProductId(Long productId);
+
+    ProductPreviewResponse findProductDetailById(Long productId);
 }

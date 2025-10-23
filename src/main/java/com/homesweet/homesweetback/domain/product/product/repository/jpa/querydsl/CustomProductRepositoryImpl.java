@@ -3,8 +3,10 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
+import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -12,9 +14,19 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity.*;
+import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
+import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionValueEntity.*;
+import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductSkuOptionEntity.*;
+import static com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity.*;
 
 /**
  * 제품 QueryDSL 레포 구현체
@@ -22,6 +34,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 10. 23.
  */
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class CustomProductRepositoryImpl implements CustomProductRepository{
@@ -31,8 +44,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
-        QProductEntity product = QProductEntity.productEntity;
-        QProductReviewEntity review = QProductReviewEntity.productReviewEntity;
+        QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
 
         List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
 
@@ -58,11 +71,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         product.shippingPrice,
                         product.status,
                         JPAExpressions
-                                .select(review.rating.avg())
+                                .select(review.rating.avg().coalesce(0.0))
                                 .from(review)
                                 .where(review.product.id.eq(product.id)),
                         JPAExpressions
-                                .select(review.count())
+                                .select(review.count().coalesce(0L))
                                 .from(review)
                                 .where(review.product.id.eq(product.id)),
                         product.createdAt,
@@ -73,6 +86,88 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
+    }
+
+    @Override
+    public List<SkuStockResponse> findSkuStocksByProductId(Long productId) {
+        QSkuEntity sku = QSkuEntity.skuEntity;
+        QProductSkuOptionEntity skuOption = productSkuOptionEntity;
+        QProductOptionValueEntity optionValue = productOptionValueEntity;
+        QProductOptionGroupEntity optionGroup = productOptionGroupEntity;
+
+        // SKU 별 옵션 조합 조회
+        List<Tuple> tuples = queryFactory
+                .select(
+                        sku.id,
+                        sku.stockQuantity,
+                        sku.priceAdjustment,
+                        optionGroup.groupName,
+                        optionValue.value
+                )
+                .from(sku)
+                .join(skuOption).on(skuOption.sku.eq(sku))
+                .join(optionValue).on(optionValue.eq(skuOption.optionValue))
+                .join(optionGroup).on(optionGroup.eq(optionValue.group))
+                .where(sku.product.id.eq(productId))
+                .orderBy(sku.id.asc())
+                .fetch();
+
+        // SKU별로 옵션 조합을 묶어서 반환
+        Map<Long, SkuStockResponse> skuMap = new LinkedHashMap<>();
+
+        for (Tuple t : tuples) {
+            Long skuId = t.get(sku.id);
+            skuMap.computeIfAbsent(skuId, id ->
+                    new SkuStockResponse(
+                            id,
+                            t.get(sku.stockQuantity),
+                            t.get(sku.priceAdjustment),
+                            new ArrayList<>()
+                    )
+            );
+
+            skuMap.get(skuId).options()
+                    .add(new SkuStockResponse.OptionCombinationResponse(
+                            t.get(optionGroup.groupName),
+                            t.get(optionValue.value)
+                    ));
+        }
+
+        return new ArrayList<>(skuMap.values());
+    }
+
+    @Override
+    public ProductPreviewResponse findProductDetailById(Long productId) {
+        QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
+
+        return queryFactory
+                .select(Projections.constructor(ProductPreviewResponse.class,
+                        product.id,
+                        product.category.id,
+                        product.seller.id,
+                        product.name,
+                        product.imageUrl,
+                        product.brand,
+                        product.basePrice,
+                        product.discountRate,
+                        product.description,
+                        product.shippingPrice,
+                        product.status,
+                        JPAExpressions
+                                .select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        JPAExpressions
+                                .select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        product.createdAt,
+                        product.updatedAt
+                ))
+                .from(product)
+                .where(product.id.eq(productId))
+                .fetchOne();
     }
 
     // 카테고리를 선택하면 하위 카테고리에 해당하는 모든 상품이 조회되어야 한다

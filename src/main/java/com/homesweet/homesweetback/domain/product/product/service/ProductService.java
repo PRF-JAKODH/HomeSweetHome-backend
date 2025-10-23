@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -22,4 +23,6 @@ public interface ProductService {
     ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
 
     ProductPreviewResponse getProductDetail(Long productId);
+
+    List<SkuStockResponse> getProductStock(Long productId);
 }
