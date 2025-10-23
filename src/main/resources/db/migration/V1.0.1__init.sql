@@ -116,7 +116,6 @@ CREATE TABLE `products_reviews` (
                                     `rating` INT NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
                                     `comment` VARCHAR(150) NULL,
                                     `image_url` VARCHAR(255) NULL,
-                                    `like_count` INT NULL DEFAULT 0,
                                     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                     `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                     PRIMARY KEY (`review_id`),

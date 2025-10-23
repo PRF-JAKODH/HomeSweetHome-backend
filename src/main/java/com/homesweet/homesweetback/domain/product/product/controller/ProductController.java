@@ -40,6 +40,10 @@ public class ProductController {
             @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId, // 테스트 용
             @Valid @ModelAttribute ProductUploadRequest request
     ) {
+//
+//        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+//        Long sellerId = principal.getUserId();
 
         ProductResponse response = service.registerProduct(sellerId, request.product(), request.mainImage(), request.detailImages());
 
