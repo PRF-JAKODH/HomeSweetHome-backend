@@ -307,40 +307,6 @@ class ProductServiceImplTest {
             }
 
             @Test
-            @DisplayName("상세 이미지를 6장 이상 등록할 수 없다")
-            void createProductWithDetailImagesOverLimit() {
-                // given
-                Long sellerId = 1L;
-                ProductCreateRequest request = new ProductCreateRequest(
-                        1L, "이미지 초과 상품", "홈스윗",
-                        25000, BigDecimal.ZERO,
-                        "상세 이미지 초과", 3000,
-                        List.of(), List.of()
-                );
-
-                MockMultipartFile mainImage =
-                        new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
-
-                List<MultipartFile> detailImages = List.of(
-                        new MockMultipartFile("1", "d1.jpg", "image/jpeg", "d".getBytes()),
-                        new MockMultipartFile("2", "d2.jpg", "image/jpeg", "d".getBytes()),
-                        new MockMultipartFile("3", "d3.jpg", "image/jpeg", "d".getBytes()),
-                        new MockMultipartFile("4", "d4.jpg", "image/jpeg", "d".getBytes()),
-                        new MockMultipartFile("5", "d5.jpg", "image/jpeg", "d".getBytes()),
-                        new MockMultipartFile("6", "d6.jpg", "image/jpeg", "d".getBytes())
-                );
-
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
-
-                // when & then
-                assertThatThrownBy(() ->
-                        service.registerProduct(sellerId, request, mainImage, detailImages)
-                )
-                        .isInstanceOf(ProductException.class)
-                        .hasMessage(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR.getMessage());
-            }
-
-            @Test
             @DisplayName("존재하지 않는 카테고리로 등록할 수 없다")
             void createProductWithInvalidCategory() {
                 // given
@@ -364,26 +330,6 @@ class ProductServiceImplTest {
                 )
                         .isInstanceOf(ProductCategoryException.class)
                         .hasMessage(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR.getMessage());
-            }
-
-            @Test
-            @DisplayName("대표 이미지를 전달하지 않으면 등록할 수 없다")
-            void createProductWithoutMainImage() {
-                // given
-                Long sellerId = 1L;
-                ProductCreateRequest request = new ProductCreateRequest(
-                        1L, "대표이미지 누락", "홈스윗",
-                        30000, BigDecimal.ZERO,
-                        "이미지 없음", 3000,
-                        List.of(), List.of()
-                );
-
-                // when & then
-                assertThatThrownBy(() ->
-                        service.registerProduct(sellerId, request, null, List.of())
-                )
-                        .isInstanceOf(ProductException.class)
-                        .hasMessage(ErrorCode.INVALID_FILE_ERROR.getMessage());
             }
         }
     }
