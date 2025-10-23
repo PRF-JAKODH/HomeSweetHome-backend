@@ -41,10 +41,4 @@ public class ChatMessage {
     private User sender;
 
 
-
-
-
-
-
-
 }
