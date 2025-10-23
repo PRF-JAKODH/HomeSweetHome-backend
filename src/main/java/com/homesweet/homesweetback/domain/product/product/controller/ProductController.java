@@ -73,7 +73,7 @@ public class ProductController {
     }
 
     // [판매자] 판매 물품 조회
-    @GetMapping
+    @GetMapping("/seller")
     public ResponseEntity<List<ProductManageResponse>> getSellerProducts(
             @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId // 테스트 용
     ) {
