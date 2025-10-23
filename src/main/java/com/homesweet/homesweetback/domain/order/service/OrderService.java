@@ -174,7 +174,7 @@ public class OrderService {
     // ================== (임시) Mock 헬퍼 메서드 ==================
     // ProductRepository
 
-    private Long calculateMockTotalPrice(@Valid @NotEmpty(message = "주문 상품 목록이 비어있습니다.") List<CreateOrderRequest.OrderItemRequest> items) {
+    private Long calculateMockTotalPrice(List<CreateOrderRequest.OrderItemRequest> items) {
         long total = 0L;
         for (CreateOrderRequest.OrderItemRequest item : items) {
             total += (long) item.quantity() * 10000L; // (임시) 모든 상품 가격 10000원으로 고정
@@ -186,7 +186,7 @@ public class OrderService {
         if (items.isEmpty()) {
             return "주문 없음";
         }
-        String firstItemName = "상품 " + items.getFirst().productId(); // (임시) "상품 1"
+        String firstItemName = "상품 " + items.get(0).productId(); // (임시) "상품 1"
         if (items.size() > 1) {
             return firstItemName + " 외 " + (items.size() - 1) + "건";
         }
