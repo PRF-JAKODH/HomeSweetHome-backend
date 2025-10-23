@@ -66,3 +66,8 @@ log:
       filename: trace
     maxHistory: 30
     totalSizeCap: 1GB
+
+# 토스페이먼츠 설정
+payments:
+  toss:
+    secretKey: test_sk_AQ92ymxN34YO65Ygo2RvVajRKXvd
