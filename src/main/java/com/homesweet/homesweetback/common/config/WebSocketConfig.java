@@ -15,15 +15,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry config) {
         config.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:8080")
-                .withSockJS();
+                .setAllowedOriginPatterns("http://localhost:8080"); //
+//                .withSockJS();
     }
+
 
     // sub : 구독, pub : 메시지 송신
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/sub");
-        registry.setApplicationDestinationPrefixes("/pub");
+        registry.enableSimpleBroker("/sub");        // 서버 -> 클라(구독)
+        registry.setApplicationDestinationPrefixes("/pub");           // 클라 -> 서버(전송)
     }
 
     // 대기시간 최대 15초, 메세지 사이즈 8KB, 버퍼 1.5MB
