@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -45,4 +46,18 @@ public class CartEntity {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public void updateQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    @Builder
+    public CartEntity(Long id, User user, SkuEntity sku, Integer quantity, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.user = user;
+        this.sku = sku;
+        this.quantity = quantity;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
 }
