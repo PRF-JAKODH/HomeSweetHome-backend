@@ -91,7 +91,7 @@ CREATE TABLE `sku` (
                        `sku_id` BIGINT NOT NULL AUTO_INCREMENT,
                        `product_id` BIGINT NOT NULL,
                        `price_adjustment` INT NULL DEFAULT 0,
-                       `stock_quantity` INT NULL DEFAULT 0,
+                       `stock_quantity` BIGINT NULL DEFAULT 0,
                        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                        PRIMARY KEY (`sku_id`),

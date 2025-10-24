@@ -38,7 +38,7 @@ public class SkuEntity {
     private Integer priceAdjustment = 0;
 
     @Column(name = "stock_quantity", nullable = false)
-    private Integer stockQuantity = 0;
+    private Long stockQuantity = 0L;
 
     @OneToMany(mappedBy = "sku", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
@@ -50,7 +50,7 @@ public class SkuEntity {
     private LocalDateTime updatedAt;
 
     @Builder
-    public SkuEntity(Integer priceAdjustment, Integer stockQuantity) {
+    public SkuEntity(Integer priceAdjustment, Long stockQuantity) {
         this.priceAdjustment = priceAdjustment;
         this.stockQuantity = stockQuantity;
     }

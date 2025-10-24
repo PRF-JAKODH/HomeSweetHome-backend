@@ -14,6 +14,10 @@ import java.util.List;
 
 /**
  * 제품 카테고리 컨트롤러
+ * /api/v1/categories POST - 카테고리 생성
+ * /api/v1/categories/parent/{parentId} GET - 부모 카테고리 ID로 자식 카테고리 ID 조회 (바로 한 단계 아래만)
+ * /api/v1/categories/top GET - 최상단 카테고리 조회
+ * /api/v1/categories/hierarchy/{categoryId} GET - 특정 카테고리 ID 상위 카테고리 전체 조회
  *
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.
@@ -44,6 +48,12 @@ public class ProductCategoryController implements ProductCategoryApi {
     @GetMapping("/top")
     public ResponseEntity<List<CategoryResponse>> getTopLevelCategories() {
         List<CategoryResponse> responses = service.getTopLevelCategories();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/hierarchy/{categoryId}")
+    public ResponseEntity<List<CategoryResponse>> getCategoryHierarchy(@PathVariable Long categoryId) {
+        List<CategoryResponse> responses = service.getCategoryHierarchy(categoryId);
         return ResponseEntity.ok(responses);
     }
 }

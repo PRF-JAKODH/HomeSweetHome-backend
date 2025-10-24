@@ -4,6 +4,8 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl.CustomProductRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 /**
  * 제품 JPA 레포
  *
@@ -13,4 +15,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ProductJPARepository extends JpaRepository<ProductEntity, Long>, CustomProductRepository {
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
+
+    Optional<ProductEntity> findById(Long sellerId);
 }

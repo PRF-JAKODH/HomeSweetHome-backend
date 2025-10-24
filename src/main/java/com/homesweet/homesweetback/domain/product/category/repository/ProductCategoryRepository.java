@@ -23,4 +23,6 @@ public interface ProductCategoryRepository {
 
     List<ProductCategory> findTopLevelCategories();
 
+    List<Long> findAllSubCategoryIds(Long categoryId);
+
 }
