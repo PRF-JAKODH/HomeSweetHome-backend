@@ -21,7 +21,7 @@ public interface ProductRepository {
 
     Product save(Product product);
 
-    Optional<Product> findById(Long productId);
+    boolean existsById(Long productId);
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
 
