@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.entity;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -46,12 +47,24 @@ public class ProductReviewEntity {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
-    @Column(name = "like_count")
-    private Integer likeCount = 0;
-
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Builder
+    public ProductReviewEntity(ProductEntity product, User user, Integer rating, String comment, String imageUrl) {
+        this.product = product;
+        this.user = user;
+        this.rating = rating;
+        this.comment = comment;
+        this.imageUrl = imageUrl;
+    }
+
+    public void update(Integer rating, String comment, String imageUrl) {
+        if (rating != null) this.rating = rating;
+        if (comment != null) this.comment = comment;
+        if (imageUrl != null) this.imageUrl = imageUrl;
+    }
 }

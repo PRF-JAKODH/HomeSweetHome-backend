@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.util.List;
 
@@ -24,5 +25,13 @@ public class ProductImageUploader {
         String mainImageUrl = imageUploader.upload(mainImage, "product/main");
         List<String> detailUrls = imageUploader.uploadFiles(detailImages, "product/detail");
         return new ProductImages(mainImageUrl, detailUrls);
+    }
+
+    public String uploadProductReviewImage(MultipartFile image) {
+        return imageUploader.upload(image, "product/review");
+    }
+
+    public void deleteProductReviewImage(String imageUrl) {
+        imageUploader.delete(imageUrl);
     }
 }

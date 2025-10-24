@@ -32,6 +32,9 @@ public enum ErrorCode {
     OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다"),
     OUT_OF_OPTION_INDEX(HttpStatus.BAD_REQUEST, "잘못된 옵션 인덱스를 입력했습니다"),
     EXCEEDED_IMAGE_LIMIT_ERROR(HttpStatus.BAD_REQUEST, "상세 이미지는 최대 5장까지 업로드 가능합니다"),
+    ALREADY_REVIEW_EXISTS(HttpStatus.CONFLICT, "이미 해당 상품에 대한 리뷰를 작성했습니다."),
+    PRODUCT_REVIEW_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품 리뷰를 찾을 수 없습니다"),
+    PRODUCT_REVIEW_FORBIDDEN(HttpStatus.BAD_REQUEST, "본인이 작성한 리뷰만 수정할 수 있습니다"),
     PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다");
 
     private final HttpStatus status;
