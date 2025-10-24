@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.controller;
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -8,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,13 +37,9 @@ public class ProductController {
     // [판매자] - 상품 등록
     @PostMapping
     public ResponseEntity<ProductResponse> registerProduct(
-            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId, // 테스트 용
             @Valid @ModelAttribute ProductUploadRequest request
     ) {
-//
-//        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-//        Long sellerId = principal.getUserId();
 
         ProductResponse response = service.registerProduct(sellerId, request.product(), request.mainImage(), request.detailImages());
 
