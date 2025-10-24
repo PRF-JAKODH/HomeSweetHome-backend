@@ -14,6 +14,11 @@ import java.util.List;
 
 /**
  * 제품 컨트롤러
+ * /api/v1/products POST 상품 등록
+ * /api/v1/products/previews GET 상품 프리뷰 목록 조회
+ * /api/v1/products/{productId} GET - 상품 상세 보기
+ * /api/v1/products/{productId}/stocks GET - 상품 옵션 별 재고 보기 (단일 제품)
+ * /api/v1/products/seller GET - 판매자 판매 상품 목록 조회
  *
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.
