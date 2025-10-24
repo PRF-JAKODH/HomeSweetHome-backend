@@ -10,13 +10,7 @@ import lombok.Getter;
  */
 @Getter
 public enum ProductStatus {
-    ON_SALE("판매중"),
-    OUT_OF_STOCK("품절"),
-    SUSPENDED("판매중지");
-
-    private String label;
-
-    ProductStatus(String label) {
-        this.label = label;
-    }
+    ON_SALE,
+    OUT_OF_STOCK,
+    SUSPENDED;
 }

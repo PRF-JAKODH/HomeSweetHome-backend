@@ -18,4 +18,7 @@ public interface ProductCategoryService {
     List<CategoryResponse> getCategoriesByParentId(Long parentId);
 
     List<CategoryResponse> getTopLevelCategories();
+
+    List<CategoryResponse> getCategoryHierarchy(Long categoryId);
+
 }

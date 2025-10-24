@@ -182,8 +182,8 @@ class ProductServiceImplTest {
 
                 // SKU 요청: 각 조합별 다른 가격/재고
                 List<ProductCreateRequest.SkuRequest> skuRequests = List.of(
-                        new ProductCreateRequest.SkuRequest(0, 10, List.of(0, 2)),   // 화이트 + S → 기본가
-                        new ProductCreateRequest.SkuRequest(5000, 5, List.of(1, 3))  // 블랙 + L → +5,000원
+                        new ProductCreateRequest.SkuRequest(0, 10L, List.of(0, 2)),   // 화이트 + S → 기본가
+                        new ProductCreateRequest.SkuRequest(5000, 5L, List.of(1, 3))  // 블랙 + L → +5,000원
                 );
 
                 ProductCreateRequest request = new ProductCreateRequest(

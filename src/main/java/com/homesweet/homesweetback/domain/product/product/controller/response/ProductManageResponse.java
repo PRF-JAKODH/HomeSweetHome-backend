@@ -1,35 +1,29 @@
 package com.homesweet.homesweetback.domain.product.product.controller.response;
 
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 제품 프리뷰 응답 DTO
+ * 제품 관리 목록 조회 응답 DTO
  *
  * @author junnukim1007gmail.com
  * @date 25. 10. 23.
  */
-public record ProductPreviewResponse(
+@Builder
+public record ProductManageResponse(
         Long id,
-        Long categoryId,
-        Long sellerId,
         String name,
         String imageUrl,
-        String brand,
+        // "가구 > 거실가구 > 소파 형식으로 조회되어야 한다!
+        String categoryPath,
         Integer basePrice,
         BigDecimal discountRate,
-        String description,
         Integer shippingPrice,
+        Long totalStock,
         ProductStatus status,
-        Double averageRating,
-        Long reviewCount,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime createdAt
 ) {
-    public static ProductPreviewResponse from(Product product) {
-        return null;
-    }
 }

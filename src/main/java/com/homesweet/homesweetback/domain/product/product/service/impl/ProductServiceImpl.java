@@ -6,9 +6,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.exception.Prod
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductScrollResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
@@ -76,23 +74,49 @@ public class ProductServiceImpl implements ProductService {
         return ProductResponse.from(save);
     }
 
-    /**
-     *
-     * 제품 프리뷰 조회 (스토어 > 제품 조회)
-     *
-     **/
     @Override
     @Transactional(readOnly = true)
-    public ProductScrollResponse getProductPreview(Long cursorId, int size, String keyword, ProductSortType sortType) {
-        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, size + 1, keyword, sortType);
+    public ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
 
-        boolean hasNext = products.size() > size;
+        boolean hasNext = products.size() > limit;
         if (hasNext) {
-            products = products.subList(0, size);
+            products = products.subList(0, limit);
         }
 
         Long nextCursorId = hasNext ? products.get(products.size() - 1).id() : null;
 
         return new ProductScrollResponse(products, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductPreviewResponse getProductDetail(Long productId) {
+
+        validateExistsProduct(productId);
+
+        return productRepository.findProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SkuStockResponse> getProductStock(Long productId) {
+
+        validateExistsProduct(productId);
+
+        return productRepository.findSkuStocksByProductId(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductManageResponse> getSellerProducts(Long sellerId) {
+        return productRepository.findProductsForSeller(sellerId);
+    }
+
+    // 상품이 존재하는지 검증하는 로직
+    private void validateExistsProduct(Long productId) {
+        productRepository.findById(productId).orElseThrow(
+                () -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR)
+        );
     }
 }

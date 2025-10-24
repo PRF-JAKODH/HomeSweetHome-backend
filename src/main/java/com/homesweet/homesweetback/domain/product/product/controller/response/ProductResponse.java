@@ -54,7 +54,7 @@ public record ProductResponse(
     public record SkuResponse(
             Long id,
             Integer priceAdjustment,
-            Integer stockQuantity,
+            Long stockQuantity,
             Integer finalPrice,
             boolean inStock,
             List<Long> optionValueIndexes
