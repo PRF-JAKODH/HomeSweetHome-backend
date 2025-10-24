@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.product.cart.controller.response;
 
-import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import lombok.Builder;
 
 import java.math.BigDecimal;

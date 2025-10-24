@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.product.cart.repository;
 
+import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,4 +19,10 @@ public interface CartRepository {
     Cart save(Cart cart);
 
     Cart updateQuantity(Cart domain);
+
+    List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size);
+
+    boolean existsByIdAndUserId(Long cartId, Long userId);
+
+    void deleteById(Long cartId);
 }
