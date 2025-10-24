@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -90,7 +91,9 @@ public class S3ImageUploader implements ImageUploader {
     @Override
     public void delete(String fileName) {
         try {
-            s3Template.deleteObject(bucketName, fileName);
+            String key = extractS3KeyFromUrl(fileName);
+            log.info("🧹 S3 이미지 삭제 요청: bucket={}, key={}", bucketName, key);
+            s3Template.deleteObject(bucketName, key);
             log.info("S3 이미지 삭제 완료: {}", fileName);
         } catch (S3Exception e) {
             log.error("S3 이미지 삭제 실패", e);
@@ -98,9 +101,20 @@ public class S3ImageUploader implements ImageUploader {
         }
     }
 
-    /**
-     * UUID 기반 파일명 생성
-     */
+    private String extractS3KeyFromUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) return null;
+
+        try {
+            URI uri = new URI(imageUrl);
+            String path = uri.getPath();
+            return path.startsWith("/") ? path.substring(1) : path;
+        } catch (Exception e) {
+            log.warn("S3 URL 파싱 실패: {}", imageUrl, e);
+            return imageUrl; // fallback (안전하게)
+        }
+    }
+
+     // UUID 기반 파일명 생성
     private String generateUniqueFileName(String directory, String originalFilename) {
         String uuid = UUID.randomUUID().toString();
         return directory + "/" + uuid + "_" + originalFilename;

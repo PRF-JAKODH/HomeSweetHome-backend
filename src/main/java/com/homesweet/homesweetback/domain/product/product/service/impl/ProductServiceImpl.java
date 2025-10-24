@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
@@ -76,17 +77,26 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
-        List<ProductPreviewResponse> products = productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
+    public ScrollResponse<ProductPreviewResponse> getProductPreview(
+            Long cursorId,
+            Long categoryId,
+            int limit,
+            String keyword,
+            ProductSortType sortType
+    ) {
+        List<ProductPreviewResponse> products =
+                productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
 
         boolean hasNext = products.size() > limit;
         if (hasNext) {
             products = products.subList(0, limit);
         }
 
-        Long nextCursorId = hasNext ? products.get(products.size() - 1).id() : null;
+        Long nextCursorId = hasNext
+                ? products.get(products.size() - 1).id()
+                : null;
 
-        return new ProductScrollResponse(products, nextCursorId, hasNext);
+        return ScrollResponse.of(products, nextCursorId, hasNext);
     }
 
     @Override
@@ -115,8 +125,8 @@ public class ProductServiceImpl implements ProductService {
 
     // 상품이 존재하는지 검증하는 로직
     private void validateExistsProduct(Long productId) {
-        productRepository.findById(productId).orElseThrow(
-                () -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR)
-        );
+        if (productRepository.existsById(productId)) {
+            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
+        }
     }
 }

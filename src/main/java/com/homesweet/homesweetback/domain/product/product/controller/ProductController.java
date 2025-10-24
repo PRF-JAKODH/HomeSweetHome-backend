@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.controller;
 
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
@@ -40,6 +41,10 @@ public class ProductController {
             @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId, // 테스트 용
             @Valid @ModelAttribute ProductUploadRequest request
     ) {
+//
+//        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+//        Long sellerId = principal.getUserId();
 
         ProductResponse response = service.registerProduct(sellerId, request.product(), request.mainImage(), request.detailImages());
 
@@ -48,14 +53,14 @@ public class ProductController {
 
     // [모두] 제품 프리뷰 조회 (스토어 > 제품 조회)
     @GetMapping("/previews")
-    public ResponseEntity<ProductScrollResponse> getProductPreviews(
+    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> getProductPreviews(
             @RequestParam(required = false) Long cursorId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType
     ) {
-        ProductScrollResponse response = service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
+        ScrollResponse<ProductPreviewResponse> response = service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
 
         return ResponseEntity.ok(response);
     }
