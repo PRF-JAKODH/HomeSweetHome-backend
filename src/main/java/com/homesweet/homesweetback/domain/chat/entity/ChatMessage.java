@@ -23,6 +23,7 @@ public class ChatMessage {
     @JoinColumn(name = "room_id", nullable = false)
     private ChatRoom room;
 
+    // 메세지 타입?
     @Column(name = "message_type", nullable = false)
     private String messageType;
 
