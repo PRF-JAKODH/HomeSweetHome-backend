@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.service;
 
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -17,7 +18,7 @@ public interface ProductService {
 
     ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages);
 
-    ProductScrollResponse getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
+    ScrollResponse<ProductPreviewResponse> getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
 
     ProductPreviewResponse getProductDetail(Long productId);
 
