@@ -125,7 +125,7 @@ public class ProductServiceImpl implements ProductService {
 
     // 상품이 존재하는지 검증하는 로직
     private void validateExistsProduct(Long productId) {
-        if (productRepository.existsById(productId)) {
+        if (!productRepository.existsById(productId)) {
             throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
         }
     }
