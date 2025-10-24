@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.cart.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARepository;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -49,5 +51,20 @@ public class CartRepositoryImpl implements CartRepository {
         entity.updateQuantity(domain.quantity());
 
         return mapper.toDomain(entity);
+    }
+
+    @Override
+    public List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size) {
+        return jpaRepository.findNextCartItems(memberId, cursorId, size);
+    }
+
+    @Override
+    public boolean existsByIdAndUserId(Long cartId, Long userId) {
+        return jpaRepository.existsByIdAndUserId(cartId, userId);
+    }
+
+    @Override
+    public void deleteById(Long cartId) {
+        jpaRepository.deleteById(cartId);
     }
 }
