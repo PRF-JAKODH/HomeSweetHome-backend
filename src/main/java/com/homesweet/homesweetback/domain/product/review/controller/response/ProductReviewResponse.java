@@ -16,6 +16,8 @@ public record ProductReviewResponse(
         Long reviewId,
         Long productId,
         Long userId,
+        String productName,
+        String username,
         Integer rating,
         String comment,
         String imageUrl,

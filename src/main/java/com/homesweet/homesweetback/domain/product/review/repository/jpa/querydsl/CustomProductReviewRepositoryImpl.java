@@ -25,6 +25,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
     private final JPAQueryFactory queryFactory;
     QProductReviewEntity review = QProductReviewEntity.productReviewEntity;
     QProductEntity product = QProductEntity.productEntity;
+    QUser user = QUser.user;
 
     @Override
     public List<ProductReviewResponse> findNextReviews(Long productId, Long cursorId, int size) {
@@ -35,6 +36,8 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         review.id,
                         review.product.id,
                         review.user.id,
+                        review.product.name,
+                        user.name,
                         review.rating,
                         review.comment,
                         review.imageUrl,
@@ -42,6 +45,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         review.updatedAt
                 ))
                 .from(review)
+                .join(review.user, user)
                 .where(condition)
                 .orderBy(review.id.desc())
                 .limit(size)
@@ -60,6 +64,8 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         review.id,
                         review.product.id,
                         review.user.id,
+                        review.product.name,
+                        user.name,
                         review.rating,
                         review.comment,
                         review.imageUrl,
