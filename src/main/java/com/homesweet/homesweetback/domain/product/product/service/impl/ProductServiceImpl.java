@@ -101,7 +101,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductPreviewResponse getProductDetail(Long productId) {
+    public ProductDetailResponse getProductDetail(Long productId) {
 
         validateExistsProduct(productId);
 

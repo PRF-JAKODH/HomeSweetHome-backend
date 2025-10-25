@@ -3,9 +3,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
@@ -141,37 +139,47 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     }
 
     @Override
-    public ProductPreviewResponse findProductDetailById(Long productId) {
-        QProductEntity product = productEntity;
-        QProductReviewEntity review = productReviewEntity;
+    public ProductDetailResponse findProductDetailById(Long productId) {
+        QProductEntity product = QProductEntity.productEntity;
+        QProductDetailImageEntity detailImage = QProductDetailImageEntity.productDetailImageEntity;
 
-        return queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
-                        product.id,
-                        product.category.id,
-                        product.seller.id,
-                        product.name,
-                        product.imageUrl,
-                        product.brand,
-                        product.basePrice,
-                        product.discountRate,
-                        product.description,
-                        product.shippingPrice,
-                        product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        product.createdAt,
-                        product.updatedAt
-                ))
-                .from(product)
+        ProductEntity entity = queryFactory
+                .selectFrom(product)
                 .where(product.id.eq(productId))
                 .fetchOne();
+
+        if (entity == null) return null;
+
+        Integer discountedPrice = null;
+        if (entity.getBasePrice() != null && entity.getDiscountRate() != null) {
+            double discountRate = entity.getDiscountRate().doubleValue();
+            discountedPrice = (int) Math.round(entity.getBasePrice() * (1 - discountRate / 100));
+        }
+
+        List<String> detailImageUrls = queryFactory
+                .select(detailImage.imageUrl)
+                .from(detailImage)
+                .where(detailImage.product.id.eq(productId))
+                .orderBy(detailImage.id.asc())
+                .fetch();
+
+        return ProductDetailResponse.builder()
+                .id(entity.getId())
+                .categoryId(entity.getCategory().getId())
+                .sellerId(entity.getSeller().getId())
+                .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
+                .detailImageUrls(detailImageUrls)
+                .brand(entity.getBrand())
+                .basePrice(entity.getBasePrice())
+                .discountRate(entity.getDiscountRate())
+                .discountedPrice(discountedPrice)
+                .description(entity.getDescription())
+                .shippingPrice(entity.getShippingPrice())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 
     @Override

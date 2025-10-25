@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.cart.repository.jpa;
 
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl.CustomCartRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
@@ -22,4 +23,8 @@ public interface CartJPARepository extends JpaRepository<CartEntity, Long>, Cust
     boolean existsByIdAndUserId(Long cartId, Long userId);
 
     void deleteById(Long cartId);
+
+    List<CartEntity> user(User user);
+
+    Long countByUserId(Long userId);
 }
