@@ -67,9 +67,9 @@ public class ProductController {
 
     // [모두] 제품 상세 페이지 조회
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductPreviewResponse> getProductDetail(@PathVariable Long productId) {
+    public ResponseEntity<ProductDetailResponse> getProductDetail(@PathVariable Long productId) {
 
-        ProductPreviewResponse response = service.getProductDetail(productId);
+        ProductDetailResponse response = service.getProductDetail(productId);
 
         return ResponseEntity.ok(response);
     }

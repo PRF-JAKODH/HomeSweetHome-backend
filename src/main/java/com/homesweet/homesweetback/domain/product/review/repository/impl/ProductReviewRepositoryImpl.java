@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.review.repository.impl;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.ProductReviewJPARepository;
@@ -63,5 +64,10 @@ public class ProductReviewRepositoryImpl implements ProductReviewRepository {
         entity.update(domain.rating(), domain.comment(), domain.imageUrl());
 
         return mapper.toDomain(entity);
+    }
+
+    @Override
+    public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
+        return jpaRepository.getReviewStatistics(productId);
     }
 }

@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.repository;
 
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
 
 import java.util.List;
@@ -26,4 +27,5 @@ public interface ProductReviewRepository {
 
     ProductReview update(ProductReview domain);
 
+    ProductReviewStatisticsResponse getReviewStatistics(Long productId);
 }
