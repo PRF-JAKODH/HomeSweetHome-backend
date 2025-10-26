@@ -44,12 +44,14 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         user.name,
                         review.rating,
                         review.comment,
+                        product.imageUrl,
                         review.imageUrl,
                         review.createdAt,
                         review.updatedAt
                 ))
                 .from(review)
-                .join(review.user, user)
+                .join(product).on(review.product.id.eq(product.id))
+                .join(user).on(review.user.id.eq(user.id))
                 .where(condition)
                 .orderBy(review.id.desc())
                 .limit(size)
