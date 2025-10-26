@@ -55,16 +55,30 @@ public class CartRepositoryImpl implements CartRepository {
 
     @Override
     public List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size) {
+
         return jpaRepository.findNextCartItems(memberId, cursorId, size);
     }
 
     @Override
     public boolean existsByIdAndUserId(Long cartId, Long userId) {
+
         return jpaRepository.existsByIdAndUserId(cartId, userId);
     }
 
     @Override
     public void deleteById(Long cartId) {
+
         jpaRepository.deleteById(cartId);
+    }
+
+    @Override
+    public void deleteAllByUserIdAndCartIdIn(Long userId, List<Long> cartIds) {
+
+        jpaRepository.deleteAllByUserIdAndIdIn(userId, cartIds);
+    }
+
+    @Override
+    public int countByUserId(Long userId) {
+        return jpaRepository.countByUserId(userId);
     }
 }
