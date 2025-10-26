@@ -19,5 +19,5 @@ public interface CustomProductRepository {
 
     ProductDetailResponse findProductDetailById(Long productId);
 
-    List<ProductManageResponse> findProductsForSeller(Long sellerId);
+    List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate);
 }

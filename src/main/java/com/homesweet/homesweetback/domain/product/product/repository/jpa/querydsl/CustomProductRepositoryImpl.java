@@ -18,6 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -183,13 +187,25 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     }
 
     @Override
-    public List<ProductManageResponse> findProductsForSeller(Long sellerId) {
+    public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
 
         QProductEntity product = QProductEntity.productEntity;
         QSkuEntity sku = QSkuEntity.skuEntity;
         QProductCategoryEntity category = QProductCategoryEntity.productCategoryEntity;
         QProductCategoryEntity parent = new QProductCategoryEntity("parent");
         QProductCategoryEntity grandParent = new QProductCategoryEntity("grandParent");
+
+        BooleanExpression condition = product.seller.id.eq(sellerId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        if (startDate != null && !startDate.isEmpty()) {
+            LocalDateTime start = LocalDate.parse(startDate, formatter).atStartOfDay();
+            condition = condition.and(product.createdAt.goe(start));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            LocalDateTime end = LocalDate.parse(endDate, formatter).atTime(LocalTime.MAX);
+            condition = condition.and(product.createdAt.loe(end));
+        }
 
         return queryFactory
                 .select(Projections.constructor(ProductManageResponse.class,
@@ -216,7 +232,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .join(product.category, category)
                 .leftJoin(parent).on(category.parentId.eq(parent.id))
                 .leftJoin(grandParent).on(parent.parentId.eq(grandParent.id))
-                .where(product.seller.id.eq(sellerId))
+                .where(condition)
                 .orderBy(product.createdAt.desc())
                 .fetch();
     }
