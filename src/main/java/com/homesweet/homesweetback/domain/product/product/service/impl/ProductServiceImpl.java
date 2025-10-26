@@ -1,19 +1,21 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -71,5 +73,60 @@ public class ProductServiceImpl implements ProductService {
         Product save = productRepository.save(product);
 
         return ProductResponse.from(save);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ScrollResponse<ProductPreviewResponse> getProductPreview(
+            Long cursorId,
+            Long categoryId,
+            int limit,
+            String keyword,
+            ProductSortType sortType
+    ) {
+        List<ProductPreviewResponse> products =
+                productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
+
+        boolean hasNext = products.size() > limit;
+        if (hasNext) {
+            products = products.subList(0, limit);
+        }
+
+        Long nextCursorId = hasNext
+                ? products.get(products.size() - 1).id()
+                : null;
+
+        return ScrollResponse.of(products, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductPreviewResponse getProductDetail(Long productId) {
+
+        validateExistsProduct(productId);
+
+        return productRepository.findProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SkuStockResponse> getProductStock(Long productId) {
+
+        validateExistsProduct(productId);
+
+        return productRepository.findSkuStocksByProductId(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductManageResponse> getSellerProducts(Long sellerId) {
+        return productRepository.findProductsForSeller(sellerId);
+    }
+
+    // 상품이 존재하는지 검증하는 로직
+    private void validateExistsProduct(Long productId) {
+        if (productRepository.existsById(productId)) {
+            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
+        }
     }
 }

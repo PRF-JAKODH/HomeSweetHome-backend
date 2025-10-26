@@ -84,7 +84,8 @@ public class ProductEntity {
     private LocalDateTime updatedAt;
 
     @Builder
-    public ProductEntity(ProductCategoryEntity category, User seller, String name, String imageUrl, String brand, Integer basePrice, BigDecimal discountRate, String description, Integer shippingPrice, ProductStatus status) {
+    public ProductEntity(Long id,ProductCategoryEntity category, User seller, String name, String imageUrl, String brand, Integer basePrice, BigDecimal discountRate, String description, Integer shippingPrice, ProductStatus status) {
+        this.id = id;
         this.category = category;
         this.seller = seller;
         this.name = name;

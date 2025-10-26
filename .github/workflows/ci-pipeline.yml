@@ -29,6 +29,9 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: 테스트 실행
+        # 토스페이먼츠
+        env:
+          TOSS_PAYMENTS_SECRET_KEY: ${{ secrets.TOSS_PAYMENTS_SECRET_KEY }}
         run: ./gradlew clean test
 
       - name: 테스트 결과 보고서 업로드
