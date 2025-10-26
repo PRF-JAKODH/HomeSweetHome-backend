@@ -72,6 +72,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         user.name,
                         review.rating,
                         review.comment,
+                        product.imageUrl,
                         review.imageUrl,
                         review.createdAt,
                         review.updatedAt

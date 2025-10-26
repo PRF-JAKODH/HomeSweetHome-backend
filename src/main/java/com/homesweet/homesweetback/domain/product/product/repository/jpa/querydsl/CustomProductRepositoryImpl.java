@@ -272,11 +272,15 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 정렬 조건 생성
     private OrderSpecifier<?> buildOrderSpecifier(QProductEntity product, ProductSortType sortType) {
+
         return switch (sortType) {
             case LATEST -> product.createdAt.desc();
             case PRICE_HIGH -> product.basePrice.desc();
             case PRICE_LOW -> product.basePrice.asc();
-            case POPULAR -> product.basePrice.desc();  // TODO: 리뷰 많은 순
+            case POPULAR -> Expressions.numberTemplate(Long.class,
+                            "(select count(r) from ProductReviewEntity r where r.product.id = {0})",
+                            product.id)
+                    .desc();
             default -> product.createdAt.desc();
         };
     }

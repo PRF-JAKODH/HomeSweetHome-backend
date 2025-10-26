@@ -20,7 +20,8 @@ public record ProductReviewResponse(
         String username,
         Integer rating,
         String comment,
-        String imageUrl,
+        String productImageUrl,
+        String reviewImageUrl,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -32,7 +33,7 @@ public record ProductReviewResponse(
                 .userId(domain.userId())
                 .rating(domain.rating())
                 .comment(domain.comment())
-                .imageUrl(domain.imageUrl())
+                .reviewImageUrl(domain.imageUrl())
                 .createdAt(domain.createdAt())
                 .updatedAt(domain.updatedAt())
                 .build();
