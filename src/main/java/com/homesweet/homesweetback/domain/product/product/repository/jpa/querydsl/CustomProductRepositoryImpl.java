@@ -107,9 +107,9 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         optionValue.value
                 )
                 .from(sku)
-                .join(skuOption).on(skuOption.sku.eq(sku))
-                .join(optionValue).on(optionValue.eq(skuOption.optionValue))
-                .join(optionGroup).on(optionGroup.eq(optionValue.group))
+                .leftJoin(skuOption).on(skuOption.sku.eq(sku))
+                .leftJoin(optionValue).on(optionValue.eq(skuOption.optionValue))
+                .leftJoin(optionGroup).on(optionGroup.eq(optionValue.group))
                 .where(sku.product.id.eq(productId))
                 .orderBy(sku.id.asc())
                 .fetch();

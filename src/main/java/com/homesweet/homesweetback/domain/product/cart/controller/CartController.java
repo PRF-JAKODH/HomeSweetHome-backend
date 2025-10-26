@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.cart.controller;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
+import com.homesweet.homesweetback.domain.product.cart.controller.request.DeleteCartItemsRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.service.CartService;
@@ -52,5 +53,15 @@ public class CartController {
     ) {
         service.deleteCartItem(userId, cartId);
         return null;
+    }
+
+    // 선택한 장바구니 제품 모두 제거
+    @DeleteMapping("/batch")
+    public ResponseEntity<Void> deleteSelectedCartItems(
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long userId,
+            @RequestBody DeleteCartItemsRequest request
+    ) {
+        service.deleteSelectedCartItems(userId, request.cartIds());
+        return ResponseEntity.noContent().build();
     }
 }

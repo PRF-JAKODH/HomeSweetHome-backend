@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 public record CartResponse(
         Long id,
+        Long skuId,
         String brand,
         String productName,
         String optionSummary,

@@ -27,11 +27,22 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
         QProductOptionValueEntity optionValue = QProductOptionValueEntity.productOptionValueEntity;
         QProductOptionGroupEntity optionGroup = QProductOptionGroupEntity.productOptionGroupEntity;
 
-        BooleanExpression condition = buildCartCursorCondition(cart, memberId, cursorId);
+        // 먼저 cart_id만 가져오기 (limit 적용 시 중복 제거)
+        List<Long> cartIds = queryFactory
+                .select(cart.id)
+                .from(cart)
+                .where(buildCartCursorCondition(cart, memberId, cursorId))
+                .orderBy(cart.id.desc())
+                .limit(size + 1)
+                .fetch();
 
+        if (cartIds.isEmpty()) return Collections.emptyList();
+
+        // 실제 cart 데이터 조회 (옵션 join 포함)
         List<Tuple> tuples = queryFactory
                 .select(
                         cart.id,
+                        sku.id,
                         product.brand,
                         product.name,
                         optionGroup.groupName,
@@ -45,16 +56,16 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                         cart.updatedAt
                 )
                 .from(cart)
-                .join(sku).on(cart.sku.eq(sku))
-                .join(product).on(sku.product.eq(product))
-                .join(skuOption).on(skuOption.sku.eq(sku))
-                .join(optionValue).on(optionValue.eq(skuOption.optionValue))
-                .join(optionGroup).on(optionGroup.eq(optionValue.group))
-                .where(condition)
+                .leftJoin(sku).on(cart.sku.eq(sku))
+                .leftJoin(product).on(sku.product.eq(product))
+                .leftJoin(skuOption).on(skuOption.sku.eq(sku))
+                .leftJoin(optionValue).on(optionValue.eq(skuOption.optionValue))
+                .leftJoin(optionGroup).on(optionGroup.eq(optionValue.group))
+                .where(cart.id.in(cartIds))
                 .orderBy(cart.id.desc())
-                .limit(size + 1)
                 .fetch();
 
+        // 카트별로 옵션 병합
         Map<Long, CartResponse.CartResponseBuilder> grouped = new LinkedHashMap<>();
 
         for (Tuple t : tuples) {
@@ -62,11 +73,13 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
             Integer basePrice = t.get(product.basePrice);
             BigDecimal discountRate = t.get(product.discountRate);
             Integer quantity = t.get(cart.quantity);
+
             int finalPrice = (int) Math.floor(basePrice * (1 - discountRate.doubleValue() / 100));
             int totalPrice = finalPrice * quantity;
 
             grouped.computeIfAbsent(cartId, id -> CartResponse.builder()
                     .id(id)
+                    .skuId(t.get(sku.id))
                     .brand(t.get(product.brand))
                     .productName(t.get(product.name))
                     .basePrice(basePrice)
@@ -78,19 +91,24 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                     .imageUrl(t.get(product.imageUrl))
                     .createdAt(t.get(cart.createdAt))
                     .updatedAt(t.get(cart.updatedAt))
-                    .optionSummary("") // 나중에 누적
+                    .optionSummary("")
             );
 
-            // 옵션 요약 누적
-            CartResponse.CartResponseBuilder builder = grouped.get(cartId);
-            String existing = builder.build().optionSummary();
-            String newOption = t.get(optionGroup.groupName) + ": " + t.get(optionValue.value);
-            builder.optionSummary(existing.isEmpty() ? newOption : existing + " / " + newOption);
+            // 옵션 정보 병합
+            String groupName = t.get(optionGroup.groupName);
+            String value = t.get(optionValue.value);
+            if (groupName != null && value != null) {
+                CartResponse.CartResponseBuilder builder = grouped.get(cartId);
+                String existing = builder.build().optionSummary();
+                String newOption = groupName + ": " + value;
+                builder.optionSummary(existing.isEmpty() ? newOption : existing + " / " + newOption);
+            }
         }
 
-        return new ArrayList<>(grouped.values().stream()
+        // DTO 변환
+        return grouped.values().stream()
                 .map(CartResponse.CartResponseBuilder::build)
-                .toList());
+                .toList();
     }
 
     private BooleanExpression buildCartCursorCondition(QCartEntity cart, Long memberId, Long cursorId) {

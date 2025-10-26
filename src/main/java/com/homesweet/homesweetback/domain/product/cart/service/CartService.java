@@ -5,6 +5,8 @@ import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRe
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 
+import java.util.List;
+
 /**
  * 장바구니 서비스 명세
  *
@@ -18,4 +20,6 @@ public interface CartService {
     ScrollResponse<CartResponse> getCartItems(Long userId, Long cursorId, int size);
 
     void deleteCartItem(Long userId, Long cartId);
+
+    void deleteSelectedCartItems(Long userId, List<Long> cartIds);
 }

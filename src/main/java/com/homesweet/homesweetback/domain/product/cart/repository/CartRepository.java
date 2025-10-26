@@ -25,4 +25,8 @@ public interface CartRepository {
     boolean existsByIdAndUserId(Long cartId, Long userId);
 
     void deleteById(Long cartId);
+
+    void deleteAllByUserIdAndCartIdIn(Long userId, List<Long> cartIds);
+
+    int countByUserId(Long userId);
 }
