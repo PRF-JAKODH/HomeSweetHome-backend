@@ -1,15 +1,22 @@
 package com.homesweet.homesweetback.domain.community.service;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.community.dto.CommunityCreateRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityResponse;
+import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
+import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Community 서비스
@@ -23,36 +30,47 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommunityService {
 
     private final CommunityPostRepository postRepository;
-    private final CommunityCommentRepository commentRepository;
+//    private final CommunityCommentRepository commentRepository;
     private final CommunityImageRepository imageRepository;
-    private final CommunityPostLikeRepository likeRepository;
-    private final CommunityCommentLikeRepository commentLikeRepository;
+//    private final CommunityPostLikeRepository likeRepository;
+//    private final CommunityCommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
+    private final CommunityImageUploader imageUploader;
 
     /**
      * 게시글 작성
      */
     @Transactional
-    public CommunityResponse createPost(CommunityCreateRequest request, Long userId) {
-        // TODO: Grade 엔티티 이슈 해결 후 User 연관관계로 변경 필요
-        // User author = userRepository.findById(userId)
-        //         .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+    public CommunityResponse createPost(List<MultipartFile> images, CommunityCreateRequest request, Long userId) {
+        // User 조회
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
 
-        // userId 존재 여부 확인
-        if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("사용자를 찾을 수 없습니다.");
-        }
-
-        CommunityPostEntity post = CommunityPostEntity.builder()
-                // .author(author)  // TODO: Grade 이슈 해결 후 복구
-                .userId(userId)
+        CommunityPostEntity savedPost = postRepository.save(
+                CommunityPostEntity.builder()
+                .author(author)
                 .title(request.title())
                 .content(request.content())
-                .build();
+                .build()
+        );
 
-        CommunityPostEntity savedPost = postRepository.save(post);
+        // 이미지 업로드 및 저장
+        List<String> imageUrls = new ArrayList<>();
+        if (images != null && !images.isEmpty()) {
+            imageUrls = imageUploader.uploadCommunityImages(images);
 
-        return CommunityResponse.from(savedPost);
+            for (int i = 0; i < imageUrls.size(); i++) {
+                imageRepository.save(
+                        CommunityImageEntity.builder()
+                                .post(savedPost)
+                                .imageUrl(imageUrls.get(i))
+                                .imageOrder(i)
+                                .build()
+                );
+            }
+        }
+
+        return CommunityResponse.from(savedPost, imageUrls);
     }
 
     /**
@@ -62,6 +80,12 @@ public class CommunityService {
         CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
 
-        return CommunityResponse.from(post);
+        // 이미지 조회
+        List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
+                .stream()
+                .map(CommunityImageEntity::getImageUrl)
+                .toList();
+
+        return CommunityResponse.from(post, imageUrls);
     }
 }
