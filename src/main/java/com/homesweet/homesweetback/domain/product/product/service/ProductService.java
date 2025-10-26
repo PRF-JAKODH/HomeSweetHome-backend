@@ -24,5 +24,5 @@ public interface ProductService {
 
     List<SkuStockResponse> getProductStock(Long productId);
 
-    List<ProductManageResponse> getSellerProducts(Long sellerId);
+    List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate);
 }

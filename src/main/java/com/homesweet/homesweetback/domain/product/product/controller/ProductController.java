@@ -85,12 +85,15 @@ public class ProductController {
     // [판매자] 판매 물품 조회
     @GetMapping("/seller")
     public ResponseEntity<List<ProductManageResponse>> getSellerProducts(
-            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId // 테스트 용
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,// 테스트 용
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
     ) {
+
 //        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 //        Long sellerId = principal.getUserId();
 
-        List<ProductManageResponse> response = service.getSellerProducts(sellerId);
+        List<ProductManageResponse> response = service.getSellerProducts(sellerId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
 }

@@ -60,7 +60,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<ProductManageResponse> findProductsForSeller(Long sellerId) {
-        return jpaRepository.findProductsForSeller(sellerId);
+    public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
+        return jpaRepository.findProductsForSeller(sellerId, startDate, endDate);
     }
 }

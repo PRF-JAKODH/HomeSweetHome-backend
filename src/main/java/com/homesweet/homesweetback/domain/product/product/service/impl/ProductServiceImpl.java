@@ -119,8 +119,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductManageResponse> getSellerProducts(Long sellerId) {
-        return productRepository.findProductsForSeller(sellerId);
+    public List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate) {
+        return productRepository.findProductsForSeller(sellerId, startDate, endDate);
     }
 
     // 상품이 존재하는지 검증하는 로직
