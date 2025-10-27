@@ -76,7 +76,8 @@ public class SecurityConfig {
                     "/error",
                     "/favicon.ico",
                     "/oauth2/authorization/**",
-                    "/login/oauth2/code/**"
+                    "/login/oauth2/code/**",
+                    "/api/chat/**"
                 ).permitAll()
                 .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
