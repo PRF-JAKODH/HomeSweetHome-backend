@@ -3,14 +3,18 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.queryds
 import com.homesweet.homesweetback.domain.auth.entity.QUser;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 상품 리뷰 QueryDSL 구현체
@@ -40,12 +44,14 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         user.name,
                         review.rating,
                         review.comment,
+                        product.imageUrl,
                         review.imageUrl,
                         review.createdAt,
                         review.updatedAt
                 ))
                 .from(review)
-                .join(review.user, user)
+                .join(product).on(review.product.id.eq(product.id))
+                .join(user).on(review.user.id.eq(user.id))
                 .where(condition)
                 .orderBy(review.id.desc())
                 .limit(size)
@@ -68,6 +74,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                         user.name,
                         review.rating,
                         review.comment,
+                        product.imageUrl,
                         review.imageUrl,
                         review.createdAt,
                         review.updatedAt
@@ -78,6 +85,47 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
                 .orderBy(review.id.desc())
                 .limit(limit)
                 .fetch();
+    }
+
+    @Override
+    public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
+        // 전체 리뷰 수 + 평균 평점
+        Tuple overall = queryFactory
+                .select(
+                        review.count(),
+                        review.rating.avg()
+                )
+                .from(review)
+                .where(review.product.id.eq(productId))
+                .fetchOne();
+
+        long totalCount = overall != null && overall.get(review.count()) != null
+                ? overall.get(review.count())
+                : 0L;
+        double averageRating = overall != null && overall.get(review.rating.avg()) != null
+                ? Math.round(overall.get(review.rating.avg()) * 10.0) / 10.0
+                : 0.0;
+
+        // 각 별점별 카운트
+        List<Tuple> counts = queryFactory
+                .select(review.rating, review.count())
+                .from(review)
+                .where(review.product.id.eq(productId))
+                .groupBy(review.rating)
+                .fetch();
+
+        Map<Integer, Long> ratingCounts = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            ratingCounts.put(i, 0L);
+        }
+        for (Tuple t : counts) {
+            ratingCounts.put(
+                    t.get(review.rating).intValue(),
+                    t.get(review.count())
+            );
+        }
+
+        return ProductReviewStatisticsResponse.of(productId, totalCount, averageRating, ratingCounts);
     }
 
     // 최신순 기준 → cursorId보다 작은 id만 조회

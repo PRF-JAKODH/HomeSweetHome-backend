@@ -1,16 +1,15 @@
 package com.homesweet.homesweetback.domain.product.review.controller;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
-import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -70,5 +69,13 @@ public class ProductReviewController {
         ProductReviewResponse response = service.updateReview(reviewId, userId, request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{productId}/statistics")
+    public ResponseEntity<ProductReviewStatisticsResponse> getReviewStatistics(
+            @PathVariable Long productId
+    ) {
+        ProductReviewStatisticsResponse statistics = service.getReviewStatistics(productId);
+        return ResponseEntity.ok(statistics);
     }
 }

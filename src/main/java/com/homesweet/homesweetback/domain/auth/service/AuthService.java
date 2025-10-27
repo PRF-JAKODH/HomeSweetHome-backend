@@ -36,43 +36,43 @@ public class AuthService {
     public AccessTokenResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Cookie에서 Refresh Token 추출
         String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
-        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
+
         if (refreshToken == null) {
             throw new IllegalArgumentException("Refresh token not found");
         }
-        
-        // Refresh Token 유효성 검증
-        String storedRefreshToken = refreshTokenRepository.findByEmail(email);
-        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
 
+        // Refresh Token 유효성 검증
         if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
             // 유효하지 않은 refresh token인 경우 cookie 삭제
             Cookie deleteCookie = cookieUtil.createRefreshTokenCookieForDeletion();
             response.addCookie(deleteCookie);
             throw new IllegalArgumentException("Invalid refresh token");
         }
-        
-        // 사용자 ID 추출
+
+        // ✅ 수정: userId로 먼저 사용자 조회
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // ✅ 수정: 조회한 사용자의 email로 저장된 토큰 확인
+        String storedRefreshToken = refreshTokenRepository.findByEmail(user.getEmail());
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new IllegalArgumentException("Invalid refresh token");
+        }
 
         // 새로운 Access Token과 Refresh Token 생성
         String newAccessToken = jwtTokenProvider.createAccessToken(user);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user);
-        refreshTokenRepository.save(email, newRefreshToken);
-        
+        refreshTokenRepository.save(user.getEmail(), newRefreshToken);
+
         // 새로운 Refresh Token을 Cookie에 설정
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(newRefreshToken);
         response.addCookie(refreshTokenCookie);
-        
+
         log.info("Token refreshed successfully for user: {}", user.getEmail());
-        
+
         return new AccessTokenResponse(newAccessToken);
     }
-
     /**
      * Refresh Token으로 사용자 정보를 조회합니다.
      */

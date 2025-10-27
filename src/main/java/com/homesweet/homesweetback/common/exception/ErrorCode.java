@@ -36,8 +36,12 @@ public enum ErrorCode {
     // Review
     ALREADY_REVIEW_EXISTS(HttpStatus.CONFLICT, "이미 해당 상품에 대한 리뷰를 작성했습니다."),
     PRODUCT_REVIEW_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품 리뷰를 찾을 수 없습니다"),
+    SKU_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 옵션을 찾을 수 없습니다"),
+    CART_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 장바구니를 찾을 수 없습니다"),
     PRODUCT_REVIEW_FORBIDDEN(HttpStatus.BAD_REQUEST, "본인이 작성한 리뷰만 수정할 수 있습니다"),
-    PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다"),
+    CART_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST, "장바구니에는 최대 10개 제품만 담을 수 있습니다"),
+    CART_ITEM_TYPE_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST,"장바구니에는 최대 10개 종류의 상품만 담을 수 있습니다."),
+    PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다");
 
     // Community
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다"),
