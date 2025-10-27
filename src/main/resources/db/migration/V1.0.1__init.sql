@@ -43,7 +43,7 @@ CREATE TABLE `products` (
                             `product_id` BIGINT NOT NULL AUTO_INCREMENT,
                             `category_id` BIGINT NOT NULL,
                             `user_id` BIGINT NOT NULL,
-                            `name` VARCHAR(150) NOT NULL,
+                            `name` VARCHAR(30) NOT NULL,
                             `image_url` VARCHAR(1024) NOT NULL,
                             `brand` VARCHAR(20) NOT NULL,
                             `base_price` INT NOT NULL DEFAULT 0,
