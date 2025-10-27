@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.cart.controller;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.domain.product.cart.controller.request.CartCountResponse;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.DeleteCartItemsRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
@@ -44,6 +45,14 @@ public class CartController {
 
         return ResponseEntity.ok(response);
 
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<CartCountResponse> getCartItemCount(
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long userId // 테스트 용
+    ) {
+        int count = service.getCartItemCount(userId);
+        return ResponseEntity.ok(new CartCountResponse(count));
     }
 
     @DeleteMapping("/{cartId}")

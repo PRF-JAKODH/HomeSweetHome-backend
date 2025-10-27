@@ -28,5 +28,5 @@ public interface CartJPARepository extends JpaRepository<CartEntity, Long>, Cust
 
     void deleteAllByUserIdAndIdIn(Long userId, List<Long> cartIds);
 
-    int countByUserId(Long userId);
+    int countByUser_Id(Long userId);
 }

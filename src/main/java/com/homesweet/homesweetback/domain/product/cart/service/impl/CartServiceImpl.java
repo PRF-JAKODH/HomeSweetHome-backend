@@ -42,17 +42,8 @@ public class CartServiceImpl implements CartService {
         Optional<Cart> existingCart = cartRepository.findByUserIdAndSkuId(userId, request.skuId());
 
         if (existingCart.isPresent()) {
-            // 기존 상품이면 수량만 증가
             Cart cart = existingCart.get();
-            int newQuantity = cart.quantity() + request.quantity();
-
-            // 동일 상품 수량 제한 체크 (최대 10개)
-            if (newQuantity > 10) {
-                throw new ProductException(ErrorCode.CART_LIMIT_EXCEEDED_ERROR);
-            }
-
-            cart.updateQuantity(newQuantity);
-            return cartRepository.save(cart);
+            return updateQuantity(cart, request.quantity());
         } else {
             // 신규 상품이면 장바구니 제품 종류 수 확인 (최대 10종류)
             int cartItemCount = cartRepository.countByUserId(userId);
@@ -97,6 +88,12 @@ public class CartServiceImpl implements CartService {
     public void deleteSelectedCartItems(Long userId, List<Long> cartIds) {
 
         cartRepository.deleteAllByUserIdAndCartIdIn(userId, cartIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int getCartItemCount(Long userId) {
+        return cartRepository.countByUserId(userId);
     }
 
     private Cart updateQuantity(Cart cart, int additionalQuantity) {

@@ -79,6 +79,6 @@ public class CartRepositoryImpl implements CartRepository {
 
     @Override
     public int countByUserId(Long userId) {
-        return jpaRepository.countByUserId(userId);
+        return jpaRepository.countByUser_Id(userId);
     }
 }

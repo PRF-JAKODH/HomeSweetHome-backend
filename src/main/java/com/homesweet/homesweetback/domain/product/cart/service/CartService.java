@@ -22,4 +22,6 @@ public interface CartService {
     void deleteCartItem(Long userId, Long cartId);
 
     void deleteSelectedCartItems(Long userId, List<Long> cartIds);
+
+    int getCartItemCount(Long userId);
 }
