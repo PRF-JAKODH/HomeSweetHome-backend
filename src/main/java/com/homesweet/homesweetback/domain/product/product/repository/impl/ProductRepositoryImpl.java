@@ -1,9 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.repository.impl;
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
@@ -57,12 +55,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public ProductPreviewResponse findProductDetailById(Long productId) {
+    public ProductDetailResponse findProductDetailById(Long productId) {
         return jpaRepository.findProductDetailById(productId);
     }
 
     @Override
-    public List<ProductManageResponse> findProductsForSeller(Long sellerId) {
-        return jpaRepository.findProductsForSeller(sellerId);
+    public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
+        return jpaRepository.findProductsForSeller(sellerId, startDate, endDate);
     }
 }

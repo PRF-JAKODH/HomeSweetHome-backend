@@ -20,9 +20,9 @@ public interface ProductService {
 
     ScrollResponse<ProductPreviewResponse> getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
 
-    ProductPreviewResponse getProductDetail(Long productId);
+    ProductDetailResponse getProductDetail(Long productId);
 
     List<SkuStockResponse> getProductStock(Long productId);
 
-    List<ProductManageResponse> getSellerProducts(Long sellerId);
+    List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate);
 }

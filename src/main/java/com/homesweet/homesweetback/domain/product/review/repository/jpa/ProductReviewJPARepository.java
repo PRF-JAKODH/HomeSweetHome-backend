@@ -18,4 +18,8 @@ public interface ProductReviewJPARepository extends JpaRepository<ProductReviewE
 
     Optional<ProductReviewEntity> findById(Long reviewId);
 
+    Long countByProductId(Long productId);
+
+    Long countByUserId(Long userId);
+
 }

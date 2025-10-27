@@ -67,9 +67,9 @@ public class ProductController {
 
     // [모두] 제품 상세 페이지 조회
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductPreviewResponse> getProductDetail(@PathVariable Long productId) {
+    public ResponseEntity<ProductDetailResponse> getProductDetail(@PathVariable Long productId) {
 
-        ProductPreviewResponse response = service.getProductDetail(productId);
+        ProductDetailResponse response = service.getProductDetail(productId);
 
         return ResponseEntity.ok(response);
     }
@@ -85,12 +85,15 @@ public class ProductController {
     // [판매자] 판매 물품 조회
     @GetMapping("/seller")
     public ResponseEntity<List<ProductManageResponse>> getSellerProducts(
-            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId // 테스트 용
+            @RequestHeader(value = "X-Test-User-Id", defaultValue = "1") Long sellerId,// 테스트 용
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
     ) {
+
 //        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 //        Long sellerId = principal.getUserId();
 
-        List<ProductManageResponse> response = service.getSellerProducts(sellerId);
+        List<ProductManageResponse> response = service.getSellerProducts(sellerId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
 }

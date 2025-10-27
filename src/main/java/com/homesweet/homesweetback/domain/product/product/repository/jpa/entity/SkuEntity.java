@@ -22,6 +22,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
+@Builder
+@AllArgsConstructor
 public class SkuEntity {
 
     @Id
@@ -40,6 +42,7 @@ public class SkuEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Long stockQuantity = 0L;
 
+    @Builder.Default
     @OneToMany(mappedBy = "sku", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();
 
