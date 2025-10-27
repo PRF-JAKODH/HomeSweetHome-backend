@@ -13,7 +13,6 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
-import java.math.BigDecimal;
 
 @AllArgsConstructor
 @Builder
@@ -62,7 +61,8 @@ public class User extends BaseEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-	/**
+
+    /**
 	 * OAuth 사용자인지 확인합니다.
 	 * 이 서비스는 모든 사용자가 OAuth 사용자입니다.
 	 * 
