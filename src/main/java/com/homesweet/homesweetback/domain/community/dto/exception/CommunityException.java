@@ -1,14 +1,8 @@
-package com.homesweet.homesweetback.domain.community.service;
+package com.homesweet.homesweetback.domain.community.dto.exception;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 
-/**
- * Community 도메인 예외
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
 public class CommunityException extends BusinessException {
 
     public CommunityException(ErrorCode errorCode) {

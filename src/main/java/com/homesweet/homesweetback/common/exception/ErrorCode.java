@@ -32,6 +32,8 @@ public enum ErrorCode {
     OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다"),
     OUT_OF_OPTION_INDEX(HttpStatus.BAD_REQUEST, "잘못된 옵션 인덱스를 입력했습니다"),
     EXCEEDED_IMAGE_LIMIT_ERROR(HttpStatus.BAD_REQUEST, "상세 이미지는 최대 5장까지 업로드 가능합니다"),
+
+    // Review
     ALREADY_REVIEW_EXISTS(HttpStatus.CONFLICT, "이미 해당 상품에 대한 리뷰를 작성했습니다."),
     PRODUCT_REVIEW_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품 리뷰를 찾을 수 없습니다"),
     SKU_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 옵션을 찾을 수 없습니다"),
@@ -40,6 +42,14 @@ public enum ErrorCode {
     CART_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST, "장바구니에는 최대 10개 제품만 담을 수 있습니다"),
     CART_ITEM_TYPE_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST,"장바구니에는 최대 10개 종류의 상품만 담을 수 있습니다."),
     PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다");
+
+    // Community
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다"),
+    COMMUNITY_POST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 게시글을 찾을 수 없습니다"),
+    COMMUNITY_POST_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 게시글만 수정/삭제할 수 있습니다"),
+    COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 댓글을 찾을 수 없습니다"),
+    COMMUNITY_COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 댓글만 수정/삭제할 수 있습니다");
+
 
     private final HttpStatus status;
     private final String message;
