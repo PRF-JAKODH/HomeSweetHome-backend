@@ -40,8 +40,11 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다"),
 
     // Community
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다");
-
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다"),
+    COMMUNITY_POST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 게시글을 찾을 수 없습니다"),
+    COMMUNITY_POST_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 게시글만 수정/삭제할 수 있습니다"),
+    COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 댓글을 찾을 수 없습니다"),
+    COMMUNITY_COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 댓글만 수정/삭제할 수 있습니다");
 
 
     private final HttpStatus status;

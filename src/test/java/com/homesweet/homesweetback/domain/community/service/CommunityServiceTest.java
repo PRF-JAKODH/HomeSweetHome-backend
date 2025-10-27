@@ -3,8 +3,8 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.dto.CommunityCreateRequest;
-import com.homesweet.homesweetback.domain.community.dto.CommunityResponse;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 class CommunityServiceTest {
 
     @InjectMocks
-    private CommunityService communityService;
+    private CommunityPostService CommunityPostService;
 
     @Mock
     private CommunityPostRepository postRepository;
@@ -70,7 +70,7 @@ class CommunityServiceTest {
             void createPostWithoutImages() {
                 // given
                 Long userId = 1L;
-                CommunityCreateRequest request = new CommunityCreateRequest(
+                CommunityPostRequest request = new CommunityPostRequest(
                         "테스트 제목",
                         "테스트 내용입니다."
                 );
@@ -91,7 +91,7 @@ class CommunityServiceTest {
                 given(postRepository.save(any(CommunityPostEntity.class))).willReturn(mockPost);
 
                 // when
-                CommunityResponse response = communityService.createPost(null, request, userId);
+                CommunityPostResponse response = CommunityPostService.createPost(null, request, userId);
 
                 // then
                 assertThat(response.title()).isEqualTo("테스트 제목");
@@ -108,7 +108,7 @@ class CommunityServiceTest {
             void createPostWithSingleImage() {
                 // given
                 Long userId = 1L;
-                CommunityCreateRequest request = new CommunityCreateRequest(
+                CommunityPostRequest request = new CommunityPostRequest(
                         "이미지 포함 게시글",
                         "이미지가 포함된 내용입니다."
                 );
@@ -142,7 +142,7 @@ class CommunityServiceTest {
                         .willAnswer(invocation -> invocation.getArgument(0));
 
                 // when
-                CommunityResponse response = communityService.createPost(images, request, userId);
+                CommunityPostResponse response = CommunityPostService.createPost(images, request, userId);
 
                 // then
                 assertThat(response.title()).isEqualTo("이미지 포함 게시글");
@@ -158,7 +158,7 @@ class CommunityServiceTest {
             void createPostWithMultipleImages() {
                 // given
                 Long userId = 1L;
-                CommunityCreateRequest request = new CommunityCreateRequest(
+                CommunityPostRequest request = new CommunityPostRequest(
                         "다중 이미지 게시글",
                         "여러 이미지가 포함된 게시글입니다."
                 );
@@ -194,7 +194,7 @@ class CommunityServiceTest {
                         .willAnswer(invocation -> invocation.getArgument(0));
 
                 // when
-                CommunityResponse response = communityService.createPost(images, request, userId);
+                CommunityPostResponse response = CommunityPostService.createPost(images, request, userId);
 
                 // then
                 assertThat(response.title()).isEqualTo("다중 이미지 게시글");
@@ -214,7 +214,7 @@ class CommunityServiceTest {
             void createPostWithImagesInCorrectOrder() {
                 // given
                 Long userId = 1L;
-                CommunityCreateRequest request = new CommunityCreateRequest(
+                CommunityPostRequest request = new CommunityPostRequest(
                         "순서 테스트",
                         "이미지 순서 확인"
                 );
@@ -248,7 +248,7 @@ class CommunityServiceTest {
                         .willAnswer(invocation -> invocation.getArgument(0));
 
                 // when
-                communityService.createPost(images, request, userId);
+                CommunityPostService.createPost(images, request, userId);
 
                 // then
                 ArgumentCaptor<CommunityImageEntity> captor = ArgumentCaptor.forClass(CommunityImageEntity.class);
@@ -271,7 +271,7 @@ class CommunityServiceTest {
             void createPostWithNonExistentUser() {
                 // given
                 Long userId = 999L;
-                CommunityCreateRequest request = new CommunityCreateRequest(
+                CommunityPostRequest request = new CommunityPostRequest(
                         "제목",
                         "내용"
                 );
@@ -280,7 +280,7 @@ class CommunityServiceTest {
 
                 // when & then
                 assertThatThrownBy(() ->
-                        communityService.createPost(null, request, userId)
+                        CommunityPostService.createPost(null, request, userId)
                 )
                         .isInstanceOf(CommunityException.class)
                         .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage());
@@ -319,7 +319,7 @@ class CommunityServiceTest {
                         .willReturn(Optional.of(mockPost));
 
                 // when
-                CommunityResponse response = communityService.getPost(postId);
+                CommunityPostResponse response = CommunityPostService.getPost(postId);
 
                 // then
                 assertThat(response.postId()).isEqualTo(postId);
@@ -344,10 +344,222 @@ class CommunityServiceTest {
 
                 // when & then
                 assertThatThrownBy(() ->
-                        communityService.getPost(postId)
+                        CommunityPostService.getPost(postId)
                 )
-                        .isInstanceOf(jakarta.persistence.EntityNotFoundException.class)
-                        .hasMessage("게시글을 찾을 수 없습니다.");
+                        .isInstanceOf(CommunityException.class)
+                        .hasMessage(ErrorCode.COMMUNITY_POST_NOT_FOUND.getMessage());
+
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("게시글 수정")
+    class UpdatePost {
+
+        @Nested
+        @DisplayName("성공")
+        class Success {
+
+            @Test
+            @DisplayName("작성자는 게시글을 수정할 수 있다")
+            void updatePost() {
+                // given
+                Long postId = 1L;
+                Long userId = 1L;
+                CommunityPostRequest request = new CommunityPostRequest(
+                        "수정된 제목",
+                        "수정된 내용"
+                );
+
+                User mockUser = User.builder()
+                        .id(userId)
+                        .email("test@example.com")
+                        .build();
+
+                CommunityPostEntity mockPost = CommunityPostEntity.builder()
+                        .postId(postId)
+                        .author(mockUser)
+                        .title("원래 제목")
+                        .content("원래 내용")
+                        .build();
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.of(mockPost));
+                given(imageRepository.findByPostOrderByImageOrderAsc(mockPost))
+                        .willReturn(List.of());
+
+                // when
+                CommunityPostResponse response = CommunityPostService.updatePost(postId, request, userId);
+
+                // then
+                assertThat(response.title()).isEqualTo("수정된 제목");
+                assertThat(response.content()).isEqualTo("수정된 내용");
+                assertThat(response.isModified()).isTrue();
+
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패")
+        class Fail {
+
+            @Test
+            @DisplayName("존재하지 않는 게시글은 수정할 수 없다")
+            void updatePostNotFound() {
+                // given
+                Long postId = 999L;
+                Long userId = 1L;
+                CommunityPostRequest request = new CommunityPostRequest(
+                        "수정된 제목",
+                        "수정된 내용"
+                );
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() ->
+                        CommunityPostService.updatePost(postId, request, userId)
+                )
+                        .isInstanceOf(CommunityException.class)
+                        .hasMessage(ErrorCode.COMMUNITY_POST_NOT_FOUND.getMessage());
+
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+
+            @Test
+            @DisplayName("작성자가 아니면 게시글을 수정할 수 없다")
+            void updatePostForbidden() {
+                // given
+                Long postId = 1L;
+                Long authorId = 1L;
+                Long otherUserId = 2L;
+                CommunityPostRequest request = new CommunityPostRequest(
+                        "수정된 제목",
+                        "수정된 내용"
+                );
+
+                User mockAuthor = User.builder()
+                        .id(authorId)
+                        .email("author@example.com")
+                        .build();
+
+                CommunityPostEntity mockPost = CommunityPostEntity.builder()
+                        .postId(postId)
+                        .author(mockAuthor)
+                        .title("원래 제목")
+                        .content("원래 내용")
+                        .build();
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.of(mockPost));
+
+                // when & then
+                assertThatThrownBy(() ->
+                        CommunityPostService.updatePost(postId, request, otherUserId)
+                )
+                        .isInstanceOf(CommunityException.class)
+                        .hasMessage(ErrorCode.COMMUNITY_POST_FORBIDDEN.getMessage());
+
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("게시글 삭제")
+    class DeletePost {
+
+        @Nested
+        @DisplayName("성공")
+        class Success {
+
+            @Test
+            @DisplayName("작성자는 게시글을 삭제할 수 있다")
+            void deletePost() {
+                // given
+                Long postId = 1L;
+                Long userId = 1L;
+
+                User mockUser = User.builder()
+                        .id(userId)
+                        .email("test@example.com")
+                        .build();
+
+                CommunityPostEntity mockPost = CommunityPostEntity.builder()
+                        .postId(postId)
+                        .author(mockUser)
+                        .title("제목")
+                        .content("내용")
+                        .build();
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.of(mockPost));
+
+                // when
+                CommunityPostService.deletePost(postId, userId);
+
+                // then
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패")
+        class Fail {
+
+            @Test
+            @DisplayName("존재하지 않는 게시글은 삭제할 수 없다")
+            void deletePostNotFound() {
+                // given
+                Long postId = 999L;
+                Long userId = 1L;
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() ->
+                        CommunityPostService.deletePost(postId, userId)
+                )
+                        .isInstanceOf(CommunityException.class)
+                        .hasMessage(ErrorCode.COMMUNITY_POST_NOT_FOUND.getMessage());
+
+                verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+            }
+
+            @Test
+            @DisplayName("작성자가 아니면 게시글을 삭제할 수 없다")
+            void deletePostForbidden() {
+                // given
+                Long postId = 1L;
+                Long authorId = 1L;
+                Long otherUserId = 2L;
+
+                User mockAuthor = User.builder()
+                        .id(authorId)
+                        .email("author@example.com")
+                        .build();
+
+                CommunityPostEntity mockPost = CommunityPostEntity.builder()
+                        .postId(postId)
+                        .author(mockAuthor)
+                        .title("제목")
+                        .content("내용")
+                        .build();
+
+                given(postRepository.findByPostIdAndIsDeletedFalse(postId))
+                        .willReturn(Optional.of(mockPost));
+
+                // when & then
+                assertThatThrownBy(() ->
+                        CommunityPostService.deletePost(postId, otherUserId)
+                )
+                        .isInstanceOf(CommunityException.class)
+                        .hasMessage(ErrorCode.COMMUNITY_POST_FORBIDDEN.getMessage());
 
                 verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
             }

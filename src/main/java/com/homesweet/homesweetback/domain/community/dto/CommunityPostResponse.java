@@ -10,7 +10,7 @@ import java.util.List;
  * @author ohhalim777@gmail.com
  * @date 25. 10. 21.
  */
-public record CommunityResponse(
+public record CommunityPostResponse(
         Long postId,
         Long authorId,
         String authorName,
@@ -24,8 +24,8 @@ public record CommunityResponse(
         LocalDateTime modifiedAt,
         List<String> imagesUrl
 ) {
-    public static CommunityResponse from(CommunityPostEntity entity, List<String> imageUrls) {
-        return new CommunityResponse(
+    public static CommunityPostResponse from(CommunityPostEntity entity, List<String> imageUrls) {
+        return new CommunityPostResponse(
                 entity.getPostId(),
                 entity.getAuthor().getId(),
                 entity.getAuthor().getName(),

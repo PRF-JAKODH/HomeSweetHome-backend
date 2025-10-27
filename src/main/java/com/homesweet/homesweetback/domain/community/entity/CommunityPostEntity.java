@@ -72,4 +72,28 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    /**
+     * 게시글 내용 수정
+     */
+    public void updatePost(String title, String content) {
+        this.title = title;
+        this.content = content;
+        this.isModified = true;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 작성자 본인 확인
+     */
+    public boolean isAuthor(Long userId) {
+        return this.author.getId().equals(userId);
+    }
+
+    /**
+     * 게시글 소프트 삭제
+     */
+    public void deletePost() {
+        this.isDeleted = true;
+    }
 }

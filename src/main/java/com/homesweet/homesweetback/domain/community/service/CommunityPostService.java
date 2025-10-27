@@ -3,13 +3,13 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.dto.CommunityCreateRequest;
-import com.homesweet.homesweetback.domain.community.dto.CommunityResponse;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.community.repository.*;
-import jakarta.persistence.EntityNotFoundException;
+import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
+import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,13 +27,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CommunityService {
+public class CommunityPostService {
 
     private final CommunityPostRepository postRepository;
-//    private final CommunityCommentRepository commentRepository;
     private final CommunityImageRepository imageRepository;
-//    private final CommunityPostLikeRepository likeRepository;
-//    private final CommunityCommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
     private final CommunityImageUploader imageUploader;
 
@@ -41,7 +38,7 @@ public class CommunityService {
      * 게시글 작성
      */
     @Transactional
-    public CommunityResponse createPost(List<MultipartFile> images, CommunityCreateRequest request, Long userId) {
+    public CommunityPostResponse createPost(List<MultipartFile> images, CommunityPostRequest request, Long userId) {
         // User 조회
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
@@ -70,15 +67,15 @@ public class CommunityService {
             }
         }
 
-        return CommunityResponse.from(savedPost, imageUrls);
+        return CommunityPostResponse.from(savedPost, imageUrls);
     }
 
     /**
      * 게시글 단건 조회
      */
-    public CommunityResponse getPost(Long postId) {
+    public CommunityPostResponse getPost(Long postId) {
         CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-                .orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
 
         // 이미지 조회
         List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
@@ -86,6 +83,50 @@ public class CommunityService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        return CommunityResponse.from(post, imageUrls);
+        return CommunityPostResponse.from(post, imageUrls);
+    }
+
+    /**
+     * 게시글 수정
+     */
+    @Transactional
+    public CommunityPostResponse updatePost(Long postId, CommunityPostRequest request, Long userId) {
+        // 게시글 조회
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        // 작성자 본인 확인
+        if (!post.isAuthor(userId)) {
+            throw new CommunityException(ErrorCode.COMMUNITY_POST_FORBIDDEN);
+        }
+
+        // 게시글 수정
+        post.updatePost(request.title(), request.content());
+
+        // 이미지 조회
+        List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
+                .stream()
+                .map(CommunityImageEntity::getImageUrl)
+                .toList();
+
+        return CommunityPostResponse.from(post, imageUrls);
+    }
+
+    /**
+     * 게시글 삭제 (소프트 삭제)
+     */
+    @Transactional
+    public void deletePost(Long postId, Long userId) {
+        // 게시글 조회
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        // 작성자 본인 확인
+        if (!post.isAuthor(userId)) {
+            throw new CommunityException(ErrorCode.COMMUNITY_POST_FORBIDDEN);
+        }
+
+        // 게시글 소프트 삭제
+        post.deletePost();
     }
 }
