@@ -78,11 +78,11 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/oauth2/authorization/**",
                                 "/login/oauth2/code/**",
-                                "/api/v1/categories",
                                 "/api/v1/categories/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/previews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/seller").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}/stocks").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/product/reviews/{productId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/product/reviews/statistics").permitAll()
