@@ -1,9 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.repository;
 
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +27,7 @@ public interface ProductRepository {
 
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 
-    ProductPreviewResponse findProductDetailById(Long productId);
+    ProductDetailResponse findProductDetailById(Long productId);
 
-    List<ProductManageResponse> findProductsForSeller(Long sellerId);
+    List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate);
 }

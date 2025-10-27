@@ -3,9 +3,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
@@ -20,6 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -109,9 +111,9 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         optionValue.value
                 )
                 .from(sku)
-                .join(skuOption).on(skuOption.sku.eq(sku))
-                .join(optionValue).on(optionValue.eq(skuOption.optionValue))
-                .join(optionGroup).on(optionGroup.eq(optionValue.group))
+                .leftJoin(skuOption).on(skuOption.sku.eq(sku))
+                .leftJoin(optionValue).on(optionValue.eq(skuOption.optionValue))
+                .leftJoin(optionGroup).on(optionGroup.eq(optionValue.group))
                 .where(sku.product.id.eq(productId))
                 .orderBy(sku.id.asc())
                 .fetch();
@@ -141,47 +143,69 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     }
 
     @Override
-    public ProductPreviewResponse findProductDetailById(Long productId) {
-        QProductEntity product = productEntity;
-        QProductReviewEntity review = productReviewEntity;
+    public ProductDetailResponse findProductDetailById(Long productId) {
+        QProductEntity product = QProductEntity.productEntity;
+        QProductDetailImageEntity detailImage = QProductDetailImageEntity.productDetailImageEntity;
 
-        return queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
-                        product.id,
-                        product.category.id,
-                        product.seller.id,
-                        product.name,
-                        product.imageUrl,
-                        product.brand,
-                        product.basePrice,
-                        product.discountRate,
-                        product.description,
-                        product.shippingPrice,
-                        product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        product.createdAt,
-                        product.updatedAt
-                ))
-                .from(product)
+        ProductEntity entity = queryFactory
+                .selectFrom(product)
                 .where(product.id.eq(productId))
                 .fetchOne();
+
+        if (entity == null) return null;
+
+        Integer discountedPrice = null;
+        if (entity.getBasePrice() != null && entity.getDiscountRate() != null) {
+            double discountRate = entity.getDiscountRate().doubleValue();
+            discountedPrice = (int) Math.round(entity.getBasePrice() * (1 - discountRate / 100));
+        }
+
+        List<String> detailImageUrls = queryFactory
+                .select(detailImage.imageUrl)
+                .from(detailImage)
+                .where(detailImage.product.id.eq(productId))
+                .orderBy(detailImage.id.asc())
+                .fetch();
+
+        return ProductDetailResponse.builder()
+                .id(entity.getId())
+                .categoryId(entity.getCategory().getId())
+                .sellerId(entity.getSeller().getId())
+                .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
+                .detailImageUrls(detailImageUrls)
+                .brand(entity.getBrand())
+                .basePrice(entity.getBasePrice())
+                .discountRate(entity.getDiscountRate())
+                .discountedPrice(discountedPrice)
+                .description(entity.getDescription())
+                .shippingPrice(entity.getShippingPrice())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 
     @Override
-    public List<ProductManageResponse> findProductsForSeller(Long sellerId) {
+    public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
 
         QProductEntity product = QProductEntity.productEntity;
         QSkuEntity sku = QSkuEntity.skuEntity;
         QProductCategoryEntity category = QProductCategoryEntity.productCategoryEntity;
         QProductCategoryEntity parent = new QProductCategoryEntity("parent");
         QProductCategoryEntity grandParent = new QProductCategoryEntity("grandParent");
+
+        BooleanExpression condition = product.seller.id.eq(sellerId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        if (startDate != null && !startDate.isEmpty()) {
+            LocalDateTime start = LocalDate.parse(startDate, formatter).atStartOfDay();
+            condition = condition.and(product.createdAt.goe(start));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            LocalDateTime end = LocalDate.parse(endDate, formatter).atTime(LocalTime.MAX);
+            condition = condition.and(product.createdAt.loe(end));
+        }
 
         return queryFactory
                 .select(Projections.constructor(ProductManageResponse.class,
@@ -208,7 +232,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .join(product.category, category)
                 .leftJoin(parent).on(category.parentId.eq(parent.id))
                 .leftJoin(grandParent).on(parent.parentId.eq(grandParent.id))
-                .where(product.seller.id.eq(sellerId))
+                .where(condition)
                 .orderBy(product.createdAt.desc())
                 .fetch();
     }
@@ -248,11 +272,15 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 정렬 조건 생성
     private OrderSpecifier<?> buildOrderSpecifier(QProductEntity product, ProductSortType sortType) {
+
         return switch (sortType) {
             case LATEST -> product.createdAt.desc();
             case PRICE_HIGH -> product.basePrice.desc();
             case PRICE_LOW -> product.basePrice.asc();
-            case POPULAR -> product.basePrice.desc();  // TODO: 리뷰 많은 순
+            case POPULAR -> Expressions.numberTemplate(Long.class,
+                            "(select count(r) from ProductReviewEntity r where r.product.id = {0})",
+                            product.id)
+                    .desc();
             default -> product.createdAt.desc();
         };
     }

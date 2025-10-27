@@ -2,6 +2,9 @@ package com.homesweet.homesweetback.domain.product.review.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
+import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
@@ -9,6 +12,7 @@ import com.homesweet.homesweetback.domain.product.review.controller.ProductRevie
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
@@ -110,6 +114,12 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         return ProductReviewResponse.from(productReviewRepository.update(domain));
 
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
+        return productReviewRepository.getReviewStatistics(productId);
     }
 
     // 제품이 등록되어 있는지 검증

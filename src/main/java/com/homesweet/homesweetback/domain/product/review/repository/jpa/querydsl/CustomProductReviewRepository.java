@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface CustomProductReviewRepository {
     List<ProductReviewResponse> findNextReviews(Long productId, Long cursorId, int size);
 
     List<ProductReviewResponse> findNextUserReviews(Long userId, Long cursorId, int limit);
+
+    ProductReviewStatisticsResponse getReviewStatistics(Long productId);
 }

@@ -101,7 +101,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductPreviewResponse getProductDetail(Long productId) {
+    public ProductDetailResponse getProductDetail(Long productId) {
 
         validateExistsProduct(productId);
 
@@ -119,13 +119,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductManageResponse> getSellerProducts(Long sellerId) {
-        return productRepository.findProductsForSeller(sellerId);
+    public List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate) {
+        return productRepository.findProductsForSeller(sellerId, startDate, endDate);
     }
 
     // 상품이 존재하는지 검증하는 로직
     private void validateExistsProduct(Long productId) {
-        if (productRepository.existsById(productId)) {
+        if (!productRepository.existsById(productId)) {
             throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
         }
     }
