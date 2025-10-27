@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.auth.controller;
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,9 +35,9 @@ public class UserController {
      * JWT 토큰을 통해 인증된 사용자의 정보를 반환합니다.
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
-        User currentUser = (User) authentication.getPrincipal();
-        UserResponse userResponse = userService.getUserInfo(currentUser.getId());
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
+        Long userId = principal.getUserId();
+        UserResponse userResponse = userService.getUserInfo(userId);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -47,10 +49,10 @@ public class UserController {
     @PutMapping("/role")
     public ResponseEntity<UserResponse> updateUserRole(
         @Valid @RequestBody UpdateUserRoleRequest request,
-        Authentication authentication) 
+        @AuthenticationPrincipal OAuth2UserPrincipal principal)
     {
-        User currentUser = (User) authentication.getPrincipal();
-        UserResponse userResponse = userService.updateUserRole(currentUser.getId(), request);
+        Long userId = principal.getUserId();
+        UserResponse userResponse = userService.updateUserRole(userId, request);
         return ResponseEntity.ok(userResponse);
     }
 
@@ -61,9 +63,9 @@ public class UserController {
     @PutMapping("/update")
     public ResponseEntity<UserResponse> updateUser(
         @Valid @RequestBody UpdateUserRequest request,
-        Authentication authentication) {
-        User currentUser = (User) authentication.getPrincipal();
-        UserResponse userResponse = userService.updateUserInfo(currentUser.getId(), request);
+        @AuthenticationPrincipal OAuth2UserPrincipal principal) {
+        Long userId = principal.getUserId();
+        UserResponse userResponse = userService.updateUserInfo(userId, request);
         return ResponseEntity.ok(userResponse);
     }
 }
