@@ -12,5 +12,25 @@ services:
     volumes:
       - mysqldata:/var/lib/mysql
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # 포트 매핑
+    depends_on:
+      - db
+    environment: # 환경 변수 설정
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/homesweet?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_USER: user
+      SPRING_FLYWAY_PASSWORD: password
+      SPRING_FLYWAY_URL: jdbc:mysql://db:3306/homesweet?useSSL=false&allowPublicKeyRetrieval=true
+      TOSS_PAYMENTS_SECRET_KEY: ${TOSS_PAYMENTS_SECRET_KEY} # .env 파일에서 읽어옴
+      # 기타 필요한 환경 변수...
+    restart: unless-stopped
+
 volumes:
   mysqldata:
