@@ -1,11 +1,11 @@
 package com.homesweet.homesweetback.domain.order.entity;
 
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter; // (연관관계 편의 메서드용)
 
 @Entity
 @Table(name = "order_items")
@@ -18,33 +18,32 @@ public class OrderItem {
     @Column(name = "order_item_id")
     private Long id;
 
-    // (ERD 기반) 상품 ID - Product 엔티티와 연관관계 매핑 필요
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "product_id")
-    // private Product product;
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
 
-    @Column(nullable = false)
-    private int quantity; // 주문 수량
-
-    @Column(name = "unit_price", nullable = false)
-    private Long unitPrice; // 주문 당시 개당 가격 (스냅샷)
-
-    // OrderItem은 Order를 알아야 함 (N:1)
-    @Setter // (연관관계 편의 메서드에서만 사용)
+    // (N:1) 한 주문은 여러 주문 상품을 가질 수 있다/
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    // (선택) 배송 상태. (우리는 Order의 상태를 따르기로 했으므로 여기선 생략 가능)
-    // @Column(name = "order_item_status", length = 15)
-    // private String orderItemStatus;
+    // (N:1) 하나의 주문 상품은 하나의 SKU(옵션)를 가리킨다
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sku_id", nullable = false)
+    private SkuEntity sku;
+
+    // 주문 수량
+    @Column(name = "quantity", nullable = false)
+    private Long quantity;
+
+    @Column(name = "price", nullable = false)
+    private Long price;
 
     @Builder
-    public OrderItem(Long productId, int quantity, Long unitPrice) {
-        this.productId = productId;
+    public OrderItem(SkuEntity sku, Long quantity, Long price) {
+        this.sku = sku;
         this.quantity = quantity;
-        this.unitPrice = unitPrice;
+        this.price = price;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
     }
 }

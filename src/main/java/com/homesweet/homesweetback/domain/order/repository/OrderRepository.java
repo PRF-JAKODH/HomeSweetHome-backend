@@ -14,6 +14,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     //스프링 데이터 JPA는 interface를 보고 런타임에 구현 클래스를 자동 생성해줌.
     //extends: 인터페이스가 다른 인터페이스의 기능을 상속받을 때 사용하는 키워드.
     //JpaRepository<Order, Long> 을 extends(상속)하는 순간, CRUD기능을 자동으로 얻음.
-    Optional<Order> findByMerchantUid(String merchantUid);
+//    Optional<Order> findByMerchantUid(String merchantUid);
     //Spring Data JPA가 이 메서드를 보고 merchant_uid컬럼으로 SELECT 쿼리를 만들어 줌.
 }
