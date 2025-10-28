@@ -35,7 +35,7 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-//    / 주문 상태 (결제, 취소 등) /
+//    주문 상태 (결제, 취소 등)
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", nullable = false, length = 20)
     private OrderStatus orderStatus;
@@ -53,7 +53,6 @@ public class Order {
     @CreatedDate
     @Column(name = "ordered_at", nullable = false, updatable = false)
     private LocalDateTime orderedAt;
-
 
     // 마지막 수정 시각
     @LastModifiedDate
