@@ -36,6 +36,7 @@ public class NotificationAPIService {
             .map(userNotification -> {
                 var template = userNotification.getTemplate();
                 return PushNotificationDTO.builder()
+                    .notificationId(userNotification.getId())
                     .title(template.getTitle())
                     .content(template.getContent())
                     .redirectUrl(template.getRedirectUrl())
@@ -79,6 +80,8 @@ public class NotificationAPIService {
         }
         
         userNotifications.forEach(UserNotification::markAsDeleted);
+        userNotifications.forEach(UserNotification::markAsRead);
+        
         userNotificationRepository.saveAll(userNotifications);
     }
 }

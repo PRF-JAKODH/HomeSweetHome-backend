@@ -46,11 +46,11 @@ public class NotificationSendServiceImpl implements NotificationSendService {
         // 2. 템플릿 조회
         NotificationTemplate template = getNotificationTemplate(templateType);
 
-        // 3. 템플릿 렌더링 (DTO 생성)
-        PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template);
+        // 3. 알림 저장
+        UserNotification userNotification = createAndSaveUserNotification(userId, template, payload.toMap());
 
-        // 4. 알림 저장
-        createAndSaveUserNotification(userId, template, pushNotificationDTO.getContextData());
+        // 4. 템플릿 렌더링 (DTO 생성)
+        PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template, userNotification.getId());
 
         // 5. 푸시 전송
         log.info("알림 전송: userId={}, templateType={}, contextData={}", userId, templateType, pushNotificationDTO.toJson());
@@ -70,12 +70,12 @@ public class NotificationSendServiceImpl implements NotificationSendService {
         // 2. 템플릿 조회
         NotificationTemplate template = getNotificationTemplate(templateType);
 
-        // 3. 템플릿 렌더링 (DTO 생성)
-        PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template);
-
         for (Long userId : userIds) {
-            // 4. 알림 저장
-            createAndSaveUserNotification(userId, template, pushNotificationDTO.getContextData());
+            // 3. 알림 저장
+            UserNotification userNotification = createAndSaveUserNotification(userId, template, payload.toMap());
+
+            // 4. 템플릿 렌더링 (DTO 생성)
+            PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template, userNotification.getId());
 
             // 5. 푸시 전송
             log.info("알림 전송: userId={}, templateType={}, contextData={}", userId, templateType, pushNotificationDTO.toJson());
@@ -101,8 +101,10 @@ public class NotificationSendServiceImpl implements NotificationSendService {
     }
 
     @Transactional
-    private void createAndSaveUserNotification(Long userId, NotificationTemplate template, Map<String, Object> contextData) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    private UserNotification createAndSaveUserNotification(Long userId, NotificationTemplate template, Map<String, Object> contextData) {
+        // getReferenceById를 사용하여 프록시 객체만 생성 (DB 조회 없음)
+        User user = userRepository.getReferenceById(userId);
+        
         UserNotification userNotification = UserNotification.builder()
             .user(user)
             .template(template)
@@ -110,11 +112,12 @@ public class NotificationSendServiceImpl implements NotificationSendService {
             .isRead(false)
             .isDeleted(false)
             .build();   
-        userNotificationRepository.save(userNotification);
+        return userNotificationRepository.save(userNotification);
     }
 
-    private PushNotificationDTO buildPushNotificationDTO(NotificationPayload payload, NotificationTemplate template) {
+    private PushNotificationDTO buildPushNotificationDTO(NotificationPayload payload, NotificationTemplate template, Long notificationId) {
         PushNotificationDTO pushNotificationDTO = PushNotificationDTO.builder()
+            .notificationId(notificationId)
             .title(template.getTitle())
             .content(template.getContent())
             .redirectUrl(template.getRedirectUrl())

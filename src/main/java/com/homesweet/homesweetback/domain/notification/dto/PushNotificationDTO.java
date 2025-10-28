@@ -16,6 +16,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public class PushNotificationDTO {
+    Long notificationId;
     String title;
     String content;
     String redirectUrl;
