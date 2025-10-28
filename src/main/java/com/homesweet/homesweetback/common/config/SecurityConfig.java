@@ -78,14 +78,14 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/oauth2/authorization/**",
                                 "/login/oauth2/code/**",
-                                "/api/v1/categories/**"
+                                "/api/v1/categories/**",
+                                "/api/v1/product/reviews/statistics",
+                                "/api/v1/product/reviews/{productId}",
+                                "/api/v1/products/{productId}/stocks",
+                                "/api/v1/products/seller",
+                                "/api/v1/products/{productId}",
+                                "/api/v1/products/previews"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/previews").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/seller").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}/stocks").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/product/reviews/{productId}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/product/reviews/statistics").permitAll()
                         .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/v1/user/**").hasRole("USER")
                         .anyRequest().authenticated()
