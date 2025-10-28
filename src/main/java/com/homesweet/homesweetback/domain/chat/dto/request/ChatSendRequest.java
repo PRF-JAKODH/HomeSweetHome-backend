@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.chat.dto;
+package com.homesweet.homesweetback.domain.chat.dto.request;
 
 public record ChatSendRequest(
         Long roomId,

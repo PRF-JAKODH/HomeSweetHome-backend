@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.entity;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
@@ -26,9 +27,9 @@ public class RoomMember {
     @ManyToOne(fetch = FetchType.LAZY)
     private ChatRoom room;
 
-    @Pattern(regexp = "OWNER|MEMBER", message = "역할은 OWNER 또는 MEMBER여야 합니다.")
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 100)
-    private String role;
+    private ChatUserRole role;
 
     private Boolean isExit;
 
