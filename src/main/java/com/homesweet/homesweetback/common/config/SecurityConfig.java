@@ -87,7 +87,7 @@ public class SecurityConfig {
                                 "/api/v1/products/previews"
                         ).permitAll()
                         .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
-                        .requestMatchers("/api/v1/user/**").hasRole("USER")
+                        .requestMatchers("/api/v1/user/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
