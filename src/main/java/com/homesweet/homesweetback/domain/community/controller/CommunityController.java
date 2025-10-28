@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.community.controller;
 
-import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.community.dto.CommunityCommentRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityCommentResponse;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
@@ -9,11 +8,17 @@ import com.homesweet.homesweetback.domain.community.service.CommunityCommentServ
 import com.homesweet.homesweetback.domain.community.service.CommunityPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+
 
 import java.util.List;
 
@@ -26,6 +31,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/community")
 @RequiredArgsConstructor
+
 public class CommunityController {
 
     private final CommunityPostService CommunityPostService;
@@ -48,11 +54,10 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityPostResponse response = CommunityPostService.createPost(images, request, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityPostResponse response = CommunityPostService.createPost(images, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }                                                   
+    }
 
     /**
      * 게시글 단건 조회 API
@@ -79,9 +84,8 @@ public class CommunityController {
             return ResponseEntity.ok(response);
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityPostResponse response = CommunityPostService.updatePost(postId, request, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityPostResponse response = CommunityPostService.updatePost(postId, request, principal.getUserId());
         return ResponseEntity.ok(response);
     }
 
@@ -100,9 +104,8 @@ public class CommunityController {
             return ResponseEntity.noContent().build();
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityPostService.deletePost(postId, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityPostService.deletePost(postId, principal.getUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -122,9 +125,8 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -155,9 +157,8 @@ public class CommunityController {
             return ResponseEntity.ok(response);
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, principal.getUserId());
         return ResponseEntity.ok(response);
     }
 
@@ -177,9 +178,24 @@ public class CommunityController {
             return ResponseEntity.noContent().build();
         }
 
-        // JWT 토큰에서 인증된 사용자 정보 추출
-        User currentUser = (User) authentication.getPrincipal();
-        CommunityCommentService.deleteComment(commentId, postId, currentUser.getId());
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityCommentService.deleteComment(commentId, postId, principal.getUserId());
         return ResponseEntity.noContent().build();
+    }
+
+    // 페이지네이션
+    @GetMapping("/posts")
+    public ResponseEntity<Page<CommunityPostResponse>> getPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "DESC") String direction
+    ) {
+        // 소문자도 허용하도록 대문자로 변환
+        Sort.Direction sortDirection = Sort.Direction.valueOf(direction.toUpperCase());
+
+        Pageable pageable = PageRequest.of(page, size, sortDirection, sort);
+        Page<CommunityPostResponse> posts = CommunityPostService.getPosts(pageable);
+        return ResponseEntity.ok(posts);
     }
 }

@@ -11,6 +11,8 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,10 +47,10 @@ public class CommunityPostService {
 
         CommunityPostEntity savedPost = postRepository.save(
                 CommunityPostEntity.builder()
-                .author(author)
-                .title(request.title())
-                .content(request.content())
-                .build()
+                        .author(author)
+                        .title(request.title())
+                        .content(request.content())
+                        .build()
         );
 
         // 이미지 업로드 및 저장
@@ -128,5 +130,19 @@ public class CommunityPostService {
 
         // 게시글 소프트 삭제
         post.deletePost();
+    }
+
+    /**
+     * 게시글 목록 조회 (페이지네이션)
+     */
+    public Page<CommunityPostResponse> getPosts(Pageable pageable) {
+        Page<CommunityPostEntity> posts = postRepository.findByIsDeletedFalse(pageable);
+        return posts.map(post -> {
+            List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
+                    .stream()
+                    .map(CommunityImageEntity::getImageUrl)
+                    .toList();
+            return CommunityPostResponse.from(post, imageUrls);
+        });
     }
 }
