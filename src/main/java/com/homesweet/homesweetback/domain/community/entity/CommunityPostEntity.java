@@ -34,13 +34,12 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(name = "post_id")
     private Long postId;
 
-    // TODO: Grade 엔티티 컬럼 매핑 이슈로 임시 주석처리
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "user_id", nullable = false)
-    // private User author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User author;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+//    @Column(name = "user_id", nullable = false)
+//    private Long userId;
 
     @Column(nullable = false, length = 100)
     private String title;
@@ -73,4 +72,28 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    /**
+     * 게시글 내용 수정
+     */
+    public void updatePost(String title, String content) {
+        this.title = title;
+        this.content = content;
+        this.isModified = true;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 작성자 본인 확인
+     */
+    public boolean isAuthor(Long userId) {
+        return this.author.getId().equals(userId);
+    }
+
+    /**
+     * 게시글 소프트 삭제
+     */
+    public void deletePost() {
+        this.isDeleted = true;
+    }
 }

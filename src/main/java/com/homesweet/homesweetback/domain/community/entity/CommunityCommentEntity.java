@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -56,9 +55,36 @@ public class CommunityCommentEntity extends BaseEntity {
     @Builder.Default
     private Boolean isModified = false;
 
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     private LocalDateTime modifiedAt;
 
     @Column(nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    /**
+     * 댓글 수정
+     */
+    public void updateComment(String content) {
+        this.content = content;
+        this.isModified = true;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 작성자 본인 확인
+     */
+    public boolean isAuthor(Long userId) {
+        return this.author.getId().equals(userId);
+    }
+
+    /**
+     * 게시글 소프트 삭제
+     */
+    public void deleteComment() {
+        this.isDeleted = true;
+    }
 }
