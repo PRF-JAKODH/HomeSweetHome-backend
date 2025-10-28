@@ -20,7 +20,7 @@ public class ChatController {
         this.template = template;
     }
 
-    @MessageMapping("/chat.send")
+    @MessageMapping("/chat/sendMessage")
     public void send(@Payload ChatSendRequest req){
 
         ChatMessageDto msg = new ChatMessageDto(
