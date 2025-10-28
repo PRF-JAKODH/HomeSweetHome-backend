@@ -54,13 +54,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (userId >= 1 && userId <= 10) {
                         User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("Test user not found with id: " + userId));
-                        
+
+                        OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
+
                         Collection<GrantedAuthority> authorities = List.of(
                             new SimpleGrantedAuthority(user.getRole().getAuthority())
                         );
                         
                         UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(user, null, authorities);
+                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         
                         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -74,14 +76,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         
                         User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-                        
+
+                        OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
+
                         // 사용자의 Role을 authorities로 설정
                         Collection<GrantedAuthority> authorities = List.of(
                             new SimpleGrantedAuthority(user.getRole().getAuthority())
                         );
                         
                         UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(user, null, authorities);
+                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         
                         SecurityContextHolder.getContext().setAuthentication(authentication);
