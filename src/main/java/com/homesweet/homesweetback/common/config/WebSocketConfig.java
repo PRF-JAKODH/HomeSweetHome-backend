@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.common.config;
 
+import com.homesweet.homesweetback.common.config.interceptor.AuthHandshakeInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -15,10 +16,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry config) {
         config.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:8080"); //
-//                .withSockJS();
+                .setAllowedOriginPatterns("http://localhost:8080")
+                .withSockJS();
     }
-
 
     // sub : 구독, pub : 메시지 송신
     @Override
@@ -34,4 +34,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setSendTimeLimit(15 * 1000)
                 .setSendBufferSizeLimit(3 * 512 * 1024);
     }
+
+
 }

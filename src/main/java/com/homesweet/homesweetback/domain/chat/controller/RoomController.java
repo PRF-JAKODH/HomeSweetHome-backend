@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,8 +31,14 @@ public class RoomController {
      */
     @PostMapping("/individual")
     @ResponseStatus(HttpStatus.OK)
-    public RoomDto createOrGetIndividual(@Valid @RequestBody CreateIndividualRoomRequest req) {
-        return chatRoomService.createOrGetIndividualRoom(req.getMeId(), req.getTargetId());
+    public RoomDto createOrGetIndividual(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @Valid @RequestBody CreateIndividualRoomRequest req) {
+
+        Long meId = principal.getUserId();
+        Long targetId = req.getTargetId();
+
+        return chatRoomService.createOrGetIndividualRoom(meId, targetId);
     }
 
 
@@ -40,8 +48,13 @@ public class RoomController {
 //     * GET /api/chat/rooms/individual
 //     */
     @GetMapping("/individual")
-    public ResponseEntity<List<Long>> getMyIndividualRoomIds(@RequestParam("me") Long meUserId) {
+    public ResponseEntity<List<Long>> getMyIndividualRoomIds(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal) {
+
+        Long meUserId = principal.getUserId();
+
         List<Long> roomIds = chatRoomService.findMyIndividualRoomIds(meUserId);
+
         return ResponseEntity.ok(roomIds);
     }
 

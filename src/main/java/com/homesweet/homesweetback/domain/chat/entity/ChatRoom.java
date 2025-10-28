@@ -37,7 +37,7 @@ public class ChatRoom {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "pair_key", length = 100)
+    @Column(name = "pair_key", nullable = true, length = 100)
     private String pairKey; //
 
     @CreatedDate

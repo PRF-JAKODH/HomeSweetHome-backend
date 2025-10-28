@@ -103,6 +103,18 @@ public class JwtTokenProvider {
     }
 
     /**
+     * 공통 Claims 파싱 메서드
+     */
+    public Claims getClaimsFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+
+    /**
      * 토큰 유효성 검증
      */
     public boolean validateToken(String token) {
@@ -133,7 +145,7 @@ public class JwtTokenProvider {
         }
     }
 
-        /**
+    /**
      * 토큰 타입 확인 (access token인지 refresh token인지)
      */
     public boolean isRefreshToken(String token) {
