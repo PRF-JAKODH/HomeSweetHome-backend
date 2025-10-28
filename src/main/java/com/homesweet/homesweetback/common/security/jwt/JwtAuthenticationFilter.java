@@ -44,30 +44,52 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Access Token을 Authorization 헤더에서 추출
             String accessToken = getJwtFromRequest(request);
             
-            if (StringUtils.hasText(accessToken) && jwtTokenProvider.validateToken(accessToken)) {
-                // Access Token인지 확인 (Refresh Token이 아닌지)
-                if (!jwtTokenProvider.isRefreshToken(accessToken)) {
-                    Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-                    
-                    User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
-                    OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
-
-                    // 사용자의 Role을 authorities로 설정
-                    Collection<GrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority(user.getRole().getAuthority())
-                    );
-                    
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
-                    log.debug("JWT authentication successful for user: {}", user.getEmail());
-                } else {
-                    log.warn("Access token required, but refresh token provided in Authorization header");
+            if (StringUtils.hasText(accessToken)) {
+                /**
+                 * 테스트 용 test 유저 처리
+                 */
+                // 테스트용: 1~10의 토큰으로 해당 user_id의 사용자를 인증
+                if (isTestToken(accessToken)) {
+                    Long userId = Long.parseLong(accessToken);
+                    if (userId >= 1 && userId <= 10) {
+                        User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("Test user not found with id: " + userId));
+                        
+                        Collection<GrantedAuthority> authorities = List.of(
+                            new SimpleGrantedAuthority(user.getRole().getAuthority())
+                        );
+                        
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(user, null, authorities);
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        
+                        log.info("TEST MODE: Authenticated user with test token. User ID: {}, Email: {}", userId, user.getEmail());
+                    }
+                } else if (jwtTokenProvider.validateToken(accessToken)) {
+                    // Access Token인지 확인 (Refresh Token이 아닌지)
+                    if (!jwtTokenProvider.isRefreshToken(accessToken)) {
+                        Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+                        
+                        User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                        
+                        // 사용자의 Role을 authorities로 설정
+                        Collection<GrantedAuthority> authorities = List.of(
+                            new SimpleGrantedAuthority(user.getRole().getAuthority())
+                        );
+                        
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(user, null, authorities);
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        
+                        log.debug("JWT authentication successful for user: {}", user.getEmail());
+                    } else {
+                        log.warn("Access token required, but refresh token provided in Authorization header");
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -89,6 +111,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         return null;
+    }
+
+    /**
+     * 테스트용 토큰인지 확인합니다.
+     * 1~10 사이의 숫자인 경우 테스트용 토큰으로 간주합니다.
+     * 
+     * 주의: 이 기능은 테스트 목적으로만 사용하세요. 실제 배포 환경에서는 제거해야 합니다.
+     */
+    private boolean isTestToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        
+        try {
+            // 숫자인지 확인하고 1~10 범위인지 체크
+            Long.parseLong(token);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
 }
