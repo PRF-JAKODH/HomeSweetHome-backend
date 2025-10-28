@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.common.security.jwt;
 
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,14 +51,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     
                     User user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-                    
+
+                    OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
+
                     // 사용자의 Role을 authorities로 설정
                     Collection<GrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority(user.getRole().getAuthority())
                     );
                     
                     UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(user, null, authorities);
+                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     
                     SecurityContextHolder.getContext().setAuthentication(authentication);
