@@ -1,15 +1,21 @@
 package com.homesweet.homesweetback.domain.community.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.community.dto.CommunityCreateRequest;
-import com.homesweet.homesweetback.domain.community.dto.CommunityResponse;
-import com.homesweet.homesweetback.domain.community.service.CommunityService;
+import com.homesweet.homesweetback.domain.community.dto.CommunityCommentRequest;
+import com.homesweet.homesweetback.domain.community.dto.CommunityCommentResponse;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
+import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
+import com.homesweet.homesweetback.domain.community.service.CommunityCommentService;
+import com.homesweet.homesweetback.domain.community.service.CommunityPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * Community 컨트롤러
@@ -22,56 +28,158 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CommunityController {
 
-    private final CommunityService communityService;
+    private final CommunityPostService CommunityPostService;
+    private final CommunityCommentService CommunityCommentService;
 
     /**
      * 게시글 작성 API
-     * JWT 토큰을 통해 인증된 사용자의 게시글을 작성합니다.
      *
-     * @param request 게시글 작성 요청 데이터 (제목, 내용)
-     * @param authentication Spring Security의 인증 정보 (JWT에서 자동 추출)
-     * @return 생성된 게시글 정보
      */
     @PostMapping("/posts")
-    public ResponseEntity<CommunityResponse> createPost(
-            @Valid @RequestBody CommunityCreateRequest request,
+    public ResponseEntity<CommunityPostResponse> createPost(
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestPart("request") @Valid CommunityPostRequest request,
             Authentication authentication
     ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityPostResponse response = CommunityPostService.createPost(images, request, 1L);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+
         // JWT 토큰에서 인증된 사용자 정보 추출
         User currentUser = (User) authentication.getPrincipal();
-
-        CommunityResponse response = communityService.createPost(request, currentUser.getId());
+        CommunityPostResponse response = CommunityPostService.createPost(images, request, currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /**
-     * 게시글 작성 API (테스트용 - 인증 없음)
-     * TODO: 실제 배포 전에 반드시 제거해야 합니다!
-     *
-     * @param request 게시글 작성 요청 데이터 (제목, 내용)
-     * @param userId 테스트용 사용자 ID
-     * @return 생성된 게시글 정보
-     */
-    @PostMapping("/posts/test")
-    public ResponseEntity<CommunityResponse> createPostTest(
-            @Valid @RequestBody CommunityCreateRequest request,
-            @RequestParam Long userId
-    ) {
-        CommunityResponse response = communityService.createPost(request, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+    }                                                   
 
     /**
      * 게시글 단건 조회 API
-     * GET /api/v1/community/posts/{postId}
-     *
-     * @param postId 조회할 게시글 ID
-     * @return 게시글 정보
      */
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<CommunityResponse> getPost(@PathVariable Long postId) {
-        CommunityResponse response = communityService.getPost(postId);
+    public ResponseEntity<CommunityPostResponse> getPost(@PathVariable Long postId) {
+        CommunityPostResponse response = CommunityPostService.getPost(postId);
         return ResponseEntity.ok(response);
     }
-}
 
+    /**
+     * 게시글 수정 API
+     */
+    @PutMapping("/posts/{postId}")
+    public ResponseEntity<CommunityPostResponse> updatePost(
+            @PathVariable Long postId,
+            @RequestBody @Valid CommunityPostRequest request,
+            Authentication authentication
+    ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityPostResponse response = CommunityPostService.updatePost(postId, request, 1L);
+            return ResponseEntity.ok(response);
+        }
+
+        // JWT 토큰에서 인증된 사용자 정보 추출
+        User currentUser = (User) authentication.getPrincipal();
+        CommunityPostResponse response = CommunityPostService.updatePost(postId, request, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 삭제 API
+     */
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long postId,
+            Authentication authentication
+    ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityPostService.deletePost(postId, 1L);
+            return ResponseEntity.noContent().build();
+        }
+
+        // JWT 토큰에서 인증된 사용자 정보 추출
+        User currentUser = (User) authentication.getPrincipal();
+        CommunityPostService.deletePost(postId, currentUser.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 댓글 작성 API
+     */
+    @PostMapping("/posts/{postId}/comments")
+    public ResponseEntity<CommunityCommentResponse> createComment(
+            @PathVariable Long postId,
+            @RequestBody @Valid CommunityCommentRequest request,
+            Authentication authentication
+    ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, 1L);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+
+        // JWT 토큰에서 인증된 사용자 정보 추출
+        User currentUser = (User) authentication.getPrincipal();
+        CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 해당 게시글 모든 댓글 조회
+     */
+    @GetMapping("/posts/{postId}/comments")
+    public ResponseEntity<List<CommunityCommentResponse>> getComments (
+            @PathVariable Long postId
+    ){
+        List<CommunityCommentResponse> responses = CommunityCommentService.getCommentsByPostId(postId);
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * 댓글 수정 API
+     */
+    @PutMapping("/posts/{postId}/comments/{commentId}")
+    public ResponseEntity<CommunityCommentResponse> updateComment(
+            @PathVariable Long commentId,
+            @RequestBody @Valid CommunityCommentRequest request,
+            Authentication authentication
+    ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, 1L);
+            return ResponseEntity.ok(response);
+        }
+
+        // JWT 토큰에서 인증된 사용자 정보 추출
+        User currentUser = (User) authentication.getPrincipal();
+        CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 댓글 삭제 API
+     */
+    @DeleteMapping("/posts/{postId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            Authentication authentication
+    ) {
+        // 개발 중 임시 처리
+        if (authentication == null) {
+            // 테스트용 userId 사용
+            CommunityCommentService.deleteComment(commentId, postId, 1L);
+            return ResponseEntity.noContent().build();
+        }
+
+        // JWT 토큰에서 인증된 사용자 정보 추출
+        User currentUser = (User) authentication.getPrincipal();
+        CommunityCommentService.deleteComment(commentId, postId, currentUser.getId());
+        return ResponseEntity.noContent().build();
+    }
+}
