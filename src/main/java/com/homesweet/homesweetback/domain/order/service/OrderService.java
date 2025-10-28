@@ -66,10 +66,11 @@ public class OrderService {
                 .status(OrderStatus.PENDING) // ★ 최초 상태: PENDING
                 .totalAmount(totalAmount)
                 .userId(userId) // (추후 User 엔티티 연동)
-                .recipientName(dto.recipientName()) // (DTO에 추가 필요. DTO 수정!)
-                .recipientPhone(dto.recipientPhone()) // (DTO에 추가 필요. DTO 수정!)
+                .usedPoint(0L) // 사용한 포인트가 없으면 기본값 0L 설정
+                .recipientName(dto.recipientName())
+                .recipientPhone(dto.recipientPhone())
                 .shippingAddress(dto.shippingAddress())
-                .shippingRequest(dto.shippingRequest()) // (DTO에 추가 필요. DTO 수정!)
+                .shippingRequest(dto.shippingRequest())
                 .build();
 
         // 4. OrderItem 엔티티 생성 및 Order에 추가
