@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
  * @author ohhalim777@gmail.com
  * @date 25. 10. 21.
  */
-public record CommunityCreateRequest(
+public record CommunityPostRequest(
         @NotBlank(message = "제목은 필수입니다")
         @Size(min = 1, max = 100, message = "제목은 1자 이상 100자 이하여야 합니다")
         String title,
