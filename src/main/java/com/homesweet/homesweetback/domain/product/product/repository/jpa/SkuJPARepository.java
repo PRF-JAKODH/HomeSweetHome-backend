@@ -1,17 +1,15 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa;
 
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import jakarta.persistence.LockModeType; // ★ LockModeType import
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock; // ★ Lock import
+import org.springframework.data.jpa.repository.Query; // ★ Query import
 
 import java.util.Optional;
 
-/**
- * 제품 제고 JPA 레포
- *
- * @author junnukim1007gmail.com
- * @date 25. 10. 24.
- */
 public interface SkuJPARepository extends JpaRepository<SkuEntity, Long> {
-
-    Optional<SkuEntity> findById(Long id);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM SkuEntity s WHERE s.id = :id")
+    Optional<SkuEntity> findByIdWithPessimisticLock(Long id);
 }
