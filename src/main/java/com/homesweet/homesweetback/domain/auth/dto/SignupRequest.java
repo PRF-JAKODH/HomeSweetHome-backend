@@ -1,9 +1,11 @@
 package com.homesweet.homesweetback.domain.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 회원가입 완료를 위한 추가 정보 입력 DTO
@@ -15,7 +17,8 @@ public record SignupRequest(
     String phoneNumber,
     
     @NotNull(message = "생일은 필수입니다")
-    LocalDate birthDate,   
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate birthDate,
 
     @NotBlank(message = "주소는 필수입니다")
     String address

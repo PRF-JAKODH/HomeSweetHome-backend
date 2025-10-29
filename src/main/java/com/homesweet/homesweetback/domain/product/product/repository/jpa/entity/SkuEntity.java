@@ -62,4 +62,11 @@ public class SkuEntity {
         this.skuOptions.add(skuOption);
         skuOption.setSku(this);
     }
+
+    public void decreaseStock(Long quantity) {
+        if (this.stockQuantity < quantity) {
+            throw new RuntimeException("재고 부족"); // (추후 커스텀 예외)
+        }
+        this.stockQuantity -= quantity;
+    }
 }

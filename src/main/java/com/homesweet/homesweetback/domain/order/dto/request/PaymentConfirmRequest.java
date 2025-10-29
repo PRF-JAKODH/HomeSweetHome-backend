@@ -10,7 +10,7 @@ public record PaymentConfirmRequest(
         String paymentKey,
 
         @NotBlank(message = "주문 ID(merchant_uid)가 비어있습니다.")
-        String orderId,
+        Long orderId,
 
         @NotNull(message = "결제 금액이 비어있습니다.")
         Long amount
