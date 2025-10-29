@@ -4,7 +4,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
 import com.homesweet.homesweetback.domain.notification.domain.payload.NotificationPayload;
 import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
@@ -35,16 +35,16 @@ public class NotificationSendServiceImpl implements NotificationSendService {
     private final SseService sseService;
     
     @Override
-    public void sendTemplateNotificationToSingleUser(Long userId, NotificationTemplateType templateType) {
-        log.info("알림 전송: userId={}, templateType={}", userId, templateType);
+    public void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType) {
+        log.info("알림 전송: userId={}, eventType={}", userId, eventType);
     }
     
     @Override
-    public void sendTemplateNotificationToSingleUser(Long userId, NotificationTemplateType templateType, NotificationPayload payload) {
+    public void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType, NotificationPayload payload) {
         // 1. Payload 검증
-        payload.validate();
+        payload.validate(eventType);
         // 2. 템플릿 조회
-        NotificationTemplate template = getNotificationTemplate(templateType);
+        NotificationTemplate template = getNotificationEventType(eventType);
 
         // 3. 알림 저장
         UserNotification userNotification = createAndSaveUserNotification(userId, template, payload.toMap());
@@ -53,22 +53,22 @@ public class NotificationSendServiceImpl implements NotificationSendService {
         PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template, userNotification.getId());
 
         // 5. 푸시 전송
-        log.info("알림 전송: userId={}, templateType={}, contextData={}", userId, templateType, pushNotificationDTO.toJson());
+        log.info("알림 전송: userId={}, eventType={}, contextData={}", userId, eventType, pushNotificationDTO.toJson());
         sseService.sendNotification(userId, pushNotificationDTO.toJson());
     }
 
     @Override   
-    public void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationTemplateType templateType) {
-        log.info("알림 전송: userIds={}, templateType={}", userIds, templateType);
+    public void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationEventType eventType) {
+        log.info("알림 전송: userIds={}, eventType={}", userIds, eventType);
         // TODO: 실제 알림 전송 구현
     }
     
     @Override
-    public void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationTemplateType templateType, NotificationPayload payload) {
+    public void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationEventType eventType, NotificationPayload payload) {
         // 1. Payload 검증
-        payload.validate();
+        payload.validate(eventType);
         // 2. 템플릿 조회
-        NotificationTemplate template = getNotificationTemplate(templateType);
+        NotificationTemplate template = getNotificationEventType(eventType);
 
         for (Long userId : userIds) {
             // 3. 알림 저장
@@ -78,7 +78,7 @@ public class NotificationSendServiceImpl implements NotificationSendService {
             PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(payload, template, userNotification.getId());
 
             // 5. 푸시 전송
-            log.info("알림 전송: userId={}, templateType={}, contextData={}", userId, templateType, pushNotificationDTO.toJson());
+            log.info("알림 전송: userId={}, eventType={}, contextData={}", userId, eventType, pushNotificationDTO.toJson());
             sseService.sendNotification(userId, pushNotificationDTO.toJson());
         }
     }
@@ -96,8 +96,9 @@ public class NotificationSendServiceImpl implements NotificationSendService {
     }
     
 
-    private NotificationTemplate getNotificationTemplate(NotificationTemplateType templateType) {
-        return notificationTemplateRepository.findByTemplateType(templateType).orElseThrow(() -> new RuntimeException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND.getMessage()));
+    private NotificationTemplate getNotificationEventType(NotificationEventType eventType) {
+        // DB 스키마 상에서는 TemplateType을 사용하고 있지만, 실제 구현에서는 EventType을 사용하고 있습니다.
+        return notificationTemplateRepository.findByTemplateType(eventType).orElseThrow(() -> new RuntimeException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND.getMessage()));
     }
 
     @Transactional

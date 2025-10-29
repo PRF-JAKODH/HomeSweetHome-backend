@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.notification.service;
 
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
 import com.homesweet.homesweetback.domain.notification.domain.payload.NotificationPayload;
 
 import java.util.List;
@@ -18,32 +18,32 @@ public interface NotificationSendService {
     /**
      * 알림 전송 단일 사용자 전송 : 템플릿 메시지 전송 (Payload 없음)
      * @param userId 사용자 ID
-     * @param templateType 알림 템플릿 타입
+     * @param eventType 알림 템플릿 타입
      */
-    void sendTemplateNotificationToSingleUser(Long userId, NotificationTemplateType templateType);
+    void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType);
     
     /**
      * 알림 전송 단일 사용자 전송 : 템플릿 메시지 전송 (타입 안전한 Payload 사용)
      * @param userId 사용자 ID
-     * @param templateType 알림 템플릿 타입
+     * @param eventType 알림 템플릿 타입
      * @param payload 알림 Payload
      */
-    void sendTemplateNotificationToSingleUser(Long userId, NotificationTemplateType templateType, NotificationPayload payload);
+    void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType, NotificationPayload payload);
 
     /** 
      * 알림 전송 다수 사용자 전송 : 템플릿 메시지 전송 (Payload 없음)
      * @param userIds 사용자 ID 리스트
-     * @param templateType 알림 템플릿 타입
+     * @param eventType 알림 템플릿 타입
      */
-    void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationTemplateType templateType);
+    void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationEventType eventType);
     
     /** 
      * 알림 전송 다수 사용자 전송 : 템플릿 메시지 전송 (타입 안전한 Payload 사용)
      * @param userIds 사용자 ID 리스트
-     * @param templateType 알림 템플릿 타입
+     * @param eventType 알림 템플릿 타입
      * @param payload 알림 Payload
      */
-    void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationTemplateType templateType, NotificationPayload payload);
+    void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationEventType eventType, NotificationPayload payload);
 
     /**
      * 알림 전송 단일 사용자 전송 : Custom 메시지 전송

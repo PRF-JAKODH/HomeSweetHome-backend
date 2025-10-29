@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.notification.repository;
 
-import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
 
 import java.util.Optional;
@@ -15,5 +15,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface NotificationTemplateRepository extends JpaRepository<NotificationTemplate, Long> {
-    Optional<NotificationTemplate> findByTemplateType(NotificationTemplateType templateType);
+    Optional<NotificationTemplate> findByTemplateType(NotificationEventType templateType);
 }

@@ -56,7 +56,8 @@ public enum ErrorCode {
     NOTIFICATION_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 카테고리를 찾을 수 없습니다"),
     NOTIFICATION_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 템플릿을 찾을 수 없습니다"),
     SSE_CONNECTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SSE 연결 중 오류가 발생했습니다"),
-    INVALID_NOTIFICATION_CONTEXT(HttpStatus.BAD_REQUEST, "알림 컨텍스트 데이터가 부족합니다");
+    INVALID_NOTIFICATION_CONTEXT(HttpStatus.BAD_REQUEST, "알림 컨텍스트 데이터가 부족합니다"),
+    NOTIFICATION_EVENT_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "알림 이벤트 타입이 일치하지 않습니다");
 
     private final HttpStatus status;
     private final String message;

@@ -1,15 +1,17 @@
 package com.homesweet.homesweetback.domain.notification.domain.payload;
 
-import lombok.AllArgsConstructor;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+
 import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
 /**
- * 주문 관련 알림 Payload 클래스
+ * 어노테이션 기반 주문 관련 알림 Payload 클래스
+ * 
+ * @SupportsEventType 어노테이션을 사용하여 각 Payload가 지원하는 EventType을 명시합니다.
+ * 
+ * @author dogyungkim
  */
 public class OrderNotificationPayload {
     
@@ -20,8 +22,9 @@ public class OrderNotificationPayload {
      * - userName: String - 사용자 이름
      * - orderId: String - 주문 ID
      */
+    @SupportsEventType(NotificationEventType.ORDER_COMPLETED)
     @Builder
-    public static class OrderCompletedPayload implements NotificationPayload {
+    public static class OrderCompletedPayload extends NotificationPayload {
         private String userName;
         private String orderId;
         
@@ -34,7 +37,7 @@ public class OrderNotificationPayload {
         }
         
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_COMPLETED notification");
             }
@@ -51,8 +54,9 @@ public class OrderNotificationPayload {
      * - userName: String - 사용자 이름
      * - orderId: String - 주문 ID
      */
+    @SupportsEventType(NotificationEventType.ORDER_CANCELLED)
     @Builder
-    public static class OrderCancelledPayload implements NotificationPayload {
+    public static class OrderCancelledPayload extends NotificationPayload {
         private String userName;
         private String orderId;
         
@@ -65,7 +69,7 @@ public class OrderNotificationPayload {
         }
         
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_CANCELLED notification");
             }
@@ -82,8 +86,9 @@ public class OrderNotificationPayload {
      * - userName: String - 사용자 이름
      * - orderId: String - 주문 ID
      */
+    @SupportsEventType(NotificationEventType.ORDER_SHIPPED)
     @Builder
-    public static class OrderShippedPayload implements NotificationPayload {
+    public static class OrderShippedPayload extends NotificationPayload {
         private String userName;
         private String orderId;
         
@@ -96,7 +101,7 @@ public class OrderNotificationPayload {
         }
         
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_SHIPPED notification");
             }
@@ -113,8 +118,9 @@ public class OrderNotificationPayload {
      * - userName: String - 사용자 이름
      * - orderId: String - 주문 ID
      */
+    @SupportsEventType(NotificationEventType.ORDER_DELIVERED)
     @Builder
-    public static class OrderDeliveredPayload implements NotificationPayload {
+    public static class OrderDeliveredPayload extends NotificationPayload {
         private String userName;
         private String orderId;
         
@@ -127,7 +133,7 @@ public class OrderNotificationPayload {
         }
         
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_DELIVERED notification");
             }

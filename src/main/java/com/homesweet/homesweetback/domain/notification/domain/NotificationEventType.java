@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public enum NotificationTemplateType {
+public enum NotificationEventType {
     // ==================== 주문 관련 ====================
     /**
      * 주문 완료 알림
@@ -264,9 +264,9 @@ public enum NotificationTemplateType {
     private final String description;
     private final NotificationCategoryType categoryType;
 
-    public static NotificationTemplateType fromCode(String code) {
+    public static NotificationEventType fromCode(String code) {
         try {
-            return NotificationTemplateType.valueOf(code);
+            return NotificationEventType.valueOf(code);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown notification template type: " + code);
         }

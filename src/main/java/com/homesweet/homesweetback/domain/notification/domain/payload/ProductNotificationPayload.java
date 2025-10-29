@@ -1,15 +1,21 @@
 package com.homesweet.homesweetback.domain.notification.domain.payload;
 
-import java.util.Map;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
 
 import lombok.Builder;
 
+import java.util.Map;
+
 /**
- * 상품 관련 알림 Payload 클래스
+ * 어노테이션 기반 상품 관련 알림 Payload 클래스
+ * 
+ * @SupportsEventType 어노테이션을 사용하여 각 Payload가 지원하는 EventType을 명시합니다.
+ * 
+ * @author dogyungkim
  */
 public class ProductNotificationPayload {
     
-    /** 
+    /**
      * 상품 승인 알림 Payload
      * 
      * 📋 필요한 contextData:
@@ -17,8 +23,9 @@ public class ProductNotificationPayload {
      * - productId: String - 상품 ID
      * - productName: String - 상품명
      */
+    @SupportsEventType(NotificationEventType.PRODUCT_APPROVED)
     @Builder
-    public static class ProductApprovedPayload implements NotificationPayload {
+    public static class ProductApprovedPayload extends NotificationPayload {
         private String userName;
         private String productId;
         private String productName;
@@ -31,8 +38,9 @@ public class ProductNotificationPayload {
                 "productName", productName != null ? productName : ""
             );
         }
+        
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for PRODUCT_APPROVED notification");
             }
@@ -44,7 +52,7 @@ public class ProductNotificationPayload {
             }
         }
     }
-
+    
     /**
      * 상품 거부 알림 Payload
      * 
@@ -53,11 +61,12 @@ public class ProductNotificationPayload {
      * - productId: String - 상품 ID
      * - productName: String - 상품명
      */
+    @SupportsEventType(NotificationEventType.PRODUCT_REJECTED)
     @Builder
-    public static class ProductRejectedPayload implements NotificationPayload {
+    public static class ProductRejectedPayload extends NotificationPayload {
         private String userName;
         private String productId;
-        private String productName; 
+        private String productName;
         
         @Override
         public Map<String, Object> toMap() {
@@ -66,9 +75,10 @@ public class ProductNotificationPayload {
                 "productId", productId != null ? productId : "",
                 "productName", productName != null ? productName : ""
             );
-        }   
+        }
+        
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for PRODUCT_REJECTED notification");
             }
@@ -90,8 +100,9 @@ public class ProductNotificationPayload {
      * - productName: String - 상품명
      * - currentStock: String - 현재 재고 수량
      */
+    @SupportsEventType(NotificationEventType.PRODUCT_LOW_STOCK)
     @Builder
-    public static class ProductLowStockPayload implements NotificationPayload {
+    public static class ProductLowStockPayload extends NotificationPayload {
         private String userName;
         private String productId;
         private String productName;
@@ -106,8 +117,9 @@ public class ProductNotificationPayload {
                 "currentStock", currentStock != null ? currentStock : ""
             );
         }
+        
         @Override
-        public void validate() {
+        protected void validateRequiredFields() {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for PRODUCT_LOW_STOCK notification");
             }
@@ -123,5 +135,3 @@ public class ProductNotificationPayload {
         }
     }
 }
-
-

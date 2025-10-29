@@ -15,7 +15,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
 import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationCategory;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
@@ -89,7 +89,7 @@ class NotificationAPIServiceTest {
         // 테스트 템플릿 생성
         testTemplate = NotificationTemplate.builder()
                 .category(testCategory)
-                .templateType(NotificationTemplateType.ORDER_COMPLETED)
+                .templateType(NotificationEventType.ORDER_COMPLETED)
                 .title("주문 완료")
                 .content("{userName}님의 주문이 완료되었습니다.")
                 .redirectUrl("app://order/{orderId}")
