@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
  * CommunityCommentLike 엔티티
  *
  * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
+ * @date 25. 10. 21.    
  */
 
 @Entity
 @Table(
-        name = "community_comment_likes",
+        name = "comments_likes",
         uniqueConstraints = @UniqueConstraint(
                 columnNames = {"comment_id", "user_id"}
         )

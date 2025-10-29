@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityCommentResponse
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.service.CommunityCommentService;
+import com.homesweet.homesweetback.domain.community.service.CommunityCountService;
 import com.homesweet.homesweetback.domain.community.service.CommunityPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class CommunityController {
 
     private final CommunityPostService CommunityPostService;
     private final CommunityCommentService CommunityCommentService;
+    private final CommunityCountService CommunityCountService;
 
     /**
      * 게시글 작성 API
@@ -182,6 +184,79 @@ public class CommunityController {
         CommunityCommentService.deleteComment(commentId, postId, principal.getUserId());
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * 게시글 좋아요 토글
+     */
+    @PostMapping("/posts/{postId}/likes")
+    public ResponseEntity<Void> togglePostLike(
+            @PathVariable Long postId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            CommunityCountService.togglePostLike(postId, 1L);
+            return ResponseEntity.ok().build();
+        }
+
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityCountService.togglePostLike(postId, principal.getUserId());
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 게시글 좋아요 상태 확인
+     */
+    @GetMapping("/posts/{postId}/likes/status")
+    public ResponseEntity<Boolean> getPostLikeStatus(
+            @PathVariable Long postId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            return ResponseEntity.ok(false);
+        }
+
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        boolean isLiked = CommunityCountService.isPostLiked(postId, principal.getUserId());
+        return ResponseEntity.ok(isLiked);
+    }
+
+    /**
+     * 댓글 좋아요 토글
+     */
+    @PostMapping("/posts/{postId}/comments/{commentId}/likes")
+    public ResponseEntity<Void> toggleCommentLike(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            CommunityCountService.toggleCommentLike(commentId, 1L);
+            return ResponseEntity.ok().build();
+        }
+
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        CommunityCountService.toggleCommentLike(commentId, principal.getUserId());
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 댓글 좋아요 상태 확인
+     */
+    @GetMapping("/posts/{postId}/comments/{commentId}/likes/status")
+    public ResponseEntity<Boolean> getCommentLikeStatus(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            return ResponseEntity.ok(false);
+        }
+
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        boolean isLiked = CommunityCountService.isCommentLiked(commentId, principal.getUserId());
+        return ResponseEntity.ok(isLiked);
+    }
+
 
     // 페이지네이션
     @GetMapping("/posts")
