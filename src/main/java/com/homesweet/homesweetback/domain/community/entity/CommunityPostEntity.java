@@ -107,4 +107,10 @@ public class CommunityPostEntity extends BaseEntity {
      */
     public void increaseLikeCount() { this.likeCount++; }
     public void decreaseLikeCount() { this.likeCount--; }
+
+    /**
+     * 게시글 댓글 카운트
+     */
+    public void increaseCommentCount() { this.commentCount++; }
+    public void decreaseCommentCount() { this.commentCount--; }
 }

@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
                 columnNames = {"comment_id", "user_id"}
         )
 )
+@IdClass(CommunityCommentLikeId.class)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Builder
@@ -33,13 +34,11 @@ import java.time.LocalDateTime;
 public class CommunityCommentLikeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long likeId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "comment_id", nullable = false)
     private CommunityCommentEntity comment;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

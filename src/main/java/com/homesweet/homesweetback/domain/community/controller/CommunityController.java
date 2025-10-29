@@ -186,6 +186,15 @@ public class CommunityController {
     }
 
     /**
+     * 게시글 조회수 증가
+     */
+    @PostMapping("/posts/{postId}/views")
+    public ResponseEntity<Void> increaseViewCount(@PathVariable Long postId) {
+        CommunityCountService.increaseViewCount(postId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * 게시글 좋아요 토글
      */
     @PostMapping("/posts/{postId}/likes")

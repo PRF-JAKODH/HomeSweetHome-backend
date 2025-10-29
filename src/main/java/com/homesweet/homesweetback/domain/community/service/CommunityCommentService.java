@@ -53,6 +53,9 @@ public class CommunityCommentService {
 
         CommunityCommentEntity savedComment = commentRepository.save(comment);
 
+        // 게시글의 댓글 수 증가
+        post.increaseCommentCount();
+
         return CommunityCommentResponse.from(savedComment);
     }
 
@@ -92,7 +95,7 @@ public class CommunityCommentService {
      */
     @Transactional
     public void deleteComment(Long commentId, Long postId, Long userId) {
-        // 게시글 조회
+        // 댓글 조회
         CommunityCommentEntity comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
 
@@ -101,7 +104,12 @@ public class CommunityCommentService {
             throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
         }
 
-        // 게시글 소프트 삭제
+        // 게시글 조회 및 댓글 수 감소
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+        post.decreaseCommentCount();
+
+        // 댓글 소프트 삭제
         comment.deleteComment();
     }
 }
