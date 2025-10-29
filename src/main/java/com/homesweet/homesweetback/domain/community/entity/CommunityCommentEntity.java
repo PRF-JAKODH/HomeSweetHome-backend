@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
  */
 
 @Entity
-@Table(name = "comments")
+@Table(name = "community_comments")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Builder

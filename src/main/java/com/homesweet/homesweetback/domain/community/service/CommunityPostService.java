@@ -63,7 +63,7 @@ public class CommunityPostService {
                         CommunityImageEntity.builder()
                                 .post(savedPost)
                                 .imageUrl(imageUrls.get(i))
-                                .imageOrder(i)
+                                .imageOrder(i + 1) // 0이 아닌 1부터 시작하도록 수정
                                 .build()
                 );
             }

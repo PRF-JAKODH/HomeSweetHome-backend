@@ -37,7 +37,7 @@ public class CommunityImageEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private CommunityPostEntity post;
 
-    @Column(name = "image_url", nullable = false, length = 255)
+    @Column(name = "image_url", nullable = false, length = 1024)
     private String imageUrl;
 
     @CreatedDate

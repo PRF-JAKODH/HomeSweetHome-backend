@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "posts_likes",
+        name = "community_post_likes",
         uniqueConstraints = @UniqueConstraint(
                 columnNames = {"post_id", "user_id"}
         )
