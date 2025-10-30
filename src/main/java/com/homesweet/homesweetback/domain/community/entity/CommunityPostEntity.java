@@ -47,6 +47,9 @@ public class CommunityPostEntity extends BaseEntity {
     @Column(nullable = false, length = 1000)
     private String content;
 
+    @Column(nullable = false, length = 10)
+    private String category;
+
     @Column(nullable = false)
     @Builder.Default
     private Integer viewCount = 0;
@@ -76,9 +79,10 @@ public class CommunityPostEntity extends BaseEntity {
     /**
      * 게시글 내용 수정
      */
-    public void updatePost(String title, String content) {
+    public void updatePost(String title, String content, String category) {
         this.title = title;
         this.content = content;
+        this.category = category;
         this.isModified = true;
         this.modifiedAt = LocalDateTime.now();
     }

@@ -50,6 +50,7 @@ public class CommunityPostService {
                         .author(author)
                         .title(request.title())
                         .content(request.content())
+                        .category(request.category())
                         .build()
         );
 
@@ -103,7 +104,7 @@ public class CommunityPostService {
         }
 
         // 게시글 수정
-        post.updatePost(request.title(), request.content());
+        post.updatePost(request.title(), request.content(), request.category());
 
         // 이미지 조회
         List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
