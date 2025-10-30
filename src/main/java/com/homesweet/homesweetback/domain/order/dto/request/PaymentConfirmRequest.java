@@ -9,8 +9,8 @@ public record PaymentConfirmRequest(
         @NotBlank(message = "토스페이먼츠 paymentKey가 비어있습니다.")
         String paymentKey,
 
-        @NotBlank(message = "주문 ID(merchant_uid)가 비어있습니다.")
-        Long orderId,
+        @NotBlank(message = "주문 ID가 비어있습니다.")
+        String orderId,
 
         @NotNull(message = "결제 금액이 비어있습니다.")
         Long amount

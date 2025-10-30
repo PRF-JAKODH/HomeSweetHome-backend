@@ -31,9 +31,6 @@ public class OrderController {
             @Valid @RequestBody CreateOrderRequest dto,
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ) {
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
         Long userId = principal.getUserId();
 
         OrderReadyResponse response = orderService.createOrder(dto, userId);
@@ -49,9 +46,6 @@ public class OrderController {
             @Valid @RequestBody PaymentConfirmRequest dto,
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ) {
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
         Long userId = principal.getUserId();
 
         // --- (수정) PaymentService 호출 ---
