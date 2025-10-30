@@ -72,4 +72,13 @@ public class Order {
         this.deliveryStatus = deliveryStatus;
         this.totalAmount = totalAmount;
     }
+    public String generateOrderNumber() {
+        return String.format("ORD-%d-%05d",
+                orderedAt.getYear(),
+                id);
+    }
+
+    public void setOrderStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 }

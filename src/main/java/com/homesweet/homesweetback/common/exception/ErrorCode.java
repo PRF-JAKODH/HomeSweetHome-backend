@@ -48,8 +48,16 @@ public enum ErrorCode {
     COMMUNITY_POST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 게시글을 찾을 수 없습니다"),
     COMMUNITY_POST_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 게시글만 수정/삭제할 수 있습니다"),
     COMMUNITY_COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 댓글을 찾을 수 없습니다"),
-    COMMUNITY_COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 댓글만 수정/삭제할 수 있습니다");
+    COMMUNITY_COMMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "본인이 작성한 댓글만 수정/삭제할 수 있습니다"),
 
+    // Notification
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다"),
+    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "알림에 접근할 권한이 없습니다"),
+    NOTIFICATION_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 카테고리를 찾을 수 없습니다"),
+    NOTIFICATION_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 템플릿을 찾을 수 없습니다"),
+    SSE_CONNECTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SSE 연결 중 오류가 발생했습니다"),
+    INVALID_NOTIFICATION_CONTEXT(HttpStatus.BAD_REQUEST, "알림 컨텍스트 데이터가 부족합니다"),
+    NOTIFICATION_EVENT_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "알림 이벤트 타입이 일치하지 않습니다");
 
     private final HttpStatus status;
     private final String message;
