@@ -1,11 +1,9 @@
 package com.homesweet.homesweetback.domain.auth.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * 회원가입 완료를 위한 추가 정보 입력 DTO
