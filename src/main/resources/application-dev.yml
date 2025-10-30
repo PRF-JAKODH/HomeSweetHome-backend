@@ -7,10 +7,10 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:mysql://localhost:3306/homesweet
-    username: user
-    password: password
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/homesweet}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DATABASE_USERNAME:user}
+    password: ${DATABASE_PASSWORD:password}
   jpa:
     hibernate:
       ddl-auto: none
@@ -71,3 +71,19 @@ log:
 payments:
   toss:
     secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: homesweet-back
+  prometheus:
+    metrics:
+      export:
+        enabled: true
