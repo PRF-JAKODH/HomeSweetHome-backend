@@ -93,7 +93,6 @@ class NotificationSendServiceTest {
             .build();
         
         NotificationPayload productLowStockPayload = ProductNotificationPayload.ProductLowStockPayload.builder()
-            .userName("홍길동")
             .productId("P001")
             .productName("아이폰")
             .currentStock("5")

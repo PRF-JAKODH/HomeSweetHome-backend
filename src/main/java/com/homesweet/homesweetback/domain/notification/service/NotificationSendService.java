@@ -16,26 +16,12 @@ import java.util.Map;
 public interface NotificationSendService {
     
     /**
-     * 알림 전송 단일 사용자 전송 : 템플릿 메시지 전송 (Payload 없음)
-     * @param userId 사용자 ID
-     * @param eventType 알림 템플릿 타입
-     */
-    void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType);
-    
-    /**
      * 알림 전송 단일 사용자 전송 : 템플릿 메시지 전송 (타입 안전한 Payload 사용)
      * @param userId 사용자 ID
      * @param eventType 알림 템플릿 타입
      * @param payload 알림 Payload
      */
     void sendTemplateNotificationToSingleUser(Long userId, NotificationEventType eventType, NotificationPayload payload);
-
-    /** 
-     * 알림 전송 다수 사용자 전송 : 템플릿 메시지 전송 (Payload 없음)
-     * @param userIds 사용자 ID 리스트
-     * @param eventType 알림 템플릿 타입
-     */
-    void sendTemplateNotificationToMultipleUsers(List<Long> userIds, NotificationEventType eventType);
     
     /** 
      * 알림 전송 다수 사용자 전송 : 템플릿 메시지 전송 (타입 안전한 Payload 사용)

@@ -95,7 +95,6 @@ public class ProductNotificationPayload {
      * 재고 부족 알림 Payload
      * 
      * 📋 필요한 contextData:
-     * - userName: String - 사용자 이름
      * - productId: String - 상품 ID
      * - productName: String - 상품명
      * - currentStock: String - 현재 재고 수량
@@ -103,7 +102,6 @@ public class ProductNotificationPayload {
     @SupportsEventType(NotificationEventType.PRODUCT_LOW_STOCK)
     @Builder
     public static class ProductLowStockPayload extends NotificationPayload {
-        private String userName;
         private String productId;
         private String productName;
         private String currentStock;
@@ -111,7 +109,6 @@ public class ProductNotificationPayload {
         @Override
         public Map<String, Object> toMap() {
             return Map.of(
-                "userName", userName != null ? userName : "",
                 "productId", productId != null ? productId : "",
                 "productName", productName != null ? productName : "",
                 "currentStock", currentStock != null ? currentStock : ""
@@ -120,9 +117,6 @@ public class ProductNotificationPayload {
         
         @Override
         protected void validateRequiredFields() {
-            if (userName == null || userName.isBlank()) {
-                throw new IllegalArgumentException("userName is required for PRODUCT_LOW_STOCK notification");
-            }
             if (productId == null || productId.isBlank()) {
                 throw new IllegalArgumentException("productId is required for PRODUCT_LOW_STOCK notification");
             }
