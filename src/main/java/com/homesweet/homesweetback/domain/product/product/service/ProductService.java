@@ -37,4 +37,5 @@ public interface ProductService {
     void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request);
 
     void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request);
+
 }

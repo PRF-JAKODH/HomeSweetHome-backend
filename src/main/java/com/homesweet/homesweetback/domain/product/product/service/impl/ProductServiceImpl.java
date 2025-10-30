@@ -168,7 +168,44 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
+        // 1. 대표 이미지 교체
+        if (request.mainImage() != null && !request.mainImage().isEmpty()) {
+            productImageUploader.deleteProductImage(product.getImageUrl());
+
+            String newMainImageUrl = productImageUploader.uploadProductMainImage(request.mainImage());
+
+            productRepository.updateMainImage(productId, newMainImageUrl);
+        }
+
+        // 2. 상세 이미지 삭제
+        if (request.deleteDetailImageUrls() != null && !request.deleteDetailImageUrls().isEmpty()) {
+            request.deleteDetailImageUrls().forEach(productImageUploader::deleteProductImage);
+
+            productRepository.deleteDetailImages(productId, request.deleteDetailImageUrls());
+        }
+
+        // 3. 상세 이미지 추가
+        if (request.detailImages() != null && !request.detailImages().isEmpty()) {
+            int currentDetailImageCount = product.getDetailImages().size();
+            int newImageCount = request.detailImages().size();
+
+            int deleteCount = request.deleteDetailImageUrls() != null
+                    ? request.deleteDetailImageUrls().size()
+                    : 0;
+
+            if (currentDetailImageCount - deleteCount + newImageCount > 5) {
+                throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
+            }
+
+            // 새 상세 이미지 업로드
+            List<String> newDetailImageUrls = productImageUploader.uploadProductDetailImages(request.detailImages());
+
+            // DB에 새 이미지 추가
+            productRepository.addDetailImages(productId, newDetailImageUrls);
+        }
     }
 
     // 상품이 존재하는지 검증하는 로직

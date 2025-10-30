@@ -37,4 +37,10 @@ public interface ProductRepository {
     void updateStatus(Long productId, ProductStatus status);
 
     void update(Long productId, Product product);
+
+    void updateMainImage(Long productId, String newImageUrl);
+
+    void deleteDetailImages(Long productId, List<String> imageUrls);
+
+    void addDetailImages(Long productId, List<String> imageUrls);
 }

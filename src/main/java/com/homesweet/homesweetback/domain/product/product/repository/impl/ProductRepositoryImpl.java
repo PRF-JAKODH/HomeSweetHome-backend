@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductDetailImageEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import jakarta.annotation.Nullable;
@@ -87,5 +88,34 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         entity.updateBasicInfo(product);
+    }
+
+    @Override
+    public void updateMainImage(Long productId, String newImageUrl) {
+        ProductEntity entity = jpaRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.updateMainImage(newImageUrl);
+    }
+
+    @Override
+    public void deleteDetailImages(Long productId, List<String> imageUrls) {
+        ProductEntity entity = jpaRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.removeDetailImagesByUrls(imageUrls);
+    }
+
+    @Override
+    public void addDetailImages(Long productId, List<String> imageUrls) {
+        ProductEntity entity = jpaRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        imageUrls.forEach(url -> {
+            ProductDetailImageEntity imageEntity = ProductDetailImageEntity.builder()
+                    .imageUrl(url)
+                    .build();
+            entity.addDetailImage(imageEntity);
+        });
     }
 }

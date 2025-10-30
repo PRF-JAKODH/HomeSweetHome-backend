@@ -34,4 +34,16 @@ public class ProductImageUploader {
     public void deleteProductReviewImage(String imageUrl) {
         imageUploader.delete(imageUrl);
     }
+
+    public String uploadProductMainImage(MultipartFile mainImage) {
+        return imageUploader.upload(mainImage, "product/main");
+    }
+
+    public List<String> uploadProductDetailImages(List<MultipartFile> detailImages) {
+        return imageUploader.uploadFiles(detailImages, "product/detail");
+    }
+
+    public void deleteProductImage(String imageUrl) {
+        imageUploader.delete(imageUrl);
+    }
 }
