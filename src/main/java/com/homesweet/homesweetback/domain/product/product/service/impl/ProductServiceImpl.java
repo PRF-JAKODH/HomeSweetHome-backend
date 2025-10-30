@@ -137,21 +137,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
-//        Product product = productRepository.findByIdWithSkus(productId)
-//                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
-//
-//        // 각 SKU의 재고 업데이트
-//        for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
-//            Sku sku = product.findSkuById(skuUpdate.skuId());
-//
-//            if (sku == null) {
-//                throw new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR);
-//            }
-//
-//            sku.updateStock(skuUpdate.stockQuantity(), skuUpdate.priceAdjustment());
-//        }
-//
-//        productRepository.save(product);
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        // 각 SKU의 재고 업데이트
+        for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
+            Sku sku = skuRepository.findById(skuUpdate.skuId())
+                    .orElseThrow(() -> new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR));
+
+            skuRepository.updateSku(sku.getId(), skuUpdate.stockQuantity(), skuUpdate.priceAdjustment());
+        }
     }
 
     @Override

@@ -69,4 +69,11 @@ public class SkuEntity {
         }
         this.stockQuantity -= quantity;
     }
+
+    public void updateStock(Long newStockQuantity, Integer newPriceAdjustment) {
+        this.stockQuantity = newStockQuantity;
+        if (newPriceAdjustment != null) {
+            this.priceAdjustment = newPriceAdjustment;
+        }
+    }
 }
