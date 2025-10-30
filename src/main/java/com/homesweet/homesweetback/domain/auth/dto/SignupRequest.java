@@ -15,7 +15,7 @@ public record SignupRequest(
     String phoneNumber,
     
     @NotNull(message = "생일은 필수입니다")
-    LocalDate birthDate,   
+    LocalDate birthDate,
 
     @NotBlank(message = "주소는 필수입니다")
     String address
