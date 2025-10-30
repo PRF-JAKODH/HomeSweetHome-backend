@@ -77,6 +77,7 @@ public class Order {
                 orderedAt.getYear(),
                 id);
     }
+
     public void setOrderStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }

@@ -24,6 +24,7 @@ import jakarta.persistence.EntityNotFoundException;
 // --- Spring & Java Imports ---
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -38,6 +39,7 @@ import java.util.Base64;
 import java.util.Map;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentService {
@@ -61,11 +63,17 @@ public class PaymentService {
      */
     @Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
+        // dto의 orderId와 order의 id는 같지 않다.
+        // dto.orderId == order.orderNumber
+        String[] s = dto.orderId().split("-");
 
         // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
-        Order order = orderRepository.findById(dto.orderId())
+        Order order = orderRepository.findById(Long.parseLong(s[2]))
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
-
+        log.debug(order.toString());
+        log.debug(order.getOrderStatus().toString());
+        log.debug(order.getTotalAmount().toString());
+        log.debug(dto.amount().toString());
         // 2. [검증 2] (보안) 요청한 유저(userId)가 주문한 유저가 맞는지 확인
         if (!order.getUser().getId().equals(userId)) {
             throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
