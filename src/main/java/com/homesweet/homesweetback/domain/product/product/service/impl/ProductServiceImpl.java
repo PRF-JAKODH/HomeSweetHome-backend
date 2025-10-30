@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.ProductCat
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -31,6 +32,7 @@ import java.util.List;
  * @date 25. 10. 21.
  */
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
@@ -40,7 +42,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageUploader productImageUploader;
 
     @Override
-    @Transactional
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
         // 판매자는 중복된 이름의 상품을 등록할 수 없다
@@ -129,7 +130,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional
     public void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
         Product product = productRepository.findByIdAndSellerId(sellerId, productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
@@ -144,7 +144,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional
     public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
         Product product = productRepository.findByIdAndSellerId(sellerId, productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
@@ -159,13 +158,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional
     public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
 
         Product domain = productRepository.findByIdAndSellerId(sellerId, productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         productRepository.updateStatus(domain.getId(), request.status());
+    }
+
+    @Override
+    public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
+
     }
 
     // 상품이 존재하는지 검증하는 로직

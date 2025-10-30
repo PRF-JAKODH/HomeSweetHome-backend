@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -34,4 +35,6 @@ public interface ProductService {
     void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request);
 
     void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request);
+
+    void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request);
 }
