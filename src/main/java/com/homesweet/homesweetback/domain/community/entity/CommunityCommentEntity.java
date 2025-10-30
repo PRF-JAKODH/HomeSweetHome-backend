@@ -82,9 +82,15 @@ public class CommunityCommentEntity extends BaseEntity {
     }
 
     /**
-     * 게시글 소프트 삭제
+     * 댓글 소프트 삭제
      */
     public void deleteComment() {
         this.isDeleted = true;
     }
+
+    /**
+     * 댓글 좋아요
+     */
+    public void increaseLikeCount() { this.likeCount++; }
+    public void decreaseLikeCount() { this.likeCount--; }
 }

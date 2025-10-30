@@ -16,5 +16,8 @@ public record CommunityPostRequest(
 
         @NotBlank(message = "내용은 필수입니다")
         @Size(min = 1, max = 1000, message = "내용은 1자 이상 1000자 이하여야 합니다")
-        String content
+        String content,
+
+        @Size(min = 1, max = 100)
+        String category
 ) {}

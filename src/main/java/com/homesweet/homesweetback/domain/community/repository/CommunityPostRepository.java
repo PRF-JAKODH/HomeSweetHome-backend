@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -44,4 +47,7 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
 
     // 특정 사용자의 게시글 개수
     Long countByAuthor_IdAndIsDeletedFalse(Long userId);
+
+    // 페이지네이션 쿼리 메서드
+    Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 }

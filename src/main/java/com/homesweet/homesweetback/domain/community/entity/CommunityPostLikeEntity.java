@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
                 columnNames = {"post_id", "user_id"}
         )
 )
+@IdClass(CommunityPostLikeId.class)  // 복합키 클래스 지정
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Builder
@@ -32,14 +33,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CommunityPostLikeEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long likeId;
-
+    @Id  
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private CommunityPostEntity post;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
