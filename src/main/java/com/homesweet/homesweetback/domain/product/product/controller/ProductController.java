@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -116,6 +117,18 @@ public class ProductController {
     ) {
         Long sellerId = principal.getUserId();
         service.updateSkuStock(sellerId, productId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<Void> updateBasicInfo(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductBasicInfoUpdateRequest request
+    ) {
+        Long sellerId = principal.getUserId();
+
+        service.updateBasicInfo(sellerId, productId, request);
         return ResponseEntity.ok().build();
     }
 }

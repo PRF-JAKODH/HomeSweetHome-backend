@@ -35,4 +35,6 @@ public interface ProductRepository {
     List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate);
 
     void updateStatus(Long productId, ProductStatus status);
+
+    void update(Long productId, Product product);
 }

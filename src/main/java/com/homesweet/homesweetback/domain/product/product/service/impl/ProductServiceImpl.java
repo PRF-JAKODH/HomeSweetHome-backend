@@ -130,8 +130,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
-        return null;
+    public void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
+            throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
+        }
+
+        Product update = product.update(request);
+
+        productRepository.update(productId, update);
     }
 
     @Override

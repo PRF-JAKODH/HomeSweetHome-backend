@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
+import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -116,20 +117,13 @@ public class ProductEntity {
     /**
      * 상품 기본 정보 업데이트
      */
-    public void updateBasicInfo(
-            String name,
-            String brand,
-            Integer basePrice,
-            BigDecimal discountRate,
-            String description,
-            Integer shippingPrice
-    ) {
-        this.name = name;
-        this.brand = brand;
-        this.basePrice = basePrice;
-        this.discountRate = discountRate != null ? discountRate : BigDecimal.ZERO;
-        this.description = description;
-        this.shippingPrice = shippingPrice;
+    public void updateBasicInfo(Product product) {
+        this.name = product.getName();
+        this.brand = product.getBrand();
+        this.basePrice = product.getBasePrice();
+        this.discountRate = product.getDiscountRate();
+        this.description = product.getDescription();
+        this.shippingPrice = product.getShippingPrice();
     }
 
     /**

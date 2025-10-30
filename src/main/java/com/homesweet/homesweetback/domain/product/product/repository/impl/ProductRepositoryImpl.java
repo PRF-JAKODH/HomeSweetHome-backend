@@ -80,4 +80,12 @@ public class ProductRepositoryImpl implements ProductRepository {
 
         entity.updateStatus(status);
     }
+
+    @Override
+    public void update(Long productId, Product product) {
+        ProductEntity entity = jpaRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.updateBasicInfo(product);
+    }
 }

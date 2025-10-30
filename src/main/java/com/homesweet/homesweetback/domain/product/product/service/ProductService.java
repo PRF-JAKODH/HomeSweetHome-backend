@@ -29,7 +29,7 @@ public interface ProductService {
 
     List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate);
 
-    ProductResponse updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request);
+    void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request);
 
     void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request);
 
