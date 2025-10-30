@@ -17,7 +17,6 @@ public record SignupRequest(
     String phoneNumber,
     
     @NotNull(message = "생일은 필수입니다")
-    @JsonFormat(pattern = "yyyy-MM-dd")
     LocalDate birthDate,
 
     @NotBlank(message = "주소는 필수입니다")
