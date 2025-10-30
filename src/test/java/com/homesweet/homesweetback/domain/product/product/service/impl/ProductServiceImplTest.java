@@ -4,7 +4,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;

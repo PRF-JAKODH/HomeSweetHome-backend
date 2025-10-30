@@ -15,4 +15,6 @@ public interface SkuRepository {
     Optional<Sku> findById(Long id);
 
     boolean existsById(Long id);
+
+    void updateSku(Long skuId, Long stockQuantity, Integer priceAdjustment);
 }

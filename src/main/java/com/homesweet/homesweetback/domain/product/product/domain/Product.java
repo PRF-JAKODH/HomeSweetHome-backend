@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.domain;
 
-import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -84,6 +84,25 @@ public class Product {
                 .detailImages(detailImages != null ? detailImages : new ArrayList<>())
                 .optionGroups(optionGroups)
                 .skus(skus != null ? skus : new ArrayList<>())
+                .build();
+    }
+
+    public Product update(ProductBasicInfoUpdateRequest request) {
+        return Product.builder()
+                .id(this.id)
+                .categoryId(this.categoryId)
+                .sellerId(this.sellerId)
+                .name(request.name() == null ? this.name : request.name())
+                .imageUrl(this.imageUrl)
+                .brand(request.brand() == null ? this.brand : request.brand())
+                .basePrice(request.basePrice() == null ? this.basePrice : request.basePrice())
+                .discountRate(request.discountRate() == null ? this.discountRate : request.discountRate())
+                .description(request.description() == null ? this.description : request.description())
+                .shippingPrice(request.shippingPrice() == null ? this.shippingPrice : request.shippingPrice())
+                .status(this.status)
+                .detailImages(this.detailImages)
+                .optionGroups(this.optionGroups)
+                .skus(this.skus)
                 .build();
     }
 }

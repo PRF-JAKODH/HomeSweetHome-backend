@@ -5,12 +5,17 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +32,16 @@ import java.util.List;
  * @date 25. 10. 21.
  */
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
     private final ProductImageUploader productImageUploader;
 
     @Override
-    @Transactional
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
         // 판매자는 중복된 이름의 상품을 등록할 수 없다
@@ -121,6 +127,85 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate) {
         return productRepository.findProductsForSeller(sellerId, startDate, endDate);
+    }
+
+    @Override
+    public void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
+            throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
+        }
+
+        Product update = product.update(request);
+
+        productRepository.update(productId, update);
+    }
+
+    @Override
+    public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        // 각 SKU의 재고 업데이트
+        for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
+            Sku sku = skuRepository.findById(skuUpdate.skuId())
+                    .orElseThrow(() -> new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR));
+
+            skuRepository.updateSku(sku.getId(), skuUpdate.stockQuantity(), skuUpdate.priceAdjustment());
+        }
+    }
+
+    @Override
+    public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
+
+        Product domain = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        productRepository.updateStatus(domain.getId(), request.status());
+    }
+
+    @Override
+    public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
+        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        // 1. 대표 이미지 교체
+        if (request.mainImage() != null && !request.mainImage().isEmpty()) {
+            productImageUploader.deleteProductImage(product.getImageUrl());
+
+            String newMainImageUrl = productImageUploader.uploadProductMainImage(request.mainImage());
+
+            productRepository.updateMainImage(productId, newMainImageUrl);
+        }
+
+        // 2. 상세 이미지 삭제
+        if (request.deleteDetailImageUrls() != null && !request.deleteDetailImageUrls().isEmpty()) {
+            request.deleteDetailImageUrls().forEach(productImageUploader::deleteProductImage);
+
+            productRepository.deleteDetailImages(productId, request.deleteDetailImageUrls());
+        }
+
+        // 3. 상세 이미지 추가
+        if (request.detailImages() != null && !request.detailImages().isEmpty()) {
+            int currentDetailImageCount = product.getDetailImages().size();
+            int newImageCount = request.detailImages().size();
+
+            int deleteCount = request.deleteDetailImageUrls() != null
+                    ? request.deleteDetailImageUrls().size()
+                    : 0;
+
+            if (currentDetailImageCount - deleteCount + newImageCount > 5) {
+                throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
+            }
+
+            // 새 상세 이미지 업로드
+            List<String> newDetailImageUrls = productImageUploader.uploadProductDetailImages(request.detailImages());
+
+            // DB에 새 이미지 추가
+            productRepository.addDetailImages(productId, newDetailImageUrls);
+        }
     }
 
     // 상품이 존재하는지 검증하는 로직

@@ -2,17 +2,20 @@ package com.homesweet.homesweetback.domain.product.product.controller;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
@@ -92,5 +96,51 @@ public class ProductController {
 
         List<ProductManageResponse> response = service.getSellerProducts(sellerId, startDate, endDate);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{productId}/status")
+    public ResponseEntity<Void> updateProductStatus(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductStatusUpdateRequest request
+    ) {
+        Long sellerId = principal.getUserId();
+        log.info("userId = {}", sellerId);
+        service.updateProductStatus(sellerId, productId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{productId}/skus")
+    public ResponseEntity<Void> updateSkuStock(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductSkuUpdateRequest request
+    ) {
+        Long sellerId = principal.getUserId();
+        service.updateSkuStock(sellerId, productId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<Void> updateBasicInfo(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductBasicInfoUpdateRequest request
+    ) {
+        Long sellerId = principal.getUserId();
+
+        service.updateBasicInfo(sellerId, productId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{productId}/images")
+    public ResponseEntity<Void> updateProductImages(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId,
+            @Valid @ModelAttribute ProductImageUpdateRequest request
+    ) {
+        Long sellerId = principal.getUserId();
+        service.updateImages(sellerId, productId, request);
+        return ResponseEntity.ok().build();
     }
 }

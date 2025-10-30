@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.controller.request;
+package com.homesweet.homesweetback.domain.product.product.controller.request.create;
 
 import jakarta.validation.constraints.*;
 

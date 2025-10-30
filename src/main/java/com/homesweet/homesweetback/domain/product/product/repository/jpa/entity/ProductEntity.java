@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
+import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -111,5 +112,41 @@ public class ProductEntity {
     public void addSku(SkuEntity sku) {
         this.skus.add(sku);
         sku.setProduct(this);
+    }
+
+    /**
+     * 상품 기본 정보 업데이트
+     */
+    public void updateBasicInfo(Product product) {
+        this.name = product.getName();
+        this.brand = product.getBrand();
+        this.basePrice = product.getBasePrice();
+        this.discountRate = product.getDiscountRate();
+        this.description = product.getDescription();
+        this.shippingPrice = product.getShippingPrice();
+    }
+
+    /**
+     * 상품 상태 업데이트
+     */
+    public void updateStatus(ProductStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    /**
+     * 대표 이미지 업데이트
+     */
+    public void updateMainImage(String newImageUrl) {
+        this.imageUrl = newImageUrl;
+    }
+
+    /**
+     * 상세 이미지 삭제
+     */
+    public void removeDetailImagesByUrls(List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+        this.detailImages.removeIf(image -> imageUrls.contains(image.getImageUrl()));
     }
 }

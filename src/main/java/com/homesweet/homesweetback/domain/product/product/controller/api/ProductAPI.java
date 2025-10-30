@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.controller.api;
 
 import com.homesweet.homesweetback.common.exception.ErrorResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductUploadRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
