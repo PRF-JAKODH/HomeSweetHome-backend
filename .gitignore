@@ -41,10 +41,12 @@ out/
 .DS_Store
 
 ### Credentials ###
-.env
+homeseet-back/.env
 
 ### Logs ###
 logs
 
 ### TOSS Payments ###
 application-dev.yml
+
+.env

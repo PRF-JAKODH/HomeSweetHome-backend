@@ -2,10 +2,7 @@ package com.homesweet.homesweetback.domain.settlement.entity;
 
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class Settlement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +21,7 @@ public class Settlement {
 
     private Long userId;
 
+    @Setter
     @Column(name = "settlement_status", length = 10)
     private String settlementStatus;
 
@@ -38,16 +37,13 @@ public class Settlement {
     @Column(name = "refund_amount", precision = 15, scale = 2)
     private BigDecimal refundAmount;
 
+    @Setter
     @Column(name = "settlement_amount", precision = 15, scale = 2)
     private BigDecimal settlementAmount;
 
     private LocalDateTime settlementDate;
 
-    @Column(nullable = false)
-    private Boolean orderCanceled;
-
-    // 주문 정보 fk
-   @ManyToOne
-   @JoinColumn(name = "order_id")
-   private Order order;
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
 }
