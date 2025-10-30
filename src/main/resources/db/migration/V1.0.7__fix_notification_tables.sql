@@ -1,21 +1,80 @@
 -- ====================================
--- H2 테스트 환경용 초기 데이터
+-- 알림 시스템 테이블 수정
 -- ====================================
--- 
--- 참고: 운영 환경에서는 다음 migration 파일들을 통해 데이터가 추가됩니다:
--- - V1.0.2: Grade 테이블 기본 데이터
--- - V1.0.4: 테스트용 사용자 데이터 및 알림 시스템 데이터
+
+-- 1. notification_category에 created_at 컬럼 추가
+ALTER TABLE `notification_category` 
+    ADD COLUMN `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `category_name`;
+
+-- 2. notification 테이블을 notification_template로 이름 변경
+ALTER TABLE `notification` RENAME TO `notification_template`;
+
+-- 3. notification_template 테이블 구조 수정
+ALTER TABLE `notification_template`
+    CHANGE COLUMN `notification_id` `notification_template_id` BIGINT NOT NULL AUTO_INCREMENT,
+    ADD COLUMN `template_type` VARCHAR(50) NOT NULL AFTER `notification_category_id`,
+    ADD COLUMN `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`;
+
+-- 3-1. notification_template 컬럼 길이 수정 (title, content)
+ALTER TABLE `notification_template`
+    MODIFY COLUMN `title` VARCHAR(50) NOT NULL,
+    MODIFY COLUMN `content` VARCHAR(200) NOT NULL;
+
+-- 4. user_notification 테이블 수정
+-- 외래키 제약조건 이름을 찾아서 제거 (동적 SQL)
+SET @fk_name = NULL;
+
+SELECT CONSTRAINT_NAME INTO @fk_name
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'user_notification'
+  AND REFERENCED_TABLE_NAME = 'notification'
+  LIMIT 1;
+
+SET @sql = IF(@fk_name IS NOT NULL, 
+    CONCAT('ALTER TABLE user_notification DROP FOREIGN KEY `', @fk_name, '`'), 
+    'SELECT 1 as noop');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 컬럼명 변경
+ALTER TABLE `user_notification`
+    CHANGE COLUMN `notification_id` `notification_template_id` BIGINT DEFAULT NULL;
+
+-- 새로운 외래키 추가
+ALTER TABLE `user_notification`
+    ADD CONSTRAINT `fk_user_notification_template` 
+        FOREIGN KEY (`notification_template_id`) REFERENCES `notification_template` (`notification_template_id`) ON DELETE SET NULL;
+
+-- 5. notification_template의 외래키 제약조건 재생성
+-- 외래키 제약조건 이름을 찾아서 제거
+SET @fk_name = NULL;
+
+SELECT CONSTRAINT_NAME INTO @fk_name
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'notification_template'
+  AND REFERENCED_TABLE_NAME = 'notification_category'
+  LIMIT 1;
+
+SET @sql = IF(@fk_name IS NOT NULL,
+    CONCAT('ALTER TABLE notification_template DROP FOREIGN KEY `', @fk_name, '`'),
+    'SELECT 1 as noop');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 새로운 외래키 추가
+ALTER TABLE `notification_template`
+    ADD CONSTRAINT `fk_notification_template_category` 
+        FOREIGN KEY (`notification_category_id`) REFERENCES `notification_category` (`notification_category_id`) ON DELETE RESTRICT;
 
 
--- Grade 테이블에 기본 데이터 삽입
-INSERT INTO grade (grade, fee_rate) VALUES 
-    ('BRONZE', 0.05),
-    ('SILVER', 0.10),
-    ('GOLD', 0.15),
-    ('VVIP', 0.20),
-    ('VIP', 0.25);
 
--- ================================================================
+-- ====================================
 -- 알림 시스템 초기 데이터
 -- ====================================
 
@@ -29,7 +88,8 @@ INSERT INTO notification_category (category_name) VALUES
     ('CHAT'),
     ('SYSTEM'),
     ('PROMOTION'),
-    ('CUSTOM');
+    ('CUSTOM')
+ON DUPLICATE KEY UPDATE category_name = VALUES(category_name);
 
 -- 알림 템플릿 데이터 삽입
 INSERT INTO notification_template (notification_category_id, template_type, title, content, redirect_url) VALUES 
@@ -66,3 +126,7 @@ INSERT INTO notification_template (notification_category_id, template_type, titl
     -- 프로모션 관련
     (8, 'PROMOTION_START', '프로모션 시작', '{promotionName} 프로모션이 시작되었습니다!', '/promotions/{promotionId}'),
     (8, 'PROMOTION_END', '프로모션 종료', '{promotionName} 프로모션이 종료되었습니다.', '/promotions/{promotionId}')
+ON DUPLICATE KEY UPDATE 
+    title = VALUES(title), 
+    content = VALUES(content), 
+    redirect_url = VALUES(redirect_url);
