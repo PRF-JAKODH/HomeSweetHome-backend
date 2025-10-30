@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;

@@ -1,8 +1,11 @@
 package com.homesweet.homesweetback.domain.product.product.repository.impl;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
@@ -40,6 +43,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public Optional<Product> findByIdAndSellerId(Long sellerId, Long productId) {
+        return jpaRepository.findByIdAndSellerId(productId, sellerId)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public boolean existsBySellerIdAndName(Long sellerId, String name) {
         return jpaRepository.existsBySellerIdAndName(sellerId, name);
     }
@@ -62,5 +71,13 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
         return jpaRepository.findProductsForSeller(sellerId, startDate, endDate);
+    }
+
+    @Override
+    public void updateStatus(Long productId, ProductStatus status) {
+        ProductEntity entity = jpaRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.updateStatus(status);
     }
 }

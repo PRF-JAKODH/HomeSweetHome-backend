@@ -112,4 +112,47 @@ public class ProductEntity {
         this.skus.add(sku);
         sku.setProduct(this);
     }
+
+    /**
+     * 상품 기본 정보 업데이트
+     */
+    public void updateBasicInfo(
+            String name,
+            String brand,
+            Integer basePrice,
+            BigDecimal discountRate,
+            String description,
+            Integer shippingPrice
+    ) {
+        this.name = name;
+        this.brand = brand;
+        this.basePrice = basePrice;
+        this.discountRate = discountRate != null ? discountRate : BigDecimal.ZERO;
+        this.description = description;
+        this.shippingPrice = shippingPrice;
+    }
+
+    /**
+     * 상품 상태 업데이트
+     */
+    public void updateStatus(ProductStatus newStatus) {
+        this.status = newStatus;
+    }
+
+    /**
+     * 대표 이미지 업데이트
+     */
+    public void updateMainImage(String newImageUrl) {
+        this.imageUrl = newImageUrl;
+    }
+
+    /**
+     * 상세 이미지 삭제
+     */
+    public void removeDetailImagesByUrls(List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+        this.detailImages.removeIf(image -> imageUrls.contains(image.getImageUrl()));
+    }
 }

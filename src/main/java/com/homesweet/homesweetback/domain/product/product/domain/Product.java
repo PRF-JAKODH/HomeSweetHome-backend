@@ -1,7 +1,5 @@
 package com.homesweet.homesweetback.domain.product.product.domain;
 
-import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
 import lombok.Builder;
 import lombok.Getter;
 

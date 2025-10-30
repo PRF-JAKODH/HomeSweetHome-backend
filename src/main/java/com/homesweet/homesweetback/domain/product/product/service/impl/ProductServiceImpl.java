@@ -5,12 +5,16 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
     private final ProductImageUploader productImageUploader;
@@ -121,6 +126,42 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate) {
         return productRepository.findProductsForSeller(sellerId, startDate, endDate);
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
+//        Product product = productRepository.findByIdWithSkus(productId)
+//                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+//
+//        // 각 SKU의 재고 업데이트
+//        for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
+//            Sku sku = product.findSkuById(skuUpdate.skuId());
+//
+//            if (sku == null) {
+//                throw new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR);
+//            }
+//
+//            sku.updateStock(skuUpdate.stockQuantity(), skuUpdate.priceAdjustment());
+//        }
+//
+//        productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
+
+        Product domain = productRepository.findByIdAndSellerId(sellerId, productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        productRepository.updateStatus(domain.getId(), request.status());
     }
 
     // 상품이 존재하는지 검증하는 로직
