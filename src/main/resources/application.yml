@@ -15,4 +15,4 @@ spring:
       region:
         static: ap-northeast-2
       s3:
-        bucket: homesweet-bucket
+        bucket: ${AWS_S3_BUCKET}
