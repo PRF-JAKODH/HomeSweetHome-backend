@@ -27,7 +27,7 @@ services:
     restart: always
     command:
       - "--mysqld.username=${DATABASE_USERNAME}:${DATABASE_PASSWORD}"
-      - "--mysqld.address=${DATABASE_URL}:3306"
+      - "--mysqld.address=${DATABASE_HOST}:3306"
     ports:
       - "9104:9104"
     networks:
