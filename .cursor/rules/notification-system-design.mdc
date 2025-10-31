@@ -1,0 +1,196 @@
+---
+alwaysApply: true
+---
+# In-App Push Notifications System Documentation
+
+안녕하세요! 이 문서는 in-app push notifications 기능을 구현한 시스템 설계를 주니어 개발자(당신)를 위해 정리한 것입니다. 이전 논의에서 시작된 기본 스키마를 바탕으로, 제가 제안한 개선된 설계(확장성, 성능, 유연성 중심)를 포함했습니다. Spring Boot 환경을 가정하고, 이벤트 기반 아키텍처(예: Redis Pub/Sub)를 사용해 다른 팀의 개발자들이 알림을 쉽게 보낼 수 있도록 했어요.
+
+이 문서는 다음과 같이 구성되어 있어요:
+1. **개요**: 시스템의 목적과 주요 원칙.
+2. **DB 스키마**: 테이블 구조와 SQL 예시.
+3. **Spring Boot 구현**: 주요 클래스와 코드 스니펫.
+4. **시스템 흐름**: 알림 생성부터 푸시까지.
+5. **사용 가이드**: 다른 팀에서 알림 보내는 방법.
+6. **베스트 프랙티스와 추가 팁**: 유지보수와 확장.
+
+이 설계는 대규모 사용자와 고빈도 알림을 고려했어요. 실제 구현 시, 요구사항에 맞게 조정하세요. 질문 있으면 언제든 물어보세요!
+
+## 1. 개요
+### 목적
+- in-app push notifications를 지원: 사용자에게 실시간 알림 전송 (예: 주문 완료, 프로모션).
+- **주요 특징**:
+  - 알림 템플릿과 인스턴스 분리: 재사용성과 personalization.
+  - 이벤트 기반: 다른 팀이 이벤트 publish만으로 알림 트리거 (템플릿 세부 모름).
+  - 유연성: 템플릿 기반 + 커스텀 알림 지원.
+  - 성능: 인덱스, 파티셔닝, ENUM으로 타입 안전.
+- **기술 스택**: Spring Boot, MySQL, SSE
+
+### 주요 원칙
+- **추상화**: 다른 개발자는 `eventType` (ENUM)과 context 데이터만 제공.
+- **확장성**: 멀티채널 (push, in-app, email) 지원.
+- **보안/컴플라이언스**: 사용자 구독 관리, PII 최소화.
+- **성능**: 인덱스 최적화, 배치 처리.
+
+## 2. DB 스키마
+RDBMS (MySQL) 기반. 테이블은 알림 카테고리, 템플릿, 사용자 알림, 구독 설정으로 구성.
+
+### 2.1 `notification_category` 테이블
+알림 카테고리 관리 (예: marketing, order).
+
+```sql
+CREATE TABLE `notification_category` (
+    `category_id` INT NOT NULL AUTO_INCREMENT,
+    `category_name` VARCHAR(100) NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`category_id`),
+    UNIQUE KEY `uk_category_name` (`category_name`)
+);
+```
+
+### 2.2 `notification_template` 테이블
+알림 템플릿 저장. 플레이스홀더 (e.g., `{userName}`) 지원.
+
+```sql
+CREATE TABLE `notification_template` (
+    `notification_template_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `notification_category_id` INT NOT NULL,
+    `event_type` VARCHAR(50) DEFAULT NULL,  -- ENUM 코드 저장 (e.g., 'ORDER_COMPLETED')
+    `title` VARCHAR(50) NOT NULL,
+    `content` VARCHAR(200) NOT NULL,
+    `redirect_url` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`notification_template_id`),
+    FOREIGN KEY (`notification_category_id`) REFERENCES `notification_category` (`category_id`) ON DELETE RESTRICT,
+    INDEX `idx_event_type` (`event_type`)
+);
+```
+
+### 2.3 `user_notification` 테이블
+사용자별 알림 인스턴스. 파티셔닝으로 대규모 데이터 관리.
+
+```sql
+CREATE TABLE `user_notification` (
+    `user_notification_id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL,
+    `notification_template_id` BIGINT DEFAULT NULL,  -- 커스텀 시 NULL 가능
+    `context_data` JSON NOT NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
+    `is_deleted` BOOLEAN NOT NULL DEFAULT FALSE,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_notification_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`notification_template_id`) REFERENCES `notification_template` (`notification_template_id`) ON DELETE SET NULL,
+    UNIQUE KEY `uk_user_notification_template` (`user_id`, `notification_template_id`, `created_at`),
+);
+```
+
+## 3. Spring Boot 구현
+### 3.1 ENUM: NotificationEventType
+이벤트 타입 관리.
+
+```java
+public enum NotificationEventType {
+    ORDER_COMPLETED("ORDER_COMPLETED", "주문 완료 알림", 1L),
+    PAYMENT_FAILED("PAYMENT_FAILED", "결제 실패 알림", 2L),
+    PROMOTION("PROMOTION", "프로모션 알림", 3L),
+    CUSTOM("CUSTOM", "커스텀 알림", 0L);
+
+    private final String code;
+    private final String description;
+    private final Long categoryId;
+
+    // 생성자, getter, fromCode 메서드 (문서 4.1 참조)
+}
+```
+
+### 3.3 DTO: NotificationEvent
+이벤트 객체.
+
+```java
+public record NotificationEvent(
+    NotificationEventType eventType,
+    Long userId,
+    Map<String, Object> context,
+    String customTitle,
+    String customContent,
+    String customRedirectUrl
+) {
+    public boolean isCustom() {
+        return eventType == NotificationEventType.CUSTOM ||
+               (customTitle != null && customContent != null);
+    }
+}
+```
+
+### 3.4 엔티티 클래스 (JPA)
+- `NotificationTemplate`, `UserNotification` 등: 테이블과 매핑 (필드 맞춤).
+
+### 3.5 서비스: NotificationService
+알림 처리 로직.
+
+```java
+@Service
+public class NotificationService {
+    // 의존성: Repository, RedisTemplate
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void subscribeToEvents() {
+        // Redis subscribe 설정
+    }
+
+    public void sendNotification(NotificationEvent event) {
+        // 템플릿 조회 or 커스텀 처리
+        // 렌더링, 저장, 푸시 (문서 4.2 참조)
+    }
+
+    private String renderTemplate(String template, Map<String, Object> context) {
+        // 플레이스홀더 치환
+    }
+}
+```
+
+### 3.6 리포지토리
+```java
+public interface NotificationTemplateRepository extends JpaRepository<NotificationTemplate, Long> {
+    Optional<NotificationTemplate> findByEventType(String eventType);
+}
+```
+
+## 4. 시스템 흐름
+1. **템플릿 생성**: 관리자 UI/DB에서 템플릿 추가 (e.g., eventType='ORDER_COMPLETED').
+2. **이벤트 publish**: 다른 팀에서 `NotificationEvent` publish (Redis or API).
+3. **알림 처리**: 
+   - 이벤트 수신 → 구독 체크 → 템플릿 조회/렌더링 or 커스텀.
+   - `user_notification` 저장 (status=pending).
+   - 배치 job으로 푸시 전송 → status=sent.
+4. **사용자 조회**: 앱에서 알림 목록 API 호출 → read_at 업데이트.
+5. **관리**: 만료 알림 삭제 크론 job.
+
+## 5. 사용 가이드
+### 5.1 다른 팀에서 알림 보내기
+템플릿 기반:
+```java
+Map<String, Object> context = Map.of("orderId", 456, "userName", "John");
+NotificationEvent event = new NotificationEvent(NotificationEventType.ORDER_COMPLETED, userId, context, null, null, null);
+redisTemplate.convertAndSend("notification-events", new ObjectMapper().writeValueAsString(event));
+```
+
+커스텀 알림:
+```java
+NotificationEvent event = new NotificationEvent(NotificationEventType.CUSTOM, userId, context, "긴급 공지!", "점검 안내", "app://link");
+redisTemplate.convertAndSend("notification-events", new ObjectMapper().writeValueAsString(event));
+```
+
+### 5.2 쿼리 예시
+- 읽지 않은 알림: `SELECT * FROM user_notification WHERE user_id = ? AND status = 'sent' AND read_at IS NULL ORDER BY created_at DESC;`
+
+## 6. 베스트 프랙티스와 추가 팁
+- **테스트**: MockRedis 사용, 단위 테스트 (e.g., @SpringBootTest).
+- **에러 핸들링**: Resilience4j로 재시도.
+- **모니터링**: Prometheus로 알림 지연 추적.
+- **확장**: Kafka로 스케일링, NoSQL 캐싱.
+- **문서화**: Swagger로 API 문서, ENUM 목록 공유.
+- **문제 해결**: ENUM 오타 방지, 템플릿 변경 시 영향 최소화.
+
+이 문서로 기본 이해가 되셨기를 바래요. 실제 코드는 Git 리포지토리에 업로드 추천! 추가 설명 필요하면 말씀해주세요.

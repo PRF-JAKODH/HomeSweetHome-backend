@@ -1,0 +1,69 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/homesweet}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DATABASE_USERNAME:homesweet}
+    password: ${DATABASE_PASSWORD:homesweet}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: id
+
+logging:
+  level:
+    com.homesweet.homesweetback: INFO
+    org.springframework.security: WARN
+
+# 프로덕션 환경 애플리케이션 설정
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+  oauth2:
+    redirect-uri: ${APP_OAUTH2_REDIRECT_URI}
+    redirect-uri-on-register: ${APP_OAUTH2_REDIRECT_URI_ON_REGISTER}
+# 프로덕션 환경 쿠키 설정
+cookie:
+  secure: ${COOKIE_SECURE:true}
+  
+# JWT 프로덕션 설정 (보안 강화)
+jwt:
+  secret: ${JWT_SECRET}  # 필수 환경 변수
+  access-token-expiration: 1800000   # 30분 (프로덕션에서는 짧게)
+  refresh-token-expiration: 604800000 # 7일
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: homesweet-back
+  prometheus:
+    metrics:
+      export:
+        enabled: true

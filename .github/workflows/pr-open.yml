@@ -1,0 +1,23 @@
+name: Notify Discord on PR Opened to develop
+
+on:
+  pull_request:
+    types: [opened]       # PR이 생성되었을 때만
+    branches:
+      - develop           # base 브랜치가 develop인 PR만
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          message: |
+            **🆕 develop 브랜치에 PR이 생성되었습니다!**
+            **PR 제목**: ${{ github.event.pull_request.title }}
+            **작성자**: ${{ github.event.pull_request.user.login }}
+            **PR 링크**: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})
+
+            리뷰어는 PR을 확인 이후 코드 리뷰를 진행해주세요 🙌

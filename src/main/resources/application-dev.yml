@@ -1,0 +1,89 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: homesweet-back
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/homesweet}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DATABASE_USERNAME:user}
+    password: ${DATABASE_PASSWORD:password}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: id
+
+logging:
+  level:
+    com.homesweet.homesweetback: DEBUG
+    org.springframework.security: DEBUG
+
+# JWT 개발 환경 설정
+jwt:
+  secret: ${JWT_SECRET:homesweet-back-jwt-secret-key-for-development-only}
+  access-token-expiration: 18000000   # 5시간
+  refresh-token-expiration: 604800000 # 7일 
+
+# OAuth2 개발 환경 설정
+app:
+  oauth2:
+    redirect-uri: http://localhost:3000/login/callback
+    redirect-uri-on-register: http://localhost:3000/signup/callback
+  cors:
+    allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+
+# 임시적으로 로그는 파일에 저장
+log:
+  config:
+    error:
+      path: logs/dev/error
+      filename: application-dev-error
+    trace:
+      path: logs/dev/trace
+      filename: trace
+    maxHistory: 30
+    totalSizeCap: 1GB
+
+# 토스페이먼츠 설정
+payments:
+  toss:
+    secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: homesweet-back
+  prometheus:
+    metrics:
+      export:
+        enabled: true

@@ -35,3 +35,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+### MAC OS ###
+.DS_Store
+
+### Credentials ###
+homeseet-back/.env
+
+### Logs ###
+logs
+
+### TOSS Payments ###
+application-dev.yml
+
+.env
