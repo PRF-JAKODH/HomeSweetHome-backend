@@ -32,13 +32,13 @@ public class SettlementController {
     }
 
     @GetMapping("/daily/{userId}/status")
-    public ResponseEntity<List<Settlement>> getDailyStatus(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @RequestParam String status) {
+    public ResponseEntity<List<Settlement>> getDailyStatus(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String status) {
         List<Settlement> res = dailySettlementService.getDailySettlementStatus(userId, date, status);
         return ResponseEntity.ok(res);
     }
 
     @PostMapping("/daily/{userId}/generate")
-    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam LocalDateTime endDate) {
+    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime endDate) {
         dailySettlementService.getSettlement(userId, startDate, endDate);
         return ResponseEntity.ok().build();
     }
@@ -74,7 +74,8 @@ public class SettlementController {
     }
 
     @PostMapping("/yearly/{userId}/generate")
-    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId) {yearlySettlementService.getYearlySettlement(userId);
+    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        yearlySettlementService.getYearlySettlement(userId);
         return ResponseEntity.ok().build();
     }
 }
