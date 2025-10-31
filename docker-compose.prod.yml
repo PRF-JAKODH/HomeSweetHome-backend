@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  spring:
+    image: homesweet-backend
+    container_name: homesweet-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    networks:
+      - homesweet-network
+    restart: always
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: always
+    ports:
+      - "9100:9100"
+
+  mysqld_exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysqld_exporter
+    restart: always
+    command:
+      - "--mysqld.username=${DATABASE_USERNAME}:${DATABASE_PASSWORD}"
+      - "--mysqld.address=${DATABASE_URL}:3306"
+    ports:
+      - "9104:9104"
+    networks:
+      - homesweet-network
+
+networks:
+  homesweet-network:
+    driver: bridge
