@@ -6,10 +6,12 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * 제품 재고 엔티티
@@ -42,6 +44,7 @@ public class SkuEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Long stockQuantity = 0L;
 
+    @BatchSize(size = 100)
     @Builder.Default
     @OneToMany(mappedBy = "sku", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductSkuOptionEntity> skuOptions = new ArrayList<>();

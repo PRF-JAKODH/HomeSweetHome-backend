@@ -1,15 +1,18 @@
 package com.homesweet.homesweetback.domain.order.service;
 
 // --- DTO Imports ---
+
+import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
+import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import com.homesweet.homesweetback.domain.order.dto.request.CreateOrderRequest;
+import com.homesweet.homesweetback.domain.order.dto.response.MyOrderItemResponse;
+import com.homesweet.homesweetback.domain.order.dto.response.OrderDetailResponse;
 import com.homesweet.homesweetback.domain.order.dto.response.OrderReadyResponse;
 
 // --- Entity Imports ---
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
-import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
+import com.homesweet.homesweetback.domain.order.entity.*;
+import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +44,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final SkuJPARepository skuJPARepository;
+    private final PaymentRepository paymentRepository;
 
 
     /**
@@ -73,7 +78,6 @@ public class OrderService {
             totalAmount += (discountedPrice * itemDto.quantity());
 
             // 2-4. 총 배송비 계산
-            // (TODO: 배송비 정책 확인 필요 - 여기서는 단순 합산)
             totalShippingPrice += product.getShippingPrice();
 
             // 2-5. OrderItem 엔티티 생성
@@ -111,10 +115,8 @@ public class OrderService {
                 .map(oi -> {
                     SkuEntity sku = oi.getSku();
                     ProductEntity product = sku.getProduct();
-                    // TODO: 옵션 이름 조합 로직 필요 (sku.getSkuOptions())
                     String optionName = "옵션명 (수정 필요)";
 
-                    // TODO: finalPrice 계산 로직 검토 필요
                     long finalItemPrice = oi.getPrice() * oi.getQuantity();
 
                     return new OrderReadyResponse.OrderItemDetail(
@@ -143,9 +145,73 @@ public class OrderService {
         );
     }
 
+    public List<MyOrderItemResponse> getMyOrders(Long userId) {
+        // 1. 사용자 조회
+        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        // 2. 주문 목록 조회 (N+1 방지용 쿼리 사용)
+        List<Order> orders = orderRepository.findAllByUserWithDetails(user);
+        // 3. MyOrderItemResponse DTO 리스트로 변환
+        return orders.stream().map(order -> {
+                    // 3-1. 대표 상품 찾기
+                    OrderItem representativeItem = order.getOrderItems().stream().findFirst().orElse(null);
+
+                    String productName = "주문 항목 없음";
+                    String imageUrl = "";
+                    Long price = 0L; // 대표 상품 단가
+
+                    if (representativeItem != null) {
+                        ProductEntity product = representativeItem.getSku().getProduct();
+                        productName = product.getName();
+                        imageUrl = product.getImageUrl();
+                        price = representativeItem.getPrice();
+                    }
+
+                    // 3-2. DTO 생성
+                    return MyOrderItemResponse.builder()
+                            .orderId(order.getId())
+                            .orderNumber(order.generateOrderNumber())
+                            .orderDate(order.getOrderedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                            .productName(productName)
+                            .imageUrl(imageUrl)
+                            .price(price)
+                            .orderStatus(order.getOrderStatus().name())
+                            .deliveryStatus(order.getDeliveryStatus().name())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     // (상품 가격 계산 헬퍼 메서드)
     private long calculateDiscountedPrice(Integer basePrice, Integer adjustment, BigDecimal discountRate) {
         long pricePerItem = basePrice + adjustment;
         return pricePerItem - (long) (pricePerItem * discountRate.doubleValue());
+    }
+
+    // 주문 상세 조회
+    public OrderDetailResponse getOrderDetail(Long orderId, Long userId) {
+
+        // 1. 주문 조회 (N+1 방지를 위해 모든 연관 엔티티를 fetch join)
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
+
+        // 2. (보안) 주문자 본인 확인
+        if (!order.getUser().getId().equals(userId)) {
+            // (권한 없음 - 403 Forbidden이 더 적절할 수 있음)
+            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
+        }
+
+        // 3. 결제 정보 조회
+        // (결제가 PENDING 상태일 경우 Payment가 없을 수 있으므로 orElse(null) 처리)
+        Payment payment = paymentRepository.findByOrder(order)
+                .orElse(null); // 결제 대기중인 주문은 payment가 null일 수 있음
+
+        // 4. 총 배송비 계산 (단순 합산)
+        // (OrderReadyResponse DTO 정의에 따라 Integer로 반환)
+        Integer totalShippingPrice = order.getOrderItems().stream()
+                .mapToInt(item -> item.getSku().getProduct().getShippingPrice())
+                .sum();
+
+        // 5. DTO로 변환
+        return OrderDetailResponse.of(order, payment, order.getUser(), totalShippingPrice);
     }
 }
