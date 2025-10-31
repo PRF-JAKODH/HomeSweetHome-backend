@@ -12,13 +12,15 @@ import jakarta.validation.Valid;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
-import com.homesweet.homesweetback.domain.auth.entity.User;
+
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
-
     /**
      * 현재 사용자 정보 조회 API
      * JWT 토큰을 통해 인증된 사용자의 정보를 반환합니다.
@@ -59,13 +60,22 @@ public class UserController {
     /**
      * 사용자 정보 수정 API
      * JWT 토큰을 통해 인증된 사용자의 정보를 수정합니다.
+     * 프로필 이미지는 multipart로 받으며, 제공된 경우에만 업로드 및 수정됩니다.
+     * 
+     * @param request 사용자 정보 수정 요청 (JSON)
+     * @param profileImage 프로필 이미지 파일 (선택사항, multipart)
+     * @param principal 인증된 사용자 정보
+     * @return 수정된 사용자 정보
      */
-    @PutMapping("/update")
+    @PutMapping(value = "/update", consumes = {"multipart/form-data"})
     public ResponseEntity<UserResponse> updateUser(
-        @Valid @RequestBody UpdateUserRequest request,
+        @RequestPart("request") @Valid UpdateUserRequest request,
+        @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
         @AuthenticationPrincipal OAuth2UserPrincipal principal) {
+        
         Long userId = principal.getUserId();
-        UserResponse userResponse = userService.updateUserInfo(userId, request);
+        
+        UserResponse userResponse = userService.updateUserInfo(userId, request, Optional.ofNullable(profileImage));
         return ResponseEntity.ok(userResponse);
     }
 }

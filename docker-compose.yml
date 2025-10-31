@@ -40,8 +40,8 @@ services:
     container_name: mysqld_exporter
     restart: always
     command:
-      - "--mysqld.username=user:password"
-      - "--mysqld.address=mysql:3306"
+      - "--mysqld.username=exporter:testpassword"
+      - "--mysqld.address=homesweet-db:3306"
     ports:
       - "9104:9104"
     networks:
