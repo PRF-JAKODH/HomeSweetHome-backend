@@ -1,0 +1,53 @@
+name: CD Pipeline 🚀 (Docker 기반 EC2 자동 배포)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: 🌍 EC2 서버에 Docker 배포
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 소스 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 🔑 EC2 접속 후 Docker 배포 실행
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "✅ EC2 접속 완료 — 프로젝트 디렉토리로 이동 중..."
+            cd /home/ec2-user/homesweet
+
+            echo "📥 최신 코드 가져오는 중..."
+            git pull origin main
+
+            echo "🔧 .env 파일 생성 중..."
+            cat > .env <<EOF
+            AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+            AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            EOF
+
+            echo "🐳 기존 컨테이너 중지 및 삭제..."
+            docker compose down || true
+
+            echo "🧱 새 Docker 이미지 빌드 중..."
+            docker compose build --no-cache
+
+            echo "🚀 새 컨테이너 실행 중..."
+            docker compose up -d
+
+            echo "✅ 배포 완료! 현재 실행 중인 컨테이너 목록:"
+            docker ps -a
