@@ -13,6 +13,7 @@ public class RoomDto {
     private Long roomId;
     private String type;     // "INDIVIDUAL" / "GROUP"
     private String name;
+    private String partnerName;
     private String pairKey;  // 1:1일 때만 값 존재
     private boolean reused;
 

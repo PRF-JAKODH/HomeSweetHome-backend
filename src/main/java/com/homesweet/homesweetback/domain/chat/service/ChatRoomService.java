@@ -1,9 +1,8 @@
 package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
-import com.homesweet.homesweetback.domain.chat.dto.RoomListDto;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
 
 import java.util.List;
 
@@ -11,9 +10,12 @@ public interface ChatRoomService {
 
     RoomDto createOrGetIndividualRoom(Long meId, Long targetId);
 
-    List<Long> findMyIndividualRoomIds(Long meUserId);
+    /**
+     * 내가 속한 1:1 채팅방 목록 조회
+     */
+    List<RoomListResponseDto> findMyIndividualRooms(Long myUserId);
 
-    //  Page<RoomListDto> listIndividualRooms(Long meId, int page, int size);
 
+    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
 
 }

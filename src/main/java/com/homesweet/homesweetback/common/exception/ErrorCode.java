@@ -63,11 +63,12 @@ public enum ErrorCode {
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "참여자를 조회할 수 없습니다."),
     MESSAGE_REJECTED(HttpStatus.FORBIDDEN, "메세지 전송이 실패했습니다."),
+    MESSAGE_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다"),
 
     // Token
-    TOKEN_MISSING(HttpStatus.NOT_FOUND,"토큰을 찾을 수 없습니다?" ),
-    TOKEN_INVALID(HttpStatus.FORBIDDEN, "유효한 토큰이 아닙니다" ),
-    TOKEN_REFRESH_NOT_ALLOWED(HttpStatus.FORBIDDEN, "유효한 토큰이 아닙니다." );
+    TOKEN_MISSING(HttpStatus.NOT_FOUND,"토큰을 찾을 수 없습니다" ),
+    TOKEN_INVALID(HttpStatus.FORBIDDEN, "유효한 토큰이 아닙니다" );
+
 
     private final HttpStatus status;
     private final String message;
