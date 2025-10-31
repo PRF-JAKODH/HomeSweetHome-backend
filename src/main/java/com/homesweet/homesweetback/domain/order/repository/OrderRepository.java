@@ -3,17 +3,35 @@ package com.homesweet.homesweetback.domain.order.repository;
 //package: 이 코드가 속한 폴더 경로를 지정하는 키워드
 
 import com.homesweet.homesweetback.domain.order.entity.Order;
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-//Spring Data JPA가 제공하는 핵심 인터페이스. 별도의 구현 코드 없이도 CRUD 메서드 사용가능
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 import java.util.Optional;
-//값이 있을 수도 있고, 없을 수도 있다는 것을 명시적으로 나타내는 래퍼(Wrapper)클래스.
-//null체크를 강제하여 NullPointerException 발생 위험을 줄이는 모범 사례(?)
 
 //스프링 빈
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    //스프링 데이터 JPA는 interface를 보고 런타임에 구현 클래스를 자동 생성해줌.
-    //extends: 인터페이스가 다른 인터페이스의 기능을 상속받을 때 사용하는 키워드.
-    //JpaRepository<Order, Long> 을 extends(상속)하는 순간, CRUD기능을 자동으로 얻음.
-//    Optional<Order> findByMerchantUid(String merchantUid);
-    //Spring Data JPA가 이 메서드를 보고 merchant_uid컬럼으로 SELECT 쿼리를 만들어 줌.
+    //  특정 사용자의 모든 주문 목록을 주문일 내림차순(최신순)으로 조회함. - 주문 정보 목록 용
+    @Query("SELECT o FROM Order o " +
+            "JOIN FETCH o.user u " +
+            "LEFT JOIN FETCH o.orderItems oi " + // 주문 항목이 없는 경우도 있으므로 LEFT JOIN
+            "LEFT JOIN FETCH oi.sku s " +
+            "LEFT JOIN FETCH s.product p " +
+            "WHERE o.user = :user " +
+            "ORDER BY o.orderedAt DESC")
+    List<Order> findAllByUserWithDetails(@Param("user") User user);
+
+    // 주문 상세 정보 조회 용
+    @Query("SELECT o FROM Order o " +
+            "JOIN FETCH o.user u " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.sku s " +
+            "LEFT JOIN FETCH s.product p " +
+            "LEFT JOIN FETCH p.seller sel " + // 판매자 정보
+//            "LEFT JOIN FETCH s.skuOptions so " + // SKU 옵션 정보
+//            "LEFT JOIN FETCH so.optionValue ov " + // 옵션 값
+            "WHERE o.id = :orderId")
+    Optional<Order> findByIdWithDetails(@Param("orderId") Long orderId);
 }
