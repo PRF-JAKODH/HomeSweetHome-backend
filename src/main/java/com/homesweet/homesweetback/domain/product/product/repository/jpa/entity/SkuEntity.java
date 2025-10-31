@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.entity;
 
+import com.homesweet.homesweetback.common.exception.StockInsufficientException;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -68,9 +69,12 @@ public class SkuEntity {
 
     public void decreaseStock(Long quantity) {
         if (this.stockQuantity < quantity) {
-            throw new RuntimeException("재고 부족"); // (추후 커스텀 예외)
-        }
+            throw new StockInsufficientException("재고가 부족합니다. (상품 SKU: " + this.id + ")");        }
         this.stockQuantity -= quantity;
+    }
+
+    public void increaseStock(Long quantity) {
+        this.stockQuantity += quantity;
     }
 
     public void updateStock(Long newStockQuantity, Integer newPriceAdjustment) {
