@@ -13,11 +13,12 @@
 
     <!-- 로그 패턴 -->
     <property name="CONSOLE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n"/>
-    <property name="FILE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative] %-5level ${PID:-} --- [%15.15thread] %-40.40logger{36} : %msg%n"/>
+              value="[%d{yyyy-MM-dd HH:mm:ss}] %clr(%-5level) %clr([%thread]){faint} %clr(%-40.40logger{36}){cyan} - %msg%n"/>
 
-    <!-- 콘솔 로그 설정 (encoder로 변경) -->
+    <property name="FILE_LOG_PATTERN"
+              value="[%d{yyyy-MM-dd HH:mm:ss}] %-5level [%thread] %-40.40logger{36} : %msg%n"/>
+
+    <!-- 콘솔 로그 설정 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -40,7 +41,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- TraceId 로그만 저장하는 appender -->
+    <!-- TraceId 전용 로그 (dev 환경용) -->
     <appender name="TRACEID_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -57,7 +58,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- dev profile -->
+    <!-- 개발 환경(dev): 콘솔 + 파일 모두 -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="STDOUT"/>
@@ -67,5 +68,12 @@
                 level="INFO" additivity="false">
             <appender-ref ref="TRACEID_FILE"/>
         </logger>
+    </springProfile>
+
+    <!-- 운영 환경(prod): 콘솔에만 출력 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="STDOUT"/>
+        </root>
     </springProfile>
 </configuration>
