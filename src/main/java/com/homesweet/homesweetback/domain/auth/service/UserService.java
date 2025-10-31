@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
+import com.homesweet.homesweetback.common.s3.ImageUploader;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 사용자 관리 서비스
@@ -22,14 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
-
+    private final ImageUploader imageUploader;
     /**
      * 사용자 정보 조회
      */
+    @Transactional(readOnly = true)
     public UserResponse getUserInfo(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -42,17 +44,29 @@ public class UserService {
      * 사용자 정보 수정
      */
     @Transactional
-    public UserResponse updateUserInfo(Long userId, UpdateUserRequest request) {
+    public UserResponse updateUserInfo(Long userId, UpdateUserRequest request, Optional<MultipartFile> profileImage) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        if (profileImage.isPresent()) {
+            try{
+                imageUploader.delete(user.getProfileImageUrl());
+            } catch (Exception e) {
+                log.error("프로필 이미지 삭제 실패: userId={}", userId, e);
+                throw new RuntimeException("프로필 이미지 삭제에 실패했습니다: " + e.getMessage());
+            }
+            try{
+                String uploadedUrl = imageUploader.upload(profileImage.get(), "user/profile/" + userId);
+                user.setProfileImageUrl(uploadedUrl);
+            } catch (Exception e) {
+                log.error("프로필 이미지 업로드 실패: userId={}", userId, e);
+                throw new RuntimeException("프로필 이미지 업로드에 실패했습니다: " + e.getMessage());
+            }
+        }
         
         // 사용자 정보 업데이트
         if (request.name() != null && !request.name().trim().isEmpty()) {
             user.setName(request.name().trim());
-        }
-        
-        if (request.profileImageUrl() != null) {
-            user.setProfileImageUrl(request.profileImageUrl());
         }
         
         if (request.phoneNumber() != null) {
@@ -104,6 +118,7 @@ public class UserService {
      * 사용자의 등급 정보를 조회합니다.
      * 등급이 없는 경우 null을 반환합니다.
      */
+    @Transactional(readOnly = true)
     public Optional<Grade> getUserGrade(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -115,6 +130,7 @@ public class UserService {
      * 사용자의 등급 이름을 조회합니다.
      * 등급이 없는 경우 "등급 없음"을 반환합니다.
      */
+    @Transactional(readOnly = true)
     public String getUserGradeName(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -126,6 +142,7 @@ public class UserService {
      * 사용자의 수수료율을 조회합니다.
      * 등급이 없는 경우 0.0을 반환합니다.
      */
+    @Transactional(readOnly = true)
     public BigDecimal getUserFeeRate(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -136,6 +153,7 @@ public class UserService {
     /**
      * 사용자가 등급을 가지고 있는지 확인합니다.
      */
+    @Transactional(readOnly = true)
     public boolean hasUserGrade(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
