@@ -51,3 +51,19 @@ jwt:
   secret: ${JWT_SECRET}  # 필수 환경 변수
   access-token-expiration: 1800000   # 30분 (프로덕션에서는 짧게)
   refresh-token-expiration: 604800000 # 7일
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: homesweet-back
+  prometheus:
+    metrics:
+      export:
+        enabled: true

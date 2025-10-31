@@ -53,6 +53,7 @@ dependencies {
 
     // Observability
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Build-time tools
     compileOnly        'org.projectlombok:lombok'
