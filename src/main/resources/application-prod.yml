@@ -6,7 +6,7 @@ spring:
     password: ${DATABASE_PASSWORD:homesweet}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -38,10 +38,10 @@ logging:
 # 프로덕션 환경 애플리케이션 설정
 app:
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
   oauth2:
-    redirect-uri: ${APP_OAUTH2_REDIRECT_URI}
-    redirect-uri-on-register: ${APP_OAUTH2_REDIRECT_URI_ON_REGISTER}
+    redirect-uri: ${APP_OAUTH2_REDIRECT_URI:http://localhost:3000/login/callback}
+    redirect-uri-on-register: ${APP_OAUTH2_REDIRECT_URI_ON_REGISTER:http://localhost:3000/signup/callback}
 # 프로덕션 환경 쿠키 설정
 cookie:
   secure: ${COOKIE_SECURE:true}
@@ -51,6 +51,10 @@ jwt:
   secret: ${JWT_SECRET}  # 필수 환경 변수
   access-token-expiration: 1800000   # 30분 (프로덕션에서는 짧게)
   refresh-token-expiration: 604800000 # 7일
+
+payments:
+  toss:
+    secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
 
 management:
   endpoints:
