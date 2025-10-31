@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.homesweet'
-version = '0.0.1-SNAPSHOT'
+version = 'V1.0.0'
 description = 'homesweet-back'
 
 java {
