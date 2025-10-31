@@ -24,7 +24,7 @@ RUN ./gradlew clean build -x test --no-daemon
 FROM amazoncorretto:21-alpine-jdk
 
 ENV PROJECT_NAME=homesweet-back
-ENV PROJECT_VERSION=V1.0.0
+ENV PROJECT_VERSION=V1.0.1
 ENV JVM_OPTS=""
 
 WORKDIR /app
