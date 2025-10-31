@@ -1,71 +1,71 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <!-- 로그 패턴 색상 적용 -->
-    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<configuration>-->
+<!--    &lt;!&ndash; 로그 패턴 색상 적용 &ndash;&gt;-->
+<!--    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />-->
 
-    <!-- log 변수 값 설정 -->
-    <springProperty name="LOG_TRACE_PATH" source="log.config.trace.path" />
-    <springProperty name="LOG_TRACE_FILE_NAME" source="log.config.trace.filename" />
-    <springProperty name="LOG_PATH" source="log.config.error.path" />
-    <springProperty name="LOG_FILE_NAME" source="log.config.error.filename" />
-    <springProperty name="LOG_MAX_HISTORY" source="log.config.maxHistory" />
-    <springProperty name="LOG_TOTAL_SIZE_CAP" source="log.config.totalSizeCap" />
+<!--    &lt;!&ndash; log 변수 값 설정 &ndash;&gt;-->
+<!--    <springProperty name="LOG_TRACE_PATH" source="log.config.trace.path" />-->
+<!--    <springProperty name="LOG_TRACE_FILE_NAME" source="log.config.trace.filename" />-->
+<!--    <springProperty name="LOG_PATH" source="log.config.error.path" />-->
+<!--    <springProperty name="LOG_FILE_NAME" source="log.config.error.filename" />-->
+<!--    <springProperty name="LOG_MAX_HISTORY" source="log.config.maxHistory" />-->
+<!--    <springProperty name="LOG_TOTAL_SIZE_CAP" source="log.config.totalSizeCap" />-->
 
-    <!-- 로그 패턴 -->
-    <property name="CONSOLE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n"/>
-    <property name="FILE_LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative] %-5level ${PID:-} --- [%15.15thread] %-40.40logger{36} : %msg%n"/>
+<!--    &lt;!&ndash; 로그 패턴 &ndash;&gt;-->
+<!--    <property name="CONSOLE_LOG_PATTERN"-->
+<!--              value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(-&#45;&#45;){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n"/>-->
+<!--    <property name="FILE_LOG_PATTERN"-->
+<!--              valueue="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative] %-5level ${PID:-} -&#45;&#45; [%15.15thread] %-40.40logger{36} : %msg%n"/>-->
 
-    <!-- 콘솔 로그 설정 (encoder로 변경) -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-        </encoder>
-    </appender>
+<!--    &lt;!&ndash; 콘솔 로그 설정 (encoder로 변경) &ndash;&gt;-->
+<!--    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">-->
+<!--        <encoder>-->
+<!--            <pattern>${CONSOLE_LOG_PATTERN}</pattern>-->
+<!--        </encoder>-->
+<!--    </appender>-->
 
-    <!-- 파일 로그 설정 -->
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
-        <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
-        </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
-            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
-        </rollingPolicy>
-    </appender>
+<!--    &lt;!&ndash; 파일 로그 설정 &ndash;&gt;-->
+<!--    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>-->
+<!--        <encoder>-->
+<!--            <pattern>${FILE_LOG_PATTERN}</pattern>-->
+<!--        </encoder>-->
+<!--        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+<!--            <level>ERROR</level>-->
+<!--        </filter>-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>-->
+<!--            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>-->
+<!--            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>-->
+<!--        </rollingPolicy>-->
+<!--    </appender>-->
 
-    <!-- TraceId 로그만 저장하는 appender -->
-    <appender name="TRACEID_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.log</file>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-        <filter class="com.homesweet.homesweetback.common.log.TraceIdFilter"/>
-        <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
-            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
-        </rollingPolicy>
-    </appender>
+<!--    &lt;!&ndash; TraceId 로그만 저장하는 appender &ndash;&gt;-->
+<!--    <appender name="TRACEID_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        <file>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.log</file>-->
+<!--        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+<!--            <level>INFO</level>-->
+<!--        </filter>-->
+<!--        <filter class="com.homesweet.homesweetback.common.log.TraceIdFilter"/>-->
+<!--        <encoder>-->
+<!--            <pattern>${FILE_LOG_PATTERN}</pattern>-->
+<!--        </encoder>-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            <fileNamePattern>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>-->
+<!--            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>-->
+<!--            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>-->
+<!--        </rollingPolicy>-->
+<!--    </appender>-->
 
-    <!-- dev profile -->
-    <springProfile name="dev">
-        <root level="INFO">
-            <appender-ref ref="STDOUT"/>
-            <appender-ref ref="FILE"/>
-        </root>
-        <logger name="com.homesweet.homesweetback.common.log.MVCLoggingAspect"
-                level="INFO" additivity="false">
-            <appender-ref ref="TRACEID_FILE"/>
-        </logger>
-    </springProfile>
-</configuration>
+<!--    &lt;!&ndash; dev profile &ndash;&gt;-->
+<!--    <springProfile name="dev">-->
+<!--        <root level="INFO">-->
+<!--            <appender-ref ref="STDOUT"/>-->
+<!--            <appender-ref ref="FILE"/>-->
+<!--        </root>-->
+<!--        <logger name="com.homesweet.homesweetback.common.log.MVCLoggingAspect"-->
+<!--                level="INFO" additivity="false">-->
+<!--            <appender-ref ref="TRACEID_FILE"/>-->
+<!--        </logger>-->
+<!--    </springProfile>-->
+<!--</configuration>-->
