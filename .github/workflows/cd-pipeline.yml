@@ -31,23 +31,23 @@ jobs:
             AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
             AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
             AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
-
+            
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-
+            
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
             DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
             EOF
 
             echo "🐳 기존 컨테이너 중지 및 삭제..."
-            docker compose down || true
-
+            docker compose -f docker-compose.prod.yml down || true
+            
             echo "🧱 새 Docker 이미지 빌드 중..."
-            docker compose build --no-cache
-
+            docker compose -f docker-compose.prod.yml build --no-cache
+            
             echo "🚀 새 컨테이너 실행 중..."
-            docker compose up -d
-
+            docker compose -f docker-compose.prod.yml up -d
+            
             echo "✅ 배포 완료! 현재 실행 중인 컨테이너 목록:"
             docker ps -a
