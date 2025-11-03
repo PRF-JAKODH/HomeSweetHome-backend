@@ -26,26 +26,39 @@ public class SettlementController {
     private final YearlySettlementService yearlySettlementService;
 
     @GetMapping("/daily/{userId}")
-    public ResponseEntity<DailySettlementResponse> getDailySummary(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        DailySettlementResponse res = dailySettlementService.getDailySummary(userId, date);
+    public ResponseEntity<List<DailySettlementResponse>> getDailySummary(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<DailySettlementResponse> res = dailySettlementService.getDailySummary(userId, date);
         return ResponseEntity.ok(res);
     }
 
     @GetMapping("/daily/{userId}/status")
-    public ResponseEntity<List<Settlement>> getDailyStatus(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @RequestParam String status) {
+    public ResponseEntity<List<Settlement>> getDailyStatus(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String status) {
         List<Settlement> res = dailySettlementService.getDailySettlementStatus(userId, date, status);
         return ResponseEntity.ok(res);
     }
 
     @PostMapping("/daily/{userId}/generate")
-    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam LocalDateTime endDate) {
+    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime endDate) {
         dailySettlementService.getSettlement(userId, startDate, endDate);
         return ResponseEntity.ok().build();
     }
 
+    // 2) 특정 년/월에 해당하는 "여러 주" 목록 조회 (월→주 드릴다운용)
+//    @GetMapping("/weekly/{userId}/month")
+//    public ResponseEntity<List<WeeklySettlementResponse>> getWeeklyListOfMonth(
+//            @PathVariable Long userId,
+//            @RequestParam int year,
+//            @RequestParam int month
+//    ) {
+//        return ResponseEntity.ok(
+//                weeklySettlementService.getWeeklyListOfMonth(userId, year, month)
+//        );
+//    }
+
+
     @GetMapping("/weekly/{userId}")
-    public ResponseEntity<WeeklySettlementResponse> getWeeklySummary(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        WeeklySettlementResponse res = weeklySettlementService.getWeeklySummary(userId, date);
+    public ResponseEntity<List<WeeklySettlementResponse>> getWeeklySummary(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<WeeklySettlementResponse> res = weeklySettlementService.getWeeklySummary(userId, date);
         return ResponseEntity.ok(res);
     }
 
@@ -70,11 +83,13 @@ public class SettlementController {
     @GetMapping("/yearly/{userId}")
     public ResponseEntity<YearlySettlementResponse> getYearlySummary(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         YearlySettlementResponse yearSummary = yearlySettlementService.getYearlySummary(userId, date);
+        System.out.println("yearSummary = " + yearSummary);
         return ResponseEntity.ok(yearSummary);
     }
 
     @PostMapping("/yearly/{userId}/generate")
-    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId) {yearlySettlementService.getYearlySettlement(userId);
+    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId) {
+        yearlySettlementService.getYearlySettlement(userId);
         return ResponseEntity.ok().build();
     }
 }

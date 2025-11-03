@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Service
@@ -34,10 +35,10 @@ public class SettlementService {
         }
         BigDecimal fee = gradeService.calculateFeeforUser(BigDecimal.valueOf(order.getTotalAmount()), seller);
         BigDecimal refundAmount = BigDecimal.ZERO;
-        BigDecimal vat = BigDecimal.valueOf(order.getTotalAmount()).multiply(BigDecimal.valueOf(0.1));
+        BigDecimal vat = BigDecimal.valueOf(order.getTotalAmount()).multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalAmount());
-        BigDecimal settlementAmount = totalAmount.subtract(fee).subtract(refundAmount);
+        BigDecimal settlementAmount = totalAmount.subtract(fee).subtract(refundAmount).setScale(2, RoundingMode.HALF_UP);
 
         Settlement settlement = Settlement.builder()
                 .order(order)

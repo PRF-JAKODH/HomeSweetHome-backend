@@ -11,4 +11,12 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
     // 주별 조회
     @Query("SELECT w FROM WeeklySettlement w WHERE w.userId = :userId")
     List<WeeklySettlement> findByWeeklySettlement(@Param("userId") Long userId);
+
+
+    @Query("""
+    SELECT w FROM WeeklySettlement w
+    WHERE w.userId = :userId AND w.year = :year AND w.month = :month
+    ORDER BY w.weekStartDate ASC""")
+    List<WeeklySettlement> findByUserIdAndYearAndMonthOrderByWeek(Long userId, Short year, Byte month);
+
 }

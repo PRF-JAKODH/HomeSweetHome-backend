@@ -8,6 +8,7 @@ public record MonthlySettlementResponse(
         Byte month,
         BigDecimal totalSales,
         BigDecimal totalFee,
+        BigDecimal totalVat,
         BigDecimal totalRefund,
         BigDecimal totalSettlement,
 

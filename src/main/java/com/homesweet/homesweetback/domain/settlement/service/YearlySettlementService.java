@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.settlement.service;
 
 import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.YearlySettlement;
 import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
@@ -22,15 +24,17 @@ public class YearlySettlementService {
     private final SettlementRepository settlementRepository;
 
     public YearlySettlementResponse getYearlySummary(Long userId, LocalDate date) {
+        List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
+        System.out.println("settlements: " + settlements);
+        short year = (short) date.getYear();
         LocalDate firstDayOfYear = date.withDayOfYear(1);  // 올해 1월 1일
         LocalDate lastDayOfYear  = firstDayOfYear.withMonth(12).withDayOfMonth(31);  // 올해 12월 31일
+        System.out.println("firstDayOfYear = " + firstDayOfYear);
+//        LocalDateTime startDate = firstDayOfYear.atStartOfDay();
+//        LocalDateTime endDate   = lastDayOfYear.atTime(23, 59, 59);
 
-        LocalDateTime startDate = firstDayOfYear.atStartOfDay();
-        LocalDateTime endDate   = lastDayOfYear.atTime(23, 59, 59);
-
-        List<Settlement> settlements = settlementRepository
-                .findByUserIdAndOrderedAtBetween(userId, startDate, endDate);
-
+//        List<Settlement> settlements = settlementRepository
+//                .findByUserIdAndOrderedAtBetween(userId, startDate, endDate);
         if (settlements.isEmpty()) {
             return new YearlySettlementResponse(
                     (long) firstDayOfYear.getYear(),
@@ -44,14 +48,17 @@ public class YearlySettlementService {
         BigDecimal totalRefund = BigDecimal.ZERO;
         BigDecimal totalSettlement = BigDecimal.ZERO;
         int totalCount = settlements.size();
+        System.out.println("totalCount = " + totalCount);
 
-        for (Settlement s : settlements) {
-            totalSales = totalSales.add(s.getSalesAmount());
-            totalFee = totalFee.add(s.getFee());
-            totalVat = totalVat.add(s.getVat());
-            totalRefund = totalRefund.add(s.getRefundAmount());
-            totalSettlement = totalSettlement.add(s.getSettlementAmount());
+        for (MonthlySettlement m : settlements) {
+            totalSales = totalSales.add(m.getTotalSales());
+            totalFee = totalFee.add(m.getTotalFee());
+            totalVat = totalVat.add(m.getTotalVat());
+            totalRefund = totalRefund.add(m.getTotalRefund());
+            totalSettlement = totalSettlement.add(m.getTotalSettlement());
+            totalCount++;
         }
+        System.out.println("totalSales: " + totalSales);
 
         return new YearlySettlementResponse(
                 (long) firstDayOfYear.getYear(),
@@ -65,36 +72,41 @@ public class YearlySettlementService {
     }
 
     public void getYearlySettlement(Long userId) {
-        List<YearlySettlement> settlements = yearlySettlementRepository.findByYearlySettlement(userId);
+        List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
+        System.out.println("settlements: " + settlements);
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");
         }
         Short prevYear = null;
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
+        BigDecimal totalVat = BigDecimal.ZERO;
         BigDecimal totalRefund = BigDecimal.ZERO;
         BigDecimal totalSettlement = BigDecimal.ZERO;
 
-        for (YearlySettlement y : settlements) {
+        for (MonthlySettlement y : settlements) {
             Short year = y.getYear();
             if (prevYear != null && !prevYear.equals(year)) {
-                YearlySettlement yearlySettlement = yearlySettlementRepository.save(
+                yearlySettlementRepository.save(
                         YearlySettlement.builder()
                                 .userId(y.getUserId())
                                 .year(prevYear)
                                 .totalSales(totalSales)
                                 .totalFee(totalFee)
+                                .totalVat(totalVat)
                                 .totalRefund(totalRefund)
                                 .totalSettlement(totalSettlement)
                                 .build()
                 );
                 totalSales = BigDecimal.ZERO;
                 totalFee = BigDecimal.ZERO;
+                totalVat = BigDecimal.ZERO;
                 totalRefund = BigDecimal.ZERO;
                 totalSettlement = BigDecimal.ZERO;
             }
             totalSales = totalSales.add(y.getTotalSales());
             totalFee = totalFee.add(y.getTotalFee());
+            totalVat = totalVat.add(y.getTotalVat());
             totalRefund = totalRefund.add(y.getTotalRefund());
             totalSettlement = totalSettlement.add(y.getTotalSettlement());
             prevYear = year;
@@ -104,6 +116,7 @@ public class YearlySettlementService {
                 .year(prevYear)
                 .totalSales(totalSales)
                 .totalFee(totalFee)
+                .totalVat(totalVat)
                 .totalRefund(totalRefund)
                 .totalSettlement(totalSettlement)
                 .build();

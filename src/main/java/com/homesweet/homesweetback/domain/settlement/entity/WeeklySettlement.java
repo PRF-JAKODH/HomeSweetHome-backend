@@ -45,6 +45,9 @@ public class WeeklySettlement {
     @Column(name = "total_fee", precision = 15, scale = 2)
     private BigDecimal totalFee;
 
+    @Column(name = "total_vat", precision = 15, scale = 2)
+    private BigDecimal totalVat;
+
     @Column(name = "total_refund", precision = 15, scale = 2)
     private BigDecimal totalRefund;
 
