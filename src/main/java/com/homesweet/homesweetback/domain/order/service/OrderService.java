@@ -146,34 +146,49 @@ public class OrderService {
     }
 
     public List<MyOrderItemResponse> getMyOrders(Long userId) {
-        // 1. 사용자 조회
+        // 1. 사용자(User) 조회
         User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
         // 2. 주문 목록 조회 (N+1 방지용 쿼리 사용)
         List<Order> orders = orderRepository.findAllByUserWithDetails(user);
+
         // 3. MyOrderItemResponse DTO 리스트로 변환
         return orders.stream().map(order -> {
-                    // 3-1. 대표 상품 찾기
-                    OrderItem representativeItem = order.getOrderItems().stream().findFirst().orElse(null);
 
                     String productName = "주문 항목 없음";
-                    String imageUrl = "";
-                    Long price = 0L; // 대표 상품 단가
+                    String imageUrl = ""; // 기본 이미지 URL
 
-                    if (representativeItem != null) {
+                    List<OrderItem> orderItems = order.getOrderItems();
+
+                    if (orderItems != null && !orderItems.isEmpty()) {
+                        // 3-1. 대표 상품(첫 번째 OrderItem) 정보 가져오기
+                        OrderItem representativeItem = orderItems.get(0);
                         ProductEntity product = representativeItem.getSku().getProduct();
-                        productName = product.getName();
-                        imageUrl = product.getImageUrl();
-                        price = representativeItem.getPrice();
+
+                        imageUrl = product.getImageUrl(); // (결정 1) 이미지는 대표 상품 1개
+
+                        // 3-2. (수정) 상품명: "A상품 외 N건" 형식으로 조합
+                        String firstProductName = product.getName();
+                        int otherItemsCount = orderItems.size() - 1;
+
+                        if (otherItemsCount > 0) {
+                            productName = String.format("%s 외 %d건", firstProductName, otherItemsCount);
+                        } else {
+                            productName = firstProductName;
+                        }
                     }
 
-                    // 3-2. DTO 생성
+                    // 3-3. (수정) 가격: 주문의 '최종 결제 금액' 사용
+                    Long price = order.getTotalAmount(); // (결정 3)
+
+                    // 3-4. DTO 생성
                     return MyOrderItemResponse.builder()
                             .orderId(order.getId())
                             .orderNumber(order.generateOrderNumber())
                             .orderDate(order.getOrderedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
-                            .productName(productName)
-                            .imageUrl(imageUrl)
-                            .price(price)
+                            .productName(productName) // "A상품 외 1건"
+                            .imageUrl(imageUrl)       // "A상품 이미지"
+                            .price(price)             // "주문 총액"
                             .orderStatus(order.getOrderStatus().name())
                             .deliveryStatus(order.getDeliveryStatus().name())
                             .build();

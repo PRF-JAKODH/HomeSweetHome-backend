@@ -29,6 +29,11 @@ public class CartRepositoryImpl implements CartRepository {
     private final CartJPARepository jpaRepository;
     private final CartMapper mapper;
 
+    @Override
+    public Optional<Cart> findById(Long cartId) {
+        return jpaRepository.findById(cartId)
+                .map(mapper::toDomain); // JPARepository로 엔티티를 찾아 도메인 객체로 변환
+    }
 
     @Override
     public Optional<Cart> findByUserIdAndSkuId(Long userId, Long skuId) {

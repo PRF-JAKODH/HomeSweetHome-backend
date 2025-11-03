@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 장바구니 레포 명세
+ * 장바구니 레포 명세s
  *
  * @author junnukim1007gmail.com
  * @date 25. 10. 24.
@@ -21,6 +21,8 @@ public interface CartRepository {
     Cart updateQuantity(Cart domain);
 
     List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size);
+
+    Optional<Cart> findById(Long cartId);
 
     boolean existsByIdAndUserId(Long cartId, Long userId);
 

@@ -32,7 +32,7 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                 .select(cart.id)
                 .from(cart)
                 .where(buildCartCursorCondition(cart, memberId, cursorId))
-                .orderBy(cart.id.desc())
+                .orderBy(cart.id.asc()) // 오름차순으로 변경 했습니다~
                 .limit(size + 1)
                 .fetch();
 
@@ -62,7 +62,7 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                 .leftJoin(optionValue).on(optionValue.eq(skuOption.optionValue))
                 .leftJoin(optionGroup).on(optionGroup.eq(optionValue.group))
                 .where(cart.id.in(cartIds))
-                .orderBy(cart.id.desc())
+                .orderBy(cart.id.asc()) // 오름차순으로 변경했습니다~ 2
                 .fetch();
 
         // 카트별로 옵션 병합
@@ -114,7 +114,7 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
     private BooleanExpression buildCartCursorCondition(QCartEntity cart, Long memberId, Long cursorId) {
         BooleanExpression condition = cart.user.id.eq(memberId);
         if (cursorId != null) {
-            condition = condition.and(cart.id.lt(cursorId));
+            condition = condition.and(cart.id.gt(cursorId)); // gt = greater than
         }
         return condition;
     }
