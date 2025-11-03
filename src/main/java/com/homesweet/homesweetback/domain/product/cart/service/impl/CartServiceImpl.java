@@ -96,6 +96,40 @@ public class CartServiceImpl implements CartService {
         return cartRepository.countByUserId(userId);
     }
 
+    // 장바구니 수량 변경용 - 안채호
+    @Override
+    @Transactional
+    public void updateCartItemQuantity(Long userId, Long cartId, int quantity) {
+
+        // 1. 수량 유효성 검사 (프론트에서 1로 막지만, 서버에서도 방어)
+        if (quantity <= 0) {
+            // (참고) 프론트엔드 cart/page.tsx는 수량이 0이 되면
+            // 이 메서드 대신 deleteCartItem을 호출하도록 되어있습니다.
+            // 하지만 비정상적인 0이하 값 요청은 막습니다.
+            throw new ProductException(ErrorCode.INVALID_INPUT_VALUE); // (적절한 에러 코드로 변경 필요)
+        }
+
+        // 2. 수량 10개 제한 체크 (addToCart와 동일한 정책 적용)
+        if (quantity > 10) {
+            throw new ProductException(ErrorCode.CART_LIMIT_EXCEEDED_ERROR);
+        }
+
+        // 3. 카트 항목이 사용자의 소유인지 검증 (기존 헬퍼 메서드 재사용)
+        validateExistsCart(cartId, userId);
+
+        // 4. 카트 정보 가져오기
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new ProductException(ErrorCode.CART_NOT_FOUND_ERROR));
+
+        // 5. Cart 도메인 객체의 수량 업데이트 메서드 호출
+        // (참고: CartEntity.updateQuantity가 quantity를 '설정'한다고 가정)
+        Cart updatedCartDomain = cart.updateQuantity(quantity);
+
+        // 6. Repository를 통해 DB에 수량 업데이트
+        // (참고: addToCart의 private updateQuantity와 동일한 방식)
+        cartRepository.updateQuantity(updatedCartDomain);
+    }
+
     private Cart updateQuantity(Cart cart, int additionalQuantity) {
         Cart domain = cart.updateQuantity(cart.quantity() + additionalQuantity);
         return cartRepository.updateQuantity(domain);
@@ -119,4 +153,6 @@ public class CartServiceImpl implements CartService {
             throw new ProductException(ErrorCode.CART_NOT_FOUND_ERROR);
         }
     }
+
+
 }
