@@ -42,6 +42,7 @@ public enum ErrorCode {
     CART_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST, "장바구니에는 최대 10개 제품만 담을 수 있습니다"),
     CART_ITEM_TYPE_LIMIT_EXCEEDED_ERROR(HttpStatus.BAD_REQUEST,"장바구니에는 최대 10개 종류의 상품만 담을 수 있습니다."),
     PRODUCT_NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "해당하는 제품을 찾을 수 없습니다"),
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 입력값입니다."),
 
     // Community
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다"),

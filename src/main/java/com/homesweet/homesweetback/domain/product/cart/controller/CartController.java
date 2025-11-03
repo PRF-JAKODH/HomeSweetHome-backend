@@ -8,11 +8,15 @@ import com.homesweet.homesweetback.domain.product.cart.controller.request.Delete
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.service.CartService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+// 장바구니 수정 - 안채호
+import com.homesweet.homesweetback.domain.product.cart.controller.request.CartQuantityUpdateRequest;
 
 /**
  * 장바구니 컨트롤러
@@ -83,5 +87,19 @@ public class CartController {
         Long userId = principal.getUserId();
         service.deleteSelectedCartItems(userId, request.cartIds());
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{cartId}")
+    public ResponseEntity<Void> updateCartItemQuantity(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long cartId,
+            @Valid @RequestBody CartQuantityUpdateRequest request
+    ) {
+        Long userId = principal.getUserId();
+
+        // CartService의 새 메서드 호출
+        service.updateCartItemQuantity(userId, cartId, request.quantity());
+
+        return ResponseEntity.ok().build(); // 성공 (200 OK)
     }
 }
