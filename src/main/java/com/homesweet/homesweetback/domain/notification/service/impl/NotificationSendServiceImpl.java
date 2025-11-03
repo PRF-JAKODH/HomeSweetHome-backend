@@ -13,6 +13,7 @@ import com.homesweet.homesweetback.domain.notification.entity.NotificationTempla
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
 import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
 import com.homesweet.homesweetback.domain.notification.repository.NotificationTemplateRepository;
+import com.homesweet.homesweetback.domain.notification.repository.NotificationCategoryRepository;
 import com.homesweet.homesweetback.domain.notification.repository.UserNotificationRepository;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import com.homesweet.homesweetback.domain.notification.service.SseService;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class NotificationSendServiceImpl implements NotificationSendService {
     
     private final NotificationTemplateRepository notificationTemplateRepository;
+    private final NotificationCategoryRepository notificationCategoryRepository;
     private final UserNotificationRepository userNotificationRepository;
     private final UserRepository userRepository;
     private final SseService sseService;
@@ -157,10 +159,12 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * @return 커스텀 알림 템플릿
      */
     private NotificationTemplate createAndSaveCustomNotificationTemplate(NotificationCategoryType categoryType, String title, String content, String redirectUrl) {
+        // 마이그레이션으로 미리 저장된 카테고리를 조회하여 영속 엔티티 연결
+        // DB 조회 없이 FK 프록시를 사용 (마이그레이션으로 이미 존재한다는 전제)
+        NotificationCategory category = notificationCategoryRepository.getReferenceById(categoryType.getCategoryId());
+
         NotificationTemplate template = NotificationTemplate.builder()
-            .category(NotificationCategory.builder()
-                .categoryType(NotificationCategoryType.CUSTOM)
-                .build())
+            .category(category)
             .templateType(NotificationEventType.CUSTOM)
             .title(title)
             .content(content)
