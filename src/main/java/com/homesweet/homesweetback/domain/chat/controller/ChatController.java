@@ -39,11 +39,10 @@ public class ChatController {
             SimpMessageHeaderAccessor headerAccessor) {
 
         try {
-            log.debug("Id는 들어옴?" + request);
+//            log.debug("Id는 들어옴?" + request);
 
             String destination = "/sub/rooms/" + request.roomId();
-            log.info("📤 메시지 전송 - destination: {}", destination);
-
+//            log.info("📤 메시지 전송 - destination: {}", destination);
 
             // 메세지 저장 . 처리
             ChatMessageResponse savedMessage = chatMessageService.sendMessage(
@@ -52,22 +51,16 @@ public class ChatController {
                     request.text()
             );
 
-            log.debug("서비스 돌아감??");
-
             messagingTemplate.convertAndSend(destination, savedMessage);
 
             log.info("✅ 브로드캐스트 완료");
-//
-//            // 동적으로 경로 생성
-//            messagingTemplate.convertAndSend(
-//                    "/sub/rooms/" + request.roomId(),  // 실제 roomId 값 사용
-//                    savedMessage
-//            );
 
         } catch (Exception e) {
             log.error("메시지 전송 실패: {}", e.getMessage());
         }
     }
+
+
 
 
     /**

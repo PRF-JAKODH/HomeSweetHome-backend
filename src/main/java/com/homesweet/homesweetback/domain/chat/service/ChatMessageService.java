@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
 
 public interface ChatMessageService {
 
@@ -9,10 +10,20 @@ public interface ChatMessageService {
      */
     ChatMessageResponse sendMessage(Long roomId, Long senderId, String content);
 
+    /*
+    * 이전 메세지 조회 (채팅방 입장 or 스크롤)
+    *
+    * */
+    PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size);
+
     /**
      * 채팅방 메시지 읽음 처리
      */
     void markAsRead(Long roomId, Long userId, Long lastReadMessageId);
 
     void checkMember(Long subRoomId, Long subUser);
+
+
+
+
 }

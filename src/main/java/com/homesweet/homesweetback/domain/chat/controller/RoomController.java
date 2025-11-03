@@ -4,7 +4,10 @@ import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomEnterResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
+import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import java.util.List;
 public class RoomController {
 
     private final ChatRoomService chatRoomService;
+    private final ChatMessageService chatMessageService;
 
     /**
      * 1:1 채팅방 생성 또는 재사용
@@ -38,6 +42,20 @@ public class RoomController {
         Long targetId = req.getTargetId();
 
         return chatRoomService.createOrGetIndividualRoom(meId, targetId);
+    }
+
+    /**
+     * 내가 속한 1:1 채팅방 list 조회
+     */
+    @GetMapping("/individual")
+    public ResponseEntity<List<RoomListResponseDto>> getMyIndividualRooms(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ) {
+        Long myUserId = principal.getUserId();
+
+        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
+
+        return ResponseEntity.ok(roomList);
     }
 
     /**
@@ -58,16 +76,42 @@ public class RoomController {
 
 
     /**
-     * 내가 속한 1:1 채팅방 list 조회
+     *  이전 메세지 목록 조회
      */
-    @GetMapping("/individual")
-    public ResponseEntity<List<RoomListResponseDto>> getMyIndividualRooms(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal
+
+    @GetMapping("/{roomId}/messages")
+    public ResponseEntity<PreMessageResponse> getPreMessageInfo(
+            @PathVariable Long roomId,
+            @RequestParam (required = false) Long lastMessageId,
+            @RequestParam(defaultValue = "30") int size
     ) {
-        Long myUserId = principal.getUserId();
-
-        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
-
-        return ResponseEntity.ok(roomList);
+        PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
+        return ResponseEntity.ok(response);
     }
-}
+
+
+    /**
+     * 방 입장 시 방 정보 + 메시지 동시 조회
+     */
+    @GetMapping("/{roomId}/enter")
+    public ResponseEntity<RoomEnterResponse> enterRoom(
+            @PathVariable Long roomId,
+
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ){
+        Long userId = principal.getUserId();
+
+        log.debug("enterRoom 요청 " + roomId + "," + userId);
+
+        ChatRoomDetailResponse room = chatRoomService.findChatRoomInfo(roomId, userId);
+        PreMessageResponse preMessageResponse = chatMessageService.getPreMessage(roomId, null, 30 );
+
+        return ResponseEntity.ok(RoomEnterResponse.of(room, preMessageResponse));
+        }
+
+    }
+
+
+
+
+

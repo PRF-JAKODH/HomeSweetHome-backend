@@ -16,10 +16,6 @@ public record ChatMessageResponse (
         LocalDateTime sentAt,
         Boolean isRead
 ) {
-    /**
-     * Entity를 DTO로 변환하는 정적 팩토리 메서드
-     * from이라는 이름은 Spring Data JPA에서 관례적으로 사용하는 변환 메서드명입니다
-     */
     public static ChatMessageResponse from(ChatMessage message, Long currentUserId) {
         return new ChatMessageResponse(
                 message.getId(),
