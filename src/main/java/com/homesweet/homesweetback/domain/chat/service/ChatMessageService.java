@@ -16,14 +16,13 @@ public interface ChatMessageService {
     * */
     PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size);
 
+  
     /**
      * 채팅방 메시지 읽음 처리
      */
     void markAsRead(Long roomId, Long userId, Long lastReadMessageId);
 
+  
     void checkMember(Long subRoomId, Long subUser);
-
-
-
 
 }

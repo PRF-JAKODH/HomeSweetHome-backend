@@ -16,6 +16,7 @@ public record ChatMessageResponse (
         LocalDateTime sentAt,
         Boolean isRead
 ) {
+
     public static ChatMessageResponse from(ChatMessage message, Long currentUserId) {
         return new ChatMessageResponse(
                 message.getId(),

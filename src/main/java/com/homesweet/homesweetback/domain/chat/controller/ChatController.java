@@ -44,6 +44,7 @@ public class ChatController {
             String destination = "/sub/rooms/" + request.roomId();
 //            log.info("📤 메시지 전송 - destination: {}", destination);
 
+
             // 메세지 저장 . 처리
             ChatMessageResponse savedMessage = chatMessageService.sendMessage(
                     request.roomId(),
@@ -55,11 +56,11 @@ public class ChatController {
 
             log.info("✅ 브로드캐스트 완료");
 
+
         } catch (Exception e) {
             log.error("메시지 전송 실패: {}", e.getMessage());
         }
     }
-
 
 
 

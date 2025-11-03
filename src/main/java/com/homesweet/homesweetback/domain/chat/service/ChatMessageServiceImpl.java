@@ -17,10 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -99,7 +99,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         // 다음 페이지 존재 여부 함께 반환
         return PreMessageResponse.of(messageDtos, slice.hasNext());
     }
-
 
 
     /**
