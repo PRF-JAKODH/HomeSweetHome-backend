@@ -71,7 +71,7 @@ public class AuthService {
 
         log.info("Token refreshed successfully for user: {}", user.getEmail());
 
-        return new AccessTokenResponse(newAccessToken);
+        return new AccessTokenResponse(newAccessToken,UserResponse.of(user));
     }
     /**
      * Refresh Token으로 사용자 정보를 조회합니다.
