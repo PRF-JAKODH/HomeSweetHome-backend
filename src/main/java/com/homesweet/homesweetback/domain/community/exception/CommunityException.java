@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.community.dto.exception;
+package com.homesweet.homesweetback.domain.community.exception;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
