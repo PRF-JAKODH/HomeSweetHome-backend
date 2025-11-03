@@ -198,8 +198,12 @@ public class OrderService {
 
     // (상품 가격 계산 헬퍼 메서드)
     private long calculateDiscountedPrice(Integer basePrice, Integer adjustment, BigDecimal discountRate) {
-        long pricePerItem = basePrice + adjustment;
-        return pricePerItem - (long) (pricePerItem * discountRate.doubleValue());
+        BigDecimal pricePerItemBD = BigDecimal.valueOf(basePrice + adjustment);
+        BigDecimal HUNDRED = new BigDecimal("100");
+        BigDecimal rate = discountRate.divide(HUNDRED, 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal discountAmount = pricePerItemBD.multiply(rate);
+        BigDecimal finalPrice = pricePerItemBD.subtract(discountAmount);
+        return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
     }
 
     // 주문 상세 조회
