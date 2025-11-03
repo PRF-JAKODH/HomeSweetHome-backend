@@ -24,4 +24,6 @@ public interface CartService {
     void deleteSelectedCartItems(Long userId, List<Long> cartIds);
 
     int getCartItemCount(Long userId);
+
+    void updateCartItemQuantity(Long userId, Long cartId, int quantity); // 장바구니 수정용 - 안채호
 }
