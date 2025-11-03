@@ -20,17 +20,18 @@ public class DailySettlementService {
     private final DailySettlementRepository dailySettlementRepository;
     private final SettlementRepository settlementRepository;
     //일별 요약 조회 + 증감률
-    public DailySettlementResponse getDailySummary(Long userId, LocalDate date){
+    public List<DailySettlementResponse> getDailySummary(Long userId, LocalDate date){
 
         LocalDateTime startDate = date.atStartOfDay();
         LocalDateTime endDate = date.atTime(23, 59, 59);
 
         List<Settlement> settlements = settlementRepository.findByUserIdAndOrderedAtBetween(userId, startDate, endDate);
         if (settlements.isEmpty()) {
-            return new DailySettlementResponse(
+            DailySettlementResponse empty =  new DailySettlementResponse(
                     date, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                    BigDecimal.ZERO, BigDecimal.ZERO, 0.0, 0
+                    BigDecimal.ZERO, BigDecimal.ZERO, date, "CANCELED", 0.0, 0, true
             );
+            return List.of(empty);
         }
 
         int completedCount = 0;
@@ -46,30 +47,43 @@ public class DailySettlementService {
             totalFee         = totalFee.add(s.getFee());
             totalVat         = totalVat.add(s.getVat());
             totalRefund      = totalRefund.add(s.getRefundAmount());
+            totalSettlement  = totalSettlement.add(s.getSettlementAmount());
 
             if (Objects.equals(s.getSettlementStatus(), "COMPLETED")) {
                 completedCount++;
             }
         }
         double completedRate = (double) completedCount / totalCount * 100.0;
-        return new DailySettlementResponse(
+        // 기본은 PENDING
+        String settlementStatus = "PENDING";
+        if (completedCount == totalCount) {
+            settlementStatus = "COMPLETED";
+        }
+
+        DailySettlementResponse dto = new DailySettlementResponse(
                 date,
                 totalSales,
                 totalFee,
                 totalVat,
                 totalRefund,
                 totalSettlement,
+                date,
+                settlementStatus,
                 Math.round(completedRate * 10) / 10.0,
-                totalCount
+                totalCount,
+                false
         );
+        return List.of(dto);
     }
     // 일별 조회
-    public List<DailySettlement> getSettlement(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Settlement> settlements = settlementRepository.findBySettlement(startDate, endDate);
+    public void getSettlement(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Settlement> settlements = settlementRepository.findBySettlement(userId, startDate, endDate);
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");
+            return;
         }
         LocalDate prevOrderedAt = null;
+
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
         BigDecimal totalVat = BigDecimal.ZERO;
@@ -79,7 +93,7 @@ public class DailySettlementService {
         for (Settlement s : settlements) {
             LocalDate orderedAt = s.getOrder().getOrderedAt().toLocalDate();
             if (prevOrderedAt != null && !orderedAt.equals(prevOrderedAt)) {
-                DailySettlement saved = dailySettlementRepository.save(
+                dailySettlementRepository.save(
                         DailySettlement.builder()
                                 .userId(s.getUserId())
                                 .settlementDate(prevOrderedAt.atStartOfDay())  // 현재 누적하고 있던 날짜 기준 저장
@@ -114,7 +128,6 @@ public class DailySettlementService {
                 .settlementDate(prevOrderedAt.atStartOfDay())
                 .build();
         dailySettlementRepository.save(dailySettlement);
-        return List.of();
     }
     // 정산 상태별 조회
     public List<Settlement> getDailySettlementStatus(Long userId, LocalDate date, String settlementStatus) {

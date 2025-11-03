@@ -12,7 +12,7 @@ import java.math.BigDecimal;
  */
 public record ProductBasicInfoUpdateRequest(
 
-        @Size(max = 30, message = "제품명은 30자 이내로 입력해주세요.")
+        @Size(max = 100, message = "제품명은 100자 이내로 입력해주세요.")
         String name,
 
         @Size(max = 20, message = "브랜드는 20자 이내로 입력해주세요.")

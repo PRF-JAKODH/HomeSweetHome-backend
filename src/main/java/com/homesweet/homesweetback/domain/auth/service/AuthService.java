@@ -71,7 +71,7 @@ public class AuthService {
 
         log.info("Token refreshed successfully for user: {}", user.getEmail());
 
-        return new AccessTokenResponse(newAccessToken);
+        return new AccessTokenResponse(newAccessToken,UserResponse.of(user));
     }
     /**
      * Refresh Token으로 사용자 정보를 조회합니다.
@@ -104,7 +104,9 @@ public class AuthService {
                 // 기존 사용자 정보 업데이트
                 existingUser.setEmail(user.getEmail());
                 existingUser.setName(user.getName());
-                existingUser.setProfileImageUrl(user.getProfileImageUrl());
+                if (existingUser.getProfileImageUrl() == null) {
+                    existingUser.setProfileImageUrl(user.getProfileImageUrl());
+                }
                 // Grade는 Optional 패턴으로 안전하게 처리
                 user.getGradeOptional().ifPresent(existingUser::setGrade);
                 // Role은 기존 사용자의 것을 유지 (변경하지 않음)

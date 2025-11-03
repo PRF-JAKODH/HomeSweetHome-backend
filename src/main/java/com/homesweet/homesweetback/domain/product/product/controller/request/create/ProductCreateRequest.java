@@ -17,7 +17,7 @@ public record ProductCreateRequest(
         Long categoryId,
 
         @NotBlank(message = "제품명은 필수입니다.")
-        @Size(max = 30, message = "제품명은 30자 이내로 입력해주세요.")
+        @Size(max = 100, message = "제품명은 100자 이내로 입력해주세요.")
         String name,
 
         @NotBlank(message = "브랜드는 필수입니다.")

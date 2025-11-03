@@ -26,7 +26,7 @@ public class WeeklySettlementService {
     private final SettlementRepository settlementRepository;
     private final DailySettlementRepository dailySettlementRepository;
 
-    public WeeklySettlementResponse getWeeklySummary(Long userId, LocalDate date) {
+    public List<WeeklySettlementResponse> getWeeklySummary(Long userId, LocalDate date) {
         LocalDate startOfWeek = date.with(DayOfWeek.MONDAY);
         LocalDate endOfWeek = date.with(DayOfWeek.SUNDAY);
 
@@ -34,17 +34,24 @@ public class WeeklySettlementService {
         LocalDateTime endDate = endOfWeek.atTime(23, 59, 59);
 
         List<Settlement> settlements = settlementRepository.findByUserIdAndOrderedAtBetween(userId, startDate, endDate);
+        WeekFields wf = WeekFields.of(DayOfWeek.MONDAY, 4);
+        int rawweek =  date.get(wf.weekOfMonth());
+        Short week = (short) (rawweek < 1 ? 1 : rawweek);
+        System.out.println("week:::: " + week);
+
         System.out.println("settlements: " + settlements);
         // 정산내역이 없다면 0.0
         if (settlements.isEmpty()) {
-            return new WeeklySettlementResponse(
+            WeeklySettlementResponse empty = new WeeklySettlementResponse(
                     (long) startOfWeek.getYear(),
                     (short) startOfWeek.getMonthValue(),
+                    week,
                     startOfWeek,
                     endOfWeek,
                     BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                    0.0, 0
+                    0.0, 0, true
             );
+            return List.of(empty);
         }
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
@@ -60,13 +67,15 @@ public class WeeklySettlementService {
             }
             totalSales = totalSales.add(s.getSalesAmount());
             totalFee = totalFee.add(s.getFee());
+            totalVat = totalVat.add(s.getVat());
             totalRefund = totalRefund.add(s.getRefundAmount());
             totalSettlement = totalSettlement.add(s.getSettlementAmount());
         }
         double completedRate = (double) completedCount / totalCount * 100.0;
-        return new WeeklySettlementResponse(
+        WeeklySettlementResponse dto =  new WeeklySettlementResponse(
                 (long) startOfWeek.getYear(),
                 (short) startOfWeek.getMonthValue(),
+                week,
                 startOfWeek,
                 endOfWeek,
                 totalSales,
@@ -75,8 +84,10 @@ public class WeeklySettlementService {
                 totalRefund,
                 totalSettlement,
                 Math.round(completedRate * 10) / 10.0,
-                totalCount
+                totalCount,
+                false
         );
+        return List.of(dto);
     }
 
 
@@ -93,22 +104,26 @@ public class WeeklySettlementService {
 
         LocalDate weekStartDate = null;
         LocalDate weekEndDate = null;
-
+        // 주 합계
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
+        BigDecimal totalVat = BigDecimal.ZERO;
         BigDecimal totalRefund = BigDecimal.ZERO;
         BigDecimal totalSettlement = BigDecimal.ZERO;
+
+        // 일자 합계
+        BigDecimal lastDaySales  = BigDecimal.ZERO;
 
         for (DailySettlement s : settlements) {
             LocalDate orderedAt = s.getSettlementDate().toLocalDate();
             WeekFields weekFields = WeekFields.of(DayOfWeek.MONDAY, 4); // 시작일이 월요일
-
             Short year = (short) orderedAt.getYear();
             Byte month = (byte) orderedAt.getMonthValue();
             int weekOfMonth = orderedAt.get(weekFields.weekOfMonth());
 
             LocalDate startOfWeek = orderedAt.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             LocalDate endOfWeek = orderedAt.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
             if (prevYear != null && (!prevYear.equals(year) || !prevMonth.equals(month) || !prevWeek.equals(weekOfMonth))) {
                 WeeklySettlement weeklySettlement = weeklySettlementRepository.save(
                         WeeklySettlement.builder()
@@ -117,19 +132,26 @@ public class WeeklySettlementService {
                                 .month(prevMonth)
                                 .weekStartDate(weekStartDate.atStartOfDay().toLocalDate())
                                 .weekEndDate(weekEndDate.atTime(23, 59, 59).toLocalDate())
+                                .weeklySales(totalSales)
+                                .dailySales(lastDaySales)
                                 .totalSales(totalSales)
+                                .totalVat(totalVat)
                                 .totalFee(totalFee)
                                 .totalRefund(totalRefund)
                                 .totalSettlement(totalSettlement)
                                 .build()
                 );
+                lastDaySales = s.getTotalSales();
+
                 totalSales = BigDecimal.ZERO;
                 totalFee = BigDecimal.ZERO;
+                totalVat = BigDecimal.ZERO;
                 totalRefund = BigDecimal.ZERO;
                 totalSettlement = BigDecimal.ZERO;
             }
             totalSales = totalSales.add(s.getTotalSales());
             totalFee = totalFee.add(s.getTotalFee());
+            totalVat = totalVat.add(s.getTotalVat());
             totalRefund = totalRefund.add(s.getTotalRefund());
             totalSettlement = totalSettlement.add(s.getTotalSettlement());
 
@@ -146,11 +168,50 @@ public class WeeklySettlementService {
                 .weekStartDate(weekStartDate.atStartOfDay().toLocalDate())
                 .weekEndDate(weekEndDate.atTime(23, 59, 59).toLocalDate())
                 .weeklySales(totalSales)
+                .dailySales(lastDaySales)
                 .totalSales(totalSales)
                 .totalFee(totalFee)
+                .totalVat(totalVat)
                 .totalRefund(totalRefund)
                 .totalSettlement(totalSettlement)
                 .build();
         weeklySettlementRepository.save(weeklySettlement);
     }
+    private short calcWeekOfMonth(LocalDate date) {
+        if (date == null) return 0;
+        return (short) date.get(WeekFields.of(DayOfWeek.MONDAY, 4).weekOfMonth());
+    }
+
+//    public List<WeeklySettlementResponse> getWeeklyListOfMonth(Long userId, int year, int month) {
+//        List<WeeklySettlement> weeks =
+//                weeklySettlementRepository.findByUserIdAndYearAndMonthOrderByWeek(
+//                        userId,
+//                        (short) year,
+//                        (byte) month
+//                );
+//
+//        // 없으면 빈 리스트
+//        if (weeks.isEmpty()) {
+//            return List.of();
+//        }
+//
+//        return weeks.stream()
+//                .map(w -> new WeeklySettlementResponse(
+//                        w.getYear().longValue(),
+//                        w.getMonth().shortValue(),
+//                        // 엔티티에 week 번호 필드 있으면 그거 쓰고, 없으면 startDate로 다시 계산
+//                        calcWeekOfMonth(w.getWeekStartDate()),
+//                        w.getWeekStartDate(),
+//                        w.getWeekEndDate(),
+//                        w.getTotalSales(),
+//                        w.getTotalFee(),
+//                        BigDecimal.ZERO,             // 주별 VAT 안 따로 저장했다면 0
+//                        w.getTotalRefund(),
+//                        w.getTotalSettlement(),
+//                        0.0,                         // 완료율 따로 없으면 0
+//                        0                            // 건수 따로 없으면 0
+//                ))
+//                .toList();
+//    }
+
 }

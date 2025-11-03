@@ -86,7 +86,9 @@ public class SecurityConfig {
                                 "/api/v1/products/seller",
                                 "/api/v1/products/{productId}",
                                 "/api/v1/products/previews",
-                                "/ws"
+                                "/ws",
+                                "/api/v1/community/posts"
+
                         ).permitAll()
                         .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/v1/user/**").authenticated()

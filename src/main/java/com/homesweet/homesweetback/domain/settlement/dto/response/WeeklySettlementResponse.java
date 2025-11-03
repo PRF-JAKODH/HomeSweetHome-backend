@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public record WeeklySettlementResponse(
         Long year,
         Short month,
+        Short week,
         LocalDate weekStartDate,
         LocalDate weekEndDate,
         BigDecimal totalSales,
@@ -15,6 +16,7 @@ public record WeeklySettlementResponse(
         BigDecimal totalSettlement,
 
         Double completedRate,   // 정산 완료율
-        int totalCount  // 총 주 거래 건수
+        int totalCount,  // 총 주 거래 건수
+        boolean empty
 ) {
 }
