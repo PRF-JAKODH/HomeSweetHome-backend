@@ -128,4 +128,42 @@ public class ProductNotificationPayload {
             }
         }
     }
+
+    /**
+     * 새 리뷰 등록 알림 Payload
+     * 
+     * 📋 필요한 contextData:
+     * - userName: String - 사용자 이름
+     * - productId: String - 상품 ID
+     * - productName: String - 상품명
+     */
+    @SupportsEventType(NotificationEventType.NEW_REVIEW)
+    @Builder
+    public static class NewReviewPayload extends NotificationPayload {
+        private String userName;
+        private String productId;
+        private String productName;
+        
+        @Override
+        public Map<String, Object> toMap() {
+            return Map.of(
+                "userName", userName != null ? userName : "",
+                "productId", productId != null ? productId : "",
+                "productName", productName != null ? productName : ""
+            );
+        }
+        
+        @Override
+        protected void validateRequiredFields() {
+            if (userName == null || userName.isBlank()) {
+                throw new IllegalArgumentException("userName is required for NEW_REVIEW notification");
+            }
+            if (productId == null || productId.isBlank()) {
+                throw new IllegalArgumentException("productId is required for NEW_REVIEW notification");
+            }
+            if (productName == null || productName.isBlank()) {
+                throw new IllegalArgumentException("productName is required for NEW_REVIEW notification");
+            }
+        }
+    }
 }

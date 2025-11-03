@@ -10,6 +10,9 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntit
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.payload.CommunityNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class CommunityCommentService {
     private final CommunityCommentRepository commentRepository;
     private final CommunityPostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationSendService notificationSendService;
 
     /**
      * 댓글 작성
@@ -55,6 +59,14 @@ public class CommunityCommentService {
 
         // 게시글의 댓글 수 증가
         post.increaseCommentCount();
+
+        // 알림 전송
+        notificationSendService.sendTemplateNotificationToSingleUser(post.getAuthor().getId(), NotificationEventType.NEW_COMMENT, CommunityNotificationPayload.NewCommentPayload.builder()
+                .userName(author.getName())
+                .postId(post.getPostId())
+                .postTitle(post.getTitle())
+                .build());
+
 
         return CommunityCommentResponse.from(savedComment);
     }
