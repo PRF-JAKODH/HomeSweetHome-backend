@@ -4,7 +4,10 @@ import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomEnterResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
+import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -106,6 +109,6 @@ public class RoomController {
         return ResponseEntity.ok(RoomEnterResponse.of(room, preMessageResponse));
         }
 
-    }
+}
 
 
