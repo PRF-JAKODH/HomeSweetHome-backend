@@ -71,7 +71,7 @@ public class S3ImageUploader implements ImageUploader {
     @Override
     public List<String> uploadFiles(List<MultipartFile> files, String directory) {
         if (files == null || files.isEmpty()) {
-            throw new CustomS3Exception(ErrorCode.INVALID_FILE_ERROR);
+            return new ArrayList<>();
         }
 
         List<String> uploadedUrls = new ArrayList<>();
