@@ -43,4 +43,7 @@ public interface ProductRepository {
     void deleteDetailImages(Long productId, List<String> imageUrls);
 
     void addDetailImages(Long productId, List<String> imageUrls);
+
+    // 알림용
+    Product findByProductId(Long productId);
 }

@@ -24,11 +24,10 @@ spring:
     open-in-view: false
   flyway:
     enabled: false
-  # sql:
-  #   init:
-  #     mode: always
-  #     schema-locations: classpath:db/schema.sql
-  #     data-locations: classpath:db/data.sql
+  cloud:
+    aws:
+      s3:
+        bucket: ${AWS_S3_BUCKET:homesweet-back-test}
   security:
     oauth2:
       client:
