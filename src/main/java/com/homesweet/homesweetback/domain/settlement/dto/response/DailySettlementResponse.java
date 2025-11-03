@@ -10,8 +10,11 @@ public record DailySettlementResponse(
         BigDecimal totalVat,
         BigDecimal totalRefund,
         BigDecimal totalSettlement,
+        LocalDate settlementDate,
+        String settlementStatus,
 
         Double completedRate,   // 정산 완료율
-        int totalCount  // 총 거래 건수
+        int totalCount,  // 총 거래 건수
+        boolean empty
 ) {
 }

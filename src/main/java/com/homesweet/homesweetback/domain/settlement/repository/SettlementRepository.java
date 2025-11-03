@@ -20,9 +20,9 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     List<Settlement> findByUserIdAndOrderOrderedAtBetweenAndSettlementStatus(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("settlementStatus") String settlementStatus);
     // 1. 주문건별에서 조회
     @Query("SELECT s FROM Settlement s JOIN s.order o " +
-            "WHERE o.orderedAt BETWEEN :startDate AND :endDate " +
+            "WHERE s.userId =:userId AND  o.orderedAt BETWEEN :startDate AND :endDate " +
             "ORDER BY o.orderedAt")
-    List<Settlement> findBySettlement(LocalDateTime startDate, LocalDateTime endDate);
+    List<Settlement> findBySettlement(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     // 특정 판매자의 정산 완료율
     @Query("SELECT s FROM Settlement s JOIN s.order o " +
