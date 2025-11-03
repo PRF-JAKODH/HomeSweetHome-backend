@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 
 import java.util.List;
 
@@ -81,5 +82,29 @@ public class OrderController {
 
         PaymentConfirmResponse response = paymentService.confirmPayment(dto, userId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 3단계: 주문 취소 (환불)
+     */
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<Void> cancelOrder(
+            @PathVariable Long orderId, // URL 경로의 {orderId} 값을 받음
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @RequestBody(required = false) OrderCancelRequest dto // (수정) 취소 사유 (선택적)
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Long userId = principal.getUserId();
+
+        // 취소 사유가 null일 경우를 대비 (DTO가 null이거나, DTO의 필드가 null일 수 있음)
+        String cancelReason = (dto != null && dto.cancelReason() != null) ? dto.cancelReason() : "고객 변심";
+
+        // PaymentService에 로직 위임
+        paymentService.cancelOrder(orderId, userId, new OrderCancelRequest(cancelReason));
+
+        // 성공 시 200 OK (내용 없음) 반환
+        return ResponseEntity.ok().build();
     }
 }

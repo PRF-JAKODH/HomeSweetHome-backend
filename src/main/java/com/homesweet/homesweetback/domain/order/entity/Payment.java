@@ -51,4 +51,8 @@ public class Payment {
         this.paidAt = paidAt;
         this.pgRawData = pgRawData;
     }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
 }

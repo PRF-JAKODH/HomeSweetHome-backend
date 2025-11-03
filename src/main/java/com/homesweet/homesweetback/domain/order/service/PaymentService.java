@@ -1,14 +1,12 @@
 package com.homesweet.homesweetback.domain.order.service;
 
 // --- DTO Imports ---
+import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
 
 // --- Entity Imports ---
-import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
-import com.homesweet.homesweetback.domain.order.entity.Payment;
+import com.homesweet.homesweetback.domain.order.entity.*;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 
 // --- Repository Imports ---
@@ -33,9 +31,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Map;
 
 @Service
@@ -55,7 +55,7 @@ public class PaymentService {
     private String tossSecretKey;
 
     private static final String TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
-
+    private static final String TOSS_CANCEL_URL_PREFIX = "https://api.tosspayments.com/v1/payments/";
 
     /**
      * API 2: 결제 검증 및 완료
@@ -138,8 +138,7 @@ public class PaymentService {
 
         // 7. [DB 저장 2] Order 상태 변경 (PENDING -> COMPLETED)
         order.setOrderStatus(OrderStatus.COMPLETED);
-        // (deliveryStatus는 BEFORE_SHIPMENT 상태 유지)
-
+        order.setDeliveryStatus(DeliveryStatus.DELIVERED); // 결제 즉시 배송 완료 처리
         // 8. [DB 저장 3] (★중요★) 재고 차감 (비관적 락 사용)
         for (OrderItem item : order.getOrderItems()) {
             SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
@@ -154,5 +153,77 @@ public class PaymentService {
                 order.getId(),
                 order.getOrderStatus().name()
         );
+    }
+
+    /**
+     * API 3: 주문 취소 (환불)
+     * (토스 API 호출, 재고 복구)
+     */
+    @Transactional
+    public void cancelOrder(Long orderId, Long userId, OrderCancelRequest dto) {
+
+        // 1. 주문 조회 (모든 연관 엔티티 포함)
+        Order order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
+
+        // 2. (보안) 주문자 본인 확인
+        if (!order.getUser().getId().equals(userId)) {
+            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
+        }
+
+        // 3. (상태 검증) 이미 취소된 주문인지 확인
+        if (order.getDeliveryStatus() == DeliveryStatus.CANCELLED) {
+            throw new RuntimeException("이미 취소된 주문입니다."); // (커스텀 예외 권장)
+        }
+
+        // 4. 결제 정보 조회
+        Payment payment = paymentRepository.findByOrder(order)
+                .orElseThrow(() -> new EntityNotFoundException("결제 정보를 찾을 수 없습니다. (비정상 상태)"));
+
+        // 5. (★핵심★) 토스페이먼츠 결제 취소 API 호출
+        String tossPaymentKey = payment.getPgTransactionId();
+        URI cancelUrl = URI.create(TOSS_CANCEL_URL_PREFIX + tossPaymentKey + "/cancel");
+
+        HttpHeaders headers = new HttpHeaders();
+        String encodedKey = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
+        headers.setBasicAuth(encodedKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // 토스 API로 보낼 요청 본문 (취소 사유)
+        Map<String, String> bodyMap = Collections.singletonMap("cancelReason", dto.cancelReason());
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(bodyMap, headers);
+
+        Map<String, Object> tossResponse;
+        try {
+            log.info("토스 결제 취소 API 호출: paymentKey={}, reason={}", tossPaymentKey, dto.cancelReason());
+            tossResponse = restTemplate.postForObject(cancelUrl, requestEntity, Map.class);
+        } catch (Exception e) {
+            log.error("토스페이먼츠 취소 API 호출 실패: {}", e.getMessage());
+            // (TODO: 토스 API 통신 실패 시 어떻게 처리할지 정책 필요)
+            throw new RuntimeException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
+        }
+
+        // 6. 응답 상태 확인 (토스 응답에 'status' 필드가 있는지 확인 필요)
+        String status = (String) tossResponse.get("status");
+        if (!"CANCELED".equals(status)) { // (토스 응답 스펙 확인 필요)
+            log.warn("토스 결제 취소 응답 상태가 CANCELED가 아닙니다: {}", status);
+            // (이 경우에도 재고 복구 등을 해야 할지 정책 필요)
+        }
+
+        // 7. (★중요★) 재고 복구
+        for (OrderItem item : order.getOrderItems()) {
+            // (동시성 제어를 위해 락 사용)
+            SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
+
+            sku.increaseStock(item.getQuantity()); // (가정한 메서드)
+        }
+
+        // 8. DB 상태 업데이트
+        order.setOrderStatus(OrderStatus.FAILED); // (정책: 취소 시 '결제 실패'로 처리)
+        order.setDeliveryStatus(DeliveryStatus.CANCELLED);
+        payment.setPaymentStatus("CANCELED"); // Payment 상태도 변경
+
+        log.info("주문 취소 완료 (환불 및 재고 복구): orderId={}", orderId);
     }
 }

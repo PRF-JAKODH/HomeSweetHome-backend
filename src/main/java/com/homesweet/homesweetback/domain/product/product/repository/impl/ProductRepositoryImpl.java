@@ -118,4 +118,11 @@ public class ProductRepositoryImpl implements ProductRepository {
             entity.addDetailImage(imageEntity);
         });
     }
+
+    @Override
+    public Product findByProductId(Long productId) {
+        return jpaRepository.findById(productId)
+                .map(mapper::toDomain)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+    }
 }

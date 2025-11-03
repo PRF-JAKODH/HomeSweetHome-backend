@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.dto.request;
 
-public record ChatSendRequest(
-        Long senderId,
+public record ChatReadRequest (
         Long roomId,
-        String text
-) { }
+        Long lastReadMessageId
+) {}
+

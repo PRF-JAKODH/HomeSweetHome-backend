@@ -1,8 +1,13 @@
 package com.homesweet.homesweetback.domain.product.review.service.impl;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.payload.ProductNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
@@ -36,7 +41,9 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ProductReviewRepository productReviewRepository;
     private final ProductRepository productRepository;
     private final ProductImageUploader imageUploader;
-
+    private final UserRepository userRepository;
+    private final NotificationSendService notificationSendService;
+    
     @Override
     @Transactional
     public ProductReviewResponse createReview(Long productId, Long userId, ProductReviewCreateRequest request) {
@@ -53,6 +60,22 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         ProductReview productReview = ProductReview.create(productId, userId, request.rating(), request.comment(), imageUrl);
 
         ProductReview domain = productReviewRepository.save(productReview);
+
+        // 알림 전송
+        Product product = productRepository.findByProductId(productId);
+
+        User seller = userRepository.findById(product.getSellerId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                
+        notificationSendService.sendTemplateNotificationToSingleUser(
+            seller.getId(),
+            NotificationEventType.NEW_REVIEW,
+            ProductNotificationPayload.NewReviewPayload.builder()
+                .productId(productId.toString())
+                .productName(product.getName())
+                .userName(seller.getName())
+                .build()
+        );
 
         return ProductReviewResponse.from(domain);
     }

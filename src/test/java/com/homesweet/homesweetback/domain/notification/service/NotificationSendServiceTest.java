@@ -1,10 +1,13 @@
 package com.homesweet.homesweetback.domain.notification.service;
 
 import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.payload.CustomNotificationPayload;
 import com.homesweet.homesweetback.domain.notification.domain.payload.NotificationPayload;
 import com.homesweet.homesweetback.domain.notification.domain.payload.OrderNotificationPayload;
 import com.homesweet.homesweetback.domain.notification.domain.payload.ProductNotificationPayload;
 import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
+
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +33,6 @@ class NotificationSendServiceTest {
     @DisplayName("올바른 EventType과 Payload 조합 - 성공")
     void correctEventTypeAndPayload_Success() {
         // Given
-        Long userId = 1L;
         NotificationPayload payload = OrderNotificationPayload.OrderCompletedPayload.builder()
             .userName("홍길동")
             .orderId("12345")
@@ -162,4 +164,70 @@ class NotificationSendServiceTest {
             payloadWithoutAnnotation.validate(NotificationEventType.ORDER_COMPLETED);
         });
     }
+    
+    @Test
+    @DisplayName("CustomNotificationPayload - contextData가 null인 경우 - 실패")
+    void customNotificationPayloadWithNullContextData_Failure() {
+        // Given - contextData가 null인 CustomNotificationPayload
+        CustomNotificationPayload payload = new CustomNotificationPayload(null);
+        
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            payload.validate(NotificationEventType.CUSTOM);
+        });
+        
+        assertNotNull(exception);
+        assertTrue(exception.getMessage().contains("contextData is required for CUSTOM notification"));
+    }
+    
+    @Test
+    @DisplayName("CustomNotificationPayload - contextData가 빈 Map인 경우 - 실패")
+    void customNotificationPayloadWithEmptyContextData_Failure() {
+        // Given - contextData가 빈 Map인 CustomNotificationPayload
+        CustomNotificationPayload payload = new CustomNotificationPayload(Map.of());
+        
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            payload.validate(NotificationEventType.CUSTOM);
+        });
+        
+        assertNotNull(exception);
+        assertTrue(exception.getMessage().contains("contextData is required for CUSTOM notification"));
+    }
+    
+    @Test
+    @DisplayName("CustomNotificationPayload - contextData가 있는 경우 - 성공")
+    void customNotificationPayloadWithContextData_Success() {
+        // Given - contextData가 있는 CustomNotificationPayload
+        Map<String, Object> contextData = Map.of(
+            "orderId", "12345",
+            "message", "테스트 메시지"
+        );
+        CustomNotificationPayload payload = new CustomNotificationPayload(contextData);
+        
+        // When & Then
+        assertDoesNotThrow(() -> {
+            payload.validate(NotificationEventType.CUSTOM);
+        });
+    }
+    
+    @Test
+    @DisplayName("CustomNotificationPayload - toMap() 변환 테스트")
+    void customNotificationPayloadToMapTest() {
+        // Given
+        Map<String, Object> contextData = Map.of(
+            "orderId", "12345",
+            "message", "테스트 메시지"
+        );
+        CustomNotificationPayload payload = new CustomNotificationPayload(contextData);
+        
+        // When
+        var result = payload.toMap();
+        
+        // Then
+        assertNotNull(result);
+        assertEquals("12345", result.get("orderId"));
+        assertEquals("테스트 메시지", result.get("message"));
+    }
+
 }

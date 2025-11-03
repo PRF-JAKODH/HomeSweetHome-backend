@@ -37,6 +37,9 @@ public class RoomMember {
     private Long lastReadId;
 
 
+    public void updateLastReadMessageId(Long lastReadMessageId) {
+        this.lastReadId = lastReadMessageId;
+    }
 }
 
 

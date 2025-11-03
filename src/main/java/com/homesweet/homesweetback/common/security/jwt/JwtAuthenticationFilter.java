@@ -39,11 +39,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, 
                                   @NonNull FilterChain filterChain) throws ServletException, IOException {
-        
+        var path = request.getRequestURI();
+        log.debug("{}",path);
+        if("/ws".equals(path)) {
+            log.debug("passed {}",path);
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             // Access Token을 Authorization 헤더에서 추출
             String accessToken = getJwtFromRequest(request);
-            
             if (StringUtils.hasText(accessToken)) {
                 /**
                  * 테스트 용 test 유저 처리

@@ -85,10 +85,13 @@ public class SecurityConfig {
                                 "/api/v1/products/{productId}/stocks",
                                 "/api/v1/products/seller",
                                 "/api/v1/products/{productId}",
-                                "/api/v1/products/previews"
+                                "/api/v1/products/previews",
+                                "/ws"
                         ).permitAll()
                         .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/v1/user/**").authenticated()
+                        .requestMatchers("/api/chat/**").authenticated()
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
