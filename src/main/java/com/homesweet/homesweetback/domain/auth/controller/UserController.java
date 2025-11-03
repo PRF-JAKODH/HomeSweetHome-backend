@@ -12,7 +12,10 @@ import jakarta.validation.Valid;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
@@ -31,6 +34,9 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+    private final NotificationSendService notificationSendService;
+
+
     /**
      * 현재 사용자 정보 조회 API
      * JWT 토큰을 통해 인증된 사용자의 정보를 반환합니다.
@@ -54,6 +60,16 @@ public class UserController {
     {
         Long userId = principal.getUserId();
         UserResponse userResponse = userService.updateUserRole(userId, request);
+
+        // 알림 전송
+        notificationSendService.sendCustomNotificationToSingleUser(
+            userId, 
+            NotificationCategoryType.CUSTOM, 
+            "판매자 등록 완료", 
+            "판매자 등록이 완료되었습니다.", 
+            "/user/seller", 
+            Map.of("userName", userResponse.name())
+        );
         return ResponseEntity.ok(userResponse);
     }
 
