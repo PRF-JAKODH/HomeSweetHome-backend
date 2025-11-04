@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 
 import java.util.Optional;
-// 채팅방 생성  삭제
+// 채팅방 생성 조회 삭제
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     Optional<ChatRoom> findByTypeAndPairKey(ChatRoomType type, String pairKey);

@@ -1,17 +1,16 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
-import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomEnterResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -34,32 +33,34 @@ public class RoomController {
     @PostMapping("/individual")
     public RoomDto createOrGetIndividual(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @Valid @RequestBody CreateIndividualRoomRequest req) {
+            @Valid @RequestBody CreateIndividualRoomRequest request) {
 
-        log.debug("채팅방 생성 or 재사용 test" + req);
+        log.debug("채팅방 생성 or 재사용 test" + request);
 
         Long meId = principal.getUserId();
-        Long targetId = req.getTargetId();
+        Long targetId = request.getTargetId();
 
         return chatRoomService.createOrGetIndividualRoom(meId, targetId);
     }
 
-    /**
-     * 내가 속한 1:1 채팅방 list 조회
-     */
-    @GetMapping("/individual")
-    public ResponseEntity<List<RoomListResponseDto>> getMyIndividualRooms(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal
-    ) {
-        Long myUserId = principal.getUserId();
-
-        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
-
-        return ResponseEntity.ok(roomList);
-    }
+//    /**
+//     * 내가 속한 1:1 채팅방 list 조회
+//     * GET /api/v1/chat/rooms/individual
+//     */
+//    @GetMapping("/individual")
+//    public ResponseEntity<List<RoomListResponseDto>> getMyIndividualRooms(
+//            @AuthenticationPrincipal OAuth2UserPrincipal principal
+//    ) {
+//        Long myUserId = principal.getUserId();
+//
+//        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
+//
+//        return ResponseEntity.ok(roomList);
+//    }
 
     /**
      *  채팅방 상세 조회
+     * GET /api/v1/chat/rooms/{roomId}
      */
     @GetMapping("/{roomId}")
     public ChatRoomDetailResponse getChatRoomInfo(
@@ -77,6 +78,7 @@ public class RoomController {
 
     /**
      *  이전 메세지 목록 조회
+     *  GET /api/v1/chat/rooms/{roomId}/messages
      */
 
     @GetMapping("/{roomId}/messages")
@@ -92,6 +94,7 @@ public class RoomController {
 
     /**
      * 방 입장 시 방 정보 + 메시지 동시 조회
+     * GET /api/v1/chat/rooms/{roomId}/enter
      */
     @GetMapping("/{roomId}/enter")
     public ResponseEntity<RoomEnterResponse> enterRoom(
@@ -108,6 +111,59 @@ public class RoomController {
 
         return ResponseEntity.ok(RoomEnterResponse.of(room, preMessageResponse));
         }
+
+    /**
+     * 그룹채팅방 생성
+     * POST /api/v1/chat/rooms/group
+     */
+    @PostMapping("/group")
+    public ResponseEntity<GroupRoomResponse> createGroupRoom(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @Valid @RequestBody CreateGroupRoomRequest request) {
+
+        Long ownerId = principal.getUserId();
+
+        GroupRoomResponse response = chatRoomService.createGroupRoom(ownerId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * ✅ 내가 속한 모든 채팅방 목록 조회 (개인 + 그룹)
+     */
+    @GetMapping("/my")
+    public ResponseEntity<List<RoomListCommonResponseDto>> getAllMyRooms(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ) {
+        Long userId = principal.getUserId();
+        List<RoomListCommonResponseDto> response = chatRoomService.findAllMyRooms(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * ✅ 내가 속한 1:1 채팅방 목록 조회
+     */
+    @GetMapping("/my/individual")
+    public ResponseEntity<List<RoomListCommonResponseDto>> getMyIndividualRooms(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ) {
+        Long userId = principal.getUserId();
+        List<RoomListCommonResponseDto> response = chatRoomService.findMyIndividualRooms(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * ✅ 내가 속한 그룹 채팅방 목록 조회
+     */
+    @GetMapping("/my/group")
+    public ResponseEntity<List<RoomListCommonResponseDto>> getMyGroupRooms(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ) {
+        Long userId = principal.getUserId();
+        List<RoomListCommonResponseDto> response = chatRoomService.findMyGroupRooms(userId);
+        return ResponseEntity.ok(response);
+    }
+
 
 }
 
