@@ -33,4 +33,19 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     // 사용자 조회
     List<Settlement> findByUserId(Long userId);
+
+    // 정산일 기준 집계
+    @Query("""
+        SELECT s
+        FROM Settlement s
+        WHERE s.userId = :userId
+          AND s.settlementDate >= :start
+          AND s.settlementDate <  :endExclusive
+        ORDER BY s.settlementDate ASC
+    """)
+    List<Settlement> findBySettlementDateRange(
+            @Param("userId") Long userId,
+            @Param("start") LocalDateTime start,
+            @Param("endExclusive") LocalDateTime endExclusive
+    );
 }

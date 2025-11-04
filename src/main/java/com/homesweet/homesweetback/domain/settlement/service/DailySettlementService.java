@@ -75,14 +75,18 @@ public class DailySettlementService {
         );
         return List.of(dto);
     }
-    // 일별 조회
-    public void getSettlement(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Settlement> settlements = settlementRepository.findBySettlement(userId, startDate, endDate);
+    // 일별 조회(정산일 기준)
+    public void getSettlement(Long userId, LocalDateTime startDate, LocalDateTime endExclusive) {
+        List<Settlement> settlements = settlementRepository
+                .findBySettlementDateRange(userId, startDate, endExclusive);
+        System.out.println("[Daily] userId=" + userId
+                + " range=[" + startDate + " ~ " + endExclusive + "]");
+
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");
             return;
         }
-        LocalDate prevOrderedAt = null;
+        LocalDate prevDate = null; // 정산 일자 기준
 
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
@@ -91,12 +95,12 @@ public class DailySettlementService {
         BigDecimal totalSettlement = BigDecimal.ZERO;
 
         for (Settlement s : settlements) {
-            LocalDate orderedAt = s.getOrder().getOrderedAt().toLocalDate();
-            if (prevOrderedAt != null && !orderedAt.equals(prevOrderedAt)) {
+            LocalDate stDate = s.getSettlementDate().toLocalDate();
+            if (prevDate != null && !stDate.equals(prevDate)) {
                 dailySettlementRepository.save(
                         DailySettlement.builder()
                                 .userId(s.getUserId())
-                                .settlementDate(prevOrderedAt.atStartOfDay())  // 현재 누적하고 있던 날짜 기준 저장
+                                .settlementDate(prevDate.atStartOfDay())  // 현재 누적하고 있던 날짜 기준 저장
                                 .totalSales(totalSales)
                                 .totalFee(totalFee)
                                 .totalVat(totalVat)
@@ -116,7 +120,7 @@ public class DailySettlementService {
             totalRefund = s.getRefundAmount().add(totalRefund);
             totalSettlement = s.getSettlementAmount().add(totalSettlement);
 
-            prevOrderedAt = orderedAt;
+            prevDate = stDate;
         }
         DailySettlement dailySettlement = DailySettlement.builder()
                 .userId(userId)
@@ -125,9 +129,10 @@ public class DailySettlementService {
                 .totalVat(totalVat)
                 .totalRefund(totalRefund)
                 .totalSettlement(totalSettlement)
-                .settlementDate(prevOrderedAt.atStartOfDay())
+                .settlementDate(prevDate.atStartOfDay())
                 .build();
         dailySettlementRepository.save(dailySettlement);
+        System.out.println("저장저장저장");
     }
     // 정산 상태별 조회
     public List<Settlement> getDailySettlementStatus(Long userId, LocalDate date, String settlementStatus) {

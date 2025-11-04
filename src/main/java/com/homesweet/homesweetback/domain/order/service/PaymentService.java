@@ -17,6 +17,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPAR
 // --- Exception Imports ---
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
 import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
+import com.homesweet.homesweetback.domain.settlement.service.SettlementService;
 import jakarta.persistence.EntityNotFoundException;
 
 // --- Spring & Java Imports ---
@@ -50,6 +51,8 @@ public class PaymentService {
     private final SkuJPARepository skuJPARepository; // ★ 재고 차감용
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+
+    private final SettlementService settlementService;
 
     @Value("${payments.toss.secretKey}")
     private String tossSecretKey;
@@ -143,6 +146,8 @@ public class PaymentService {
             // (가정한 메서드) SkuEntity의 재고 차감 로직 호출
             sku.decreaseStock(item.getQuantity());
         }
+        settlementService.createSettlement(order);
+
 
         // 9. 최종 응답 반환
         return new PaymentConfirmResponse(
