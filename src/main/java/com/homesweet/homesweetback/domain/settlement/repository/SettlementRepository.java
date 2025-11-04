@@ -1,11 +1,13 @@
 package com.homesweet.homesweetback.domain.settlement.repository;
 
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,12 +42,11 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
         FROM Settlement s
         WHERE s.userId = :userId
           AND s.settlementDate >= :start
-          AND s.settlementDate <  :endExclusive
-        ORDER BY s.settlementDate ASC
+          AND s.settlementDate <  :endDate
     """)
     List<Settlement> findBySettlementDateRange(
             @Param("userId") Long userId,
             @Param("start") LocalDateTime start,
-            @Param("endExclusive") LocalDateTime endExclusive
+            @Param("endDate") LocalDateTime endDate
     );
 }

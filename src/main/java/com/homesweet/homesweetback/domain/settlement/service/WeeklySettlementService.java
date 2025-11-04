@@ -92,7 +92,7 @@ public class WeeklySettlementService {
 
 
     // 주차별 정산내역
-    public void getWeeklySettlement(Long userId) {
+    public void getWeeklySettlement(Long userId, LocalDate weekStart, LocalDate weekEnd) {
         List<DailySettlement> settlements = dailySettlementRepository.findByDailySettlement(userId);
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");

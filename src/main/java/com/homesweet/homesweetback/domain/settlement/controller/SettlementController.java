@@ -63,8 +63,8 @@ public class SettlementController {
     }
 
     @PostMapping("/weekly/{userId}/generate")
-    public ResponseEntity<Void> getWeeklySettlement(@PathVariable Long userId) {
-        weeklySettlementService.getWeeklySettlement(userId);
+    public ResponseEntity<Void> getWeeklySettlement(@PathVariable Long userId, @RequestParam LocalDate weekStart, @RequestParam LocalDate weekEnd) {
+        weeklySettlementService.getWeeklySettlement(userId, weekStart, weekEnd);
         return ResponseEntity.ok().build();
     }
 
