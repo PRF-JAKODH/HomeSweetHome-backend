@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.ProductCategor
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
+import com.homesweet.homesweetback.domain.product.product.service.ProductValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +23,17 @@ import java.util.List;
  * @date 25. 10. 21.
  */
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProductCategoryServiceImpl implements ProductCategoryService {
 
+    private final ProductValidator validator;
     private final ProductCategoryRepository repository;
 
     @Override
-    @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
-        validateDuplicateCategoryName(request.name());
+        validator.validateDuplicateCategoryName(request.name());
 
         int depth = 0;
         if (request.parentId() != null) {
@@ -89,12 +91,5 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         Collections.reverse(hierarchy);
 
         return hierarchy;
-    }
-
-    private void validateDuplicateCategoryName(String name) {
-        repository.findByName(name)
-                .ifPresent(c -> {
-                    throw new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR);
-                });
     }
 }

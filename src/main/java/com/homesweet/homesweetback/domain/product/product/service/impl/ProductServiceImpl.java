@@ -18,6 +18,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.ProductRepo
 import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
+import com.homesweet.homesweetback.domain.product.product.service.ProductValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    private final ProductValidator validator;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
@@ -45,9 +47,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
         // 판매자는 중복된 이름의 상품을 등록할 수 없다
-        if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
-            throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
-        }
+        validator.validateDuplicatedProductName(sellerId, request.name());
 
         // 제품 등록 시 -> 카테고리 설정, 대표 이미지 설정, 상세 이미지 설정, 옵션 그룹 생성, 옵션 그룹 별 재고 설정이 필요하다
         ProductCategory category = categoryRepository.findById(request.categoryId())
@@ -109,7 +109,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long productId) {
 
-        validateExistsProduct(productId);
+        validator.validateProductExists(productId);
 
         return productRepository.findProductDetailById(productId);
     }
@@ -118,7 +118,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<SkuStockResponse> getProductStock(Long productId) {
 
-        validateExistsProduct(productId);
+        validator.validateProductExists(productId);
 
         return productRepository.findSkuStocksByProductId(productId);
     }
@@ -131,13 +131,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product product = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         if (request.name() != null && !request.name().equals(product.getName())) {
-            if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
-                throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
-            }
+            validator.validateDuplicatedProductName(sellerId, request.name());
         }
 
         Product update = product.update(request);
@@ -147,8 +145,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
-                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+        validator.validateExistsProductIdAndSellerId(productId, sellerId);
 
         // 각 SKU의 재고 업데이트
         for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
@@ -162,7 +159,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
 
-        Product domain = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product domain = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         productRepository.updateStatus(domain.getId(), request.status());
@@ -170,7 +167,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product product = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         // 1. 대표 이미지 교체
@@ -207,13 +204,6 @@ public class ProductServiceImpl implements ProductService {
 
             // DB에 새 이미지 추가
             productRepository.addDetailImages(productId, newDetailImageUrls);
-        }
-    }
-
-    // 상품이 존재하는지 검증하는 로직
-    private void validateExistsProduct(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
         }
     }
 }

@@ -22,7 +22,9 @@ public interface ProductRepository {
 
     boolean existsById(Long productId);
 
-    Optional<Product> findByIdAndSellerId(Long sellerId, Long productId);
+    boolean existsByIdAndSellerId(Long productId, Long sellerId);
+
+    Optional<Product> findByIdAndSellerId(Long productId, Long sellerId);
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
 

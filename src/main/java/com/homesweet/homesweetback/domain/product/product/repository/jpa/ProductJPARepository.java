@@ -17,4 +17,6 @@ public interface ProductJPARepository extends JpaRepository<ProductEntity, Long>
     boolean existsBySellerIdAndName(Long sellerId, String name);
 
     Optional<ProductEntity> findByIdAndSellerId(Long productId, Long sellerId);
+
+    boolean existsByIdAndSellerId(Long productId, Long sellerId);
 }

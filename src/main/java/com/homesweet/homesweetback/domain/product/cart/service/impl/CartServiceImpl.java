@@ -8,7 +8,7 @@ import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
 import com.homesweet.homesweetback.domain.product.cart.service.CartService;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
-import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
+import com.homesweet.homesweetback.domain.product.product.service.ProductValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,20 +23,21 @@ import java.util.Optional;
  * @date 25. 10. 24.
  */
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
+    private final ProductValidator validator;
     private final CartRepository cartRepository;
-    private final SkuRepository skuRepository;
 
     /**
      * 장바구니에 상품 추가
      * - 동일 상품 수량 제한: 최대 10개
      * - 제품 종류 제한: 최대 10종류
      */
-    @Transactional
+    @Override
     public Cart addToCart(Long userId, CartRequest request) {
-        validateExistsSku(request.skuId());
+        validator.validateExistsSku(request.skuId());
 
         // 이미 장바구니에 존재하면 수량 증가
         Optional<Cart> existingCart = cartRepository.findByUserIdAndSkuId(userId, request.skuId());
@@ -76,15 +77,13 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
     public void deleteCartItem(Long userId, Long cartId) {
-        validateExistsCart(cartId, userId);
+        validator.validateExistsCart(cartId, userId);
 
         cartRepository.deleteById(cartId);
     }
 
     @Override
-    @Transactional
     public void deleteSelectedCartItems(Long userId, List<Long> cartIds) {
 
         cartRepository.deleteAllByUserIdAndCartIdIn(userId, cartIds);
@@ -98,7 +97,6 @@ public class CartServiceImpl implements CartService {
 
     // 장바구니 수량 변경용 - 안채호
     @Override
-    @Transactional
     public void updateCartItemQuantity(Long userId, Long cartId, int quantity) {
 
         // 1. 수량 유효성 검사 (프론트에서 1로 막지만, 서버에서도 방어)
@@ -115,7 +113,7 @@ public class CartServiceImpl implements CartService {
         }
 
         // 3. 카트 항목이 사용자의 소유인지 검증 (기존 헬퍼 메서드 재사용)
-        validateExistsCart(cartId, userId);
+        validator.validateExistsCart(cartId, userId);
 
         // 4. 카트 정보 가져오기
         Cart cart = cartRepository.findById(cartId)
@@ -140,19 +138,4 @@ public class CartServiceImpl implements CartService {
 
         return cartRepository.save(cart);
     }
-
-
-    private void validateExistsSku(Long skuId) {
-        if (!skuRepository.existsById(skuId)) {
-            throw new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR);
-        }
-    }
-
-    private void validateExistsCart(Long cartId, Long userId) {
-        if (!cartRepository.existsByIdAndUserId(cartId, userId)) {
-            throw new ProductException(ErrorCode.CART_NOT_FOUND_ERROR);
-        }
-    }
-
-
 }

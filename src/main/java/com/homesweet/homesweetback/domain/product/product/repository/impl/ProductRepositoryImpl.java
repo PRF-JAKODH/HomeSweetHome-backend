@@ -44,7 +44,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public Optional<Product> findByIdAndSellerId(Long sellerId, Long productId) {
+    public boolean existsByIdAndSellerId(Long productId, Long sellerId) {
+        return jpaRepository.existsByIdAndSellerId(productId, sellerId);
+    }
+
+    @Override
+    public Optional<Product> findByIdAndSellerId(Long productId, Long sellerId) {
         return jpaRepository.findByIdAndSellerId(productId, sellerId)
                 .map(mapper::toDomain);
     }

@@ -31,23 +31,6 @@ public class Sku {
     private List<Long> optionValueIndexes = new ArrayList<>();
 
     /**
-     * 재고 차감
-     */
-    public void decreaseStock(int quantity) {
-        if (stockQuantity < quantity) {
-            throw new ProductException(ErrorCode.OUT_OF_STOCK);
-        }
-        this.stockQuantity -= quantity;
-    }
-
-    /**
-     * 재고 증가
-     */
-    public void increaseStock(int quantity) {
-        this.stockQuantity += quantity;
-    }
-
-    /**
      * 재고 여부 확인
      */
     public boolean isInStock() {
