@@ -5,12 +5,14 @@ import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
+import com.homesweet.homesweetback.domain.grade.repository.GradeRepository;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ImageUploader imageUploader;
+    private final GradeRepository gradeRepository;  
     /**
      * 사용자 정보 조회
      */
@@ -111,6 +114,13 @@ public class UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         user.setRole(request.role());
+        
+        // 판매자 등급 랜덤 설정
+        Integer gradeId = ThreadLocalRandom.current().nextInt(1, 6);
+        Grade grade = gradeRepository.findById(gradeId)
+            .orElseThrow(() -> new RuntimeException("Grade not found with id: " + gradeId));
+        user.setGrade(grade);
+        
         return UserResponse.of(userRepository.save(user));
     }
 
