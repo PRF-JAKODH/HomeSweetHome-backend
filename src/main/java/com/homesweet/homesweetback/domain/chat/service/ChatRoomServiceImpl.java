@@ -1,13 +1,16 @@
 package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
+
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +28,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
-
+    private final UserRepository userRepository;
     @Transactional
     @Override
     public RoomDto createOrGetIndividualRoom(Long meId, Long targetId) {
@@ -56,7 +59,26 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     .name("INDIVIDUAL-" + pairKey)
                     .pairKey(pairKey)
                     .build();
+            
             chatRoomRepository.save(room);
+
+            User me = userRepository.getReferenceById(meId);
+            RoomMember roomMember = RoomMember.builder()
+                    .user(me)
+                    .room(room)
+                    .role(ChatUserRole.OWNER)
+                    .isExit(false)
+                    .build();
+            roomMemberRepository.save(roomMember);
+
+            User target = userRepository.getReferenceById(targetId);
+            RoomMember targetRoomMember = RoomMember.builder()
+                    .user(target)
+                    .room(room)
+                    .role(ChatUserRole.MEMBER)
+                    .isExit(false)
+                    .build();
+            roomMemberRepository.save(targetRoomMember);
 
             return RoomDto.builder()
                     .roomId(room.getId())

@@ -13,6 +13,7 @@ services:
     networks:
       - homesweet-network
     restart: always
+    mem_limit: 1024m
 
   node_exporter:
     image: prom/node-exporter:latest
