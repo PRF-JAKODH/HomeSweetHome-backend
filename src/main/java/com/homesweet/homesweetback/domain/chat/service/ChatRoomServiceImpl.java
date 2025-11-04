@@ -3,12 +3,16 @@ package com.homesweet.homesweetback.domain.chat.service;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
+import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
+import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
+
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
@@ -29,6 +34,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
     private final UserRepository userRepository;
+    private final ChatRoomMapper chatRoomMapper;
+
+
     @Transactional
     @Override
     public RoomDto createOrGetIndividualRoom(Long meId, Long targetId) {
@@ -96,17 +104,49 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return low + ":" + high;
     }
 
-
     /**
-     * 내가 속한 1:1 채팅방 목록 조회 (상대방 정보 포함)
+     * 그룹 채팅방 생성
      */
-    @Override
-    public List<RoomListResponseDto> findMyIndividualRooms(Long myUserId) {
 
-        List<RoomListResponseDto> roomList = roomMemberRepository.findMyIndividualRoomsWithPartner(myUserId);
+    @Transactional
+    public GroupRoomResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request) {
 
-        return roomList;
+        User owner = userRepository.findById(ownerId)
+               .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        // 요청 받아온 dto를 엔터티 객체로 생성
+        ChatRoom chatRoom = chatRoomMapper.toEntity(request);
+
+        // 채팅방 정보 저장
+        chatRoomRepository.save(chatRoom);
+
+        // 방장 정보 저장
+        roomMemberRepository.save(RoomMember.builder()
+                .room(chatRoom)
+                .user(owner)
+                .role(ChatUserRole.OWNER)
+                .isExit(false)
+                .build()
+        );
+
+        // 저장된 정보 응답
+        return chatRoomMapper.toDto(chatRoom, ownerId);
+
     }
+
+
+//
+//    /**
+//     * 내가 속한 1:1 채팅방 목록 조회 (상대방 정보 포함)
+//     */
+//    @Override
+//    public List<RoomListResponseDto> findMyIndividualRooms(Long myUserId) {
+//
+//        List<RoomListResponseDto> roomList = roomMemberRepository.findMyIndividualRoomsWithPartner(myUserId);
+//
+//        return roomList;
+//    }
 
 
     /**
@@ -144,5 +184,26 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .build();
     }
 
+
+    /**
+     * ✅ 내가 속한 채팅방 전체 목록 조회
+     */
+    public List<RoomListCommonResponseDto> findAllMyRooms(Long userId) {
+        return roomMemberRepository.findMyRoomsByType(userId, null);
+    }
+
+    /**
+     * ✅ 내가 속한 1:1 채팅방 목록 조회
+     */
+    public List<RoomListCommonResponseDto> findMyIndividualRooms(Long userId) {
+        return roomMemberRepository.findMyRoomsByType(userId, ChatRoomType.INDIVIDUAL);
+    }
+
+    /**
+     * ✅ 내가 속한 그룹 채팅방 목록 조회
+     */
+    public List<RoomListCommonResponseDto> findMyGroupRooms(Long userId) {
+        return roomMemberRepository.findMyRoomsByType(userId, ChatRoomType.GROUP);
+    }
 
 }

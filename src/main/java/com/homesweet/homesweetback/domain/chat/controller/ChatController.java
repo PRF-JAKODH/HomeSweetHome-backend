@@ -39,11 +39,8 @@ public class ChatController {
             SimpMessageHeaderAccessor headerAccessor) {
 
         try {
-//            log.debug("Id는 들어옴?" + request);
 
             String destination = "/sub/rooms/" + request.roomId();
-//            log.info("📤 메시지 전송 - destination: {}", destination);
-
 
             // 메세지 저장 . 처리
             ChatMessageResponse savedMessage = chatMessageService.sendMessage(

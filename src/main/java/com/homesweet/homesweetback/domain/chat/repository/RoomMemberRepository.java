@@ -1,9 +1,9 @@
 package com.homesweet.homesweetback.domain.chat.repository;
 
-import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,34 +35,63 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
      */
     List<RoomMember> findAllByRoomId(Long roomId);
 
-    /**
-     * 내가 속한 1:1 채팅방 목록 조회 (상대방 정보 포함)
-     */
-    @Query("""
-        SELECT new com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto(
-            r.id,
-            partner.user.id,
-            partner.user.name,
-            COALESCE(partner.user.profileImageUrl, ''),
-            COALESCE(lastMsg.content, ''),
-            lastMsg.sentAt,
-            lastMsg.id,
-            CASE WHEN my.lastReadId >= lastMsg.id THEN true ELSE false END
-        )
-        FROM RoomMember my
-        JOIN my.room r
-        JOIN RoomMember partner ON partner.room.id = r.id AND partner.user.id != :myUserId
-        LEFT JOIN ChatMessage lastMsg ON lastMsg.id = r.lastMessageId
-        WHERE my.user.id = :myUserId
-          AND r.type = 'INDIVIDUAL'
-          AND (my.isExit = false OR my.isExit IS NULL)
-        ORDER BY COALESCE(lastMsg.sentAt, r.createdAt) DESC
-    """)
-    List<RoomListResponseDto> findMyIndividualRoomsWithPartner(@Param("myUserId") Long myUserId);
+//    /**
+//     * 내가 속한 1:1 채팅방 목록 조회 (상대방 정보 포함)
+//     */
+//    @Query("""
+//        SELECT new com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto(
+//            r.id,
+//            partner.user.id,
+//            partner.user.name,
+//            COALESCE(partner.user.profileImageUrl, ''),
+//            COALESCE(lastMsg.content, ''),
+//            lastMsg.sentAt,
+//            lastMsg.id,
+//            CASE WHEN my.lastReadId >= lastMsg.id THEN true ELSE false END
+//        )
+//        FROM RoomMember my
+//        JOIN my.room r
+//        JOIN RoomMember partner ON partner.room.id = r.id AND partner.user.id != :myUserId
+//        LEFT JOIN ChatMessage lastMsg ON lastMsg.id = r.lastMessageId
+//        WHERE my.user.id = :myUserId
+//          AND r.type = 'INDIVIDUAL'
+//          AND (my.isExit = false OR my.isExit IS NULL)
+//        ORDER BY COALESCE(lastMsg.sentAt, r.createdAt) DESC
+//    """)
+//    List<RoomListResponseDto> findMyIndividualRoomsWithPartner(@Param("myUserId") Long myUserId);
 
     /**
      * 내가 속한 채팅방의 id와 나의 id
      */
     RoomMember findByUserIdAndRoomId (Long userId, Long roomId);
+
+
+    @Query("""
+    SELECT new com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto(
+        r.id,
+        r.name,
+        r.type,
+        COALESCE(r.thumbnailUrl, ''),
+        COALESCE(lastMsg.content, ''),
+        lastMsg.sentAt,
+        COUNT(m),
+        CASE WHEN my.lastReadId >= lastMsg.id THEN true ELSE false END
+    )
+    FROM RoomMember my
+    JOIN my.room r
+    LEFT JOIN ChatMessage lastMsg ON lastMsg.id = r.lastMessageId
+    JOIN RoomMember m ON m.room.id = r.id
+    WHERE my.user.id = :myUserId
+      AND (r.type = :roomType OR :roomType IS NULL)
+      AND (my.isExit = false OR my.isExit IS NULL)
+    GROUP BY r.id, r.name, r.type, r.thumbnailUrl, lastMsg.content, lastMsg.sentAt, lastMsg.id, my.lastReadId
+    ORDER BY COALESCE(lastMsg.sentAt, r.createdAt) DESC
+""")
+    List<RoomListCommonResponseDto> findMyRoomsByType(
+            @Param("myUserId") Long myUserId,
+            @Param("roomType") ChatRoomType roomType
+    );
+
+
 }
 
