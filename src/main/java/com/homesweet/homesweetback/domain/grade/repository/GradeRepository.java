@@ -4,7 +4,9 @@ import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
-public interface GradeRepository extends JpaRepository<Grade, Integer> {
-    Grade findByGrade(String grade);
+public interface GradeRepository extends JpaRepository<Grade, Long> {
+    List<Grade> findByGradeId(Long gradeId);
 }

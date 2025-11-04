@@ -2,9 +2,11 @@ package com.homesweet.homesweetback.domain.auth.repository;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -28,4 +30,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 이메일과 Provider로 사용자 조회
      */
     Optional<User> findByEmailAndProvider(String email, OAuth2Provider provider);
+
+
+
+    List<User> findAllByRole(UserRole role);
 }
