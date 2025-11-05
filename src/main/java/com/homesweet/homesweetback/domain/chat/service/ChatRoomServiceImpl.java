@@ -7,7 +7,6 @@ import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomReques
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
@@ -19,16 +18,19 @@ import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ChatRoomServiceImpl implements ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
@@ -37,7 +39,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final ChatRoomMapper chatRoomMapper;
 
 
-    @Transactional
     @Override
     public RoomDto createOrGetIndividualRoom(Long meId, Long targetId) {
 
@@ -49,55 +50,54 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         }
 
         String pairKey = buildPairKey(meId, targetId);
-
         Optional<ChatRoom> existing = chatRoomRepository.findByTypeAndPairKey(ChatRoomType.INDIVIDUAL, pairKey);
 
-        if (existing.isPresent()) {
-            ChatRoom room = existing.get();
+        // 방 재사용
+        if  (existing.isPresent()) {
+            ChatRoom chatRoom = existing.get();
+            log.info("📎 기존 방 재사용: roomId={}, pairKey={}", chatRoom.getId(), pairKey);
             return RoomDto.builder()
-                    .roomId(room.getId())
-                    .type(room.getType().name())
-                    .name(room.getName())
-                    .pairKey(room.getPairKey())
+                    .roomId(chatRoom.getId())
                     .reused(true)
                     .build();
-        } else {
-            ChatRoom room = ChatRoom.builder()
-                    .type(ChatRoomType.INDIVIDUAL)
-                    .name("INDIVIDUAL-" + pairKey)
-                    .pairKey(pairKey)
-                    .build();
-            
-            chatRoomRepository.save(room);
-
-            User me = userRepository.getReferenceById(meId);
-            RoomMember roomMember = RoomMember.builder()
-                    .user(me)
-                    .room(room)
-                    .role(ChatUserRole.OWNER)
-                    .isExit(false)
-                    .build();
-            roomMemberRepository.save(roomMember);
-
-            User target = userRepository.getReferenceById(targetId);
-            RoomMember targetRoomMember = RoomMember.builder()
-                    .user(target)
-                    .room(room)
-                    .role(ChatUserRole.MEMBER)
-                    .isExit(false)
-                    .build();
-            roomMemberRepository.save(targetRoomMember);
-
-            return RoomDto.builder()
-                    .roomId(room.getId())
-                    .type(room.getType().name())
-                    .name(room.getName())
-                    .pairKey(room.getPairKey())
-                    .reused(false)
-                    .build();
         }
+
+        // 방 생성
+        ChatRoom room = ChatRoom.builder()
+                .type(ChatRoomType.INDIVIDUAL)
+                .name("INDIVIDUAL-" + pairKey)
+                .pairKey(pairKey)
+                .build();
+        chatRoomRepository.saveAndFlush(room); // roomId 즉시 생성 보장
+
+        User me = userRepository.getReferenceById(meId);
+        User target = userRepository.getReferenceById(targetId);
+
+        roomMemberRepository.save(RoomMember.builder()
+                .room(room)
+                .user(me)
+                .role(ChatUserRole.OWNER)
+                .isExit(false)
+                .build());
+
+        roomMemberRepository.save(RoomMember.builder()
+                .room(room)
+                .user(target)
+                .role(ChatUserRole.MEMBER)
+                .isExit(false)
+                .build());
+
+        log.info(" RoomMember 2명 등록 완료: roomId={}, meId={}, targetId={}", room.getId(), meId, targetId);
+
+        return RoomDto.builder()
+                .roomId(room.getId())
+                .type(room.getType().name())
+                .name(room.getName())
+                .pairKey(room.getPairKey())
+                .reused(false)
+                .build();
     }
-    // pairKey 생성
+
     private String buildPairKey(Long a, Long b) {
         long low = Math.min(a, b);
         long high = Math.max(a, b);
@@ -108,7 +108,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
      * 그룹 채팅방 생성
      */
 
-    @Transactional
+    @Override
     public GroupRoomResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request) {
 
         User owner = userRepository.findById(ownerId)
@@ -134,20 +134,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return chatRoomMapper.toDto(chatRoom, ownerId);
 
     }
-
-
-//
-//    /**
-//     * 내가 속한 1:1 채팅방 목록 조회 (상대방 정보 포함)
-//     */
-//    @Override
-//    public List<RoomListResponseDto> findMyIndividualRooms(Long myUserId) {
-//
-//        List<RoomListResponseDto> roomList = roomMemberRepository.findMyIndividualRoomsWithPartner(myUserId);
-//
-//        return roomList;
-//    }
-
 
     /**
      * 내가 속한 1:1 채팅방 상세 조회 (상대방 정보 포함)
@@ -186,24 +172,36 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
 
     /**
-     * ✅ 내가 속한 채팅방 전체 목록 조회
+     * 내가 속한 채팅방 전체 목록 조회
      */
     public List<RoomListCommonResponseDto> findAllMyRooms(Long userId) {
-        return roomMemberRepository.findMyRoomsByType(userId, null);
+
+        List<RoomListCommonResponseDto> rooms = roomMemberRepository.findMyRoomsByType(userId, null);
+
+        return rooms.stream()
+                .filter(room -> !room.getLastMessageIsRead())
+                .collect(Collectors.toList());
     }
 
     /**
-     * ✅ 내가 속한 1:1 채팅방 목록 조회
+     * 내가 속한 1:1 채팅방 목록 조회
      */
     public List<RoomListCommonResponseDto> findMyIndividualRooms(Long userId) {
         return roomMemberRepository.findMyRoomsByType(userId, ChatRoomType.INDIVIDUAL);
     }
 
     /**
-     * ✅ 내가 속한 그룹 채팅방 목록 조회
+     * 내가 속한 그룹 채팅방 목록 조회
      */
     public List<RoomListCommonResponseDto> findMyGroupRooms(Long userId) {
         return roomMemberRepository.findMyRoomsByType(userId, ChatRoomType.GROUP);
     }
+
+
+    @Override
+    public boolean isUserInRoom(Long userId, Long roomId) {
+        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId, userId);
+    }
+
 
 }

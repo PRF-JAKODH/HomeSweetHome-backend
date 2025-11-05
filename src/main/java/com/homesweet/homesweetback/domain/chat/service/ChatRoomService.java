@@ -5,9 +5,6 @@ import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomReques
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomListResponseDto;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
-import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -28,5 +25,6 @@ public interface ChatRoomService {
 
     List<RoomListCommonResponseDto> findMyGroupRooms(Long userId);
 
+    boolean isUserInRoom(Long userId, Long roomId);
 
-    }
+}

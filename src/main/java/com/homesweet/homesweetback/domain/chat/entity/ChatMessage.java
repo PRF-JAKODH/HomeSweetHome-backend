@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "chat_message")
+@Builder
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

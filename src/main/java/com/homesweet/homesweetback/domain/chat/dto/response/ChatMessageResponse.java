@@ -23,11 +23,11 @@ public record ChatMessageResponse (
                 message.getRoom().getId(),
                 message.getSender().getId(),
                 message.getSender().getName(),
-                message.getSender().getProfileImageUrl(),  // User 엔티티에 이 필드가 있어야 해요
+                message.getSender().getProfileImageUrl(),
                 message.getMessageType(),
                 message.getContent(),
                 message.getSentAt(),
-                message.getSender().getId().equals(currentUserId)  // 본인이 보낸 메시지는 읽음 처리
+                message.getSender().getId().equals(currentUserId)
         );
     }
 

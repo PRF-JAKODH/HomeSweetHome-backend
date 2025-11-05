@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.service;
 
 
+import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
@@ -21,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.homesweet.homesweetback.domain.chat.entity.QChatMessage.chatMessage;
+
 
 @Slf4j
 @Service
@@ -30,6 +33,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
+    private final UserRepository userRepository;
 
     /**
      * 채팅 메시지 전송 및 저장
@@ -43,16 +47,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
 
         // 발신자 조회
+        log.info("💬 [메시지 전송 요청] senderId={}, roomId={}", senderId, roomId);
         RoomMember sender = roomMemberRepository.findByUserIdAndRoomId(senderId, roomId);
+        log.info("📌 RoomMember 조회 결과: {}", sender);        // ws세션은 끊지않으므로 퇴장자 검증 필요
+        if (sender == null || sender.getIsExit() == true) {
+            throw new IllegalStateException("🚫 채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
+        }
 
         // 채팅 메시지 저장
-        ChatMessage message = new ChatMessage(
-                chatRoom,
-                MessageType.TEXT,
-                content,
-                null,
-                sender.getUser()
-        );
+        ChatMessage message = ChatMessage.builder()
+                .room(chatRoom)
+                .messageType(MessageType.TEXT)
+                .content(content)
+                .sender(sender.getUser())
+                .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
@@ -119,6 +127,14 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     @Override
     public void checkMember(Long subRoomId, Long subUser) {
 
+    }
+
+    @Override
+    public boolean canSendMessage(Long userId, Long roomId) {
+        RoomMember roomMember = roomMemberRepository.findByUserIdAndRoomId(userId, roomId);
+        if (roomMember == null) return false;
+        if (Boolean.TRUE.equals(roomMember.getIsExit())) return false;
+        return true;
     }
 
 }

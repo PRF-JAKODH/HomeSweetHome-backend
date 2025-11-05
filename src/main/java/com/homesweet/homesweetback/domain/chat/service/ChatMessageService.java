@@ -25,4 +25,5 @@ public interface ChatMessageService {
   
     void checkMember(Long subRoomId, Long subUser);
 
+    boolean canSendMessage(Long userId, Long roomId);
 }

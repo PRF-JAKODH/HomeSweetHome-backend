@@ -43,21 +43,6 @@ public class RoomController {
         return chatRoomService.createOrGetIndividualRoom(meId, targetId);
     }
 
-//    /**
-//     * 내가 속한 1:1 채팅방 list 조회
-//     * GET /api/v1/chat/rooms/individual
-//     */
-//    @GetMapping("/individual")
-//    public ResponseEntity<List<RoomListResponseDto>> getMyIndividualRooms(
-//            @AuthenticationPrincipal OAuth2UserPrincipal principal
-//    ) {
-//        Long myUserId = principal.getUserId();
-//
-//        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
-//
-//        return ResponseEntity.ok(roomList);
-//    }
-
     /**
      *  채팅방 상세 조회
      * GET /api/v1/chat/rooms/{roomId}
@@ -74,7 +59,6 @@ public class RoomController {
 
         return chatRoomService.findChatRoomInfo(roomId, userId);
     }
-
 
     /**
      *  이전 메세지 목록 조회
@@ -99,7 +83,6 @@ public class RoomController {
     @GetMapping("/{roomId}/enter")
     public ResponseEntity<RoomEnterResponse> enterRoom(
             @PathVariable Long roomId,
-
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ){
         Long userId = principal.getUserId();
@@ -129,7 +112,7 @@ public class RoomController {
     }
 
     /**
-     * ✅ 내가 속한 모든 채팅방 목록 조회 (개인 + 그룹)
+     * 내가 속한 모든 채팅방 목록 조회 (개인 + 그룹)
      */
     @GetMapping("/my")
     public ResponseEntity<List<RoomListCommonResponseDto>> getAllMyRooms(
@@ -137,6 +120,9 @@ public class RoomController {
     ) {
         Long userId = principal.getUserId();
         List<RoomListCommonResponseDto> response = chatRoomService.findAllMyRooms(userId);
+
+        //        List<RoomListResponseDto> roomList = chatRoomService.findMyIndividualRooms(myUserId);
+
         return ResponseEntity.ok(response);
     }
 
