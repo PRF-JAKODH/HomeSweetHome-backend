@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,26 +28,44 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
     @Modifying
     @Transactional
     @Query(value = """
-    INSERT INTO weekly_settlements
-            (user_id, year, month, weekStartDate, weekEndDate, dailySales, weeklySales,  totalSales, totalFee, totalVat, totalRefund, totalSettlement) 
-    VALUES
-            (:userId, :year, :month, :weekStartDate, :weekEndDate, :dailySales, :weeklySales, :totalSales, :totalFee, :totalVat, :totalRefund, :totalSettlement) 
-    ON DUPLICATE KEY UPDATE
-            total_sales = total_sales + VALUES(total_sales),
-            total_fee = total_fee + VALUES(total_fee),
-            total_vat = total_vat + VALUES(total_vat),
-            total_refund = total_refund + VALUES(total_refund),
-            total_settlement = total_settlement + VALUES(total_settlement)
-    
-    """, nativeQuery = true)
+            INSERT INTO weekly_settlements
+              (user_id, `year`, `month`, week_start_date, week_end_date,
+               total_sales, total_fee, total_vat, total_refund, total_settlement)
+            SELECT
+              new.user_id, new.`year`, new.`month`, new.week_start_date, new.week_end_date,
+              new.total_sales, new.total_fee, new.total_vat, new.total_refund, new.total_settlement
+            FROM (
+              SELECT
+                :userId                              AS user_id,
+                YEAR(:weekStartDate)                 AS `year`,
+                MONTH(:weekStartDate)                AS `month`,
+                :weekStartDate                       AS week_start_date,
+                DATE_ADD(:weekStartDate, INTERVAL 6 DAY) AS week_end_date,
+                COALESCE(SUM(d.total_sales),      0) AS total_sales,
+                COALESCE(SUM(d.total_fee),        0) AS total_fee,
+                COALESCE(SUM(d.total_vat),        0) AS total_vat,
+                COALESCE(SUM(d.total_refund),     0) AS total_refund,
+                COALESCE(SUM(d.total_settlement), 0) AS total_settlement
+              FROM daily_settlements d
+              WHERE d.user_id = :userId
+                AND d.settlement_date >= :weekStartDate
+                AND d.settlement_date <  DATE_ADD(:weekStartDate, INTERVAL 7 DAY)
+            ) AS new
+            ON DUPLICATE KEY UPDATE
+              total_sales      = new.total_sales,
+              total_fee        = new.total_fee,
+              total_vat        = new.total_vat,
+              total_refund     = new.total_refund,
+              total_settlement = new.total_settlement,
+              `month`          = new.`month`,
+              week_end_date    = new.week_end_date;
+            """, nativeQuery = true)
     int upsertWeekly(
             @Param("userId") Long userId,
-            @Param("year") Short year,
+            @Param("year")  Short year,
             @Param("month") Byte month,
             @Param("weekStartDate") LocalDate weekStartDate,
             @Param("weekEndDate") LocalDate weekEndDate,
-            @Param("dailySales")  BigDecimal dailySales,
-            @Param("weeklySales") BigDecimal weeklySales,
             @Param("totalSales") BigDecimal totalSales,
             @Param("totalFee") BigDecimal totalFee,
             @Param("totalVat") BigDecimal totalVat,

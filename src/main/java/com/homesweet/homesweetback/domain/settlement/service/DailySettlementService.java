@@ -92,9 +92,6 @@ public class DailySettlementService {
 
         List<Settlement> settlements = settlementRepository
                 .findBySettlementDateRange(userId, startDate, endDate);
-        System.out.println("[Daily--] userId=" + userId
-                + " range=[" + startDate + " ~ " + endDate + "]");
-
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");
             return;
@@ -119,10 +116,8 @@ public class DailySettlementService {
             totalVat = s.getVat().add(totalVat);
             totalRefund = s.getRefundAmount().add(totalRefund);
             totalSettlement = s.getSettlementAmount().add(totalSettlement);
-
             prevDate = stDate;
         }
-        System.out.println("upsertupsertupsert");
         if (prevDate != null) {
             dailySettlementRepository.upsertDaily(
                     userId, prevDate.atStartOfDay(),     // 자정 고정

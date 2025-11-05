@@ -48,7 +48,6 @@ public class YearlySettlementService {
         BigDecimal totalRefund = BigDecimal.ZERO;
         BigDecimal totalSettlement = BigDecimal.ZERO;
         int totalCount = settlements.size();
-        System.out.println("totalCount = " + totalCount);
 
         for (MonthlySettlement m : settlements) {
             totalSales = totalSales.add(m.getTotalSales());
@@ -58,7 +57,6 @@ public class YearlySettlementService {
             totalSettlement = totalSettlement.add(m.getTotalSettlement());
             totalCount++;
         }
-        System.out.println("totalSales: " + totalSales);
 
         return new YearlySettlementResponse(
                 (long) firstDayOfYear.getYear(),
@@ -71,13 +69,13 @@ public class YearlySettlementService {
         );
     }
 
+    // 연 집계
     public void getYearlySettlement(Long userId) {
+        Short prevYear = null;
         List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
-        System.out.println("settlements: " + settlements);
         if (settlements == null || settlements.isEmpty()) {
             System.out.println("조회된 정산 데이터가 없어요");
         }
-        Short prevYear = null;
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
         BigDecimal totalVat = BigDecimal.ZERO;
@@ -86,40 +84,46 @@ public class YearlySettlementService {
 
         for (MonthlySettlement y : settlements) {
             Short year = y.getYear();
-            if (prevYear != null && !prevYear.equals(year)) {
-                yearlySettlementRepository.save(
-                        YearlySettlement.builder()
-                                .userId(y.getUserId())
-                                .year(prevYear)
-                                .totalSales(totalSales)
-                                .totalFee(totalFee)
-                                .totalVat(totalVat)
-                                .totalRefund(totalRefund)
-                                .totalSettlement(totalSettlement)
-                                .build()
+            if (prevYear == null) {
+                prevYear = year;    // 연도 초기화
+            }
+            // 연도가 변경되면 upsert
+            if (!year.equals(prevYear)) {
+                yearlySettlementRepository.upsertYearly(
+                        userId,
+                        prevYear,
+                        totalSales,
+                        totalFee,
+                        totalVat,
+                        totalRefund,
+                        totalSettlement
                 );
+                // 다음 연도
+                prevYear = year;
                 totalSales = BigDecimal.ZERO;
                 totalFee = BigDecimal.ZERO;
                 totalVat = BigDecimal.ZERO;
                 totalRefund = BigDecimal.ZERO;
                 totalSettlement = BigDecimal.ZERO;
             }
+            // 현재 연도의 누적
             totalSales = totalSales.add(y.getTotalSales());
             totalFee = totalFee.add(y.getTotalFee());
             totalVat = totalVat.add(y.getTotalVat());
             totalRefund = totalRefund.add(y.getTotalRefund());
             totalSettlement = totalSettlement.add(y.getTotalSettlement());
-            prevYear = year;
         }
-        YearlySettlement yearlySettlement = YearlySettlement.builder()
-                .userId(userId)
-                .year(prevYear)
-                .totalSales(totalSales)
-                .totalFee(totalFee)
-                .totalVat(totalVat)
-                .totalRefund(totalRefund)
-                .totalSettlement(totalSettlement)
-                .build();
-        yearlySettlementRepository.save(yearlySettlement);
+        // 마지막 연도
+        if(prevYear != null) {
+            yearlySettlementRepository.upsertYearly(
+                    userId,
+                    prevYear,
+                    totalSales,
+                    totalFee,
+                    totalVat,
+                    totalRefund,
+                    totalSettlement
+            );
+        }
     }
 }

@@ -73,73 +73,79 @@ public class MonthlySettlementService {
                 currMonth,
                 currentTotalSales,
                 currentTotalFee,
+                currentTotalVat,
                 currentTotalRefund,
                 currentTotalSettlement,
-                currentTotalVat,
                 growthRate.doubleValue(),
                 currentCount
         );
     }
 
+    // 월 집계
     public void getMonthlySettlement(Long userId) {
-        List<WeeklySettlement> settlements = weeklySettlementRepository.findByWeeklySettlement(userId);
-        System.out.println("settlements: " + settlements);
-        if (settlements == null || settlements.isEmpty()) {
-            System.out.println("조회된 정산 데이터가 없어요");
-        }
         Short prevYear = null;
         Byte prevMonth = null;
-
+        // 월 합계
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
         BigDecimal totalVat = BigDecimal.ZERO;
         BigDecimal totalRefund = BigDecimal.ZERO;
         BigDecimal totalSettlement = BigDecimal.ZERO;
 
+        List<WeeklySettlement> settlements = weeklySettlementRepository.findByWeeklySettlement(userId);
+        if (settlements == null || settlements.isEmpty()) {
+            System.out.println("조회된 정산 데이터가 없어요");
+        }
         for (WeeklySettlement w : settlements) {
             Short year = w.getYear();
-             Byte month = w.getMonth();
-            System.out.println(year + "/" );
-            if (prevYear != null && (!prevYear.equals(year) || !prevMonth.equals(month))) {
-                monthlySettlementRepository.save(
-                        MonthlySettlement.builder()
-                                .userId(userId)
-                                .year(prevYear)
-                                .month(prevMonth)
-                                .totalSales(totalSales)
-                                .totalFee(totalFee)
-                                .totalVat(totalVat)
-                                .totalRefund(totalRefund)
-                                .totalSettlement(totalSettlement)
-                                .build()
+            Byte month = w.getMonth();
+            // 첫번째 데이터 초기화
+            if(prevYear == null){
+                prevYear = year;
+                prevMonth = month;
+            }
+            // 시작 월이 변경되면 upsert
+            if (!year.equals(prevYear) || !month.equals(prevMonth)) {
+                monthlySettlementRepository.upsertMonthly(
+                        userId,
+                        prevYear,
+                        prevMonth,
+                        totalSales,
+                        totalFee,
+                        totalVat,
+                        totalRefund,
+                        totalSettlement
                 );
+                // 다음 월
+                prevYear = year;
+                prevMonth = month;
+                System.out.println(prevYear + "/" + prevMonth);
                 totalSales = BigDecimal.ZERO;
                 totalFee = BigDecimal.ZERO;
                 totalVat = BigDecimal.ZERO;
                 totalRefund = BigDecimal.ZERO;
                 totalSettlement = BigDecimal.ZERO;
             }
+            // 현재 월의 누적
             totalSales = totalSales.add(w.getTotalSales());
             totalFee = totalFee.add(w.getTotalFee());
             totalVat = totalVat.add(w.getTotalVat());
             totalRefund = totalRefund.add(w.getTotalRefund());
             totalSettlement = totalSettlement.add(w.getTotalSettlement());
 
-            prevYear = year;
-            prevMonth = month;
-            System.out.println(prevYear + "/" + prevMonth);
         }
-        MonthlySettlement monthlySettlement = MonthlySettlement.builder()
-                .userId(userId)
-                .year(prevYear)
-                .month(prevMonth)
-                .totalSales(totalSales)
-                .totalFee(totalFee)
-                .totalVat(totalVat)
-                .totalRefund(totalRefund)
-                .totalSettlement(totalSettlement)
-                .build();
-        System.out.println(":::::" + monthlySettlement.getTotalSettlement());
-        monthlySettlementRepository.save(monthlySettlement);
+        // 마지막 월 upsert
+        if (prevMonth != null){
+            monthlySettlementRepository.upsertMonthly(
+                    userId,
+                    prevYear,
+                    prevMonth,
+                    totalSales,
+                    totalFee,
+                    totalVat,
+                    totalRefund,
+                    totalSettlement
+            );
+        }
     }
 }

@@ -33,11 +33,11 @@ public class WeeklySettlement {
 
     private LocalDate weekEndDate;
 
-    @Column(name = "daily_sales", precision = 15, scale = 2)
-    private BigDecimal dailySales;
-
-    @Column(name = "weekly_sales", precision = 15, scale = 2)
-    private BigDecimal weeklySales;
+//    @Column(name = "daily_sales", precision = 15, scale = 2)
+//    private BigDecimal dailySales;
+//
+//    @Column(name = "weekly_sales", precision = 15, scale = 2)
+//    private BigDecimal weeklySales;
 
     @Column(name = "total_sales", precision = 15, scale = 2)
     private BigDecimal totalSales;
