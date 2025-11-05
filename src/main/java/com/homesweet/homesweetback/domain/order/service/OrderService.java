@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,12 +93,15 @@ public class OrderService {
         // 3. 최종 결제 금액 = 상품 총액 + 총 배송비
         totalAmount += totalShippingPrice;
 
+        String newOrderNumber = this.generateOrderNumber();
+
         // 4. Order 엔티티 생성 (PENDING, BEFORE_SHIPMENT 상태)
         Order order = Order.builder()
                 .user(user)
                 .orderStatus(OrderStatus.PENDING)
                 .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
                 .totalAmount(totalAmount)
+                .orderNumber(newOrderNumber)
                 .build();
 
         // 5. 연관관계 설정 (Order <-> OrderItem)
@@ -109,8 +113,6 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         // 7. OrderReadyResponse DTO 생성
-        String orderNumber = savedOrder.generateOrderNumber();
-
         List<OrderReadyResponse.OrderItemDetail> itemDetails = savedOrder.getOrderItems().stream()
                 .map(oi -> {
                     SkuEntity sku = oi.getSku();
@@ -135,7 +137,7 @@ public class OrderService {
 
         return new OrderReadyResponse(
                 savedOrder.getId(),
-                orderNumber,
+                newOrderNumber,
                 user.getName(),
                 user.getAddress(),
                 user.getPhoneNumber(),
@@ -184,7 +186,7 @@ public class OrderService {
                     // 3-4. DTO 생성
                     return MyOrderItemResponse.builder()
                             .orderId(order.getId())
-                            .orderNumber(order.generateOrderNumber())
+                            .orderNumber(order.getOrderNumber())
                             .orderDate(order.getOrderedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
                             .productName(productName) // "A상품 외 1건"
                             .imageUrl(imageUrl)       // "A상품 이미지"
@@ -232,5 +234,11 @@ public class OrderService {
 
         // 5. DTO로 변환
         return OrderDetailResponse.of(order, payment, order.getUser(), totalShippingPrice);
+    }
+
+    private String generateOrderNumber() {
+        String uuid = UUID.randomUUID().toString();
+        String cleanUuid = uuid.replace("-", "");
+        return "ORD-" + cleanUuid.toUpperCase();
     }
 }

@@ -63,12 +63,8 @@ public class PaymentService {
      */
     @Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
-        // dto의 orderId와 order의 id는 같지 않다.
-        // dto.orderId == order.orderNumber
-        String[] s = dto.orderId().split("-");
-
         // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
-        Order order = orderRepository.findById(Long.parseLong(s[2]))
+        Order order = orderRepository.findByOrderNumber(dto.orderId()) // 👈 ✨ 여기를 수정!
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
         log.debug(order.toString());
         log.debug(order.getOrderStatus().toString());
