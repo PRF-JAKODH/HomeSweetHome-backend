@@ -6,6 +6,8 @@ import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
+import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
@@ -22,13 +24,20 @@ public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final GradeService gradeService;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
-    public void createSettlement(Order order) {
+    public void createSettlement(Order order, Long userId) {
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("결제완료 상태인 경우에 정산을 생성할 수 있어요");
+            throw new IllegalArgumentException("결제완료 상태인 경우에만 정산을 생성할 수 있어요");
         }
-        User seller = userRepository.findById(order.getUser().getId())
+        if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
+            throw new IllegalArgumentException("제품이 없어요");
+        }
+
+        Long currementSellerId = null;
+        User seller = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("판매자를 찾을 수 없어요"));
         if (seller.getRole() != UserRole.SELLER) {
             throw new IllegalArgumentException("유효한 판매자가 아닙니다");

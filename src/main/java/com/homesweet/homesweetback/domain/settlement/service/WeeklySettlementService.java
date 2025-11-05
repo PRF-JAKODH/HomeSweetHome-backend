@@ -93,10 +93,6 @@ public class WeeklySettlementService {
 
     // 주차별 정산내역
     public void getWeeklySettlement(Long userId, LocalDate weekStart, LocalDate weekEnd) {
-        List<DailySettlement> settlements = dailySettlementRepository.findByDailySettlement(userId);
-        if (settlements == null || settlements.isEmpty()) {
-            System.out.println("조회된 정산 데이터가 없어요");
-        }
         // 이전 연, 월, 주
         Short prevYear = null;
         Byte prevMonth = null;
@@ -104,6 +100,13 @@ public class WeeklySettlementService {
 
         LocalDate weekStartDate = null;
         LocalDate weekEndDate = null;
+
+        // 일별 판매금액
+        BigDecimal dailySales = null;
+        BigDecimal weeklySales = null;
+
+        // 주별 판매금액
+
         // 주 합계
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
@@ -114,33 +117,41 @@ public class WeeklySettlementService {
         // 일자 합계
         BigDecimal lastDaySales  = BigDecimal.ZERO;
 
+        List<DailySettlement> settlements = dailySettlementRepository.findByDailySettlement(userId);
+        if (settlements == null || settlements.isEmpty()) {
+            System.out.println("조회된 정산 데이터가 없어요");
+        }
+
         for (DailySettlement s : settlements) {
-            LocalDate orderedAt = s.getSettlementDate().toLocalDate();
+            LocalDate stDate = s.getSettlementDate().toLocalDate();
+            System.out.println("----" + stDate);
             WeekFields weekFields = WeekFields.of(DayOfWeek.MONDAY, 4); // 시작일이 월요일
-            Short year = (short) orderedAt.getYear();
-            Byte month = (byte) orderedAt.getMonthValue();
-            int weekOfMonth = orderedAt.get(weekFields.weekOfMonth());
+            Short year = (short) stDate.getYear();
+            Byte month = (byte) stDate.getMonthValue();
+            int weekOfMonth = stDate.get(weekFields.weekOfMonth());
 
-            LocalDate startOfWeek = orderedAt.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-            LocalDate endOfWeek = orderedAt.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+            LocalDate startOfWeek = stDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            LocalDate endOfWeek = stDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
 
+            // upsert
             if (prevYear != null && (!prevYear.equals(year) || !prevMonth.equals(month) || !prevWeek.equals(weekOfMonth))) {
-                WeeklySettlement weeklySettlement = weeklySettlementRepository.save(
-                        WeeklySettlement.builder()
-                                .userId(s.getUserId())
-                                .year(prevYear)
-                                .month(prevMonth)
-                                .weekStartDate(weekStartDate.atStartOfDay().toLocalDate())
-                                .weekEndDate(weekEndDate.atTime(23, 59, 59).toLocalDate())
-                                .weeklySales(totalSales)
-                                .dailySales(lastDaySales)
-                                .totalSales(totalSales)
-                                .totalVat(totalVat)
-                                .totalFee(totalFee)
-                                .totalRefund(totalRefund)
-                                .totalSettlement(totalSettlement)
-                                .build()
-                );
+                weeklySettlementRepository.upsertWeekly(userId, year, month, weekStartDate, weekEndDate, dailySales, weeklySales, totalSales, totalFee, totalVat, totalRefund, totalSettlement);
+//                WeeklySettlement weeklySettlement = weeklySettlementRepository.save(
+//                        WeeklySettlement.builder()
+//                                .userId(s.getUserId())
+//                                .year(prevYear)
+//                                .month(prevMonth)
+//                                .weekStartDate(weekStartDate.atStartOfDay().toLocalDate())
+//                                .weekEndDate(weekEndDate.atTime(23, 59, 59).toLocalDate())
+//                                .weeklySales(totalSales)
+//                                .dailySales(lastDaySales)
+//                                .totalSales(totalSales)
+//                                .totalVat(totalVat)
+//                                .totalFee(totalFee)
+//                                .totalRefund(totalRefund)
+//                                .totalSettlement(totalSettlement)
+//                                .build()
+//                );
                 lastDaySales = s.getTotalSales();
 
                 totalSales = BigDecimal.ZERO;

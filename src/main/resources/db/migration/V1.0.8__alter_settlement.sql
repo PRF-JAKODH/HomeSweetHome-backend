@@ -25,3 +25,5 @@ ON daily_settlements(user_id, settlement_date);
 CREATE UNIQUE INDEX ux_weekly_settlements
 ON weekly_settlements(user_id, week_start_date);
 
+-- ALTER TABLE order_items
+--     ADD COLUMN seller_id BIGINT NOT NULL;
