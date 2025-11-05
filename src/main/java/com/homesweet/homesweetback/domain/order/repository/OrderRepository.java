@@ -34,4 +34,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 //            "LEFT JOIN FETCH so.optionValue ov " + // 옵션 값
             "WHERE o.id = :orderId")
     Optional<Order> findByIdWithDetails(@Param("orderId") Long orderId);
+
+    Optional<Order> findByOrderNumber(String orderNumber);
 }
