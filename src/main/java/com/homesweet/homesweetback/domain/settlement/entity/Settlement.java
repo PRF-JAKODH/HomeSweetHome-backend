@@ -19,6 +19,8 @@ public class Settlement {
     @Column(name = "settlement_id")
     private Long settlementId;
 
+    // 판매자 번호
+    @Column(name = "user_id")
     private Long userId;
 
     @Setter
@@ -41,6 +43,7 @@ public class Settlement {
     @Column(name = "settlement_amount", precision = 15, scale = 2)
     private BigDecimal settlementAmount;
 
+    @Column(name = "settlement_date")
     private LocalDateTime settlementDate;
 
     @ManyToOne

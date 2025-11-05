@@ -13,4 +13,6 @@ public interface MonthlySettlementRepository extends JpaRepository<MonthlySettle
     List<MonthlySettlement> findByMonthlySettlement(@Param("userId") Long userId);
 //    @Query("SELECT m FROM MonthlySettlement m WHERE m.userId = :userId AND m.year =:year AND m.month =:month")
 //    List<MonthlySettlement> findByMonthlySettlement(@Param("userId") Long userId, @Param("year") Short year, @Param("month") Byte month);
+
+//    int upsertMonthly()
 }
