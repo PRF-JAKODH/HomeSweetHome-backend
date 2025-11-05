@@ -4,10 +4,12 @@ package com.homesweet.homesweetback.domain.order.repository;
 
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +38,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdWithDetails(@Param("orderId") Long orderId);
 
     Optional<Order> findByOrderNumber(String orderNumber);
+
+    /**
+     * 특정 상태(status)이면서, 특정 시간(cutoffTime) 이전에 생성된 모든 주문을 조회합니다.
+     * (스케줄러가 PENDING 주문을 찾기 위해 사용)
+     */
+    List<Order> findAllByOrderStatusAndOrderedAtBefore(OrderStatus orderStatus, LocalDateTime cutoffTime);
 }

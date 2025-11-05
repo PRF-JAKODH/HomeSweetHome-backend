@@ -1,9 +1,4 @@
--- ====================================
--- 알림 템플릿 업데이트
--- ====================================
--- V1.0.10에서 추가된 템플릿을 삭제하고 새로운 템플릿으로 교체합니다.
 
--- 기존에 V1.0.10에서 추가된 데이터 삭제
 DELETE FROM notification_template 
 WHERE template_type IN ('NEW_FOLLOW', 'SETTLEMENT_FAILED', 'CHAT_ROOM_INVITE');
 
