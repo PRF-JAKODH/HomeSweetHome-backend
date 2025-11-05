@@ -28,16 +28,15 @@ public class SettlementService {
 
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
-    public void createSettlement(Order order, Long userId) {
+    public void createSettlement(Order order) {
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
             throw new IllegalArgumentException("결제완료 상태인 경우에만 정산을 생성할 수 있어요");
         }
         if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
             throw new IllegalArgumentException("제품이 없어요");
         }
-
-        Long currementSellerId = null;
-        User seller = userRepository.findById(userId)
+        // !!seller 가져오는 거 변경 필요!! 현재 주문자의 아이디를 가져옴
+        User seller = userRepository.findById(order.getUser().getId())
                 .orElseThrow(() -> new IllegalArgumentException("판매자를 찾을 수 없어요"));
         if (seller.getRole() != UserRole.SELLER) {
             throw new IllegalArgumentException("유효한 판매자가 아닙니다");

@@ -33,12 +33,13 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
           (user_id, settlement_date, total_sales, total_fee, total_vat, total_refund, total_settlement)
         VALUES
           (:userId, :settlementDate, :totalSales, :totalFee, :totalVat, :totalRefund, :totalSettlement)
+        AS new
         ON DUPLICATE KEY UPDATE
-          total_sales      = total_sales + VALUES(total_sales),
-          total_fee        = total_fee + VALUES(total_fee),
-          total_vat        = total_vat + VALUES(total_vat),
-          total_refund     = total_refund + VALUES(total_refund),
-          total_settlement = total_settlement + VALUES(total_settlement)
+            total_sales = new.total_sales,
+            total_fee = new.total_fee,
+            total_vat = new.total_vat,
+            total_refund = new.total_refund,
+            total_settlement = new.total_settlement
         """, nativeQuery = true)
     int upsertDaily(
             @Param("userId") Long userId,
