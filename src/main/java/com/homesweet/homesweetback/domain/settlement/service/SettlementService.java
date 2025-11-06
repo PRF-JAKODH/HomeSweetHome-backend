@@ -26,6 +26,7 @@ public class SettlementService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
 
+    //TODO: 결제에서 받지말고 한번에 처리하게끔 구조를 변경
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
     public void createSettlement(Order order) {
@@ -43,6 +44,7 @@ public class SettlementService {
             throw new IllegalArgumentException("유효한 판매자가 아닙니다");
         }
         BigDecimal fee = gradeService.calculateFeeforUser(BigDecimal.valueOf(order.getTotalAmount()), seller);
+        //TODO: 계산 로직만 메서드를 분리한다면 순숫하게 테스트 가능
         BigDecimal refundAmount = BigDecimal.ZERO;
         BigDecimal vat = BigDecimal.valueOf(order.getTotalAmount()).multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP);
 

@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.controller.request.update;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -76,6 +76,7 @@ public class OrderService {
             ProductEntity product = sku.getProduct();
 
             // 2-2. 주문 항목 가격 계산 (할인 적용된 '단가')
+            //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다
             long discountedPrice = calculateDiscountedPrice(product.getBasePrice(), sku.getPriceAdjustment(), product.getDiscountRate());
 
             // 2-3. 총 주문 금액 계산 (상품 총액)
@@ -83,6 +84,7 @@ public class OrderService {
 
 //            totalShippingPrice += product.getShippingPrice();
             // 2-4. 총 배송비 계산 (productId 기준 1회만)
+            //TODO: 배송한테 값얼만지 요청해야한다.
             Long currentProductId = product.getId();
             if (!processedProductIds.contains(currentProductId)) {
                 totalShippingPrice += product.getShippingPrice();
@@ -92,7 +94,7 @@ public class OrderService {
             // 2-5. OrderItem 엔티티 생성
             OrderItem orderItem = OrderItem.builder()
                     .sku(sku)
-                    .quantity((long) itemDto.quantity())
+                    .quantity((long) itemDto.quantity()) //TODO: long 타입 변환이 필요한가? dto 변환
                     .price(discountedPrice) // 주문 시점의 '단가' 스냅샷
                     .build();
             orderItemsList.add(orderItem);
@@ -157,6 +159,7 @@ public class OrderService {
 
     public List<MyOrderItemResponse> getMyOrders(Long userId) {
         // 1. 사용자(User) 조회
+        //TODO: userRepo를 참조해서 order에서 검증하는게 맞나?
         User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         // 2. 주문 목록 조회 (N+1 방지용 쿼리 사용)
@@ -230,6 +233,7 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         // 2. (보안) 주문자 본인 확인
+        //TODO: 캡슐화 적용!!
         if (!order.getUser().getId().equals(userId)) {
             // (권한 없음 - 403 Forbidden이 더 적절할 수 있음)
             throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
@@ -256,6 +260,7 @@ public class OrderService {
         // 5. DTO로 변환
         return OrderDetailResponse.of(order, payment, order.getUser(), totalShippingPrice);
     }
+
 
     private String generateOrderNumber() {
         String uuid = UUID.randomUUID().toString();
