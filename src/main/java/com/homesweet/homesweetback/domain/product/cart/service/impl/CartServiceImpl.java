@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.cart.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
@@ -27,7 +28,7 @@ import java.util.Optional;
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
-    private final SkuRepository skuRepository;
+    private final ProductValidator productValidator;
 
     /**
      * 장바구니에 상품 추가
@@ -36,7 +37,11 @@ public class CartServiceImpl implements CartService {
      */
     @Transactional
     public Cart addToCart(Long userId, CartRequest request) {
-        validateExistsSku(request.skuId());
+        // 장바구니 수량 검증
+        request.validateLimitQuantity();
+
+        // 재고가 존재하는지 확인
+        productValidator.validateExistsSku(request.skuId());
 
         // 이미 장바구니에 존재하면 수량 증가
         Optional<Cart> existingCart = cartRepository.findByUserIdAndSkuId(userId, request.skuId());
@@ -46,15 +51,7 @@ public class CartServiceImpl implements CartService {
             return updateQuantity(cart, request.quantity());
         } else {
             // 신규 상품이면 장바구니 제품 종류 수 확인 (최대 10종류)
-            int cartItemCount = cartRepository.countByUserId(userId);
-            if (cartItemCount >= 10) {
-                throw new ProductException(ErrorCode.CART_ITEM_TYPE_LIMIT_EXCEEDED_ERROR);
-            }
-
-            // 수량 제한 체크
-            if (request.quantity() > 10) {
-                throw new ProductException(ErrorCode.CART_LIMIT_EXCEEDED_ERROR);
-            }
+            productValidator.validateCartItemTypeLimit(userId);
 
             return createCart(userId, request.skuId(), request.quantity());
         }
@@ -78,7 +75,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void deleteCartItem(Long userId, Long cartId) {
-        validateExistsCart(cartId, userId);
+        productValidator.validateExistsCart(cartId, userId);
 
         cartRepository.deleteById(cartId);
     }
@@ -115,7 +112,7 @@ public class CartServiceImpl implements CartService {
         }
 
         // 3. 카트 항목이 사용자의 소유인지 검증 (기존 헬퍼 메서드 재사용)
-        validateExistsCart(cartId, userId);
+        productValidator.validateExistsCart(cartId, userId);
 
         // 4. 카트 정보 가져오기
         Cart cart = cartRepository.findById(cartId)
@@ -140,19 +137,4 @@ public class CartServiceImpl implements CartService {
 
         return cartRepository.save(cart);
     }
-
-
-    private void validateExistsSku(Long skuId) {
-        if (!skuRepository.existsById(skuId)) {
-            throw new ProductException(ErrorCode.SKU_NOT_FOUND_ERROR);
-        }
-    }
-
-    private void validateExistsCart(Long cartId, Long userId) {
-        if (!cartRepository.existsByIdAndUserId(cartId, userId)) {
-            throw new ProductException(ErrorCode.CART_NOT_FOUND_ERROR);
-        }
-    }
-
-
 }

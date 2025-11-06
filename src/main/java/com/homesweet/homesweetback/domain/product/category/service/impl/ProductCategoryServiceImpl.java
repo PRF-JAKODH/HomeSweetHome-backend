@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.category.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
 import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
@@ -25,13 +26,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductCategoryServiceImpl implements ProductCategoryService {
 
+    private final ProductValidator validator;
     private final ProductCategoryRepository repository;
 
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
-        validateDuplicateCategoryName(request.name());
+        validator.validateDuplicateCategoryName(request.name());
 
         int depth = 0;
         if (request.parentId() != null) {
@@ -40,9 +42,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
             depth = parent.depth() + 1;
 
-            if (depth > ProductCategory.MAX_DEPTH) {
-                throw new ProductCategoryException(ErrorCode.CATEGORY_DEPTH_EXCEEDED_ERROR);
-            }
+            parent.validateMaxDepth(depth);
         }
 
         ProductCategory category = ProductCategory.createCategory(request.name(), request.parentId(), depth);
@@ -89,12 +89,5 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         Collections.reverse(hierarchy);
 
         return hierarchy;
-    }
-
-    private void validateDuplicateCategoryName(String name) {
-        repository.findByName(name)
-                .ifPresent(c -> {
-                    throw new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR);
-                });
     }
 }
