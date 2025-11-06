@@ -37,7 +37,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+
+import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -49,6 +53,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final SkuJPARepository skuJPARepository; // ★ 재고 차감용
+    private final CartRepository cartRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -149,7 +154,24 @@ public class PaymentService {
         settlementService.createSettlement(order);
 
 
-        // 9. 최종 응답 반환
+        // 9. 구매 완료된 상품 장바구니에서 삭제
+        try {
+            List<Long> purchasedSkuIds = order.getOrderItems().stream()
+                    .map(orderItem -> orderItem.getSku().getId())
+                    .collect(Collectors.toList());
+
+            if (!purchasedSkuIds.isEmpty()) {
+                cartRepository.deleteByUserIdAndSkuIdIn(userId, purchasedSkuIds);
+                log.info("[Payment Success] 사용자의 장바구니에서 {}개의 SKU를 삭제했습니다. (UserId: {})", purchasedSkuIds.size(), userId);
+            }
+        } catch (Exception e) {
+            // (중요) 장바구니 삭제에 실패하더라도,
+            // 이미 결제 승인/재고 차감이 완료되었으므로 이 트랜잭션을 롤백하면 안 됩니다.
+            // 따라서 예외를 잡아서 로그만 남깁니다.
+            log.error("[Payment Success - Cart Clear Failed] 장바구니 삭제 중 오류 발생. (UserId: {}): {}", userId, e.getMessage());
+        }
+
+        // 10. 최종 응답 반환
         return new PaymentConfirmResponse(
                 order.getId(),
                 order.getOrderStatus().name()

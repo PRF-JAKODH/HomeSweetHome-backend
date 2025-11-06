@@ -43,11 +43,13 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                 .select(
                         cart.id,
                         sku.id,
+                        sku.product.id,
                         product.brand,
                         product.name,
                         optionGroup.groupName,
                         optionValue.value,
                         product.basePrice,
+                        sku.priceAdjustment,
                         product.discountRate,
                         product.shippingPrice,
                         cart.quantity,
@@ -71,15 +73,21 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
         for (Tuple t : tuples) {
             Long cartId = t.get(cart.id);
             Integer basePrice = t.get(product.basePrice);
+            Integer priceAdjustment = Optional.ofNullable(t.get(sku.priceAdjustment)).orElse(0);
             BigDecimal discountRate = t.get(product.discountRate);
             Integer quantity = t.get(cart.quantity);
 
-            int finalPrice = (int) Math.floor(basePrice * (1 - discountRate.doubleValue() / 100));
+            // 1. 기본가(basePrice)에만 할인을 먼저 적용
+            double discountedBasePrice = basePrice * (1 - discountRate.doubleValue() / 100);
+
+            // 2. 할인된 기본가에 옵션가(priceAdjustment)를 더함
+            int finalPrice = (int) Math.floor(discountedBasePrice) + priceAdjustment;
             int totalPrice = finalPrice * quantity;
 
             grouped.computeIfAbsent(cartId, id -> CartResponse.builder()
                     .id(id)
                     .skuId(t.get(sku.id))
+                    .productId(t.get(sku.product.id))
                     .brand(t.get(product.brand))
                     .productName(t.get(product.name))
                     .basePrice(basePrice)
@@ -91,6 +99,7 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                     .imageUrl(t.get(product.imageUrl))
                     .createdAt(t.get(cart.createdAt))
                     .updatedAt(t.get(cart.updatedAt))
+                    .priceAdjustment(priceAdjustment)
                     .optionSummary("")
             );
 

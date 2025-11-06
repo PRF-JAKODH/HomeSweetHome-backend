@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public record CartResponse(
         Long id,
         Long skuId,
+        Long productId,
         String brand,
         String productName,
         String optionSummary,
@@ -26,7 +27,8 @@ public record CartResponse(
         Integer totalPrice,
         String imageUrl,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer priceAdjustment
 ) {
 
 }
