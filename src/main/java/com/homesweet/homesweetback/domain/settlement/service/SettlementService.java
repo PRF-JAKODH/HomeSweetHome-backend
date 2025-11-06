@@ -35,9 +35,10 @@ public class SettlementService {
         if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
             throw new IllegalArgumentException("제품이 없어요");
         }
-        // !!seller 가져오는 거 변경 필요!! 현재 주문자의 아이디를 가져옴
-        User seller = userRepository.findById(order.getUser().getId())
-                .orElseThrow(() -> new IllegalArgumentException("판매자를 찾을 수 없어요"));
+        User seller = orderRepository.findBySellerId(order.getId());
+        if (seller == null) {
+            throw new IllegalArgumentException("판매자를 찾을 수 없어요");
+        }
         if (seller.getRole() != UserRole.SELLER) {
             throw new IllegalArgumentException("유효한 판매자가 아닙니다");
         }

@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.settlement.repository;
 
 import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -72,4 +73,5 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
     );
+
 }
