@@ -63,6 +63,9 @@ public class OrderService {
         long totalAmount = 0L;
         int totalShippingPrice = 0;
 
+        // 배송비를 계산한 상품 ID를 저장할 Set
+        java.util.Set<Long> processedProductIds = new java.util.HashSet<>();
+
         // 2. 주문 항목(SKU) 조회 및 총액 계산
         for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()) {
             // 2-1. SKU 조회 (ProductEntity 포함)
@@ -78,8 +81,13 @@ public class OrderService {
             // 2-3. 총 주문 금액 계산 (상품 총액)
             totalAmount += (discountedPrice * itemDto.quantity());
 
-            // 2-4. 총 배송비 계산
-            totalShippingPrice += product.getShippingPrice();
+//            totalShippingPrice += product.getShippingPrice();
+            // 2-4. 총 배송비 계산 (productId 기준 1회만)
+            Long currentProductId = product.getId();
+            if (!processedProductIds.contains(currentProductId)) {
+                totalShippingPrice += product.getShippingPrice();
+                processedProductIds.add(currentProductId);
+            }
 
             // 2-5. OrderItem 엔티티 생성
             OrderItem orderItem = OrderItem.builder()
@@ -200,11 +208,17 @@ public class OrderService {
 
     // (상품 가격 계산 헬퍼 메서드)
     private long calculateDiscountedPrice(Integer basePrice, Integer adjustment, BigDecimal discountRate) {
-        BigDecimal pricePerItemBD = BigDecimal.valueOf(basePrice + adjustment);
+
+        // 1. [수정] 기본가(basePrice)에만 할인을 먼저 적용
+        BigDecimal basePriceBD = BigDecimal.valueOf(basePrice);
         BigDecimal HUNDRED = new BigDecimal("100");
         BigDecimal rate = discountRate.divide(HUNDRED, 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal discountAmount = pricePerItemBD.multiply(rate);
-        BigDecimal finalPrice = pricePerItemBD.subtract(discountAmount);
+        BigDecimal discountAmount = basePriceBD.multiply(rate);
+        BigDecimal discountedBasePrice = basePriceBD.subtract(discountAmount);
+
+        // 2. [수정] 할인된 기본가에 옵션가(adjustment)를 더함
+        BigDecimal finalPrice = discountedBasePrice.add(BigDecimal.valueOf(adjustment));
+
         return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
     }
 
@@ -226,10 +240,17 @@ public class OrderService {
         Payment payment = paymentRepository.findByOrder(order)
                 .orElse(null); // 결제 대기중인 주문은 payment가 null일 수 있음
 
-        // 4. 총 배송비 계산 (단순 합산)
+        // 4. 총 배송비 계산
         // (OrderReadyResponse DTO 정의에 따라 Integer로 반환)
         Integer totalShippingPrice = order.getOrderItems().stream()
-                .mapToInt(item -> item.getSku().getProduct().getShippingPrice())
+                .map(item -> item.getSku().getProduct()) // OrderItem -> Product
+                .map(ProductEntity::getId)               // Product -> Product ID
+                .distinct()                              // [핵심] Product ID 중복 제거
+                .mapToInt(productId -> order.getOrderItems().stream()
+                        .filter(oi -> oi.getSku().getProduct().getId().equals(productId))
+                        .findFirst() // 각 Product ID당 첫 번째 아이템만 찾음
+                        .map(oi -> oi.getSku().getProduct().getShippingPrice()) // 그 아이템의 배송비
+                        .orElse(0))
                 .sum();
 
         // 5. DTO로 변환

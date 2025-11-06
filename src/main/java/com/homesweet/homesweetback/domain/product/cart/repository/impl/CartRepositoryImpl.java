@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARep
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.mapper.CartMapper;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -85,5 +86,11 @@ public class CartRepositoryImpl implements CartRepository {
     @Override
     public int countByUserId(Long userId) {
         return jpaRepository.countByUser_Id(userId);
+    }
+
+    @Override
+    @Transactional // 데이터 변경(DELETE)이므로 트랜잭션 필요
+    public void deleteByUserIdAndSkuIdIn(Long userId, List<Long> skuIds) {
+        jpaRepository.deleteByUserIdAndSkuIdIn(userId, skuIds);
     }
 }

@@ -28,7 +28,7 @@ public class OrderSchedulerService {
      * * 생성된 지 60분이 지났지만 여전히 PENDING 상태인
      * '결제 이탈 주문'을 찾아 자동으로 취소 처리합니다.
      */
-    @Scheduled(cron = "0 0/1 * * * ?") // 30분마다 실행
+    @Scheduled(cron = "0 0/30 * * * ?") // 30분마다 실행
     @Transactional
     public void cleanupAbandonedPendingOrders() {
         log.info("[Scheduler] 결제 이탈 주문(PENDING) 자동 취소 작업 시작...");
