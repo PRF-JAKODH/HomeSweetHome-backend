@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
@@ -36,6 +37,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    private final ProductValidator productValidator;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
@@ -45,9 +47,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
 
         // 판매자는 중복된 이름의 상품을 등록할 수 없다
-        if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
-            throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
-        }
+        productValidator.validateDuplicateProductName(sellerId, request.name());
 
         // 제품 등록 시 -> 카테고리 설정, 대표 이미지 설정, 상세 이미지 설정, 옵션 그룹 생성, 옵션 그룹 별 재고 설정이 필요하다
         ProductCategory category = categoryRepository.findById(request.categoryId())
@@ -109,7 +109,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long productId) {
 
-        validateExistsProduct(productId);
+        productValidator.validateExistsProduct(productId);
 
         return productRepository.findProductDetailById(productId);
     }
@@ -118,7 +118,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<SkuStockResponse> getProductStock(Long productId) {
 
-        validateExistsProduct(productId);
+        productValidator.validateExistsProduct(productId);
 
         return productRepository.findSkuStocksByProductId(productId);
     }
@@ -147,8 +147,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
-                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+        // 판매자가 실제 판매하는 제품인지 확인
+        productValidator.validateExistsSellerProduct(sellerId, productId);
 
         // 각 SKU의 재고 업데이트
         for (ProductSkuUpdateRequest.SkuStockUpdateRequest skuUpdate : request.skus()) {
@@ -174,7 +174,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         // 1. 대표 이미지 교체
-        if (request.mainImage() != null && !request.mainImage().isEmpty()) {
+        if (request.hasMainImage()) {
             productImageUploader.deleteProductImage(product.getImageUrl());
 
             String newMainImageUrl = productImageUploader.uploadProductMainImage(request.mainImage());
@@ -183,37 +183,22 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 2. 상세 이미지 삭제
-        if (request.deleteDetailImageUrls() != null && !request.deleteDetailImageUrls().isEmpty()) {
+        if (request.hasDeleteTargets()) {
             request.deleteDetailImageUrls().forEach(productImageUploader::deleteProductImage);
 
             productRepository.deleteDetailImages(productId, request.deleteDetailImageUrls());
         }
 
         // 3. 상세 이미지 추가
-        if (request.detailImages() != null && !request.detailImages().isEmpty()) {
-            int currentDetailImageCount = product.getDetailImages().size();
-            int newImageCount = request.detailImages().size();
-
-            int deleteCount = request.deleteDetailImageUrls() != null
-                    ? request.deleteDetailImageUrls().size()
-                    : 0;
-
-            if (currentDetailImageCount - deleteCount + newImageCount > 5) {
-                throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
-            }
+        if (request.hasDetailImages()) {
+            // 상세 이미지 개수 검증 (5개 초과 불가)
+            productValidator.validateDetailImageLimit(product, request.deleteDetailImageUrls(), request.detailImages());
 
             // 새 상세 이미지 업로드
             List<String> newDetailImageUrls = productImageUploader.uploadProductDetailImages(request.detailImages());
 
             // DB에 새 이미지 추가
             productRepository.addDetailImages(productId, newDetailImageUrls);
-        }
-    }
-
-    // 상품이 존재하는지 검증하는 로직
-    private void validateExistsProduct(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
         }
     }
 }

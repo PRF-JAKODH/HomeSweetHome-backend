@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.product.category.domain;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -27,5 +29,11 @@ public record ProductCategory(
                 .parentId(parentId)
                 .depth(depth)
                 .build();
+    }
+
+    public void validateMaxDepth(int depth) {
+        if (depth > ProductCategory.MAX_DEPTH) {
+            throw new ProductCategoryException(ErrorCode.CATEGORY_DEPTH_EXCEEDED_ERROR);
+        }
     }
 }
