@@ -74,8 +74,8 @@ public class PaymentService {
         // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
 
         //TODO: 지금 비효율적이다.(조금 효율적으로 하면 좋을것 같다)
-        saveDB();
-        callTossAPI();
+//        saveDB();
+//        callTossAPI();
         Order order = orderRepository.findByOrderNumber(dto.orderId()) // 👈 ✨ 여기를 수정!
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
         log.debug(order.toString());
