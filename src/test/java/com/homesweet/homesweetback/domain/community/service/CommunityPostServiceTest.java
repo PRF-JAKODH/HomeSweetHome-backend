@@ -46,9 +46,8 @@ class CommunityPostServiceTest {
     private CommunityPostService communityPostService;
 
 
-    /**
-     * any()로 짬 다음부턴 @argumentCaptor로
-     */
+    // ArgumentCaptor를 사용할수도 있다
+
     @DisplayName("게시물 생성 테스트")
     @Test
     void postPost(){
@@ -85,34 +84,14 @@ class CommunityPostServiceTest {
     @DisplayName("게시물 조회 테스트")
     @Test
     void getPost(){
-
-    }
-
-    @DisplayName("게시물 수정 테스트")
-    @Test
-    void updatePost(){
-        // ArgumentCaptor 생성
-        ArgumentCaptor<CommunityPostEntity> getCaptor = ArgumentCaptor.forClass((CommunityPostEntity.class));
-
-        // given
-        Long userId = 1L;
-        CommunityPostRequest request = new CommunityPostRequest("Test Title", "Test Content", "Test category");
-
-        User fakeUser = User.builder().id(userId).name("fakeUser").build();
-
-//        CommunityPostEntity savedPost = CommunityPostEntity.builder()
-//                .postId(1L)
-//                .author(fakeUser)
-//                .title(request.title())
-//                .content(request.content())
-//                .category(request.category())
-//                .build();
-
-        communityPostService.createPost(Collections.emptyList(), request, userId);
-        
+        Long postId = 1L;
+        User fakeUser = User.builder().id(1L).name("fakeUser").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("")
         // when
-        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
-        when(postRepository.save(any(CommunityPostEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(postRepository.findById(1L)).thenReturn(Optional.of(savedPost));
 
         // then
         verify(postRepository).save((getCaptor.capture()));
@@ -124,5 +103,12 @@ class CommunityPostServiceTest {
         assertThat(getPost.getCategory()).isEqualTo("Test category");
         assertThat(getPost.getAuthor()).isEqualTo(fakeUser);
         assertThat(getPost.getIsDeleted()).isFalse();
+
+    }
+
+    @DisplayName("게시물 수정 테스트")
+    @Test
+    void updatePost(){
+
     }
 }

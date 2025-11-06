@@ -3,10 +3,7 @@ package com.homesweet.homesweetback.domain.community.repository;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.homesweet.homesweetback.domain.community.entity.*;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 /**

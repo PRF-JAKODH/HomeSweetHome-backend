@@ -17,9 +17,7 @@ import java.util.Optional;
  */
 
 public interface CommunityPostRepository extends JpaRepository<CommunityPostEntity, Long> {
-
-    List<CommunityPostEntity> findAllByIsDeletedFalse();
-
+    
     // 특정 게시글 조회
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
