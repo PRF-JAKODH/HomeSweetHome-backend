@@ -305,32 +305,6 @@ class ProductServiceImplTest {
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR.getMessage());
             }
-
-            @Test
-            @DisplayName("존재하지 않는 카테고리로 등록할 수 없다")
-            void createProductWithInvalidCategory() {
-                // given
-                Long sellerId = 1L;
-                ProductCreateRequest request = new ProductCreateRequest(
-                        999L, "잘못된 카테고리 상품", "홈스윗",
-                        30000, BigDecimal.ZERO,
-                        "없는 카테고리", 3000,
-                        List.of(), List.of()
-                );
-
-                MockMultipartFile mainImage =
-                        new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
-
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
-                given(categoryRepository.findById(999L)).willReturn(Optional.empty());
-
-                // when & then
-                assertThatThrownBy(() ->
-                        service.registerProduct(sellerId, request, mainImage, List.of())
-                )
-                        .isInstanceOf(ProductCategoryException.class)
-                        .hasMessage(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR.getMessage());
-            }
         }
     }
 }

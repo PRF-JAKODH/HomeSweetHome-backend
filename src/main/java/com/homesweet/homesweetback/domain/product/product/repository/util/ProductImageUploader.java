@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.product.product.repository.util;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
+import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ProductImageUploader {
+
+    private static final int MAX_DETAIL_IMAGE_COUNT = 5;
 
     private final ImageUploader imageUploader;
 
@@ -40,6 +44,15 @@ public class ProductImageUploader {
     }
 
     public List<String> uploadProductDetailImages(List<MultipartFile> detailImages) {
+        if (detailImages == null || detailImages.isEmpty()) {
+            return List.of();
+        }
+
+        // 상세 이미지는 5개까지 가능
+        if (detailImages.size() > MAX_DETAIL_IMAGE_COUNT) {
+            throw new ProductException(ErrorCode.EXCEEDED_IMAGE_LIMIT_ERROR);
+        }
+
         return imageUploader.uploadFiles(detailImages, "product/detail");
     }
 
