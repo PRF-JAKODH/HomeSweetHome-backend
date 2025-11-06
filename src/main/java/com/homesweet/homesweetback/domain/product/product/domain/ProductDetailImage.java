@@ -23,6 +23,7 @@ public class ProductDetailImage {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    //TODO: 이미지에 대한 변경지점을 한곳에서 관리하는게 어떨까?(SRP)
     public static List<ProductDetailImage> createDetailImages(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return new ArrayList<>();
