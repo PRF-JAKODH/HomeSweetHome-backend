@@ -2,6 +2,8 @@ package com.homesweet.homesweetback.domain.settlement.repository;
 
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -50,4 +52,12 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
     );
+
+    // 일별 집계 조회
+    @Query(value = """
+    SELECT d FROM DailySettlement d WHERE d.userId =:userId
+        AND d.settlementDate >= :startDate AND d.settlementDate < :endDate
+        ORDER BY d.settlementDate DESC
+    """)
+    Page<DailySettlement> findByDailySettlementByRange(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 }
