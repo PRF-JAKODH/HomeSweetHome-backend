@@ -110,7 +110,7 @@ class CommunityPostRepositoryTest {
 
     @Test
     @DisplayName("게시글 수정이 잘되는지 확인")
-    void putPost() {
+    void updatePost() {
         // given: 유저와 게시물 생성
         User testUser = User.builder()
                 .email("test@test.com")
@@ -182,10 +182,10 @@ class CommunityPostRepositoryTest {
                 .author(SavedUser)
                 .build();
 
-        CommunityPostEntity savedPost = postRepository.save(post);
+        CommunityPostEntity savedPost = postRepository.save(post);      
 
         // when:
-        postRepository.delete(post);
+        postRepository.delete(savedPost);
 
         // then:
         assertThat(postRepository.findById(post.getPostId())).isEmpty();
