@@ -50,7 +50,7 @@ class CommunityPostServiceTest {
 
     @DisplayName("게시물 생성 테스트")
     @Test
-    void postPost(){
+    void postPost() {
         // given
         Long userId = 1L;
         CommunityPostRequest request = new CommunityPostRequest("Test Title", "Test Content", "Test category");
@@ -58,12 +58,12 @@ class CommunityPostServiceTest {
         User fakeUser = User.builder().id(userId).name("fakeUser").build();
 
         CommunityPostEntity savedPost = CommunityPostEntity.builder()
-                        .postId(1L)
-                        .author(fakeUser)
-                        .title(request.title())
-                        .content(request.content())
-                        .category(request.category())
-                        .build();
+                .postId(1L)
+                .author(fakeUser)
+                .title(request.title())
+                .content(request.content())
+                .category(request.category())
+                .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(postRepository.save(any(CommunityPostEntity.class))).thenReturn(savedPost);
@@ -83,32 +83,107 @@ class CommunityPostServiceTest {
 
     @DisplayName("게시물 조회 테스트")
     @Test
-    void getPost(){
+    void getPost() {
+        // given
         Long postId = 1L;
         User fakeUser = User.builder().id(1L).name("fakeUser").build();
         CommunityPostEntity fakePost = CommunityPostEntity.builder()
                 .postId(postId)
                 .author(fakeUser)
-                .title("")
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .viewCount(0)
+                .likeCount(0)
+                .commentCount(0)
+                .isModified(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .modifiedAt(null)
+                .build();
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(fakePost));
+        when(imageRepository.findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class))).thenReturn(Collections.emptyList());
+
         // when
-        when(postRepository.findById(1L)).thenReturn(Optional.of(savedPost));
+        CommunityPostResponse response = communityPostService.getPost(postId);
 
         // then
-        verify(postRepository).save((getCaptor.capture()));
+        assertThat(response).isNotNull();
+        assertThat(response.postId()).isEqualTo(postId);
+        assertThat(response.title()).isEqualTo("Test Title");
+        assertThat(response.content()).isEqualTo("Test Content");
+        assertThat(response.category()).isEqualTo("Test Category");
 
-        CommunityPostEntity getPost = getCaptor.getValue();
-
-        assertThat(getPost.getTitle()).isEqualTo("Test Title");
-        assertThat(getPost.getContent()).isEqualTo("Test Content");
-        assertThat(getPost.getCategory()).isEqualTo("Test category");
-        assertThat(getPost.getAuthor()).isEqualTo(fakeUser);
-        assertThat(getPost.getIsDeleted()).isFalse();
-
+        verify(imageRepository).findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class));
     }
 
     @DisplayName("게시물 수정 테스트")
     @Test
-    void updatePost(){
+    void updatePost() {
+        // given
+        Long postId = 2L;
+        Long userId = 2L;
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity originalPost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("원본 제목")
+                .content("원본 내용")
+                .category("원본 카테고리")
+                .viewCount(0)
+                .likeCount(0)
+                .commentCount(0)
+                .isModified(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .modifiedAt(null)
+                .build();
 
+        CommunityPostRequest updateRequest = new CommunityPostRequest("수정된 제목", "수정된 내용", "수정된 카테고리");
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(originalPost));
+        when(imageRepository.findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class))).thenReturn(Collections.emptyList());
+
+        // when
+        CommunityPostResponse response = communityPostService.updatePost(postId, updateRequest, userId);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.title()).isEqualTo("수정된 제목");
+        assertThat(response.content()).isEqualTo("수정된 내용");
+        assertThat(response.category()).isEqualTo("수정된 카테고리");
+        assertThat(response.isModified()).isTrue();
+
+        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+    }
+
+    @DisplayName("게시물 삭제 테스트")
+    @Test
+    void deletePost() {
+        // given
+        Long postId = 2L;
+        Long userId = 2L;
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity originalPost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("원본 제목")
+                .content("원본 내용")
+                .category("원본 카테고리")
+                .viewCount(0)
+                .likeCount(0)
+                .commentCount(0)
+                .isModified(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .modifiedAt(null)
+                .build();
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(originalPost));
+
+        // when
+        communityPostService.deletePost(postId, userId);      //  response 반환값없음
+
+        // then
+        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+        assertThat(originalPost.getIsDeleted()).isTrue();
     }
 }
