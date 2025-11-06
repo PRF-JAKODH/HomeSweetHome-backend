@@ -8,7 +8,7 @@ public record ChatMessageDto(
         Long messageId,
         Long roomId,
         Long senderId,
-        String text,
+        String content,
         LocalDateTime sentAt,
         String senderName,
         String profileImageUrl
