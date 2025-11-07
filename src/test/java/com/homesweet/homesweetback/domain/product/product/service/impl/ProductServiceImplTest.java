@@ -47,7 +47,7 @@ import static org.mockito.Mockito.verify;
  */
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("제품 서비스 단위 테스트")
+@DisplayName("상품 서비스 단위 테스트")
 class ProductServiceImplTest {
 
     @InjectMocks
