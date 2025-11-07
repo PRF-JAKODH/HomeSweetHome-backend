@@ -172,7 +172,6 @@ class ProductCategoryServiceImplTest {
                         .updatedAt(LocalDateTime.now())
                         .build();
 
-                given(repository.findByName(request.name())).willReturn(Optional.empty());
                 given(repository.findById(3L)).willReturn(Optional.of(parentCategory));
 
                 // when & then
@@ -199,8 +198,6 @@ class ProductCategoryServiceImplTest {
                         .updatedAt(LocalDateTime.now())
                         .build();
 
-                given(repository.findByName(request.name())).willReturn(Optional.of(existingCategory));
-
                 // when & then
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
@@ -216,7 +213,6 @@ class ProductCategoryServiceImplTest {
                         .parentId(999L)  // 존재하지 않는 부모 ID
                         .build();
 
-                given(repository.findByName(request.name())).willReturn(Optional.empty());
                 given(repository.findById(999L)).willReturn(Optional.empty());
 
                 // when & then
