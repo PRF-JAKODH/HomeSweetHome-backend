@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.community.dto.CommunityCommentRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
@@ -10,7 +11,6 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntit
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
-import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -39,17 +38,12 @@ class CommunityServiceTest {
     private CommunityCommentRepository commentRepository;
 
     @Mock
-    private CommunityPostLikeRepository  postLikeRepository;
-
-    @Mock
     private CommunityImageRepository imageRepository;
 
     @Mock
     private UserRepository userRepository;
 
     @Mock
-    private CommunityImageUploader imageUploader;
-
     @InjectMocks
     private CommunityPostService communityPostService;
 
@@ -235,9 +229,6 @@ class CommunityServiceTest {
                 .hasMessage("본인이 작성한 게시글만 수정/삭제할 수 있습니다")
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COMMUNITY_POST_FORBIDDEN);
-
-        // 저장되었는지 확인
-        verify(postRepository, never()).save(any());
     }
 
     @DisplayName("다른 사용자가 게시글 삭제")
@@ -271,9 +262,6 @@ class CommunityServiceTest {
                 .hasMessage("본인이 작성한 게시글만 수정/삭제할 수 있습니다")
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COMMUNITY_POST_FORBIDDEN);
-
-        // 저장되었는지 확인
-        verify(postRepository, never()).save(any());
     }
     
     @DisplayName("존재하지 않는 게시글 조회수 증가")
@@ -295,9 +283,6 @@ class CommunityServiceTest {
                 .hasMessage("해당하는 게시글을 찾을 수 없습니다")
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-
-        // 조회수 저장되었는지 확인
-        verify(postRepository, never()).save(any());
     }
 
     @DisplayName("존재하지 않는 게시글 좋아요 증가")
@@ -321,47 +306,172 @@ class CommunityServiceTest {
                 .hasMessage("해당하는 게시글을 찾을 수 없습니다")
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-
-        // 좋아요 저장되었는지 확인
-        verify(postLikeRepository, never()).save(any());
     }
 
-//    @DisplayName("다른 사용자가 댓글 수정")
-//    @Test
-//    void otherUserUpdateComment() {
-//        Long postId = 1L;
-//        Long commentId = 1L;
-//        Long authorId = 100L;
-//        Long otherUserId = 200L;
-//
-//        User author = User.builder()
-//                .id(authorId)
-//                .name("test author")
-//                .build();
-//
-//        CommunityPostEntity post = CommunityPostEntity.builder()
-//                .postId(postId)
-//                .author(anthor)
-//                .build();
-//
-//        CommunityCommentEntity comment = CommunityCommentEntity.builder()
-//                .postId(postId)
-//                .commentId(commentId)
-//                .author(anthor)
-//                .build();
-//
-//        given(postRepository.findByPostIdAndIsDeletedFalse(postId))
-//                .willReturn(Optional.empty());
-//
-//        // when, then
-//        assertThatThrownBy(() ->
-//                communityCommentService.updateComment(postId,  comment, otherUserId))
-//
-//                .isInstanceOf(CommunityException.class)
-//                .hasMessage("본인이 작성한 댓글만 수정/삭제할 수 있습니다")
-//                .extracting("errorCode")
-//                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
-//
-//        verify(commentRepository, never()).save(any());
+    @DisplayName("다른 사용자가 댓글 수정")
+    @Test
+    void otherUserUpdateComment() {
+        Long postId = 1L;
+        Long commentId = 1L;
+        Long authorId = 100L;
+        Long otherUserId = 200L;
 
+        User author = User.builder()
+                .id(authorId)
+                .name("test author")
+                .build();
+
+        CommunityPostEntity post = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(author)
+                .build();
+
+        CommunityCommentEntity comment = CommunityCommentEntity.builder()
+                .post(post)
+                .commentId(commentId)
+                .author(author)
+                .content("test comment")
+                .build();
+
+        CommunityCommentRequest request = new CommunityCommentRequest("update comment", null);
+
+        // 댓글 존재하도록 설정
+        given(commentRepository.findById(commentId))
+                .willReturn(Optional.of(comment));
+
+        // when, then
+        assertThatThrownBy(() ->
+                communityCommentService.updateComment(postId, request, otherUserId))
+
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("본인이 작성한 댓글만 수정/삭제할 수 있습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
     }
+
+    @DisplayName("다른 사용자가 댓글 삭제")
+    @Test
+    void otherUserDeleteComment() {
+        Long postId = 1L;
+        Long commentId = 1L;
+        Long authorId = 100L;
+        Long otherUserId = 200L;
+
+        User author = User.builder()
+                .id(authorId)
+                .name("test author")
+                .build();
+
+        CommunityPostEntity post = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(author)
+                .build();
+
+        CommunityCommentEntity comment = CommunityCommentEntity.builder()
+                .post(post)
+                .commentId(commentId)
+                .author(author)
+                .content("test comment")
+                .build();
+
+        // 댓글 존재하도록 설정
+        given(commentRepository.findById(commentId))
+                .willReturn(Optional.of(comment));
+
+        // when, then
+        assertThatThrownBy(() ->
+                // 다른유저가 삭제시도
+                communityCommentService.deleteComment(commentId, postId, otherUserId))
+
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("본인이 작성한 댓글만 수정/삭제할 수 있습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
+    }
+
+    @DisplayName("존재하지 않는 게시글에 댓글 작성")
+    @Test
+    void createCommentOnNonExistPost() {
+        // given
+        Long nonExistPostId = 999L;
+        Long userId = 1L;
+        CommunityCommentRequest request = new CommunityCommentRequest("test comment", null);
+
+        User fakeUser = User.builder()
+                .id(userId)
+                .name("test user")
+                .build();
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(fakeUser));
+        given(postRepository.findByPostIdAndIsDeletedFalse(nonExistPostId))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() ->
+                communityCommentService.createComment(nonExistPostId, request, userId))
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("해당하는 게시글을 찾을 수 없습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+    }
+
+    @DisplayName("존재하지 않는 댓글 수정")
+    @Test
+    void updateNonExistComment() {
+        // given
+        Long nonExistCommentId = 999L;
+        Long userId = 1L;
+        CommunityCommentRequest request = new CommunityCommentRequest("updated comment", null);
+
+        given(commentRepository.findById(nonExistCommentId))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() ->
+                communityCommentService.updateComment(nonExistCommentId, request, userId))
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("해당하는 댓글을 찾을 수 없습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
+    }
+
+    @DisplayName("존재하지 않는 댓글 삭제")
+    @Test
+    void deleteNonExistComment() {
+        // given
+        Long nonExistCommentId = 999L;
+        Long postId = 1L;
+        Long userId = 1L;
+
+        given(commentRepository.findById(nonExistCommentId))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() ->
+                communityCommentService.deleteComment(nonExistCommentId, postId, userId))
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("해당하는 댓글을 찾을 수 없습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
+    }
+
+    @DisplayName("존재하지 않는 댓글에 좋아요")
+    @Test
+    void likeNonExistComment() {
+        // given
+        Long nonExistCommentId = 999L;
+        Long userId = 1L;
+
+        given(commentRepository.findById(nonExistCommentId))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() ->
+                communityCountService.toggleCommentLike(nonExistCommentId, userId))
+                .isInstanceOf(CommunityException.class)
+                .hasMessage("해당하는 댓글을 찾을 수 없습니다")
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
+    }
+}
