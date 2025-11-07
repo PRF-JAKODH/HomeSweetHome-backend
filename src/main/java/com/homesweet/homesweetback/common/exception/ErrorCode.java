@@ -59,6 +59,8 @@ public enum ErrorCode {
     SSE_CONNECTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SSE 연결 중 오류가 발생했습니다"),
     INVALID_NOTIFICATION_CONTEXT(HttpStatus.BAD_REQUEST, "알림 컨텍스트 데이터가 부족합니다"),
     NOTIFICATION_EVENT_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "알림 이벤트 타입이 일치하지 않습니다"),
+    NOTIFICATION_CONTEXT_DATA_IS_NULL(HttpStatus.BAD_REQUEST, "알림 컨텍스트 데이터가 없습니다"),
+    NOTIFICATION_USER_ID_IS_NULL(HttpStatus.BAD_REQUEST, "알림 사용자 ID가 없습니다"),
 
     // Chat
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
