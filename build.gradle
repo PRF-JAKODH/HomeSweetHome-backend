@@ -96,11 +96,29 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         csv.required.set(false)
     }
+        // 디렉터리/파일명
+    def qTypes = []
+    for(qPattern in "**/entity/QA" .. "**/entity/QZ"){
+        qTypes.add(qPattern + "*")
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: ["**/*Application*"] + qTypes)
+        }))
+    }
+
+    finalizedBy(tasks.jacocoTestCoverageVerification)
 }
 
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    def qTypes = new ArrayList<String>()
+    for (qPattern in '*.entity.QA'..'*.entity.QZ') {
+        qTypes.add(qPattern + '*')
+    }
     violationRules {
         rule {
             element = 'CLASS'
@@ -109,7 +127,7 @@ tasks.jacocoTestCoverageVerification {
                 value = 'COVEREDRATIO'
 //                minimum = 0.8
             }
-            excludes = ['*.common.*', '*.domain.Q*']
+            excludes = ['*.common.*', '*.domain.Q*'] + qTypes
         }
     }
 }
