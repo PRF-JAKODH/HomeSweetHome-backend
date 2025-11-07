@@ -1,16 +1,18 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.data.ProductFixture;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import org.junit.jupiter.api.DisplayName;
@@ -29,9 +31,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.homesweet.homesweetback.domain.product.data.ProductFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -54,27 +58,8 @@ class ProductServiceImplTest {
     @Mock
     private ProductImageUploader productImageUploader;
     @Mock
-    private ProductValidator validator;
+    private ProductValidator productValidator;
 
-    private ProductPreviewResponse createMockProduct(Long id, String name, String brand, Integer price) {
-        return new ProductPreviewResponse(
-                id,
-                1L,
-                1L,
-                name,
-                "https://s3.aws/" + name + ".jpg",
-                brand,
-                price,
-                new BigDecimal("10.0"),
-                name + " 상세 설명",
-                3000,
-                ProductStatus.ON_SALE,
-                4.5,
-                20L,
-                LocalDateTime.now().minusDays(2),
-                LocalDateTime.now()
-        );
-    }
 
     @Nested
     @DisplayName("상품 생성")
@@ -397,6 +382,226 @@ class ProductServiceImplTest {
         @DisplayName("실패")
         class Fail {
 
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 상세 조회")
+    class FindProductDetail {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("유효한 상품 ID로 상세 정보를 조회할 수 있다")
+            void getProductDetail_success() {
+                // given
+                Long productId = 1L;
+                ProductDetailResponse mockResponse = createMockDetailResponse(productId, "테이블", "홈스윗");
+
+                willDoNothing().given(productValidator).validateExistsProduct(productId);
+                given(productRepository.findProductDetailById(productId)).willReturn(mockResponse);
+
+                // when
+                ProductDetailResponse response = service.getProductDetail(productId);
+
+                // then
+                assertThat(response.id()).isEqualTo(productId);
+                assertThat(response.name()).isEqualTo("테이블");
+                assertThat(response.brand()).isEqualTo("홈스윗");
+                assertThat(response.detailImageUrls()).hasSize(2);
+                assertThat(response.discountedPrice()).isEqualTo(90000);
+                verify(productValidator).validateExistsProduct(productId);
+                verify(productRepository).findProductDetailById(productId);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException이 발생한다")
+            void getProductDetail_notFound() {
+                // given
+                Long invalidProductId = 999L;
+                willThrow(new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR))
+                        .given(productValidator).validateExistsProduct(invalidProductId);
+
+                // when & then
+                assertThatThrownBy(() -> service.getProductDetail(invalidProductId))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productValidator).validateExistsProduct(invalidProductId);
+                verify(productRepository, never()).findProductDetailById(any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 제고 정보 조회")
+    class FindProductSkuInfo {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("유효한 상품 ID로 SKU 재고 목록을 조회할 수 있다")
+            void getProductStock_success() {
+                // given
+                Long productId = 1L;
+                List<SkuStockResponse> mockSkus = List.of(
+                        createMockSku(101L, 10L, 0, "색상", "화이트", "사이즈", "S"),
+                        createMockSku(102L, 5L, 3000, "색상", "블랙", "사이즈", "L")
+                );
+
+                willDoNothing().given(productValidator).validateExistsProduct(productId);
+                given(productRepository.findSkuStocksByProductId(productId)).willReturn(mockSkus);
+
+                // when
+                List<SkuStockResponse> result = service.getProductStock(productId);
+
+                // then
+                assertThat(result).hasSize(2);
+                assertThat(result.getFirst().skuId()).isEqualTo(101L);
+                assertThat(result.getFirst().stockQuantity()).isEqualTo(10L);
+                assertThat(result.getFirst().priceAdjustment()).isEqualTo(0);
+                assertThat(result.getFirst().options()).hasSize(2);
+                assertThat(result.getFirst().options().get(0).groupName()).isEqualTo("색상");
+                assertThat(result.getFirst().options().get(1).valueName()).isEqualTo("S");
+
+                verify(productValidator).validateExistsProduct(productId);
+                verify(productRepository).findSkuStocksByProductId(productId);
+            }
+
+            @Test
+            @DisplayName("SKU가 없는 상품은 빈 리스트를 반환한다")
+            void getProductStock_empty() {
+                // given
+                Long productId = 2L;
+                willDoNothing().given(productValidator).validateExistsProduct(productId);
+                given(productRepository.findSkuStocksByProductId(productId)).willReturn(List.of());
+
+                // when
+                List<SkuStockResponse> result = service.getProductStock(productId);
+
+                // then
+                assertThat(result).isEmpty();
+                verify(productValidator).validateExistsProduct(productId);
+                verify(productRepository).findSkuStocksByProductId(productId);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException이 발생한다")
+            void getProductStock_notFound() {
+                // given
+                Long invalidProductId = 999L;
+                willThrow(new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR))
+                        .given(productValidator).validateExistsProduct(invalidProductId);
+
+                // when & then
+                assertThatThrownBy(() -> service.getProductStock(invalidProductId))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productValidator).validateExistsProduct(invalidProductId);
+                verify(productRepository, never()).findSkuStocksByProductId(any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("판매자가 등록한 상품 정보 조회")
+    class FindSellerProducts {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("판매자가 등록한 상품 목록을 조회할 수 있다")
+            void getSellerProducts_success() {
+                // given
+                Long sellerId = 1L;
+                String startDate = "2025-01-01";
+                String endDate = "2025-12-31";
+
+                List<ProductManageResponse> mockProducts = List.of(
+                        createMockProduct(1L, "패브릭소파", "가구 > 거실가구 > 소파", 250000, new BigDecimal("10.0"), 15L),
+                        createMockProduct(2L, "원목식탁", "가구 > 주방가구 > 식탁", 300000, new BigDecimal("5.0"), 8L)
+                );
+
+                given(productRepository.findProductsForSeller(sellerId, startDate, endDate))
+                        .willReturn(mockProducts);
+
+                // when
+                List<ProductManageResponse> result = service.getSellerProducts(sellerId, startDate, endDate);
+
+                // then
+                assertThat(result).hasSize(2);
+                assertThat(result.get(0).name()).isEqualTo("패브릭소파");
+                assertThat(result.get(0).categoryPath()).isEqualTo("가구 > 거실가구 > 소파");
+                assertThat(result.get(1).discountRate()).isEqualByComparingTo("5.0");
+                assertThat(result.get(0).status()).isEqualTo(ProductStatus.ON_SALE);
+                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
+            }
+
+            @Test
+            @DisplayName("판매자가 등록한 상품이 없는 경우 빈 리스트를 반환한다")
+            void getSellerProducts_empty() {
+                // given
+                Long sellerId = 2L;
+                String startDate = "2025-01-01";
+                String endDate = "2025-12-31";
+
+                given(productRepository.findProductsForSeller(sellerId, startDate, endDate))
+                        .willReturn(List.of());
+
+                // when
+                List<ProductManageResponse> result = service.getSellerProducts(sellerId, startDate, endDate);
+
+                // then
+                assertThat(result).isEmpty();
+                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
+            }
+        }
+
+        @Nested
+        @DisplayName("엣지 케이스")
+        class Edge {
+
+            @Test
+            @DisplayName("조회 기간이 null인 경우 전체 기간으로 조회해야 한다")
+            void getSellerProducts_nullDate() {
+                // given
+                Long sellerId = 3L;
+                String startDate = null;
+                String endDate = null;
+
+                List<ProductManageResponse> mockProducts = List.of(
+                        createMockProduct(10L, "책상", "가구 > 서재가구 > 책상", 150000, BigDecimal.ZERO, 30L)
+                );
+
+                given(productRepository.findProductsForSeller(sellerId, startDate, endDate))
+                        .willReturn(mockProducts);
+
+                // when
+                List<ProductManageResponse> result = service.getSellerProducts(sellerId, startDate, endDate);
+
+                // then
+                assertThat(result).hasSize(1);
+                assertThat(result.get(0).name()).isEqualTo("책상");
+                assertThat(result.get(0).categoryPath()).isEqualTo("가구 > 서재가구 > 책상");
+                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
+            }
         }
     }
 }
