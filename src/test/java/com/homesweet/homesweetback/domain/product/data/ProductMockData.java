@@ -15,10 +15,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 테스트를 위한 Product 관련 객체 생성
+ * 테스트를 위한 Product 관련 Mock 객체 생성
  *
  * @author junnukim1007gmail.com
- * @date 25. 11. 7.
  */
 public class ProductMockData {
 
