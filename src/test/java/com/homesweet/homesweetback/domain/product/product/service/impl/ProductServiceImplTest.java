@@ -5,15 +5,19 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.data.ProductFixture;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +31,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +62,8 @@ class ProductServiceImplTest {
     private ProductImageUploader productImageUploader;
     @Mock
     private ProductValidator productValidator;
+    @Mock
+    private SkuRepository skuRepository;
 
 
     @Nested
@@ -105,6 +110,7 @@ class ProductServiceImplTest {
                 assertThat(response.name()).isEqualTo("무옵션 상품");
                 assertThat(response.imageUrl()).isEqualTo("https://s3.aws/main.jpg");
                 verify(productRepository).save(any(Product.class));
+                verify(productValidator).validateDuplicateProductName(sellerId, request.name());
             }
 
             @Test
@@ -307,9 +313,9 @@ class ProductServiceImplTest {
                 ProductSortType sortType = ProductSortType.LATEST;
 
                 List<ProductPreviewResponse> mockProducts = List.of(
-                        createMockProduct(1L, "의자", "홈스윗", 10000),
-                        createMockProduct(2L, "테이블", "홈스윗", 20000),
-                        createMockProduct(3L, "소파", "홈스윗", 30000)
+                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000),
+                        createProductPreviewResponse(2L, "테이블", "홈스윗", 20000),
+                        createProductPreviewResponse(3L, "소파", "홈스윗", 30000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
@@ -333,8 +339,8 @@ class ProductServiceImplTest {
                 Long categoryId = 1L;
                 int limit = 3;
                 List<ProductPreviewResponse> mockProducts = List.of(
-                        createMockProduct(1L, "의자", "홈스윗", 10000),
-                        createMockProduct(2L, "테이블", "홈스윗", 20000)
+                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000),
+                        createProductPreviewResponse(2L, "테이블", "홈스윗", 20000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, null, ProductSortType.LATEST))
@@ -361,7 +367,7 @@ class ProductServiceImplTest {
                 ProductSortType sortType = ProductSortType.POPULAR;
 
                 List<ProductPreviewResponse> mockProducts = List.of(
-                        createMockProduct(1L, "의자", "홈스윗", 10000)
+                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
@@ -535,8 +541,8 @@ class ProductServiceImplTest {
                 String endDate = "2025-12-31";
 
                 List<ProductManageResponse> mockProducts = List.of(
-                        createMockProduct(1L, "패브릭소파", "가구 > 거실가구 > 소파", 250000, new BigDecimal("10.0"), 15L),
-                        createMockProduct(2L, "원목식탁", "가구 > 주방가구 > 식탁", 300000, new BigDecimal("5.0"), 8L)
+                        createManageResponse(1L, "패브릭소파", "가구 > 거실가구 > 소파", 250000, new BigDecimal("10.0"), 15L),
+                        createManageResponse(2L, "원목식탁", "가구 > 주방가구 > 식탁", 300000, new BigDecimal("5.0"), 8L)
                 );
 
                 given(productRepository.findProductsForSeller(sellerId, startDate, endDate))
@@ -582,7 +588,7 @@ class ProductServiceImplTest {
                 String endDate = null;
 
                 List<ProductManageResponse> mockProducts = List.of(
-                        createMockProduct(10L, "책상", "가구 > 서재가구 > 책상", 150000, BigDecimal.ZERO, 30L)
+                        createManageResponse(10L, "책상", "가구 > 서재가구 > 책상", 150000, BigDecimal.ZERO, 30L)
                 );
 
                 given(productRepository.findProductsForSeller(sellerId, startDate, endDate))
@@ -596,6 +602,430 @@ class ProductServiceImplTest {
                 assertThat(result.get(0).name()).isEqualTo("책상");
                 assertThat(result.get(0).categoryPath()).isEqualTo("가구 > 서재가구 > 책상");
                 verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 기본 업데이트")
+    class UpdateProductBasicInfo {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("상품 이름을 변경하지 않고 다른 필드를 수정할 수 있다")
+            void updateWithoutNameChange() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 10L;
+
+                Product existing = createMockProduct(productId, sellerId, "원래상품");
+                ProductBasicInfoUpdateRequest request = new ProductBasicInfoUpdateRequest(
+                        null, // 이름 변경 없음
+                        "홈스윗",
+                        20000,
+                        new BigDecimal("5.0"),
+                        "업데이트된 설명",
+                        2500
+                );
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.of(existing));
+                willDoNothing().given(productRepository).update(eq(productId), any(Product.class));
+
+                // when
+                service.updateBasicInfo(sellerId, productId, request);
+
+                // then
+                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository, never()).existsBySellerIdAndName(anyLong(), anyString());
+                verify(productRepository).update(eq(productId), any(Product.class));
+            }
+
+            @Test
+            @DisplayName("상품 이름을 변경하되 중복이 없는 경우 정상 수정된다")
+            void updateWithNameChange_noDuplicate() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 10L;
+
+                Product existing = createMockProduct(productId, sellerId, "기존상품");
+                ProductBasicInfoUpdateRequest request = new ProductBasicInfoUpdateRequest(
+                        "새상품", // 변경된 이름
+                        "홈스윗",
+                        20000,
+                        new BigDecimal("10.0"),
+                        "새로운 설명",
+                        3000
+                );
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.of(existing));
+                given(productRepository.existsBySellerIdAndName(sellerId, "새상품"))
+                        .willReturn(false);
+                willDoNothing().given(productRepository).update(eq(productId), any(Product.class));
+
+                // when
+                service.updateBasicInfo(sellerId, productId, request);
+
+                // then
+                verify(productRepository).existsBySellerIdAndName(sellerId, "새상품");
+                verify(productRepository).update(eq(productId), any(Product.class));
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException이 발생한다")
+            void updateProduct_notFound() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 999L;
+                ProductBasicInfoUpdateRequest request = new ProductBasicInfoUpdateRequest(
+                        "업데이트상품", "홈스윗", 20000, new BigDecimal("5.0"), "설명", 3000
+                );
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.updateBasicInfo(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productRepository, never()).update(anyLong(), any());
+            }
+
+            @Test
+            @DisplayName("변경하려는 상품 이름이 중복되면 ProductException이 발생한다")
+            void updateProduct_duplicateName() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 10L;
+                Product existing = createMockProduct(productId, sellerId, "기존상품");
+
+                ProductBasicInfoUpdateRequest request = new ProductBasicInfoUpdateRequest(
+                        "중복상품", // 중복 이름
+                        "홈스윗",
+                        15000,
+                        new BigDecimal("3.0"),
+                        "변경된 설명",
+                        2500
+                );
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.of(existing));
+                given(productRepository.existsBySellerIdAndName(sellerId, "중복상품"))
+                        .willReturn(true);
+
+                // when & then
+                assertThatThrownBy(() -> service.updateBasicInfo(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR.getMessage());
+
+                verify(productRepository).existsBySellerIdAndName(sellerId, "중복상품");
+                verify(productRepository, never()).update(anyLong(), any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 재고 정보 업데이트")
+    class UpdateProductStock {
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("판매자가 실제 소유한 상품의 SKU 재고를 모두 수정할 수 있다")
+            void updateSkuStock_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 10L;
+                ProductSkuUpdateRequest request = createSkuUpdateRequest();
+
+                willDoNothing().given(productValidator).validateExistsSellerProduct(sellerId, productId);
+                given(skuRepository.findById(1L)).willReturn(Optional.of(createMockSku(1L)));
+                given(skuRepository.findById(2L)).willReturn(Optional.of(createMockSku(2L)));
+                willDoNothing().given(skuRepository).updateSku(anyLong(), anyLong(), any());
+
+                // when
+                service.updateSkuStock(sellerId, productId, request);
+
+                // then
+                verify(productValidator).validateExistsSellerProduct(sellerId, productId);
+                verify(skuRepository, times(2)).findById(anyLong());
+                verify(skuRepository, times(2)).updateSku(anyLong(), anyLong(), any());
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("판매자가 소유하지 않은 상품이면 ProductException 발생")
+            void updateSkuStock_invalidSeller() {
+                // given
+                Long sellerId = 99L;
+                Long productId = 10L;
+                ProductSkuUpdateRequest request = createSkuUpdateRequest();
+
+                willThrow(new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR))
+                        .given(productValidator).validateExistsSellerProduct(sellerId, productId);
+
+                // when & then
+                assertThatThrownBy(() -> service.updateSkuStock(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productValidator).validateExistsSellerProduct(sellerId, productId);
+                verify(skuRepository, never()).findById(any());
+                verify(skuRepository, never()).updateSku(anyLong(), anyLong(), any());
+            }
+
+            @Test
+            @DisplayName("SKU가 존재하지 않으면 ProductException 발생 (이미 처리된 SKU는 업데이트됨)")
+            void updateSkuStock_skuNotFound() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 10L;
+                ProductSkuUpdateRequest request = createSkuUpdateRequest();
+
+                willDoNothing().given(productValidator).validateExistsSellerProduct(sellerId, productId);
+                given(skuRepository.findById(1L)).willReturn(Optional.of(createMockSku(1L)));
+                given(skuRepository.findById(2L)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.updateSkuStock(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.SKU_NOT_FOUND_ERROR.getMessage());
+
+                // 첫 번째 SKU는 업데이트 호출됨
+                verify(skuRepository).updateSku(eq(1L), eq(10L), eq(0));
+
+                // 두 번째 SKU는 예외로 update 호출 안 됨
+                verify(skuRepository, never()).updateSku(eq(2L), anyLong(), any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 상태 정보 업데이트")
+    class UpdateProductStatus {
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("판매자가 자신의 상품 상태를 정상적으로 변경할 수 있다")
+            void updateProductStatus_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 100L;
+                ProductStatusUpdateRequest request = new ProductStatusUpdateRequest(ProductStatus.OUT_OF_STOCK);
+
+                Product existing = createMockProduct(productId, sellerId, ProductStatus.ON_SALE);
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.of(existing));
+                willDoNothing().given(productRepository).updateStatus(eq(productId), eq(ProductStatus.OUT_OF_STOCK));
+
+                // when
+                service.updateProductStatus(sellerId, productId, request);
+
+                // then
+                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository).updateStatus(productId, ProductStatus.OUT_OF_STOCK);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("판매자가 등록하지 않은 상품이면 ProductException 발생")
+            void updateProductStatus_notFound() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 999L;
+                ProductStatusUpdateRequest request = new ProductStatusUpdateRequest(ProductStatus.SUSPENDED);
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.updateProductStatus(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository, never()).updateStatus(anyLong(), any());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 이미지 업데이트")
+    class UpdateProductImage {
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("대표 이미지를 교체할 수 있다")
+            void updateMainImage_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 100L;
+                Product product = createMockProductWithImage(productId, sellerId, "https://s3.aws/old_main.jpg");
+
+                MultipartFile newMain = createMockFile("new_main");
+                ProductImageUpdateRequest request = new ProductImageUpdateRequest(newMain, List.of(), List.of());
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                given(productImageUploader.uploadProductMainImage(newMain)).willReturn("https://s3.aws/new_main.jpg");
+                willDoNothing().given(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
+
+                // when
+                service.updateImages(sellerId, productId, request);
+
+                // then
+                verify(productImageUploader).deleteProductImage("https://s3.aws/old_main.jpg");
+                verify(productImageUploader).uploadProductMainImage(newMain);
+                verify(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
+                verifyNoMoreInteractions(productImageUploader, productRepository);
+            }
+
+            @Test
+            @DisplayName("상세 이미지를 삭제할 수 있다")
+            void deleteDetailImages_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 101L;
+                Product product = createMockProductWithImage(productId, sellerId, "https://s3.aws/main.jpg");
+
+                List<String> deleteTargets = List.of(
+                        "https://s3.aws/detail1.jpg",
+                        "https://s3.aws/detail2.jpg"
+                );
+
+                ProductImageUpdateRequest request = new ProductImageUpdateRequest(null, List.of(), deleteTargets);
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                willDoNothing().given(productRepository).deleteDetailImages(productId, deleteTargets);
+
+                // when
+                service.updateImages(sellerId, productId, request);
+
+                // then
+                verify(productImageUploader, times(2)).deleteProductImage(anyString());
+                verify(productRepository).deleteDetailImages(productId, deleteTargets);
+            }
+
+            @Test
+            @DisplayName("상세 이미지를 추가할 수 있다 (5개 이하 제한 검증 포함)")
+            void addDetailImages_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 102L;
+                Product product = createMockProductWithImage(productId, sellerId, "https://s3.aws/main.jpg");
+
+                List<MultipartFile> newDetails = List.of(
+                        createMockFile("detail1"),
+                        createMockFile("detail2")
+                );
+
+                ProductImageUpdateRequest request = new ProductImageUpdateRequest(null, newDetails, List.of());
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                willDoNothing().given(productValidator)
+                        .validateDetailImageLimit(eq(product), anyList(), eq(newDetails));
+
+                List<String> uploadedUrls = List.of("https://s3.aws/detail1.jpg", "https://s3.aws/detail2.jpg");
+                given(productImageUploader.uploadProductDetailImages(newDetails)).willReturn(uploadedUrls);
+                willDoNothing().given(productRepository).addDetailImages(productId, uploadedUrls);
+
+                // when
+                service.updateImages(sellerId, productId, request);
+
+                // then
+                verify(productValidator).validateDetailImageLimit(product, List.of(), newDetails);
+                verify(productImageUploader).uploadProductDetailImages(newDetails);
+                verify(productRepository).addDetailImages(productId, uploadedUrls);
+            }
+
+            @Test
+            @DisplayName("대표, 상세 삭제, 상세 추가가 모두 함께 수행될 수 있다")
+            void fullUpdate_success() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 103L;
+                Product product = createMockProductWithImage(productId, sellerId, "https://s3.aws/old_main.jpg");
+
+                MultipartFile newMain = createMockFile("new_main");
+                List<MultipartFile> newDetails = List.of(createMockFile("detail1"));
+                List<String> deleteTargets = List.of("https://s3.aws/old_detail.jpg");
+
+                ProductImageUpdateRequest request =
+                        new ProductImageUpdateRequest(newMain, newDetails, deleteTargets);
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                given(productImageUploader.uploadProductMainImage(newMain))
+                        .willReturn("https://s3.aws/new_main.jpg");
+                given(productImageUploader.uploadProductDetailImages(newDetails))
+                        .willReturn(List.of("https://s3.aws/detail1.jpg"));
+
+                willDoNothing().given(productValidator)
+                        .validateDetailImageLimit(eq(product), eq(deleteTargets), eq(newDetails));
+
+                // when
+                service.updateImages(sellerId, productId, request);
+
+                // then
+                verify(productImageUploader).deleteProductImage("https://s3.aws/old_main.jpg");
+                verify(productImageUploader).uploadProductMainImage(newMain);
+                verify(productImageUploader).deleteProductImage("https://s3.aws/old_detail.jpg");
+                verify(productValidator).validateDetailImageLimit(product, deleteTargets, newDetails);
+                verify(productImageUploader).uploadProductDetailImages(newDetails);
+                verify(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
+                verify(productRepository).deleteDetailImages(productId, deleteTargets);
+                verify(productRepository).addDetailImages(productId, List.of("https://s3.aws/detail1.jpg"));
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void updateImages_notFound() {
+                // given
+                Long sellerId = 1L;
+                Long productId = 999L;
+                ProductImageUpdateRequest request =
+                        new ProductImageUpdateRequest(null, List.of(), List.of());
+
+                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                        .willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.updateImages(sellerId, productId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+
+                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verifyNoInteractions(productImageUploader);
             }
         }
     }
