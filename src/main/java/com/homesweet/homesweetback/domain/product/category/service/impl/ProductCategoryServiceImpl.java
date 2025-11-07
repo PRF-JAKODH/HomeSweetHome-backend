@@ -36,7 +36,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         validator.validateDuplicateCategoryName(request.name());
 
         int depth = 0;
-        if (request.parentId() != null) {
+        if (!request.isParentIdNull()) {
             ProductCategory parent = repository.findById(request.parentId())
                     .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR));
 

@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.category.service.impl;
 
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
 import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
@@ -22,7 +23,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 
 /**
  *
@@ -36,6 +39,9 @@ class ProductCategoryServiceImplTest {
 
     @InjectMocks
     private ProductCategoryServiceImpl service;
+
+    @Mock
+    private ProductValidator validator;
 
     @Mock
     private ProductCategoryRepository repository;
@@ -66,7 +72,6 @@ class ProductCategoryServiceImplTest {
                         .updatedAt(LocalDateTime.now())
                         .build();
 
-                given(repository.findByName(request.name())).willReturn(Optional.empty());
                 given(repository.save(any(ProductCategory.class))).willReturn(savedCategory);
 
                 CategoryResponse response = service.createCategory(request);
