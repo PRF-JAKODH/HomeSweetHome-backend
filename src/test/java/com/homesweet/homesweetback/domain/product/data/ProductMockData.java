@@ -20,7 +20,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 11. 7.
  */
-public class ProductFixture {
+public class ProductMockData {
 
     // [제품 프리뷰 조회] 제품 응답 DTO
     public static ProductPreviewResponse createProductPreviewResponse(Long id, String name, String brand, Integer price) {
