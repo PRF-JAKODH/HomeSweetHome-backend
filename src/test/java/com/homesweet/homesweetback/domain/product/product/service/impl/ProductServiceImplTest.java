@@ -572,11 +572,6 @@ class ProductServiceImplTest {
                 assertThat(result).isEmpty();
                 verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
             }
-        }
-
-        @Nested
-        @DisplayName("엣지 케이스")
-        class Edge {
 
             @Test
             @DisplayName("조회 기간이 null인 경우 전체 기간으로 조회해야 한다")
