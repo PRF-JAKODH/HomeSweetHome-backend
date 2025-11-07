@@ -31,4 +31,7 @@ public record ProductBasicInfoUpdateRequest(
         Integer shippingPrice
 
 ) {
+    public boolean validateName(String productName) {
+        return name == null || name.isEmpty() || name.equals(productName);
+    }
 }

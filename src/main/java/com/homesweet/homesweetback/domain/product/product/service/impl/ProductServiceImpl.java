@@ -134,7 +134,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByIdAndSellerId(sellerId, productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
-        if (request.name() != null && !request.name().equals(product.getName())) {
+        if (!request.validateName(product.getName())) {
             if (productRepository.existsBySellerIdAndName(sellerId, request.name())) {
                 throw new ProductException(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR);
             }
