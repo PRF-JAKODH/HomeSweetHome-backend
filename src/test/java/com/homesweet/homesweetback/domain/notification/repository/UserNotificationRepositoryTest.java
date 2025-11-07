@@ -182,12 +182,13 @@ public class UserNotificationRepositoryTest {
 
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 30);
         
-        savedUserNotificationList.forEach(userNotification -> {
-            if (savedUserNotificationList.indexOf(userNotification) % 3 == 0) {
+        for (int i = 0; i < savedUserNotificationList.size(); i++) {
+            UserNotification userNotification = savedUserNotificationList.get(i);
+            if (i % 3 == 0) {
                 userNotification.markAsDeleted();
             }
             userNotificationRepository.save(userNotification);
-        });
+        }
 
         // When
         List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
@@ -278,12 +279,13 @@ public class UserNotificationRepositoryTest {
         // setUp()에서 설정된 testUser, testTemplate 사용
         
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 10);
-        savedUserNotificationList.forEach(userNotification -> {
-            if (savedUserNotificationList.indexOf(userNotification) % 2 == 0) {
+        for (int i = 0; i < savedUserNotificationList.size(); i++) {
+            UserNotification userNotification = savedUserNotificationList.get(i);
+            if (i % 2 == 0) {
                 userNotification.markAsRead();
             }
             userNotificationRepository.save(userNotification);
-        });
+        }
 
         // When
         List<UserNotification> userNotificationList = userNotificationRepository.findByUserIdAndIsReadFalseAndIsDeletedFalse(testUser.getId());
@@ -300,12 +302,13 @@ public class UserNotificationRepositoryTest {
         // setUp()에서 설정된 testUser, testTemplate 사용
         
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 30);
-        savedUserNotificationList.forEach(userNotification -> {
-            if (savedUserNotificationList.indexOf(userNotification) % 2 == 0) {
+        for (int i = 0; i < savedUserNotificationList.size(); i++) {
+            UserNotification userNotification = savedUserNotificationList.get(i);
+            if (i % 2 == 0) {
                 userNotification.markAsDeleted();
             }
             userNotificationRepository.save(userNotification);
-        });
+        }
 
         List<Long> notificationIdsToDelete = savedUserNotificationList.stream().filter(userNotification -> !userNotification.getIsDeleted()).map(UserNotification::getId).toList();
 
