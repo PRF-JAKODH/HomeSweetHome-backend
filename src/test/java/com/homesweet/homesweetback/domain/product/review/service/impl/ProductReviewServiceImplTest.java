@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -11,6 +12,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.ProductRepo
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
@@ -198,6 +201,252 @@ class ProductReviewServiceImplTest {
                 assertThatThrownBy(() -> service.createReview(productId, userId, request))
                         .isInstanceOf(RuntimeException.class)
                         .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 리뷰 무한 스크롤")
+    class GetProductReviews {
+        @Test
+        @DisplayName("마지막 페이지일 경우 hasNext=false, nextCursorId=null")
+        void getProductReviews_lastPage() {
+            // given
+            Long productId = 1L;
+            Long cursorId = null;
+            int size = 3;
+
+            List<ProductReviewResponse> reviews = List.of(
+                    createReviewResponse(10L, productId, 1L, 5, "좋아요"),
+                    createReviewResponse(9L, productId, 2L, 4, "보통이에요")
+            );
+
+            given(productReviewRepository.findNextReviews(productId, cursorId, size + 1))
+                    .willReturn(reviews);
+
+            // when
+            ScrollResponse<ProductReviewResponse> result = service.getProductReviews(productId, cursorId, size);
+
+            // then
+            assertThat(result.contents()).hasSize(2);
+            assertThat(result.hasNext()).isFalse();
+            assertThat(result.nextCursorId()).isNull();
+
+            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
+        }
+
+        @Test
+        @DisplayName("다음 페이지가 존재할 경우 hasNext=true, nextCursorId=마지막 리뷰 ID")
+        void getProductReviews_hasNextPage() {
+            // given
+            Long productId = 1L;
+            Long cursorId = 10L;
+            int size = 2;
+
+            List<ProductReviewResponse> reviews = List.of(
+                    createReviewResponse(9L, productId, 1L, 5, "좋아요"),
+                    createReviewResponse(8L, productId, 2L, 4, "괜찮아요"),
+                    createReviewResponse(7L, productId, 3L, 3, "그냥 그래요")
+            );
+
+            given(productReviewRepository.findNextReviews(productId, cursorId, size + 1))
+                    .willReturn(reviews);
+
+            // when
+            ScrollResponse<ProductReviewResponse> result = service.getProductReviews(productId, cursorId, size);
+
+            // then
+            assertThat(result.contents()).hasSize(size);
+            assertThat(result.hasNext()).isTrue();
+            assertThat(result.nextCursorId()).isEqualTo(8L);
+
+            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
+        }
+
+        @Test
+        @DisplayName("조회 결과가 비어있으면 빈 리스트와 hasNext=false를 반환한다")
+        void getProductReviews_emptyResult() {
+            // given
+            Long productId = 1L;
+            Long cursorId = null;
+            int size = 3;
+
+            given(productReviewRepository.findNextReviews(productId, cursorId, size + 1))
+                    .willReturn(List.of());
+
+            // when
+            ScrollResponse<ProductReviewResponse> result = service.getProductReviews(productId, cursorId, size);
+
+            // then
+            assertThat(result.contents()).isEmpty();
+            assertThat(result.hasNext()).isFalse();
+            assertThat(result.nextCursorId()).isNull();
+
+            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
+        }
+    }
+
+    @Nested
+    @DisplayName("사용자 작성 상품 리뷰 조회")
+    class GetWriterProductReviews {
+
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("마지막 페이지일 경우 hasNext=false, nextCursorId=null")
+            void getUserReviews_lastPage() {
+                // given
+                Long userId = 2L;
+                Long cursorId = null;
+                int limit = 3;
+
+                List<ProductReviewResponse> reviews = List.of(
+                        createReviewResponse(11L, 100L, userId, 5, "만족합니다."),
+                        createReviewResponse(10L, 101L, userId, 4, "괜찮아요.")
+                );
+
+                given(productReviewRepository.findNextUserReviews(userId, cursorId, limit + 1))
+                        .willReturn(reviews);
+
+                // when
+                ScrollResponse<ProductReviewResponse> result = service.getUserReviews(userId, cursorId, limit);
+
+                // then
+                assertThat(result.contents()).hasSize(2);
+                assertThat(result.hasNext()).isFalse();
+                assertThat(result.nextCursorId()).isNull();
+
+                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
+            }
+
+            @Test
+            @DisplayName("다음 페이지가 존재할 경우 hasNext=true, nextCursorId=마지막 리뷰 ID")
+            void getUserReviews_hasNextPage() {
+                // given
+                Long userId = 2L;
+                Long cursorId = 10L;
+                int limit = 2;
+
+                List<ProductReviewResponse> reviews = List.of(
+                        createReviewResponse(9L, 100L, userId, 5, "좋아요!"),
+                        createReviewResponse(8L, 101L, userId, 4, "괜찮아요!"),
+                        createReviewResponse(7L, 102L, userId, 3, "그냥 그래요.")
+                );
+
+                given(productReviewRepository.findNextUserReviews(userId, cursorId, limit + 1))
+                        .willReturn(reviews);
+
+                // when
+                ScrollResponse<ProductReviewResponse> result = service.getUserReviews(userId, cursorId, limit);
+
+                // then
+                assertThat(result.contents()).hasSize(limit);
+                assertThat(result.hasNext()).isTrue();
+                assertThat(result.nextCursorId()).isEqualTo(8L);
+
+                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
+            }
+
+            @Test
+            @DisplayName("조회 결과가 비어있으면 빈 리스트와 hasNext=false를 반환한다")
+            void getUserReviews_emptyResult() {
+                // given
+                Long userId = 2L;
+                Long cursorId = null;
+                int limit = 3;
+
+                given(productReviewRepository.findNextUserReviews(userId, cursorId, limit + 1))
+                        .willReturn(List.of());
+
+                // when
+                ScrollResponse<ProductReviewResponse> result = service.getUserReviews(userId, cursorId, limit);
+
+                // then
+                assertThat(result.contents()).isEmpty();
+                assertThat(result.hasNext()).isFalse();
+                assertThat(result.nextCursorId()).isNull();
+
+                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 리뷰 통계 정보 조회")
+    class GetReviewStatistics {
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("상품 리뷰 통계를 정상적으로 조회할 수 있다")
+            void getReviewStatistics_success() {
+                // given
+                Long productId = 1L;
+
+                ProductReviewStatisticsResponse mockResponse = createReviewStatisticsResponse(productId);
+
+                given(productReviewRepository.getReviewStatistics(productId))
+                        .willReturn(mockResponse);
+
+                // when
+                ProductReviewStatisticsResponse result = service.getReviewStatistics(productId);
+
+                // then
+                assertThat(result).isNotNull();
+                assertThat(result.productId()).isEqualTo(productId);
+                assertThat(result.totalCount()).isEqualTo(10L);
+                assertThat(result.averageRating()).isEqualTo(4.5);
+                assertThat(result.ratingCounts()).containsEntry(5, 6L)
+                        .containsEntry(4, 3L)
+                        .containsEntry(3, 1L);
+
+                verify(productReviewRepository).getReviewStatistics(productId);
+            }
+
+            @Test
+            @DisplayName("리뷰가 없는 상품은 카운트 0과 평균 0.0으로 반환할 수 있다")
+            void getReviewStatistics_emptyProduct() {
+                // given
+                Long productId = 99L;
+
+                ProductReviewStatisticsResponse emptyStats = createEmptyReviewStatisticsResponse(productId);
+
+                given(productReviewRepository.getReviewStatistics(productId))
+                        .willReturn(emptyStats);
+
+                // when
+                ProductReviewStatisticsResponse result = service.getReviewStatistics(productId);
+
+                // then
+                assertThat(result.productId()).isEqualTo(productId);
+                assertThat(result.totalCount()).isZero();
+                assertThat(result.averageRating()).isEqualTo(0.0);
+                assertThat(result.ratingCounts()).isEmpty();
+
+                verify(productReviewRepository).getReviewStatistics(productId);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("리포지토리가 null을 반환하면 null이 그대로 반환된다")
+            void getReviewStatistics_nullReturn() {
+                // given
+                Long productId = 1L;
+                given(productReviewRepository.getReviewStatistics(anyLong())).willReturn(null);
+
+                // when
+                ProductReviewStatisticsResponse result = service.getReviewStatistics(productId);
+
+                // then
+                assertThat(result).isNull();
+                verify(productReviewRepository).getReviewStatistics(productId);
             }
         }
     }
