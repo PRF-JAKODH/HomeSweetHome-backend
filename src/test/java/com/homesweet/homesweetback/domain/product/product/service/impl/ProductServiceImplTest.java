@@ -34,7 +34,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static com.homesweet.homesweetback.domain.product.data.ProductFixture.*;
+import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,7 +44,6 @@ import static org.mockito.Mockito.verify;
 /**
  *
  * @author junnukim1007gmail.com
- * @date 25. 10. 21.
  */
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
