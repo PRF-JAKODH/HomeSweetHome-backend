@@ -17,4 +17,8 @@ public record CategoryCreateRequest(
         String name,
         Long parentId
 ) {
+
+    public boolean isParentIdNull() {
+        return parentId == null;
+    }
 }
