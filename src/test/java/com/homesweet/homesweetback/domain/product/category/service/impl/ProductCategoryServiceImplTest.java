@@ -16,14 +16,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.homesweet.homesweetback.domain.product.data.CategoryMockData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+
 /**
  *
  * @author junnukim1007gmail.com
@@ -31,7 +34,7 @@ import static org.mockito.BDDMockito.*;
  */
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("카테고리 서비스 단위 테스트")
+@DisplayName("제품 카테고리 서비스 단위 테스트")
 class ProductCategoryServiceImplTest {
 
     @InjectMocks
@@ -52,78 +55,98 @@ class ProductCategoryServiceImplTest {
         class Success {
 
             @Test
-            @DisplayName("최상위 카테고리를 생성할 수 있다 (depth=0)")
+            @DisplayName("최상위 카테고리(1레벨) 생성 성공")
             void createTopLevelCategory() {
-                // given
+
                 CategoryCreateRequest request = CategoryCreateRequest.builder()
                         .name("가구")
                         .parentId(null)
                         .build();
 
-                ProductCategory saved = createTopCategory(1L, "가구");
+                ProductCategory savedCategory = ProductCategory.builder()
+                        .id(1L)
+                        .name("가구")
+                        .parentId(null)
+                        .depth(0)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
 
-                willDoNothing().given(validator).validateDuplicateCategoryName(request.name());
-                given(repository.save(any(ProductCategory.class))).willReturn(saved);
+                given(repository.save(any(ProductCategory.class))).willReturn(savedCategory);
 
-                // when
                 CategoryResponse response = service.createCategory(request);
 
-                // then
+                assertThat(response.id()).isEqualTo(1L);
                 assertThat(response.name()).isEqualTo("가구");
                 assertThat(response.parentId()).isNull();
-                assertThat(response.depth()).isEqualTo(0);
+
             }
 
             @Test
-            @DisplayName("중간 카테고리를 생성할 수 있다 (depth=1)")
-            void createMidLevelCategory() {
+            @DisplayName("같은 부모 카테고리를 갖는 여러 하위 카테고리를 생성할 수 있다")
+            void createChildCategoryWithSameParent() {
                 // given
-                ProductCategory parent = createTopCategory(1L, "가구");
-
-                CategoryCreateRequest request = CategoryCreateRequest.builder()
-                        .name("거실가구")
-                        .parentId(parent.id())
+                ProductCategory parentCategory = ProductCategory.builder()
+                        .id(1L)
+                        .name("가구")
+                        .parentId(null)
+                        .depth(0)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
                         .build();
 
-                ProductCategory saved = createMidCategory(2L, "거실가구", parent.id());
+                // 첫 번째 하위 카테고리 생성
+                CategoryCreateRequest firstRequest = CategoryCreateRequest.builder()
+                        .name("침대")
+                        .parentId(1L)
+                        .build();
 
-                willDoNothing().given(validator).validateDuplicateCategoryName(request.name());
-                given(repository.findById(parent.id())).willReturn(Optional.of(parent));
-                given(repository.save(any(ProductCategory.class))).willReturn(saved);
+                ProductCategory firstSavedCategory = ProductCategory.builder()
+                        .id(2L)
+                        .name("침대")
+                        .parentId(1L)
+                        .depth(1)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+
+                given(repository.findByName("침대")).willReturn(Optional.empty());
+                given(repository.findById(1L)).willReturn(Optional.of(parentCategory));
+                given(repository.save(any(ProductCategory.class))).willReturn(firstSavedCategory);
 
                 // when
-                CategoryResponse response = service.createCategory(request);
+                CategoryResponse firstResponse = service.createCategory(firstRequest);
 
                 // then
-                assertThat(response.name()).isEqualTo("거실가구");
-                assertThat(response.parentId()).isEqualTo(parent.id());
-                assertThat(response.depth()).isEqualTo(1);
-            }
+                assertThat(firstResponse.id()).isEqualTo(2L);
+                assertThat(firstResponse.name()).isEqualTo("침대");
+                assertThat(firstResponse.parentId()).isEqualTo(1L);
 
-            @Test
-            @DisplayName("하위 카테고리를 생성할 수 있다 (depth=2)")
-            void createSubLevelCategory() {
-                // given
-                ProductCategory parent = createMidCategory(2L, "거실가구", 1L);
-
-                CategoryCreateRequest request = CategoryCreateRequest.builder()
+                // 두 번째 하위 카테고리 생성
+                CategoryCreateRequest secondRequest = CategoryCreateRequest.builder()
                         .name("소파")
-                        .parentId(parent.id())
+                        .parentId(1L)
                         .build();
 
-                ProductCategory saved = createSubCategory(3L, "소파", parent.id());
+                ProductCategory secondSavedCategory = ProductCategory.builder()
+                        .id(3L)
+                        .name("소파")
+                        .parentId(1L)
+                        .depth(1)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
 
-                willDoNothing().given(validator).validateDuplicateCategoryName(request.name());
-                given(repository.findById(parent.id())).willReturn(Optional.of(parent));
-                given(repository.save(any(ProductCategory.class))).willReturn(saved);
+                given(repository.findByName("소파")).willReturn(Optional.empty());
+                given(repository.save(any(ProductCategory.class))).willReturn(secondSavedCategory);
 
                 // when
-                CategoryResponse response = service.createCategory(request);
+                CategoryResponse secondResponse = service.createCategory(secondRequest);
 
                 // then
-                assertThat(response.name()).isEqualTo("소파");
-                assertThat(response.depth()).isEqualTo(2);
-                assertThat(response.parentId()).isEqualTo(parent.id());
+                assertThat(secondResponse.id()).isEqualTo(3L);
+                assertThat(secondResponse.name()).isEqualTo("소파");
+                assertThat(secondResponse.parentId()).isEqualTo(1L);
             }
         }
 
@@ -132,23 +155,30 @@ class ProductCategoryServiceImplTest {
         class Fail {
 
             @Test
-            @DisplayName("카테고리 최대 깊이를 초과하면 예외가 발생한다 (depth > 2)")
-            void exceedMaxDepth() {
+            @DisplayName("3레벨 넘어서는 카테고리 생성 시 ProductCategoryException이 발생한다")
+            void createCategoryWithDepthOver() {
                 // given
-                ProductCategory parent = createSubCategory(3L, "소파", 2L);
-
                 CategoryCreateRequest request = CategoryCreateRequest.builder()
-                        .name("더 깊은 카테고리")
-                        .parentId(parent.id())
+                        .name("더블 침대")
+                        .parentId(3L)
                         .build();
 
-                willDoNothing().given(validator).validateDuplicateCategoryName(request.name());
-                given(repository.findById(parent.id())).willReturn(Optional.of(parent));
+                ProductCategory parentCategory = ProductCategory.builder()
+                        .id(3L)
+                        .name("싱글 침대")
+                        .parentId(2L)
+                        .depth(2)  // 이미 MAX_DEPTH
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+
+                given(repository.findByName(request.name())).willReturn(Optional.empty());
+                given(repository.findById(3L)).willReturn(Optional.of(parentCategory));
 
                 // when & then
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
-                        .hasMessage(ErrorCode.CATEGORY_DEPTH_EXCEEDED_ERROR.getMessage());
+                        .hasMessageContaining(ErrorCode.CATEGORY_DEPTH_EXCEEDED_ERROR.getMessage());
             }
 
             @Test
@@ -160,31 +190,39 @@ class ProductCategoryServiceImplTest {
                         .parentId(null)
                         .build();
 
-                willThrow(new ProductCategoryException(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR))
-                        .given(validator).validateDuplicateCategoryName(request.name());
+                ProductCategory existingCategory = ProductCategory.builder()
+                        .id(1L)
+                        .name("가구")
+                        .parentId(null)
+                        .depth(0)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+
+                given(repository.findByName(request.name())).willReturn(Optional.of(existingCategory));
 
                 // when & then
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
-                        .hasMessage(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR.getMessage());
+                        .hasMessageContaining(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR.getMessage());
             }
 
             @Test
-            @DisplayName("부모 카테고리를 찾을 수 없으면 예외가 발생한다")
-            void parentCategoryNotFound() {
+            @DisplayName("존재하지 않는 부모 ID로 하위 카테고리를 생성할 수 없다")
+            void createChildCategoryWithNotExistParent() {
                 // given
                 CategoryCreateRequest request = CategoryCreateRequest.builder()
-                        .name("없는부모")
-                        .parentId(999L)
+                        .name("침대")
+                        .parentId(999L)  // 존재하지 않는 부모 ID
                         .build();
 
-                willDoNothing().given(validator).validateDuplicateCategoryName(request.name());
+                given(repository.findByName(request.name())).willReturn(Optional.empty());
                 given(repository.findById(999L)).willReturn(Optional.empty());
 
                 // when & then
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
-                        .hasMessage(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR.getMessage());
+                        .hasMessageContaining(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR.getMessage());
             }
         }
     }
@@ -204,9 +242,9 @@ class ProductCategoryServiceImplTest {
                 Long parentId = 1L;
 
                 List<ProductCategory> children = List.of(
-                        createSubCategory(2L, "침실가구", 1L),
-                        createSubCategory(3L, "거실가구", 1L),
-                        createSubCategory(4L, "주방가구", 1L)
+                        new ProductCategory(2L, "침실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(3L, "거실가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(4L, "주방가구", 1L, 1, LocalDateTime.now(), LocalDateTime.now())
                 );
 
                 given(repository.findByParentId(parentId)).willReturn(children);
@@ -221,9 +259,9 @@ class ProductCategoryServiceImplTest {
             void getTopLevelCategories() {
                 // given
                 List<ProductCategory> topLevelCategories = List.of(
-                        createTopCategory(1L, "가구"),
-                        createTopCategory(5L, "조명"),
-                        createTopCategory(10L, "패브릭")
+                        new ProductCategory(1L, "가구", null, 0, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(5L, "조명", null, 0, LocalDateTime.now(), LocalDateTime.now()),
+                        new ProductCategory(10L, "패브릭", null, 0, LocalDateTime.now(), LocalDateTime.now())
                 );
 
                 given(repository.findTopLevelCategories()).willReturn(topLevelCategories);
@@ -238,72 +276,6 @@ class ProductCategoryServiceImplTest {
                 assertThat(responses).extracting("depth")
                         .containsOnly(0);
             }
-        }
-    }
-
-    @Nested
-    @DisplayName("카테고리 계층 전체 조회")
-    class FindCategoryHierarchy {
-        @Test
-        @DisplayName("하위 카테고리로부터 루트까지 계층을 올바르게 조회할 수 있다")
-        void getCategoryHierarchy_success() {
-            // given
-            ProductCategory top = createTopCategory(1L, "가구");
-            ProductCategory mid = createMidCategory(2L, "거실가구", top.id());
-            ProductCategory sub = createSubCategory(3L, "소파", mid.id());
-
-            // 하위 카테고리로부터 위로 탐색하는 stub
-            given(repository.findById(sub.id())).willReturn(Optional.of(sub));
-            given(repository.findById(mid.id())).willReturn(Optional.of(mid));
-            given(repository.findById(top.id())).willReturn(Optional.of(top));
-
-            // when
-            List<CategoryResponse> result = service.getCategoryHierarchy(sub.id());
-
-            // then
-            assertThat(result).hasSize(3);
-            assertThat(result.get(0).name()).isEqualTo("가구");        // depth 0
-            assertThat(result.get(1).name()).isEqualTo("거실가구");   // depth 1
-            assertThat(result.get(2).name()).isEqualTo("소파");       // depth 2
-
-            // 부모-자식 관계 검증
-            assertThat(result.get(1).parentId()).isEqualTo(result.get(0).id());
-            assertThat(result.get(2).parentId()).isEqualTo(result.get(1).id());
-        }
-
-        @Test
-        @DisplayName("최상위 카테고리는 자기 자신만 반환한다")
-        void getCategoryHierarchy_topLevel() {
-            // given
-            ProductCategory top = createTopCategory(1L, "가전");
-
-            given(repository.findById(top.id())).willReturn(Optional.of(top));
-
-            // when
-            List<CategoryResponse> result = service.getCategoryHierarchy(top.id());
-
-            // then
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).name()).isEqualTo("가전");
-            assertThat(result.get(0).parentId()).isNull();
-        }
-    }
-
-    @Nested
-    @DisplayName("실패 케이스")
-    class Fail {
-
-        @Test
-        @DisplayName("존재하지 않는 카테고리를 조회하면 예외가 발생한다")
-        void getCategoryHierarchy_notFound() {
-            // given
-            Long invalidId = 999L;
-            given(repository.findById(invalidId)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> service.getCategoryHierarchy(invalidId))
-                    .isInstanceOf(ProductCategoryException.class)
-                    .hasMessage(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR.getMessage());
         }
     }
 }

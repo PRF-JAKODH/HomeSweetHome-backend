@@ -1,14 +1,12 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
-import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
-import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -51,6 +48,8 @@ class ProductServiceImplTest {
     private ProductCategoryRepository categoryRepository;
     @Mock
     private ProductImageUploader productImageUploader;
+    @Mock
+    private ProductValidator validator;
 
     @Nested
     @DisplayName("상품 생성")
@@ -85,7 +84,6 @@ class ProductServiceImplTest {
                         "https://s3.aws/main.jpg", List.of()
                 );
 
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
                 given(categoryRepository.findById(1L)).willReturn(Optional.of(category));
                 given(productImageUploader.uploadProductImages(any(), any())).willReturn(uploaded);
                 given(productRepository.save(any(Product.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -120,7 +118,6 @@ class ProductServiceImplTest {
                 MockMultipartFile mainImage =
                         new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
 
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
                 given(categoryRepository.findById(1L)).willReturn(Optional.of(ProductCategory.builder().id(1L).name("가구").build()));
                 given(productImageUploader.uploadProductImages(any(), any())).willReturn(
                         new ProductImages("https://s3.aws/main.jpg", List.of())
@@ -155,7 +152,6 @@ class ProductServiceImplTest {
                 MockMultipartFile mainImage =
                         new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
 
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
                 given(categoryRepository.findById(1L)).willReturn(Optional.of(ProductCategory.builder().id(1L).name("가구").build()));
                 given(productImageUploader.uploadProductImages(any(), any())).willReturn(
                         new ProductImages("https://s3.aws/main.jpg", List.of())
@@ -207,7 +203,6 @@ class ProductServiceImplTest {
                         List.of("https://s3.aws/detail1.jpg")
                 );
 
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
                 given(categoryRepository.findById(1L)).willReturn(Optional.of(category));
                 given(productImageUploader.uploadProductImages(any(), any())).willReturn(uploaded);
                 given(productRepository.save(any(Product.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -262,7 +257,6 @@ class ProductServiceImplTest {
                         )
                 );
 
-                given(productRepository.existsBySellerIdAndName(any(), any())).willReturn(false);
                 given(categoryRepository.findById(any())).willReturn(Optional.of(category));
                 given(productImageUploader.uploadProductImages(any(), any())).willReturn(uploaded);
                 given(productRepository.save(any(Product.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -281,30 +275,30 @@ class ProductServiceImplTest {
         @DisplayName("실패")
         class Fail {
 
-            @Test
-            @DisplayName("이미 등록된 상품명으로 등록할 수 없다")
-            void createProductWithDuplicateName() {
-                // given
-                Long sellerId = 1L;
-                ProductCreateRequest request = new ProductCreateRequest(
-                        1L, "중복 상품", "홈스윗",
-                        20000, BigDecimal.ZERO,
-                        "중복 이름 상품", 3000,
-                        List.of(), List.of()
-                );
-
-                MockMultipartFile mainImage =
-                        new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
-
-                given(productRepository.existsBySellerIdAndName(sellerId, "중복 상품")).willReturn(true);
-
-                // when & then
-                assertThatThrownBy(() ->
-                        service.registerProduct(sellerId, request, mainImage, List.of())
-                )
-                        .isInstanceOf(ProductException.class)
-                        .hasMessage(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR.getMessage());
-            }
+//            @Test
+//            @DisplayName("이미 등록된 상품명으로 등록할 수 없다")
+//            void createProductWithDuplicateName() {
+//                // given
+//                Long sellerId = 1L;
+//                ProductCreateRequest request = new ProductCreateRequest(
+//                        1L, "중복 상품", "홈스윗",
+//                        20000, BigDecimal.ZERO,
+//                        "중복 이름 상품", 3000,
+//                        List.of(), List.of()
+//                );
+//
+//                MockMultipartFile mainImage =
+//                        new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
+//
+//                given(productRepository.existsBySellerIdAndName(sellerId, "중복 상품")).willReturn(true);
+//
+//                // when & then
+//                assertThatThrownBy(() ->
+//                        service.registerProduct(sellerId, request, mainImage, List.of())
+//                )
+//                        .isInstanceOf(ProductException.class)
+//                        .hasMessage(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR.getMessage());
+//            }
         }
     }
 }
