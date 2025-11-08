@@ -43,7 +43,7 @@ public class ProductMockData {
         );
     }
 
-    // [상품 생성] 상품명과 함께 상품 생성
+    // [상품 도메인 생성] 상품명과 함께 상품 생성
     public static Product createMockProduct(Long id, Long sellerId, String name) {
         return Product.builder()
                 .id(id)
@@ -56,7 +56,7 @@ public class ProductMockData {
                 .build();
     }
 
-    // [상품 생성] 상품 상태와 함께 상품 생성
+    // [상품 도메인 생성] 상품 상태와 함께 상품 생성
     public static Product createMockProduct(Long id, Long sellerId, ProductStatus status) {
         return Product.builder()
                 .id(id)
@@ -80,6 +80,20 @@ public class ProductMockData {
                 .build();
     }
 
+    // [상품 엔티티 생성] 아이디
+    public static ProductEntity createMockProductEntity(Long id) {
+        return ProductEntity.builder()
+                .id(id)
+                .name("의자")
+                .brand("홈스윗")
+                .basePrice(30000)
+                .discountRate(BigDecimal.ZERO)
+                .shippingPrice(3000)
+                .status(ProductStatus.ON_SALE)
+                .build();
+    }
+
+    // [상품 엔티티 생성] 아이디, 상품명
     public static ProductEntity createMockProductEntity(Long id, String name) {
         return ProductEntity.builder()
                 .id(id)
@@ -88,6 +102,19 @@ public class ProductMockData {
                 .basePrice(10000)
                 .description("테스트 상품")
                 .shippingPrice(3000)
+                .build();
+    }
+
+    // [상품 엔티티 생성] 아이디, 상품명, 상품 상태
+    public static ProductEntity createMockProductEntity(Long id, String name, ProductStatus status) {
+        return ProductEntity.builder()
+                .id(id)
+                .name(name)
+                .brand("홈스윗")
+                .basePrice(10000)
+                .description("테스트 상품")
+                .shippingPrice(3000)
+                .status(status)
                 .build();
     }
 
