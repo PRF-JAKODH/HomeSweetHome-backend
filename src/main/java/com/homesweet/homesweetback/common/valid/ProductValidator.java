@@ -63,8 +63,8 @@ public class ProductValidator {
     /**
      * 판매자가 해당 상품을 등록했는지 검증
      */
-    public void validateExistsSellerProduct(Long sellerId, Long productId) {
-        productRepository.findByIdAndSellerId(sellerId, productId)
+    public void validateExistsSellerProduct(Long productId, Long sellerId) {
+        productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
     }
 

@@ -131,7 +131,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateBasicInfo(Long sellerId, Long productId, ProductBasicInfoUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product product = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         if (!request.validateName(product.getName())) {
@@ -162,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
 
-        Product domain = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product domain = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         productRepository.updateStatus(domain.getId(), request.status());
@@ -170,7 +170,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
-        Product product = productRepository.findByIdAndSellerId(sellerId, productId)
+        Product product = productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         // 1. 대표 이미지 교체
