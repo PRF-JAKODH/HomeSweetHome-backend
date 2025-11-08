@@ -3,23 +3,25 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.dto.CommunityCommentRequest;
-import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
-import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
+import com.homesweet.homesweetback.domain.community.dto.*;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
-import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
-import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
-import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
-import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.community.entity.*;
+import com.homesweet.homesweetback.domain.community.repository.*;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,18 @@ class CommunityServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CommunityPostLikeRepository postLikeRepository;
+
+    @Mock
+    private CommunityCommentLikeRepository commentLikeRepository;
+
+    @Mock
+    private NotificationSendService notificationSendService;
+
+    @Mock
+    private CommunityImageUploader imageUploader;
 
     @Mock
     @InjectMocks
@@ -185,11 +199,460 @@ class CommunityServiceTest {
         when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(originalPost));
 
         // when
-        communityPostService.deletePost(postId, userId);     
+        communityPostService.deletePost(postId, userId);
 
         // then
         verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
         assertThat(originalPost.getIsDeleted()).isTrue();
+    }
+
+    @DisplayName("게시물 목록 조회 테스트 (페이지네이션)")
+    @Test
+    void getPosts() {
+        // given
+        User fakeUser = User.builder().id(1L).name("User").build();
+
+        CommunityPostEntity post1 = CommunityPostEntity.builder()
+                .postId(1L)
+                .author(fakeUser)
+                .title("첫 번째 게시물")
+                .content("첫 번째 내용")
+                .category("카테고리1")
+                .build();
+
+        CommunityPostEntity post2 = CommunityPostEntity.builder()
+                .postId(2L)
+                .author(fakeUser)
+                .title("두 번째 게시물")
+                .content("두 번째 내용")
+                .category("카테고리2")
+                .build();
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<CommunityPostEntity> page = new PageImpl<>(Arrays.asList(post1, post2), pageable, 2);
+
+        when(postRepository.findByIsDeletedFalse(pageable)).thenReturn(page);
+        when(imageRepository.findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class)))
+                .thenReturn(Collections.emptyList());
+
+        // when
+        Page<CommunityPostResponse> result = communityPostService.getPosts(pageable);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent().get(0).title()).isEqualTo("첫 번째 게시물");
+        assertThat(result.getContent().get(1).title()).isEqualTo("두 번째 게시물");
+
+        verify(postRepository).findByIsDeletedFalse(pageable);
+    }
+
+    @DisplayName("댓글 작성 테스트")
+    @Test
+    void createComment() {
+        // given
+        Long postId = 1L;
+        Long userId = 1L;
+        String commentContent = "테스트 댓글입니다.";
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .build();
+
+        CommunityCommentRequest request = new CommunityCommentRequest(commentContent, null);
+
+        CommunityCommentEntity savedComment = CommunityCommentEntity.builder()
+                .commentId(1L)
+                .post(fakePost)
+                .author(fakeUser)
+                .content(commentContent)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(commentRepository.save(any(CommunityCommentEntity.class))).thenReturn(savedComment);
+
+        // when
+        CommunityCommentResponse response = communityCommentService.createComment(postId, request, userId);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.content()).isEqualTo(commentContent);
+        assertThat(response.authorName()).isEqualTo("User");
+
+        verify(userRepository).findById(userId);
+        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+        verify(commentRepository).save(any(CommunityCommentEntity.class));
+    }
+
+    @DisplayName("대댓글 작성 테스트")
+    @Test
+    void createReplyComment() {
+        // given
+        Long postId = 1L;
+        Long userId = 1L;
+        Long parentCommentId = 1L;
+        String replyContent = "대댓글입니다.";
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .build();
+
+        CommunityCommentEntity parentComment = CommunityCommentEntity.builder()
+                .commentId(parentCommentId)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("부모 댓글")
+                .build();
+
+        CommunityCommentRequest request = new CommunityCommentRequest(replyContent, parentCommentId);
+
+        CommunityCommentEntity savedReply = CommunityCommentEntity.builder()
+                .commentId(2L)
+                .post(fakePost)
+                .author(fakeUser)
+                .content(replyContent)
+                .parentCommentId(parentCommentId)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(commentRepository.findById(parentCommentId)).thenReturn(Optional.of(parentComment));
+        when(commentRepository.save(any(CommunityCommentEntity.class))).thenReturn(savedReply);
+
+        // when
+        CommunityCommentResponse response = communityCommentService.createComment(postId, request, userId);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.content()).isEqualTo(replyContent);
+        assertThat(response.parentCommentId()).isEqualTo(parentCommentId);
+
+        verify(commentRepository).findById(parentCommentId);
+    }
+
+    @DisplayName("게시글의 댓글 목록 조회 테스트")
+    @Test
+    void getCommentsByPostId() {
+        // given
+        Long postId = 1L;
+        User fakeUser = User.builder().id(1L).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .build();
+
+        CommunityCommentEntity comment1 = CommunityCommentEntity.builder()
+                .commentId(1L)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("첫 번째 댓글")
+                .build();
+
+        CommunityCommentEntity comment2 = CommunityCommentEntity.builder()
+                .commentId(2L)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("두 번째 댓글")
+                .build();
+
+        when(commentRepository.findByPost_PostIdAndIsDeletedFalse(postId))
+                .thenReturn(Arrays.asList(comment1, comment2));
+
+        // when
+        List<CommunityCommentResponse> responses = communityCommentService.getCommentsByPostId(postId);
+
+        // then
+        assertThat(responses).isNotNull();
+        assertThat(responses).hasSize(2);
+        assertThat(responses.get(0).content()).isEqualTo("첫 번째 댓글");
+        assertThat(responses.get(1).content()).isEqualTo("두 번째 댓글");
+
+        verify(commentRepository).findByPost_PostIdAndIsDeletedFalse(postId);
+    }
+
+    @DisplayName("댓글 수정 테스트")
+    @Test
+    void updateComment() {
+        // given
+        Long commentId = 1L;
+        Long userId = 1L;
+        String updatedContent = "수정된 댓글";
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(1L)
+                .author(fakeUser)
+                .build();
+
+        CommunityCommentEntity comment = CommunityCommentEntity.builder()
+                .commentId(commentId)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("원래 댓글")
+                .build();
+
+        CommunityCommentRequest request = new CommunityCommentRequest(updatedContent, null);
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        // when
+        CommunityCommentResponse response = communityCommentService.updateComment(commentId, request, userId);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.content()).isEqualTo(updatedContent);
+
+        verify(commentRepository).findById(commentId);
+    }
+
+    @DisplayName("댓글 삭제 테스트")
+    @Test
+    void deleteComment() {
+        // given
+        Long commentId = 1L;
+        Long postId = 1L;
+        Long userId = 1L;
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .commentCount(1)
+                .build();
+
+        CommunityCommentEntity comment = CommunityCommentEntity.builder()
+                .commentId(commentId)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("삭제할 댓글")
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+
+        // when
+        communityCommentService.deleteComment(commentId, postId, userId);
+
+        // then
+        assertThat(comment.getIsDeleted()).isTrue();
+        assertThat(fakePost.getCommentCount()).isEqualTo(0);
+
+        verify(commentRepository).findById(commentId);
+        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+    }
+
+    @DisplayName("게시글 조회수 증가 테스트")
+    @Test
+    void increaseViewCount() {
+        // given
+        Long postId = 1L;
+        User fakeUser = User.builder().id(1L).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .viewCount(0)
+                .build();
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+
+        // when
+        communityCountService.increaseViewCount(postId);
+
+        // then
+        assertThat(fakePost.getViewCount()).isEqualTo(1);
+
+        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+    }
+
+    @DisplayName("게시글 좋아요 추가 테스트")
+    @Test
+    void addPostLike() {
+        // given
+        Long postId = 1L;
+        Long userId = 1L;
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .likeCount(0)
+                .build();
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.empty());
+
+        // when
+        communityCountService.togglePostLike(postId, userId);
+
+        // then
+        assertThat(fakePost.getLikeCount()).isEqualTo(1);
+
+        verify(postLikeRepository).save(any(CommunityPostLikeEntity.class));
+    }
+
+    @DisplayName("게시글 좋아요 취소 테스트")
+    @Test
+    void removePostLike() {
+        // given
+        Long postId = 1L;
+        Long userId = 1L;
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(postId)
+                .author(fakeUser)
+                .title("Test Title")
+                .content("Test Content")
+                .category("Test Category")
+                .likeCount(1)
+                .build();
+
+        CommunityPostLikeEntity existingLike = CommunityPostLikeEntity.builder()
+                .post(fakePost)
+                .user(fakeUser)
+                .build();
+
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.of(existingLike));
+
+        // when
+        communityCountService.togglePostLike(postId, userId);
+
+        // then
+        assertThat(fakePost.getLikeCount()).isEqualTo(0);
+
+        verify(postLikeRepository).delete(existingLike);
+    }
+
+    @DisplayName("게시글 좋아요 확인 테스트")
+    @Test
+    void isPostLiked() {
+        // given
+        Long postId = 1L;
+        Long userId = 1L;
+
+        when(postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId)).thenReturn(true);
+
+        // when
+        boolean result = communityCountService.isPostLiked(postId, userId);
+
+        // then
+        assertThat(result).isTrue();
+
+        verify(postLikeRepository).existsByPost_PostIdAndUser_Id(postId, userId);
+    }
+
+    @DisplayName("댓글 좋아요 추가 테스트")
+    @Test
+    void addCommentLike() {
+        // given
+        Long commentId = 1L;
+        Long userId = 1L;
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(1L)
+                .author(fakeUser)
+                .build();
+        CommunityCommentEntity fakeComment = CommunityCommentEntity.builder()
+                .commentId(commentId)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("Test Comment")
+                .likeCount(0)
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(fakeComment));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser)).thenReturn(Optional.empty());
+
+        // when
+        communityCountService.toggleCommentLike(commentId, userId);
+
+        // then
+        assertThat(fakeComment.getLikeCount()).isEqualTo(1);
+
+        verify(commentLikeRepository).save(any(CommunityCommentLikeEntity.class));
+    }
+
+    @DisplayName("댓글 좋아요 취소 테스트")
+    @Test
+    void removeCommentLike() {
+        // given
+        Long commentId = 1L;
+        Long userId = 1L;
+
+        User fakeUser = User.builder().id(userId).name("User").build();
+        CommunityPostEntity fakePost = CommunityPostEntity.builder()
+                .postId(1L)
+                .author(fakeUser)
+                .build();
+        CommunityCommentEntity fakeComment = CommunityCommentEntity.builder()
+                .commentId(commentId)
+                .post(fakePost)
+                .author(fakeUser)
+                .content("Test Comment")
+                .likeCount(1)
+                .build();
+
+        CommunityCommentLikeEntity existingLike = CommunityCommentLikeEntity.builder()
+                .comment(fakeComment)
+                .user(fakeUser)
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(fakeComment));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
+        when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser))
+                .thenReturn(Optional.of(existingLike));
+
+        // when
+        communityCountService.toggleCommentLike(commentId, userId);
+
+        // then
+        assertThat(fakeComment.getLikeCount()).isEqualTo(0);
+
+        verify(commentLikeRepository).delete(existingLike);
+    }
+
+    @DisplayName("댓글 좋아요 확인 테스트")
+    @Test
+    void isCommentLiked() {
+        // given
+        Long commentId = 1L;
+        Long userId = 1L;
+
+        when(commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId)).thenReturn(true);
+
+        // when
+        boolean result = communityCountService.isCommentLiked(commentId, userId);
+
+        // then
+        assertThat(result).isTrue();
+
+        verify(commentLikeRepository).existsByComment_CommentIdAndUser_Id(commentId, userId);
     }
 
     /**
