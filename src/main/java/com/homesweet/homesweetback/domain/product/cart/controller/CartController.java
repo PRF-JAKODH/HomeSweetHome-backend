@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.cart.controller;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartCountResponse;
@@ -8,6 +9,7 @@ import com.homesweet.homesweetback.domain.product.cart.controller.request.Delete
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.service.CartService;
+import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -95,6 +97,7 @@ public class CartController {
             @PathVariable Long cartId,
             @Valid @RequestBody CartQuantityUpdateRequest request
     ) {
+
         Long userId = principal.getUserId();
 
         // CartService의 새 메서드 호출
