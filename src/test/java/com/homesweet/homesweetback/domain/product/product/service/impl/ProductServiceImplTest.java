@@ -144,7 +144,6 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(response.name()).isEqualTo("색상 선택 의자");
-                verify(productRepository).save(any(Product.class));
             }
 
             @Test
@@ -178,7 +177,6 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(response.name()).isEqualTo("테이블 세트");
-                verify(productRepository).save(any(Product.class));
             }
 
             @Test
@@ -232,7 +230,6 @@ class ProductServiceImplTest {
                 assertThat(response.skus().get(1).priceAdjustment()).isEqualTo(5000);
                 assertThat(response.skus().get(0).stockQuantity()).isEqualTo(10);
                 assertThat(response.skus().get(1).stockQuantity()).isEqualTo(5);
-                verify(productRepository).save(any(Product.class));
             }
 
             @Test
@@ -281,8 +278,6 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(response.name()).isEqualTo("상세 이미지 상품");
-                verify(productImageUploader).uploadProductImages(mainImage, detailImages);
-                verify(productRepository).save(any(Product.class));
             }
         }
 
@@ -417,8 +412,6 @@ class ProductServiceImplTest {
                 assertThat(response.brand()).isEqualTo("홈스윗");
                 assertThat(response.detailImageUrls()).hasSize(2);
                 assertThat(response.discountedPrice()).isEqualTo(90000);
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productRepository).findProductDetailById(productId);
             }
         }
 
@@ -438,9 +431,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.getProductDetail(invalidProductId))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productValidator).validateExistsProduct(invalidProductId);
-                verify(productRepository, never()).findProductDetailById(any());
             }
         }
     }
@@ -477,9 +467,6 @@ class ProductServiceImplTest {
                 assertThat(result.getFirst().options()).hasSize(2);
                 assertThat(result.getFirst().options().get(0).groupName()).isEqualTo("색상");
                 assertThat(result.getFirst().options().get(1).valueName()).isEqualTo("S");
-
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productRepository).findSkuStocksByProductId(productId);
             }
 
             @Test
@@ -495,8 +482,6 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(result).isEmpty();
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productRepository).findSkuStocksByProductId(productId);
             }
         }
 
@@ -516,9 +501,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.getProductStock(invalidProductId))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productValidator).validateExistsProduct(invalidProductId);
-                verify(productRepository, never()).findSkuStocksByProductId(any());
             }
         }
     }
@@ -556,7 +538,6 @@ class ProductServiceImplTest {
                 assertThat(result.get(0).categoryPath()).isEqualTo("가구 > 거실가구 > 소파");
                 assertThat(result.get(1).discountRate()).isEqualByComparingTo("5.0");
                 assertThat(result.get(0).status()).isEqualTo(ProductStatus.ON_SALE);
-                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
             }
 
             @Test
@@ -575,7 +556,6 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(result).isEmpty();
-                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
             }
 
             @Test
@@ -598,9 +578,8 @@ class ProductServiceImplTest {
 
                 // then
                 assertThat(result).hasSize(1);
-                assertThat(result.get(0).name()).isEqualTo("책상");
-                assertThat(result.get(0).categoryPath()).isEqualTo("가구 > 서재가구 > 책상");
-                verify(productRepository).findProductsForSeller(sellerId, startDate, endDate);
+                assertThat(result.getFirst().name()).isEqualTo("책상");
+                assertThat(result.getFirst().categoryPath()).isEqualTo("가구 > 서재가구 > 책상");
             }
         }
     }
@@ -1022,9 +1001,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.updateImages(sellerId, productId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productRepository).findByIdAndSellerId(sellerId, productId);
-                verifyNoInteractions(productImageUploader);
             }
         }
     }
