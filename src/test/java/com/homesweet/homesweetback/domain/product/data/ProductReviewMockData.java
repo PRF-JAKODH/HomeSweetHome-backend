@@ -1,8 +1,10 @@
 package com.homesweet.homesweetback.domain.product.data;
 
+import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -22,6 +24,20 @@ public class ProductReviewMockData {
                 .userId(userId)
                 .rating(rating)
                 .comment(comment)
+                .imageUrl(imageUrl)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    // 리뷰 ID와 함께 리뷰 생성
+    public static ProductReview createMockReview(Long reviewId, Long productId, Long userId, String imageUrl) {
+        return ProductReview.builder()
+                .id(reviewId)
+                .productId(productId)
+                .userId(userId)
+                .rating(4)
+                .comment("기존 리뷰")
                 .imageUrl(imageUrl)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -64,5 +80,9 @@ public class ProductReviewMockData {
                 0.0,
                 Map.of()
         );
+    }
+
+    public static ProductReviewUpdateRequest createProductReviewUpdateRequest(Integer rating, String comment, MultipartFile image) {
+        return new ProductReviewUpdateRequest(5, "수정된 리뷰", null);
     }
 }

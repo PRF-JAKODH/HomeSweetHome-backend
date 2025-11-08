@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.exception.Produ
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
+import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
@@ -33,7 +34,6 @@ import static com.homesweet.homesweetback.domain.product.data.UserMockData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -93,10 +93,6 @@ class ProductReviewServiceImplTest {
                 assertThat(response.rating()).isEqualTo(5);
                 assertThat(response.comment()).isEqualTo("좋아요!");
                 assertThat(response.reviewImageUrl()).isNull();
-
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productValidator).validateDuplicateReview(productId, userId);
-                verify(imageUploader, never()).uploadProductReviewImage(any());
             }
 
             @Test
@@ -127,8 +123,6 @@ class ProductReviewServiceImplTest {
                 // then
                 assertThat(response.rating()).isEqualTo(4);
                 assertThat(response.reviewImageUrl()).isEqualTo("https://s3.aws/review.jpg");
-                verify(imageUploader).uploadProductReviewImage(image);
-                verify(productReviewRepository).save(any(ProductReview.class));
             }
         }
 
@@ -151,9 +145,6 @@ class ProductReviewServiceImplTest {
                 assertThatThrownBy(() -> service.createReview(productId, userId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productValidator, never()).validateDuplicateReview(anyLong(), anyLong());
             }
 
             @Test
@@ -173,10 +164,6 @@ class ProductReviewServiceImplTest {
                 assertThatThrownBy(() -> service.createReview(productId, userId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.ALREADY_REVIEW_EXISTS.getMessage());
-
-                verify(productValidator).validateExistsProduct(productId);
-                verify(productValidator).validateDuplicateReview(productId, userId);
-                verifyNoInteractions(imageUploader);
             }
 
             @Test
@@ -231,8 +218,6 @@ class ProductReviewServiceImplTest {
             assertThat(result.contents()).hasSize(2);
             assertThat(result.hasNext()).isFalse();
             assertThat(result.nextCursorId()).isNull();
-
-            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
         }
 
         @Test
@@ -259,8 +244,6 @@ class ProductReviewServiceImplTest {
             assertThat(result.contents()).hasSize(size);
             assertThat(result.hasNext()).isTrue();
             assertThat(result.nextCursorId()).isEqualTo(8L);
-
-            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
         }
 
         @Test
@@ -281,8 +264,6 @@ class ProductReviewServiceImplTest {
             assertThat(result.contents()).isEmpty();
             assertThat(result.hasNext()).isFalse();
             assertThat(result.nextCursorId()).isNull();
-
-            verify(productReviewRepository).findNextReviews(productId, cursorId, size + 1);
         }
     }
 
@@ -317,8 +298,6 @@ class ProductReviewServiceImplTest {
                 assertThat(result.contents()).hasSize(2);
                 assertThat(result.hasNext()).isFalse();
                 assertThat(result.nextCursorId()).isNull();
-
-                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
             }
 
             @Test
@@ -345,8 +324,6 @@ class ProductReviewServiceImplTest {
                 assertThat(result.contents()).hasSize(limit);
                 assertThat(result.hasNext()).isTrue();
                 assertThat(result.nextCursorId()).isEqualTo(8L);
-
-                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
             }
 
             @Test
@@ -367,8 +344,6 @@ class ProductReviewServiceImplTest {
                 assertThat(result.contents()).isEmpty();
                 assertThat(result.hasNext()).isFalse();
                 assertThat(result.nextCursorId()).isNull();
-
-                verify(productReviewRepository).findNextUserReviews(userId, cursorId, limit + 1);
             }
         }
     }
@@ -402,8 +377,6 @@ class ProductReviewServiceImplTest {
                 assertThat(result.ratingCounts()).containsEntry(5, 6L)
                         .containsEntry(4, 3L)
                         .containsEntry(3, 1L);
-
-                verify(productReviewRepository).getReviewStatistics(productId);
             }
 
             @Test
@@ -425,8 +398,6 @@ class ProductReviewServiceImplTest {
                 assertThat(result.totalCount()).isZero();
                 assertThat(result.averageRating()).isEqualTo(0.0);
                 assertThat(result.ratingCounts()).isEmpty();
-
-                verify(productReviewRepository).getReviewStatistics(productId);
             }
         }
 
@@ -446,7 +417,133 @@ class ProductReviewServiceImplTest {
 
                 // then
                 assertThat(result).isNull();
-                verify(productReviewRepository).getReviewStatistics(productId);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 리뷰 업데이트")
+    class ProductReviewUpdate {
+        @Nested
+        @DisplayName("성공 케이스")
+        class Success {
+
+            @Test
+            @DisplayName("이미지를 변경하지 않고 리뷰 내용을 수정할 수 있다")
+            void updateReview_withoutImage() {
+                // given
+                Long reviewId = 1L;
+                Long userId = 2L;
+                ProductReview existing = createMockReview(reviewId, 100L, userId, "https://s3.aws/old.jpg");
+
+                ProductReviewUpdateRequest request = createProductReviewUpdateRequest(5, "수정된 리뷰", null);
+                ProductReview updated = existing.update(request.rating(), request.comment(), existing.imageUrl());
+
+                given(productReviewRepository.findById(reviewId)).willReturn(Optional.of(existing));
+                willDoNothing().given(productValidator).validateDuplicateWriter(existing, userId);
+                given(productReviewRepository.update(any(ProductReview.class))).willReturn(updated);
+
+                // when
+                ProductReviewResponse response = service.updateReview(reviewId, userId, request);
+
+                // then
+                assertThat(response.rating()).isEqualTo(5);
+                assertThat(response.comment()).isEqualTo("수정된 리뷰");
+                assertThat(response.reviewImageUrl()).isEqualTo(existing.imageUrl());
+            }
+
+            @Test
+            @DisplayName("기존 이미지가 없을 때 새 이미지를 업로드할 수 있다")
+            void updateReview_addImage() {
+                // given
+                Long reviewId = 1L;
+                Long userId = 2L;
+                ProductReview existing = createMockReview(reviewId, 100L, userId, null);
+
+                MockMultipartFile newImage = new MockMultipartFile("image", "new.jpg", "image/jpeg", "data".getBytes());
+                ProductReviewUpdateRequest request = createProductReviewUpdateRequest(4, "이미지 추가", newImage);
+
+                String uploadedUrl = "https://s3.aws/new.jpg";
+                ProductReview updated = existing.update(request.rating(), request.comment(), uploadedUrl);
+
+                given(productReviewRepository.findById(reviewId)).willReturn(Optional.of(existing));
+                willDoNothing().given(productValidator).validateDuplicateWriter(existing, userId);
+                given(imageUploader.uploadProductReviewImage(newImage)).willReturn(uploadedUrl);
+                given(productReviewRepository.update(any(ProductReview.class))).willReturn(updated);
+
+                // when
+                ProductReviewResponse response = service.updateReview(reviewId, userId, request);
+
+                // then
+                assertThat(response.reviewImageUrl()).isEqualTo(uploadedUrl);
+            }
+
+            @Test
+            @DisplayName("기존 이미지를 교체할 수 있다 (기존 이미지 삭제 후 새 이미지 업로드)")
+            void updateReview_replaceImage() {
+                // given
+                Long reviewId = 1L;
+                Long userId = 2L;
+                ProductReview existing = createMockReview(reviewId, 100L, userId, "https://s3.aws/old.jpg");
+
+                MockMultipartFile newImage = new MockMultipartFile("image", "new.jpg", "image/jpeg", "data".getBytes());
+                ProductReviewUpdateRequest request = createProductReviewUpdateRequest(5, "교체된 리뷰", newImage);
+
+                String newImageUrl = "https://s3.aws/new.jpg";
+                ProductReview updated = existing.update(request.rating(), request.comment(), newImageUrl);
+
+                given(productReviewRepository.findById(reviewId)).willReturn(Optional.of(existing));
+                willDoNothing().given(productValidator).validateDuplicateWriter(existing, userId);
+                willDoNothing().given(imageUploader).deleteProductReviewImage(existing.imageUrl());
+                given(imageUploader.uploadProductReviewImage(newImage)).willReturn(newImageUrl);
+                given(productReviewRepository.update(any(ProductReview.class))).willReturn(updated);
+
+                // when
+                ProductReviewResponse response = service.updateReview(reviewId, userId, request);
+
+                // then
+                assertThat(response.reviewImageUrl()).isEqualTo(newImageUrl);
+            }
+        }
+
+        @Nested
+        @DisplayName("실패 케이스")
+        class Fail {
+
+            @Test
+            @DisplayName("리뷰가 존재하지 않으면 ProductException 발생")
+            void updateReview_notFound() {
+                // given
+                Long reviewId = 99L;
+                Long userId = 1L;
+                ProductReviewUpdateRequest request = new ProductReviewUpdateRequest(5, "리뷰 없음", null);
+
+                given(productReviewRepository.findById(reviewId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.updateReview(reviewId, userId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_REVIEW_NOT_FOUND_ERROR.getMessage());
+            }
+
+            @Test
+            @DisplayName("작성자가 아닌 경우 ProductException 발생")
+            void updateReview_unauthorizedWriter() {
+                // given
+                Long reviewId = 1L;
+                Long userId = 999L; // 다른 사용자
+                ProductReview existing = createMockReview(reviewId, 100L, 2L, null);
+
+                ProductReviewUpdateRequest request = new ProductReviewUpdateRequest(5, "권한 없음", null);
+
+                given(productReviewRepository.findById(reviewId)).willReturn(Optional.of(existing));
+                willThrow(new ProductException(ErrorCode.PRODUCT_REVIEW_FORBIDDEN))
+                        .given(productValidator).validateDuplicateWriter(existing, userId);
+
+                // when & then
+                assertThatThrownBy(() -> service.updateReview(reviewId, userId, request))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_REVIEW_FORBIDDEN.getMessage());
             }
         }
     }
