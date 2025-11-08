@@ -31,7 +31,7 @@ import static org.mockito.BDDMockito.*;
  */
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("제품 카테고리 서비스 단위 테스트")
+@DisplayName("카테고리 서비스 단위 테스트")
 class ProductCategoryServiceImplTest {
 
     @InjectMocks
