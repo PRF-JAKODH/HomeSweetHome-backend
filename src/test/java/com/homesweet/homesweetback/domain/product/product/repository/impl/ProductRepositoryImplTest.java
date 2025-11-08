@@ -1,11 +1,14 @@
 package com.homesweet.homesweetback.domain.product.product.repository.impl;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
@@ -26,6 +29,7 @@ import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -299,6 +303,115 @@ class ProductRepositoryImplTest {
                         repository.findProductsForSeller(100L, "2024-01-01", "2024-12-31");
 
                 assertThat(result).isEmpty();
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 업데이트")
+    class UpdateProduct {
+        @Nested
+        @DisplayName("상품 상태")
+        class UpdateStatus {
+
+            @Test
+            @DisplayName("상품이 존재하면 상태가 업데이트된다")
+            void updateStatus_success() {
+                // given
+                Long productId = 1L;
+                ProductEntity entity = createMockProductEntity(productId, "의자", ProductStatus.ON_SALE);
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+
+                // when
+                repository.updateStatus(productId, ProductStatus.OUT_OF_STOCK);
+
+                // then
+                assertThat(entity.getStatus()).isEqualTo(ProductStatus.OUT_OF_STOCK);
+            }
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void updateStatus_notFound() {
+                // given
+                Long productId = 999L;
+                given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> repository.updateStatus(productId, ProductStatus.ON_SALE))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+            }
+        }
+
+        @Nested
+        @DisplayName("상품 기본 정보")
+        class UpdateBasicInfo {
+
+            @Test
+            @DisplayName("상품이 존재하면 기본 정보가 업데이트된다")
+            void update_success() {
+                // given
+                Long productId = 1L;
+                ProductEntity entity = createMockProductEntity(productId);
+                Product domain = createMockProduct(1L, 100L, "새로운 의자");
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+
+                // when
+                repository.update(productId, domain);
+
+                // then
+                assertThat(entity.getName()).isEqualTo("새로운 의자");
+            }
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void update_notFound() {
+                // given
+                Long productId = 999L;
+                Product domain = createMockProduct(1L, 100L, "의자");
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> repository.update(productId, domain))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+            }
+        }
+
+        @Nested
+        @DisplayName("상품 이미지")
+        class UpdateMainImage {
+
+            @Test
+            @DisplayName("상품이 존재하면 대표 이미지가 업데이트된다")
+            void updateMainImage_success() {
+                // given
+                Long productId = 1L;
+                ProductEntity entity = createMockProductEntity(productId);
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+
+                // when
+                repository.updateMainImage(productId, "https://new-image.jpg");
+
+                // then
+                assertThat(entity.getImageUrl()).isEqualTo("https://new-image.jpg");
+            }
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void updateMainImage_notFound() {
+                // given
+                Long productId = 999L;
+                given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> repository.updateMainImage(productId, "https://new-image.jpg"))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
             }
         }
     }
