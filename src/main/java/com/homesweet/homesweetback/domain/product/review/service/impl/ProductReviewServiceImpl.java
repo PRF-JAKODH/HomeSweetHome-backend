@@ -125,8 +125,8 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         // 새로운 이미지가 존재할 때
         if (request.existImage()) {
-            // 기존 이미지를 제거합니다
-            if (productReview.imageUrl() != null) {
+            // 기존 이미지가 있다면 제거합니다
+            if (productReview.existsImage()) {
                 imageUploader.deleteProductReviewImage(productReview.imageUrl());
             }
 
