@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.response.Sk
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.domain.Sku;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
@@ -48,6 +49,7 @@ public class ProductMockData {
                 .id(id)
                 .name(name)
                 .brand("홈스윗")
+                .sellerId(sellerId)
                 .basePrice(10000)
                 .description("테스트 상품")
                 .shippingPrice(3000)
@@ -60,6 +62,7 @@ public class ProductMockData {
                 .id(id)
                 .name("테스트 상품")
                 .brand("홈스윗")
+                .sellerId(sellerId)
                 .basePrice(10000)
                 .description("테스트 상품")
                 .shippingPrice(3000)
@@ -74,6 +77,17 @@ public class ProductMockData {
                 .sellerId(sellerId)
                 .name("테스트상품")
                 .imageUrl(imageUrl)
+                .build();
+    }
+
+    public static ProductEntity createMockProductEntity(Long id, String name) {
+        return ProductEntity.builder()
+                .id(id)
+                .name(name)
+                .brand("홈스윗")
+                .basePrice(10000)
+                .description("테스트 상품")
+                .shippingPrice(3000)
                 .build();
     }
 

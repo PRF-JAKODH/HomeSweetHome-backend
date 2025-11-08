@@ -609,7 +609,7 @@ class ProductServiceImplTest {
                         2500
                 );
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.of(existing));
                 willDoNothing().given(productRepository).update(eq(productId), any(Product.class));
 
@@ -617,7 +617,7 @@ class ProductServiceImplTest {
                 service.updateBasicInfo(sellerId, productId, request);
 
                 // then
-                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository).findByIdAndSellerId(productId, sellerId);
                 verify(productRepository, never()).existsBySellerIdAndName(anyLong(), anyString());
                 verify(productRepository).update(eq(productId), any(Product.class));
             }
@@ -639,7 +639,7 @@ class ProductServiceImplTest {
                         3000
                 );
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.of(existing));
                 given(productRepository.existsBySellerIdAndName(sellerId, "새상품"))
                         .willReturn(false);
@@ -668,7 +668,7 @@ class ProductServiceImplTest {
                         "업데이트상품", "홈스윗", 20000, new BigDecimal("5.0"), "설명", 3000
                 );
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.empty());
 
                 // when & then
@@ -696,7 +696,7 @@ class ProductServiceImplTest {
                         2500
                 );
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.of(existing));
                 given(productRepository.existsBySellerIdAndName(sellerId, "중복상품"))
                         .willReturn(true);
@@ -810,7 +810,7 @@ class ProductServiceImplTest {
 
                 Product existing = createMockProduct(productId, sellerId, ProductStatus.ON_SALE);
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.of(existing));
                 willDoNothing().given(productRepository).updateStatus(eq(productId), eq(ProductStatus.OUT_OF_STOCK));
 
@@ -818,7 +818,7 @@ class ProductServiceImplTest {
                 service.updateProductStatus(sellerId, productId, request);
 
                 // then
-                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository).findByIdAndSellerId(productId, sellerId);
                 verify(productRepository).updateStatus(productId, ProductStatus.OUT_OF_STOCK);
             }
         }
@@ -835,7 +835,7 @@ class ProductServiceImplTest {
                 Long productId = 999L;
                 ProductStatusUpdateRequest request = new ProductStatusUpdateRequest(ProductStatus.SUSPENDED);
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.empty());
 
                 // when & then
@@ -843,7 +843,7 @@ class ProductServiceImplTest {
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
 
-                verify(productRepository).findByIdAndSellerId(sellerId, productId);
+                verify(productRepository).findByIdAndSellerId(productId, sellerId);
                 verify(productRepository, never()).updateStatus(anyLong(), any());
             }
         }
@@ -867,7 +867,7 @@ class ProductServiceImplTest {
                 MultipartFile newMain = createMockFile("new_main");
                 ProductImageUpdateRequest request = new ProductImageUpdateRequest(newMain, List.of(), List.of());
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
                 willDoNothing().given(productImageUploader).deleteProductImage(anyString());
                 given(productImageUploader.uploadProductMainImage(newMain)).willReturn("https://s3.aws/new_main.jpg");
                 willDoNothing().given(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
@@ -897,7 +897,7 @@ class ProductServiceImplTest {
 
                 ProductImageUpdateRequest request = new ProductImageUpdateRequest(null, List.of(), deleteTargets);
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
                 willDoNothing().given(productImageUploader).deleteProductImage(anyString());
                 willDoNothing().given(productRepository).deleteDetailImages(productId, deleteTargets);
 
@@ -924,7 +924,7 @@ class ProductServiceImplTest {
 
                 ProductImageUpdateRequest request = new ProductImageUpdateRequest(null, newDetails, List.of());
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
                 willDoNothing().given(productValidator)
                         .validateDetailImageLimit(eq(product), anyList(), eq(newDetails));
 
@@ -956,7 +956,7 @@ class ProductServiceImplTest {
                 ProductImageUpdateRequest request =
                         new ProductImageUpdateRequest(newMain, newDetails, deleteTargets);
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId)).willReturn(Optional.of(product));
+                given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
                 willDoNothing().given(productImageUploader).deleteProductImage(anyString());
                 given(productImageUploader.uploadProductMainImage(newMain))
                         .willReturn("https://s3.aws/new_main.jpg");
@@ -994,7 +994,7 @@ class ProductServiceImplTest {
                 ProductImageUpdateRequest request =
                         new ProductImageUpdateRequest(null, List.of(), List.of());
 
-                given(productRepository.findByIdAndSellerId(sellerId, productId))
+                given(productRepository.findByIdAndSellerId(productId, sellerId))
                         .willReturn(Optional.empty());
 
                 // when & then
