@@ -25,6 +25,7 @@ import static org.mockito.BDDMockito.given;
  * @date 25. 11. 6.
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("상품 이미지 업로더 단위 테스트")
 class ProductImageUploaderTest {
 
     @Mock
