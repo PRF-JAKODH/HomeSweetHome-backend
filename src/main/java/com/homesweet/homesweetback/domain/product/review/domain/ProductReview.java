@@ -46,4 +46,8 @@ public record ProductReview(
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
+
+    public boolean existsImage() {
+        return this.imageUrl != null && !this.imageUrl.isEmpty();
+    }
 }

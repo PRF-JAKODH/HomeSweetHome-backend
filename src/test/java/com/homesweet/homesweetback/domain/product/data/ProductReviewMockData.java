@@ -83,6 +83,6 @@ public class ProductReviewMockData {
     }
 
     public static ProductReviewUpdateRequest createProductReviewUpdateRequest(Integer rating, String comment, MultipartFile image) {
-        return new ProductReviewUpdateRequest(5, "수정된 리뷰", null);
+        return new ProductReviewUpdateRequest(rating, comment, image);
     }
 }
