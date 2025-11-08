@@ -40,9 +40,9 @@ public interface ProductRepository {
 
     void updateMainImage(Long productId, String newImageUrl);
 
-    void deleteDetailImages(Long productId, List<String> imageUrls);
-
     void addDetailImages(Long productId, List<String> imageUrls);
+
+    void deleteDetailImages(Long productId, List<String> imageUrls);
 
     // 알림용
     Product findByProductId(Long productId);

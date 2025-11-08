@@ -10,6 +10,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductDetailImageEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -305,6 +306,44 @@ class ProductRepositoryImplTest {
                 assertThat(result).isEmpty();
             }
         }
+
+        @Nested
+        @DisplayName("단일 상품 조회")
+        class FindByProductId {
+
+            @Test
+            @DisplayName("상품이 존재하면 Product 도메인 객체를 반환한다")
+            void findByProductId_success() {
+                // given
+                Long productId = 1L;
+                ProductEntity entity = createMockProductEntity(productId);
+                Product domain = createMockProduct(productId, 100L, "의자");
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+                given(mapper.toDomain(entity)).willReturn(domain);
+
+                // when
+                Product result = repository.findByProductId(productId);
+
+                // then
+                assertThat(result).isNotNull();
+                assertThat(result.getName()).isEqualTo("의자");
+                verify(mapper).toDomain(entity);
+            }
+
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void findByProductId_notFound() {
+                // given
+                Long productId = 999L;
+                given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> repository.findByProductId(productId))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+            }
+        }
     }
 
     @Nested
@@ -410,6 +449,103 @@ class ProductRepositoryImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> repository.updateMainImage(productId, "https://new-image.jpg"))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+            }
+        }
+
+        @Nested
+        @DisplayName("상품 상세 이미지")
+        class UpdateDetailImage {
+            @Nested
+            @DisplayName("성공 케이스")
+            class Success {
+
+                @Test
+                @DisplayName("상품이 존재하면 상세 이미지가 정상적으로 추가된다")
+                void addDetailImages_success() {
+                    // given
+                    Long productId = 1L;
+                    List<String> imageUrls = List.of(
+                            "https://image1.jpg",
+                            "https://image2.jpg"
+                    );
+
+                    ProductEntity entity = createMockProductEntity(productId);
+                    given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+
+                    // when
+                    repository.addDetailImages(productId, imageUrls);
+
+                    assertThat(entity.getDetailImages()).hasSize(2);
+                    assertThat(entity.getDetailImages())
+                            .extracting(ProductDetailImageEntity::getImageUrl)
+                            .containsExactly("https://image1.jpg", "https://image2.jpg");
+
+                    // 양방향 연관관계 확인
+                    assertThat(entity.getDetailImages().getFirst().getProduct()).isEqualTo(entity);
+                }
+            }
+
+            @Nested
+            @DisplayName("실패 케이스")
+            class Fail {
+
+                @Test
+                @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+                void addDetailImages_productNotFound() {
+                    // given
+                    Long productId = 999L;
+                    List<String> imageUrls = List.of("https://image1.jpg");
+                    given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                    // when & then
+                    assertThatThrownBy(() -> repository.addDetailImages(productId, imageUrls))
+                            .isInstanceOf(ProductException.class)
+                            .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
+                }
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상세 이미지 제거")
+    class DeleteDetailImages {
+
+        @Nested
+        @DisplayName("성공")
+        class Success {
+
+            @Test
+            @DisplayName("상품이 존재하면 removeDetailImagesByUrls가 호출된다")
+            void deleteDetailImages_success() {
+                // given
+                Long productId = 1L;
+                List<String> imageUrls = List.of("https://a.jpg", "https://b.jpg");
+                ProductEntity entity = createMockProductEntity(productId);
+
+                given(jpaRepository.findById(productId)).willReturn(Optional.of(entity));
+
+                // when
+                repository.deleteDetailImages(productId, imageUrls);
+
+                // then
+                assertThat(entity.getDetailImages()).isEmpty();
+            }
+        }
+
+        @Nested
+        @DisplayName("실패")
+        class Fail {
+            @Test
+            @DisplayName("상품이 존재하지 않으면 ProductException 발생")
+            void deleteDetailImages_notFound() {
+                // given
+                Long productId = 999L;
+                given(jpaRepository.findById(productId)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> repository.deleteDetailImages(productId, List.of("https://a.jpg")))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
             }

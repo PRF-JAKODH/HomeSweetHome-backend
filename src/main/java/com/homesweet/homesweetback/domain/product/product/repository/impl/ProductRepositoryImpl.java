@@ -103,14 +103,6 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public void deleteDetailImages(Long productId, List<String> imageUrls) {
-        ProductEntity entity = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
-
-        entity.removeDetailImagesByUrls(imageUrls);
-    }
-
-    @Override
     public void addDetailImages(Long productId, List<String> imageUrls) {
         ProductEntity entity = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
@@ -121,6 +113,14 @@ public class ProductRepositoryImpl implements ProductRepository {
                     .build();
             entity.addDetailImage(imageEntity);
         });
+    }
+
+    @Override
+    public void deleteDetailImages(Long productId, List<String> imageUrls) {
+        ProductEntity entity = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.removeDetailImagesByUrls(imageUrls);
     }
 
     @Override
