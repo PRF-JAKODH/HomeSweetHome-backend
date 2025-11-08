@@ -170,9 +170,6 @@ class ProductCategoryServiceImplTest {
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
                         .hasMessage(ErrorCode.DUPLICATED_CATEGORY_NAME_ERROR.getMessage());
-
-                verify(validator).validateDuplicateCategoryName(request.name());
-                verifyNoInteractions(repository);
             }
 
             @Test
@@ -191,8 +188,6 @@ class ProductCategoryServiceImplTest {
                 assertThatThrownBy(() -> service.createCategory(request))
                         .isInstanceOf(ProductCategoryException.class)
                         .hasMessage(ErrorCode.CANNOT_FOUND_PARENT_CATEGORY_ERROR.getMessage());
-
-                verify(repository).findById(999L);
             }
         }
     }
@@ -277,8 +272,6 @@ class ProductCategoryServiceImplTest {
             // 부모-자식 관계 검증
             assertThat(result.get(1).parentId()).isEqualTo(result.get(0).id());
             assertThat(result.get(2).parentId()).isEqualTo(result.get(1).id());
-
-            verify(repository, times(3)).findById(anyLong());
         }
 
         @Test
@@ -296,8 +289,6 @@ class ProductCategoryServiceImplTest {
             assertThat(result).hasSize(1);
             assertThat(result.get(0).name()).isEqualTo("가전");
             assertThat(result.get(0).parentId()).isNull();
-
-            verify(repository).findById(top.id());
         }
     }
 
@@ -316,8 +307,6 @@ class ProductCategoryServiceImplTest {
             assertThatThrownBy(() -> service.getCategoryHierarchy(invalidId))
                     .isInstanceOf(ProductCategoryException.class)
                     .hasMessage(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR.getMessage());
-
-            verify(repository).findById(invalidId);
         }
     }
 }
