@@ -57,7 +57,6 @@ class CommunityServiceTest {
     @Mock
     private CommunityImageUploader imageUploader;
 
-    @Mock
     @InjectMocks
     private CommunityPostService communityPostService;
 
