@@ -70,7 +70,8 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public ProductDetailResponse findProductDetailById(Long productId) {
-        return productRepository.findProductDetailById(productId);
+        return productRepository.findProductDetailById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
     }
 
     @Override

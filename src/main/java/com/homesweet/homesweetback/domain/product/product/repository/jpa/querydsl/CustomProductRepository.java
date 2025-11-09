@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 제품 QueryDSL 레포 인터페이스
@@ -17,7 +18,7 @@ public interface CustomProductRepository {
 
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 
-    ProductDetailResponse findProductDetailById(Long productId);
+    Optional<ProductDetailResponse> findProductDetailById(Long productId);
 
     List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate);
 }

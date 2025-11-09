@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -31,4 +32,31 @@ public record ProductDetailResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+    public static ProductDetailResponse from(ProductEntity entity, List<String> detailImageUrls) {
+        return ProductDetailResponse.builder()
+                .id(entity.getId())
+                .categoryId(entity.getCategory().getId())
+                .sellerId(entity.getSeller().getId())
+                .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
+                .detailImageUrls(detailImageUrls)
+                .brand(entity.getBrand())
+                .basePrice(entity.getBasePrice())
+                .discountRate(entity.getDiscountRate())
+                .discountedPrice(calculateDiscountedPrice(entity))
+                .description(entity.getDescription())
+                .shippingPrice(entity.getShippingPrice())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    private static Integer calculateDiscountedPrice(ProductEntity entity) {
+        if (entity.getBasePrice() == null || entity.getDiscountRate() == null)
+            return null;
+
+        double discountRate = entity.getDiscountRate().doubleValue();
+        return (int) Math.round(entity.getBasePrice() * (1 - discountRate / 100));
+    }
 }

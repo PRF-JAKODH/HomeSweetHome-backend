@@ -3,6 +3,8 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
@@ -17,7 +19,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -179,6 +184,118 @@ class CustomProductRepositoryImplTest {
 
             // when
             List<SkuStockResponse> results = repository.findSkuStocksByProductId(productId);
+
+            // then
+            assertThat(results).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 상세 정보 조회")
+    class FindProductDetailById {
+
+        @Test
+        @DisplayName("상품 ID로 상세 정보를 조회할 수 있다")
+        void findProductDetailById_success() {
+            // given
+            Long productId = 100L; // SQL 파일의 "고급 의자"
+
+            // when
+            Optional<ProductDetailResponse> result = repository.findProductDetailById(productId);
+
+            // then
+            assertThat(result).isPresent();
+            ProductDetailResponse response = result.get();
+
+            // 기본 필드 검증
+            assertThat(response.id()).isEqualTo(100L);
+            assertThat(response.name()).isEqualTo("고급 의자");
+            assertThat(response.brand()).isEqualTo("홈스윗");
+            assertThat(response.imageUrl()).isEqualTo("https://a.jpg");
+            assertThat(response.description()).isEqualTo("좋은 의자");
+
+            // 가격 관련 검증
+            assertThat(response.basePrice()).isEqualTo(10000);
+            assertThat(response.discountRate()).isEqualTo(new BigDecimal("10.00"));
+            assertThat(response.discountedPrice()).isEqualTo((int) Math.round(10000 * (1 - 0.1))); // 9000
+            assertThat(response.shippingPrice()).isEqualTo(3000);
+
+            // 관계 검증
+            assertThat(response.categoryId()).isEqualTo(2L);
+            assertThat(response.sellerId()).isEqualTo(10L);
+            assertThat(response.status()).isEqualTo(ProductStatus.ON_SALE);
+
+            // 상세 이미지 검증
+            assertThat(response.detailImageUrls())
+                    .containsExactly("https://a_detail_1.jpg", "https://a_detail_2.jpg");
+        }
+
+        @Test
+        @DisplayName("상품 ID가 존재하지 않으면 Optional.empty()를 반환한다")
+        void findProductDetailById_notFound() {
+            // given
+            Long productId = 9999L;
+
+            // when
+            Optional<ProductDetailResponse> result = repository.findProductDetailById(productId);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("판매자 상품 관리 목록 조회")
+    class FindProductsForSeller {
+
+        @Test
+        @DisplayName("특정 판매자는 본인이 등록한 모든 상품(판매 중지 포함)을 조회할 수 있다")
+        void findProductsForSeller_allStatusesIncluded() {
+            // given
+            Long sellerId = 11L; // 판매자B
+            String startDate = "2020-01-01";
+            String endDate = "2030-01-01";
+
+            // when
+            List<ProductManageResponse> results = repository.findProductsForSeller(sellerId, startDate, endDate);
+
+            // then
+            assertThat(results).hasSize(2);
+            assertThat(results)
+                    .extracting(ProductManageResponse::name)
+                    .containsExactlyInAnyOrder("책상 세트", "판매 중지 상품");
+
+            // 카테고리 경로 검증
+            assertThat(results.get(0).categoryPath()).contains("가구 > 책상");
+        }
+
+        @Test
+        @DisplayName("날짜 범위를 지정하면 해당 기간 내 등록된 상품만 조회된다")
+        void findProductsForSeller_withDateRange() {
+            // given
+            Long sellerId = 11L;
+            String startDate = LocalDate.now().minusDays(2).toString(); // 2일 전
+            String endDate = LocalDate.now().toString(); // 오늘까지
+
+            // when
+            List<ProductManageResponse> results = repository.findProductsForSeller(sellerId, startDate, endDate);
+
+            // then
+            assertThat(results)
+                    .extracting(ProductManageResponse::name)
+                    .containsExactlyInAnyOrder("책상 세트", "판매 중지 상품");
+        }
+
+        @Test
+        @DisplayName("상품이 존재하지 않으면 빈 리스트를 반환한다")
+        void findProductsForSeller_noProducts() {
+            // given
+            Long sellerId = 99L; // 존재하지 않는 판매자
+            String startDate = "2020-01-01";
+            String endDate = "2030-01-01";
+
+            // when
+            List<ProductManageResponse> results = repository.findProductsForSeller(sellerId, startDate, endDate);
 
             // then
             assertThat(results).isEmpty();
