@@ -22,10 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
@@ -143,21 +140,19 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     }
 
     @Override
-    public ProductDetailResponse findProductDetailById(Long productId) {
+    public Optional<ProductDetailResponse> findProductDetailById(Long productId) {
         QProductEntity product = QProductEntity.productEntity;
         QProductDetailImageEntity detailImage = QProductDetailImageEntity.productDetailImageEntity;
 
         ProductEntity entity = queryFactory
                 .selectFrom(product)
+                .leftJoin(product.category).fetchJoin()
+                .leftJoin(product.seller).fetchJoin()
                 .where(product.id.eq(productId))
                 .fetchOne();
 
-        if (entity == null) return null;
-
-        Integer discountedPrice = null;
-        if (entity.getBasePrice() != null && entity.getDiscountRate() != null) {
-            double discountRate = entity.getDiscountRate().doubleValue();
-            discountedPrice = (int) Math.round(entity.getBasePrice() * (1 - discountRate / 100));
+        if (entity == null) {
+            return Optional.empty();
         }
 
         List<String> detailImageUrls = queryFactory
@@ -167,23 +162,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .orderBy(detailImage.id.asc())
                 .fetch();
 
-        return ProductDetailResponse.builder()
-                .id(entity.getId())
-                .categoryId(entity.getCategory().getId())
-                .sellerId(entity.getSeller().getId())
-                .name(entity.getName())
-                .imageUrl(entity.getImageUrl())
-                .detailImageUrls(detailImageUrls)
-                .brand(entity.getBrand())
-                .basePrice(entity.getBasePrice())
-                .discountRate(entity.getDiscountRate())
-                .discountedPrice(discountedPrice)
-                .description(entity.getDescription())
-                .shippingPrice(entity.getShippingPrice())
-                .status(entity.getStatus())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
+        return Optional.of(ProductDetailResponse.from(entity, detailImageUrls));
     }
 
     @Override
@@ -197,15 +176,10 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         BooleanExpression condition = product.seller.id.eq(sellerId);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        if (startDate != null && !startDate.isEmpty()) {
-            LocalDateTime start = LocalDate.parse(startDate, formatter).atStartOfDay();
-            condition = condition.and(product.createdAt.goe(start));
-        }
-        if (endDate != null && !endDate.isEmpty()) {
-            LocalDateTime end = LocalDate.parse(endDate, formatter).atTime(LocalTime.MAX);
-            condition = condition.and(product.createdAt.loe(end));
-        }
+        // 날짜 필터링
+        condition = condition
+                .and(parseStartDate(startDate))
+                .and(parseEndDate(endDate));
 
         return queryFactory
                 .select(Projections.constructor(ProductManageResponse.class,
@@ -214,9 +188,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         product.imageUrl,
                         Expressions.stringTemplate(
                                 "concat_ws(' > ', {0}, {1}, {2})",
-                                grandParent.name,
-                                parent.name,
-                                category.name
+                                grandParent.name, parent.name, category.name
                         ),
                         product.basePrice,
                         product.discountRate,
@@ -235,6 +207,20 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .where(condition)
                 .orderBy(product.createdAt.desc())
                 .fetch();
+    }
+
+    // 판매자 상품 조회 시작일
+    private BooleanExpression parseStartDate(String startDate) {
+        if (startDate == null || startDate.isEmpty()) return null;
+        LocalDateTime start = LocalDate.parse(startDate, DateTimeFormatter.ISO_DATE).atStartOfDay();
+        return QProductEntity.productEntity.createdAt.goe(start);
+    }
+
+    // 판매자 상품 조회 끝일
+    private BooleanExpression parseEndDate(String endDate) {
+        if (endDate == null || endDate.isEmpty()) return null;
+        LocalDateTime end = LocalDate.parse(endDate, DateTimeFormatter.ISO_DATE).atTime(LocalTime.MAX);
+        return QProductEntity.productEntity.createdAt.loe(end);
     }
 
     // 카테고리를 선택하면 하위 카테고리에 해당하는 모든 상품이 조회되어야 한다
