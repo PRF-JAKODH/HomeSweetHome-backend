@@ -3,6 +3,8 @@ package com.homesweet.homesweetback.domain.product.category.repository.jpa.entit
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,12 +33,14 @@ public class ProductCategoryEntity {
     @Column(name = "category_id")
     private Long id;
 
+    @NotBlank(message = "카테고리 이름은 필수입니다.")
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(name = "parent_id")
     private Long parentId;
 
-    @Column(nullable = false)
+    @NotNull(message = "카테고리 깊이는 필수입니다.")
     @Min(0)
     @Max(2)
     private Integer depth;
