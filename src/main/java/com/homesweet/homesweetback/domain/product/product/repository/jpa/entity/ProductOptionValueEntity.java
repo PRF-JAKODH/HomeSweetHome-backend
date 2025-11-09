@@ -27,7 +27,7 @@ public class ProductOptionValueEntity {
     @Column(name = "option_value_id")
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "value_name", nullable = false, length = 100)
     private String value;
 
     @Setter
