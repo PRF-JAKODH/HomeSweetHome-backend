@@ -227,7 +227,7 @@ class ProductRepositoryImplTest {
             void findProductDetailById_success() {
                 ProductDetailResponse detail = createMockDetailResponse(1L, "테스트", "브랜드");
 
-                given(jpaRepository.findProductDetailById(1L)).willReturn(detail);
+                given(jpaRepository.findProductDetailById(1L)).willReturn(Optional.of(detail));
 
                 ProductDetailResponse result = repository.findProductDetailById(1L);
 
@@ -235,13 +235,16 @@ class ProductRepositoryImplTest {
             }
 
             @Test
-            @DisplayName("상품 상세 정보가 없으면 null 반환")
-            void findProductDetailById_null() {
-                given(jpaRepository.findProductDetailById(1L)).willReturn(null);
+            @DisplayName("상품 상세 정보가 없으면 예외 발생")
+            void findProductDetailById_empty() {
+                // given
+                given(jpaRepository.findProductDetailById(1L))
+                        .willReturn(Optional.empty());
 
-                ProductDetailResponse result = repository.findProductDetailById(1L);
-
-                assertThat(result).isNull();
+                // then
+                assertThatThrownBy(() -> repository.findProductDetailById(1L))
+                        .isInstanceOf(ProductException.class)
+                        .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
             }
         }
 
