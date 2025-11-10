@@ -97,7 +97,8 @@ def jacocoExcludes = [
         '**/controller/**',         // controller 제외
         '**/common/**',             // common 제외
         '**/config/**',             // config 제외
-        '**/exception/**'           // exception 제외
+        '**/exception/**',          // exception 제외
+        '**/mapper/**'              // mapper 제외
 ]
 
 tasks.jacocoTestReport {
