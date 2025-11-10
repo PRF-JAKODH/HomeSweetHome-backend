@@ -14,9 +14,9 @@ import java.util.Optional;
  */
 public interface CartRepository {
 
-    Optional<Cart> findByUserIdAndSkuId(Long userId, Long skuId);
-
     Cart save(Cart cart);
+
+    Optional<Cart> findByUserIdAndSkuId(Long userId, Long skuId);
 
     Cart updateQuantity(Cart domain);
 

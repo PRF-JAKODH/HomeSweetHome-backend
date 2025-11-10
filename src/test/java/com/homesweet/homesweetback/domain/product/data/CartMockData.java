@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.data;
 
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
+import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -78,5 +79,12 @@ public class CartMockData {
                 1,
                 "https://s3.aws/test" + id + ".jpg"
         );
+    }
+
+    public static CartEntity createMockCartEntity(Long id, Integer quantity) {
+        return CartEntity.builder()
+                .id(id)
+                .quantity(quantity)
+                .build();
     }
 }
