@@ -1,7 +1,10 @@
 package com.homesweet.homesweetback.domain.notification.entity;
 
 import com.homesweet.homesweetback.common.BaseEntity;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -61,10 +64,10 @@ public class UserNotification extends BaseEntity {
                             Boolean isDeleted) {
         // 필수 필드 검증
         if (user == null) {
-            throw new IllegalArgumentException("User cannot be null");
+            throw new NotificationException(ErrorCode.NOTIFICATION_USER_ID_IS_NULL);
         }
         if (contextData == null) {
-            throw new IllegalArgumentException("ContextData cannot be null");
+            throw new NotificationException(ErrorCode.NOTIFICATION_CONTEXT_DATA_IS_NULL);
         }
         
         this.user = user;
