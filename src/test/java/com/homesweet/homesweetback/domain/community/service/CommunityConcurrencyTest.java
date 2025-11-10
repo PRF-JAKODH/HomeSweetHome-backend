@@ -4,13 +4,17 @@ import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
+import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
@@ -23,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Community 동시성 테스트
+ * 동시성 테스트
  * - 여러 사용자가 동시에 접근할 때 데이터 정합성 검증
  */
 @SpringBootTest
@@ -37,9 +41,16 @@ class CommunityConcurrencyTest {
     private CommunityPostRepository postRepository;
 
     @Autowired
+    private CommunityCommentRepository commentRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
+    @MockBean
+    private NotificationSendService notificationSendService;
+
     private CommunityPostEntity testPost;
+    private CommunityCommentEntity testComment;
     private List<User> testUsers;
 
     @BeforeEach
@@ -65,6 +76,14 @@ class CommunityConcurrencyTest {
                 .category("테스트")
                 .build();
         testPost = postRepository.save(testPost);
+
+        // 테스트용 댓글 생성
+        testComment = CommunityCommentEntity.builder()
+                .post(testPost)
+                .author(testUsers.get(0))
+                .content("동시성 테스트용 댓글입니다!")
+                .build();
+        testComment = commentRepository.save(testComment);
     }
 
     @Test
@@ -176,6 +195,87 @@ class CommunityConcurrencyTest {
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
         System.out.println("=== 좋아요 토글 동시성 테스트 결과 ===");
+        System.out.println("실제 좋아요 수: " + result.getLikeCount());
+        System.out.println("예상 좋아요 수: 0 (10번씩 토글하면 모두 취소됨)");
+
+        // 각 사용자가 짝수 번 토글하면 최종적으로 좋아요가 없어야 함
+        assertThat(result.getLikeCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("동시성 테스트 - 100명이 동시에 댓글 좋아요 클릭")
+    void concurrentCommentLike() throws InterruptedException {
+        // given
+        int threadCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        // when - 100명이 동시에 댓글 좋아요 클릭
+        for (int i = 0; i < threadCount; i++) {
+            final int userIndex = i;
+            executorService.submit(() -> {
+                try {
+                    countService.toggleCommentLike(testComment.getCommentId(), testUsers.get(userIndex).getId());
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                    System.err.println("Error: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await(); // 모든 스레드가 완료될 때까지 대기
+        executorService.shutdown();
+
+        // then
+        CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
+
+        System.out.println("=== 댓글 좋아요 동시성 테스트 결과 ===");
+        System.out.println("성공 횟수: " + successCount.get());
+        System.out.println("실패 횟수: " + failCount.get());
+        System.out.println("실제 좋아요 수: " + result.getLikeCount());
+        System.out.println("예상 좋아요 수: 100");
+
+        // 동시성 제어가 제대로 되면 100이어야 함
+        assertThat(result.getLikeCount()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("동시성 테스트 - 댓글 좋아요 토글 (추가/취소)")
+    void concurrentCommentToggleLike() throws InterruptedException {
+        // given
+        int threadCount = 10;
+        int toggleCount = 10; // 각 사용자가 10번씩 토글
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
+
+        // when - 10명이 각각 10번씩 토글 (총 100번)
+        for (int i = 0; i < threadCount; i++) {
+            final int userIndex = i;
+            for (int j = 0; j < toggleCount; j++) {
+                executorService.submit(() -> {
+                    try {
+                        countService.toggleCommentLike(testComment.getCommentId(), testUsers.get(userIndex).getId());
+                    } catch (Exception e) {
+                        System.err.println("Error: " + e.getMessage());
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        // then
+        CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
+
+        System.out.println("=== 댓글 좋아요 토글 동시성 테스트 결과 ===");
         System.out.println("실제 좋아요 수: " + result.getLikeCount());
         System.out.println("예상 좋아요 수: 0 (10번씩 토글하면 모두 취소됨)");
 

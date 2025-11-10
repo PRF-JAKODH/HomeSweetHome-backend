@@ -32,6 +32,8 @@ import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 
 /**
+ * - 실제 DB(H2)를 사용하여 전체 플로우 검증
+ * - 트랜잭션 롤백으로 테스트 격리 보장
  * - In-Memory ImageUploader를 사용하여 이미지 업로드 테스트
  */
 @SpringBootTest

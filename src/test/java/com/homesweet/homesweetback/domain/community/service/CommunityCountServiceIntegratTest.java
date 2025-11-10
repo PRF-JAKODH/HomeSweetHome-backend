@@ -25,7 +25,6 @@ import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 
 /**
- * CommunityCountService 통합 테스트
  * - 조회수, 좋아요 기능 검증
  * - 토글 기능 및 중복 체크 테스트
  */
