@@ -9,12 +9,17 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * 상품 리뷰 QueryDSL 구현체
@@ -91,40 +96,39 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
     public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
         // 전체 리뷰 수 + 평균 평점
         Tuple overall = queryFactory
-                .select(
-                        review.count(),
-                        review.rating.avg()
-                )
+                .select(review.count(), review.rating.avg())
                 .from(review)
                 .where(review.product.id.eq(productId))
                 .fetchOne();
 
-        long totalCount = overall != null && overall.get(review.count()) != null
-                ? overall.get(review.count())
-                : 0L;
-        double averageRating = overall != null && overall.get(review.rating.avg()) != null
-                ? Math.round(overall.get(review.rating.avg()) * 10.0) / 10.0
-                : 0.0;
+        long totalCount = Optional.ofNullable(overall)
+                .map(t -> t.get(review.count()))
+                .orElse(0L);
+
+        double averageRating = Optional.ofNullable(overall)
+                .map(t -> t.get(review.rating.avg()))
+                .map(avg -> Math.round(avg * 10.0) / 10.0)
+                .orElse(0.0);
 
         // 각 별점별 카운트
-        List<Tuple> counts = queryFactory
-                .select(review.rating, review.count())
+        List<RatingCountDto> counts = queryFactory
+                .select(Projections.constructor(RatingCountDto.class,
+                        review.rating,
+                        review.count()))
                 .from(review)
                 .where(review.product.id.eq(productId))
                 .groupBy(review.rating)
                 .fetch();
 
-        Map<Integer, Long> ratingCounts = new HashMap<>();
-        for (int i = 1; i <= 5; i++) {
-            ratingCounts.put(i, 0L);
-        }
-        for (Tuple t : counts) {
-            ratingCounts.put(
-                    t.get(review.rating).intValue(),
-                    t.get(review.count())
-            );
-        }
+        // 1~5점 기본 초기화
+        Map<Integer, Long> ratingCounts = IntStream.rangeClosed(1, 5)
+                .boxed()
+                .collect(Collectors.toMap(i -> i, i -> 0L));
 
+        // 실제 데이터 병합
+        counts.forEach(c -> ratingCounts.put(c.rating, c.count));
+
+        // Response 생성
         return ProductReviewStatisticsResponse.of(productId, totalCount, averageRating, ratingCounts);
     }
 
@@ -138,4 +142,9 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
 
         return condition;
     }
+
+    public record RatingCountDto(
+            Integer rating,
+            Long count
+    ) {}
 }
