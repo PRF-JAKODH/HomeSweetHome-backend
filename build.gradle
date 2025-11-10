@@ -89,45 +89,49 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
+def jacocoExcludes = [
+        '**/*Application*',
+        '**/Q*',                    // QueryDSL Q 클래스 전체
+        '**/domain/**/Q*',          // domain 패키지의 Q 클래스
+        '**/entity/Q*',             // entity 패키지의 Q 클래스
+        '**/controller/**',         // controller 제외
+        '**/common/**',             // common 제외
+        '**/config/**',             // config 제외
+        '**/exception/**'           // exception 제외
+]
+
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+
     reports {
         html.required.set(true)
         xml.required.set(true)
         csv.required.set(false)
     }
-        // 디렉터리/파일명
-    def qTypes = []
-    for(qPattern in "**/entity/QA" .. "**/entity/QZ"){
-        qTypes.add(qPattern + "*")
-    }
 
+    // 리포트에서 제외
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    exclude: ["**/*Application*"] + qTypes)
+            fileTree(dir: it, exclude: jacocoExcludes)
         }))
     }
 
     finalizedBy(tasks.jacocoTestCoverageVerification)
 }
 
-
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    def qTypes = new ArrayList<String>()
-    for (qPattern in '*.entity.QA'..'*.entity.QZ') {
-        qTypes.add(qPattern + '*')
-    }
+
     violationRules {
         rule {
             element = 'CLASS'
             limit {
                 counter = 'BRANCH'
                 value = 'COVEREDRATIO'
-//                minimum = 0.8
+                // minimum = 0.8
             }
-            excludes = ['*.common.*', '*.domain.Q*'] + qTypes
+
+            excludes = jacocoExcludes
         }
     }
 }
