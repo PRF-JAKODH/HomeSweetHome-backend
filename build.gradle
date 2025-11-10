@@ -127,7 +127,7 @@ tasks.jacocoTestCoverageVerification {
                 value = 'COVEREDRATIO'
 //                minimum = 0.8
             }
-            excludes = ['*.controller.*', '*.common.*', '*.domain.Q*'] + qTypes
+            excludes = ['*.common.*', '*.domain.Q*'] + qTypes
         }
     }
 }
