@@ -470,7 +470,7 @@ class CommunityServiceTest {
                 .viewCount(0)
                 .build();
 
-        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
 
         // when
         communityCountService.increaseViewCount(postId);
@@ -478,7 +478,7 @@ class CommunityServiceTest {
         // then
         assertThat(fakePost.getViewCount()).isEqualTo(1);
 
-        verify(postRepository).findByPostIdAndIsDeletedFalse(postId);
+        verify(postRepository).findByPostIdAndIsDeletedFalseWithPessimisticLock(postId);
     }
 
     @DisplayName("게시글 좋아요 추가 테스트")
@@ -498,7 +498,7 @@ class CommunityServiceTest {
                 .likeCount(0)
                 .build();
 
-        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.empty());
 
@@ -533,7 +533,7 @@ class CommunityServiceTest {
                 .user(fakeUser)
                 .build();
 
-        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
+        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.of(existingLike));
 
@@ -584,7 +584,7 @@ class CommunityServiceTest {
                 .likeCount(0)
                 .build();
 
-        when(commentRepository.findById(commentId)).thenReturn(Optional.of(fakeComment));
+        when(commentRepository.findByIdWithPessimisticLock(commentId)).thenReturn(Optional.of(fakeComment));
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser)).thenReturn(Optional.empty());
 
@@ -622,7 +622,7 @@ class CommunityServiceTest {
                 .user(fakeUser)
                 .build();
 
-        when(commentRepository.findById(commentId)).thenReturn(Optional.of(fakeComment));
+        when(commentRepository.findByIdWithPessimisticLock(commentId)).thenReturn(Optional.of(fakeComment));
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser))
                 .thenReturn(Optional.of(existingLike));
@@ -756,7 +756,7 @@ class CommunityServiceTest {
         Long authorId = 100L;
 
         // 가짜 객체 설정
-        given(postRepository.findByPostIdAndIsDeletedFalse(nonExistPostId))
+        given(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(nonExistPostId))
                 .willReturn(Optional.empty());
 
         // when, then
@@ -925,7 +925,7 @@ class CommunityServiceTest {
         Long nonExistCommentId = 999L;
         Long userId = 1L;
 
-        given(commentRepository.findById(nonExistCommentId))
+        given(commentRepository.findByIdWithPessimisticLock(nonExistCommentId))
                 .willReturn(Optional.empty());
 
         // when, then

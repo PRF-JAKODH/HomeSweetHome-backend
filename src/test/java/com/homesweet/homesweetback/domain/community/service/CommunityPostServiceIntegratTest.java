@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.community.service;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,11 +23,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
@@ -34,11 +40,10 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 /**
  * - 실제 DB(H2)를 사용하여 전체 플로우 검증
  * - 트랜잭션 롤백으로 테스트 격리 보장
- * - In-Memory ImageUploader를 사용하여 이미지 업로드 테스트
+ * - Mock ImageUploader를 사용하여 외부 의존성 제거
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(TestImageConfig.class)
 @Transactional
 class CommunityPostServiceIntegratTest {
 
@@ -53,6 +58,9 @@ class CommunityPostServiceIntegratTest {
 
     @Autowired
     private CommunityImageRepository imageRepository;
+
+    @MockBean
+    private ImageUploader imageUploader;
 
     private User testUser;
     private User anotherUser;
@@ -77,6 +85,16 @@ class CommunityPostServiceIntegratTest {
                 .role(UserRole.USER)
                 .build();
         anotherUser = userRepository.save(anotherUser);
+
+        // Mock ImageUploader - S3 업로드를 시뮬레이션
+        when(imageUploader.uploadFiles(anyList(), any(String.class)))
+                .thenAnswer(invocation -> {
+                    List<MultipartFile> files = invocation.getArgument(0);
+                    String directory = invocation.getArgument(1);
+                    return files.stream()
+                            .map(file -> "https://test-bucket.s3.amazonaws.com/" + directory + "/" + file.getOriginalFilename())
+                            .collect(Collectors.toList());
+                });
     }
 
     @Test
