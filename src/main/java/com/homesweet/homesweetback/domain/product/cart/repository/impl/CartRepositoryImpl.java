@@ -8,9 +8,7 @@ import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARep
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.mapper.CartMapper;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,13 +20,18 @@ import java.util.Optional;
  * @author junnukim1007gmail.com
  * @date 25. 10. 24.
  */
-@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class CartRepositoryImpl implements CartRepository {
 
     private final CartJPARepository jpaRepository;
     private final CartMapper mapper;
+
+    @Override
+    public Cart save(Cart cart) {
+        CartEntity entity = jpaRepository.save(mapper.toEntity(cart));
+        return mapper.toDomain(entity);
+    }
 
     @Override
     public Optional<Cart> findById(Long cartId) {
@@ -43,9 +46,9 @@ public class CartRepositoryImpl implements CartRepository {
     }
 
     @Override
-    public Cart save(Cart cart) {
-        CartEntity entity = jpaRepository.save(mapper.toEntity(cart));
-        return mapper.toDomain(entity);
+    public List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size) {
+
+        return jpaRepository.findNextCartItems(memberId, cursorId, size);
     }
 
     @Override
@@ -53,16 +56,9 @@ public class CartRepositoryImpl implements CartRepository {
         CartEntity entity = jpaRepository.findById(domain.id())
                 .orElseThrow(() -> new ProductException(ErrorCode.CART_NOT_FOUND_ERROR));
 
-        log.info("Cart quantity update → before: {}, after: {}", entity.getQuantity(), domain.quantity());
         entity.updateQuantity(domain.quantity());
 
         return mapper.toDomain(entity);
-    }
-
-    @Override
-    public List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size) {
-
-        return jpaRepository.findNextCartItems(memberId, cursorId, size);
     }
 
     @Override
@@ -78,18 +74,17 @@ public class CartRepositoryImpl implements CartRepository {
     }
 
     @Override
+    public int countByUserId(Long userId) {
+        return jpaRepository.countByUser_Id(userId);
+    }
+
+    @Override
     public void deleteAllByUserIdAndCartIdIn(Long userId, List<Long> cartIds) {
 
         jpaRepository.deleteAllByUserIdAndIdIn(userId, cartIds);
     }
 
     @Override
-    public int countByUserId(Long userId) {
-        return jpaRepository.countByUser_Id(userId);
-    }
-
-    @Override
-    @Transactional // 데이터 변경(DELETE)이므로 트랜잭션 필요
     public void deleteByUserIdAndSkuIdIn(Long userId, List<Long> skuIds) {
         jpaRepository.deleteByUserIdAndSkuIdIn(userId, skuIds);
     }
