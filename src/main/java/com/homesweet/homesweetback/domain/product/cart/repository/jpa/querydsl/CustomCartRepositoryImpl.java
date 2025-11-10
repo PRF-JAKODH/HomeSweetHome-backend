@@ -5,12 +5,14 @@ import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.QCa
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -20,6 +22,15 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
 
     @Override
     public List<CartResponse> findNextCartItems(Long memberId, Long cursorId, int size) {
+        List<Tuple> tuples = queryCartTuples(memberId, cursorId, size);
+        if (tuples.isEmpty()) return Collections.emptyList();
+        return mapTuplesToCartResponses(tuples);
+    }
+
+    /**
+     * 카트 목록 및 옵션 정보 쿼리
+     */
+    private List<Tuple> queryCartTuples(Long memberId, Long cursorId, int size) {
         QCartEntity cart = QCartEntity.cartEntity;
         QSkuEntity sku = QSkuEntity.skuEntity;
         QProductEntity product = QProductEntity.productEntity;
@@ -27,19 +38,7 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
         QProductOptionValueEntity optionValue = QProductOptionValueEntity.productOptionValueEntity;
         QProductOptionGroupEntity optionGroup = QProductOptionGroupEntity.productOptionGroupEntity;
 
-        // 먼저 cart_id만 가져오기 (limit 적용 시 중복 제거)
-        List<Long> cartIds = queryFactory
-                .select(cart.id)
-                .from(cart)
-                .where(buildCartCursorCondition(cart, memberId, cursorId))
-                .orderBy(cart.id.asc()) // 오름차순으로 변경 했습니다~
-                .limit(size + 1)
-                .fetch();
-
-        if (cartIds.isEmpty()) return Collections.emptyList();
-
-        // 실제 cart 데이터 조회 (옵션 join 포함)
-        List<Tuple> tuples = queryFactory
+        return queryFactory
                 .select(
                         cart.id,
                         sku.id,
@@ -63,47 +62,59 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
                 .leftJoin(skuOption).on(skuOption.sku.eq(sku))
                 .leftJoin(optionValue).on(optionValue.eq(skuOption.optionValue))
                 .leftJoin(optionGroup).on(optionGroup.eq(optionValue.group))
-                .where(cart.id.in(cartIds))
-                .orderBy(cart.id.asc()) // 오름차순으로 변경했습니다~ 2
+                .where(cart.id.in(
+                        JPAExpressions
+                                .select(cart.id)
+                                .from(cart)
+                                .where(buildCartCursorCondition(cart, memberId, cursorId))
+                                .orderBy(cart.id.asc())
+                                .limit(size + 1)
+                ))
+                .orderBy(cart.id.asc())
                 .fetch();
+    }
 
-        // 카트별로 옵션 병합
+    /**
+     * Tuple → DTO 변환 (옵션 병합 포함)
+     */
+    private List<CartResponse> mapTuplesToCartResponses(List<Tuple> tuples) {
+        QCartEntity cart = QCartEntity.cartEntity;
+        QSkuEntity sku = QSkuEntity.skuEntity;
+        QProductEntity product = QProductEntity.productEntity;
+        QProductOptionGroupEntity optionGroup = QProductOptionGroupEntity.productOptionGroupEntity;
+        QProductOptionValueEntity optionValue = QProductOptionValueEntity.productOptionValueEntity;
+
         Map<Long, CartResponse.CartResponseBuilder> grouped = new LinkedHashMap<>();
 
         for (Tuple t : tuples) {
             Long cartId = t.get(cart.id);
-            Integer basePrice = t.get(product.basePrice);
-            Integer priceAdjustment = Optional.ofNullable(t.get(sku.priceAdjustment)).orElse(0);
-            BigDecimal discountRate = t.get(product.discountRate);
-            Integer quantity = t.get(cart.quantity);
 
-            // 1. 기본가(basePrice)에만 할인을 먼저 적용
-            double discountedBasePrice = basePrice * (1 - discountRate.doubleValue() / 100);
+            grouped.computeIfAbsent(cartId, id -> {
+                Integer basePrice = t.get(product.basePrice);
+                Integer priceAdjustment = Optional.ofNullable(t.get(sku.priceAdjustment)).orElse(0);
+                BigDecimal discountRate = t.get(product.discountRate);
+                Integer quantity = t.get(cart.quantity);
+                int totalPrice = calculateTotalPrice(basePrice, priceAdjustment, discountRate, quantity);
 
-            // 2. 할인된 기본가에 옵션가(priceAdjustment)를 더함
-            int finalPrice = (int) Math.floor(discountedBasePrice) + priceAdjustment;
-            int totalPrice = finalPrice * quantity;
+                return CartResponse.builder()
+                        .id(id)
+                        .skuId(t.get(sku.id))
+                        .productId(t.get(sku.product.id))
+                        .brand(t.get(product.brand))
+                        .productName(t.get(product.name))
+                        .basePrice(basePrice)
+                        .discountRate(discountRate)
+                        .finalPrice((int) Math.floor(basePrice * (1 - discountRate.doubleValue() / 100)) + priceAdjustment)
+                        .shippingPrice(t.get(product.shippingPrice))
+                        .quantity(quantity)
+                        .totalPrice(totalPrice)
+                        .imageUrl(t.get(product.imageUrl))
+                        .createdAt(t.get(cart.createdAt))
+                        .updatedAt(t.get(cart.updatedAt))
+                        .priceAdjustment(priceAdjustment)
+                        .optionSummary("");
+            });
 
-            grouped.computeIfAbsent(cartId, id -> CartResponse.builder()
-                    .id(id)
-                    .skuId(t.get(sku.id))
-                    .productId(t.get(sku.product.id))
-                    .brand(t.get(product.brand))
-                    .productName(t.get(product.name))
-                    .basePrice(basePrice)
-                    .discountRate(discountRate)
-                    .finalPrice(finalPrice)
-                    .shippingPrice(t.get(product.shippingPrice))
-                    .quantity(quantity)
-                    .totalPrice(totalPrice)
-                    .imageUrl(t.get(product.imageUrl))
-                    .createdAt(t.get(cart.createdAt))
-                    .updatedAt(t.get(cart.updatedAt))
-                    .priceAdjustment(priceAdjustment)
-                    .optionSummary("")
-            );
-
-            // 옵션 정보 병합
             String groupName = t.get(optionGroup.groupName);
             String value = t.get(optionValue.value);
             if (groupName != null && value != null) {
@@ -114,16 +125,27 @@ public class CustomCartRepositoryImpl implements CustomCartRepository {
             }
         }
 
-        // DTO 변환
         return grouped.values().stream()
                 .map(CartResponse.CartResponseBuilder::build)
                 .toList();
     }
 
+    /**
+     * 할인 및 총합 계산
+     */
+    private int calculateTotalPrice(int basePrice, int adjustment, BigDecimal discountRate, int quantity) {
+        double discountedBase = basePrice * (1 - discountRate.doubleValue() / 100);
+        int finalPrice = (int) Math.floor(discountedBase) + adjustment;
+        return finalPrice * quantity;
+    }
+
+    /**
+     * 커서 조건
+     */
     private BooleanExpression buildCartCursorCondition(QCartEntity cart, Long memberId, Long cursorId) {
         BooleanExpression condition = cart.user.id.eq(memberId);
         if (cursorId != null) {
-            condition = condition.and(cart.id.gt(cursorId)); // gt = greater than
+            condition = condition.and(cart.id.gt(cursorId));
         }
         return condition;
     }
