@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.settlement.repository;
 import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,11 +20,15 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
     List<WeeklySettlement> findByWeeklySettlement(@Param("userId") Long userId);
 
 
+    // 주별 집계 조회
     @Query("""
-            SELECT w FROM WeeklySettlement w
-            WHERE w.userId = :userId AND w.year = :year AND w.month = :month
-            ORDER BY w.weekStartDate ASC""")
-    List<WeeklySettlement> findByUserIdAndYearAndMonthOrderByWeek(Long userId, Short year, Byte month);
+    SELECT w FROM WeeklySettlement w
+    WHERE w.userId = :userId
+     AND w.weekStartDate >= :startDate
+     AND w.weekStartDate < :endDate
+    ORDER BY w.weekStartDate ASC
+    """)
+    Page<WeeklySettlement> findByWeeklySettlementByRange(@Param("userId") Long userId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
 
     // upsert
     @Modifying
@@ -73,5 +78,6 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
     );
+    //
 
 }

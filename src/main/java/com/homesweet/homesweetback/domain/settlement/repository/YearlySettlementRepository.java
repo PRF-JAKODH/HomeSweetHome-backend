@@ -1,13 +1,17 @@
 package com.homesweet.homesweetback.domain.settlement.repository;
 
+import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.YearlySettlement;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface YearlySettlementRepository extends JpaRepository<YearlySettlement, Long> {
@@ -56,5 +60,21 @@ public interface YearlySettlementRepository extends JpaRepository<YearlySettleme
             @Param("totalVat") BigDecimal totalVat,
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
+    );
+
+    // 일별 집계 조회
+    @Query("""
+    SELECT y
+    FROM YearlySettlement y
+    WHERE y.userId = :userId
+      AND y.year >= :fromYear
+      AND y.year < :toYearEx
+    ORDER BY y.year DESC
+    """)
+    Page<YearlySettlement> findByYearlySettlementByRange(
+            @Param("userId") Long userId,
+            @Param("fromYear") Short fromYear,
+            @Param("toYearEx") Short toYearEx,
+            Pageable pageable
     );
 }

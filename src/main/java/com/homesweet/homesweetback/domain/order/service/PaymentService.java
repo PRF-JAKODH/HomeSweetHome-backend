@@ -157,8 +157,6 @@ public class PaymentService {
             // (가정한 메서드) SkuEntity의 재고 차감 로직 호출
             sku.decreaseStock(item.getQuantity());
         }
-        settlementService.createSettlement(order);
-
 
         // 9. 구매 완료된 상품 장바구니에서 삭제
         try {
@@ -269,7 +267,6 @@ public class PaymentService {
         order.setOrderStatus(OrderStatus.FAILED); // (정책: 취소 시 '결제 실패'로 처리)
         order.setDeliveryStatus(DeliveryStatus.CANCELLED);
         payment.setPaymentStatus("CANCELED"); // Payment 상태도 변경
-
         log.info("주문 취소 완료 (환불 및 재고 복구): orderId={}", orderId);
     }
 }

@@ -13,6 +13,6 @@ public record MonthlySettlementResponse(
         BigDecimal totalSettlement,
 
         Double growthRate,   // 전월대비 증감율
-        int totalCount  // 총 거래 건수
+        Long totalCount  // 총 거래 건수
 ) {
 }

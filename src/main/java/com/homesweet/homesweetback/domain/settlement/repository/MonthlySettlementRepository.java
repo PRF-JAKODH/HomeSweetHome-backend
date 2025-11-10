@@ -1,7 +1,11 @@
 package com.homesweet.homesweetback.domain.settlement.repository;
 
+import com.homesweet.homesweetback.domain.settlement.dto.response.MonthlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
+import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -59,4 +63,13 @@ public interface MonthlySettlementRepository extends JpaRepository<MonthlySettle
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
     );
+    // 월별 집계 조회
+    @Query("""
+    SELECT m FROM MonthlySettlement m
+    WHERE m.userId = :userId
+     AND (m.year >= :fromYear OR (m.year = :fromYear AND m.month >= :fromMonth))
+     AND (m.year < :toYear OR (m.year = :toYear AND m.month >= :toMonth))
+    ORDER BY m.year DESC, m.month DESC
+    """)
+    Page<MonthlySettlement> findByMonthlySettlementByRange(@Param("userId") Long userId, @Param("fromYear") Short fromYear, @Param("fromMonth") Byte fromMonth, @Param("toYear") Short toYear, @Param("toMonth") Byte toMonth, Pageable pageable);
 }

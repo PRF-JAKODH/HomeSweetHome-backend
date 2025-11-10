@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record DailySettlementResponse(
-        LocalDate orderedAt,
         BigDecimal totalSales,
         BigDecimal totalFee,
         BigDecimal totalVat,
@@ -14,7 +13,6 @@ public record DailySettlementResponse(
         String settlementStatus,
 
         Double completedRate,   // 정산 완료율
-        int totalCount,  // 총 거래 건수
-        boolean empty
+        Long totalCount  // 총 거래
 ) {
 }
