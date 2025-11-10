@@ -45,15 +45,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * (스케줄러가 PENDING 주문을 찾기 위해 사용)
      */
     List<Order> findAllByOrderStatusAndOrderedAtBefore(OrderStatus orderStatus, LocalDateTime cutoffTime);
-
-    // 판매자 조회
-    @Query("""
-    SELECT p.seller FROM Order o 
-        JOIN o.orderItems oi 
-        JOIN oi.sku s 
-        JOIN s.product p 
-        WHERE o.id =:orderId
-    """)
-    User findBySellerId(@Param("orderId") Long orderId);
-
 }

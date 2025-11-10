@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.settlement.service;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
@@ -9,11 +11,16 @@ import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlemen
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.YearlySettlementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,58 +30,54 @@ public class YearlySettlementService {
     private final MonthlySettlementRepository monthlySettlementRepository;
     private final SettlementRepository settlementRepository;
 
-    public YearlySettlementResponse getYearlySummary(Long userId, LocalDate date) {
-        List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
-        System.out.println("settlements: " + settlements);
-        short year = (short) date.getYear();
-        LocalDate firstDayOfYear = date.withDayOfYear(1);  // 올해 1월 1일
-        LocalDate lastDayOfYear  = firstDayOfYear.withMonth(12).withDayOfMonth(31);  // 올해 12월 31일
-        System.out.println("firstDayOfYear = " + firstDayOfYear);
-//        LocalDateTime startDate = firstDayOfYear.atStartOfDay();
-//        LocalDateTime endDate   = lastDayOfYear.atTime(23, 59, 59);
+    // 연별 데이터 조회
+    @Transactional(readOnly = true)
+    public Page<YearlySettlementResponse> getYearlySummary(Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        // yyyy-01-01 <=  ~ < yyyy-01-01
+        LocalDate fromDate   = LocalDate.of(startDate.getYear(), 1, 1);
+        LocalDate toDate   = LocalDate.of((short)(endDate.getYear() + 1), 1, 1);
+        LocalDateTime start  = fromDate.atStartOfDay();
+        LocalDateTime end  = toDate.atStartOfDay();
 
-//        List<Settlement> settlements = settlementRepository
-//                .findByUserIdAndOrderedAtBetween(userId, startDate, endDate);
-        if (settlements.isEmpty()) {
-            return new YearlySettlementResponse(
-                    (long) firstDayOfYear.getYear(),
-                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0
+        short fromYear = (short) startDate.getYear();
+        short toYearEx = (short) (endDate.getYear() + 1);
+
+        // 1. 페이지로 정산일시 기준 연별 정산목록 조회
+        Page<YearlySettlement> yearlySettlements = yearlySettlementRepository.findByYearlySettlementByRange(userId, fromYear, toYearEx, pageable);
+
+        // 2. 기간 전체의 총 주문 건수
+        long totalCount = settlementRepository.countAllByOrderedAt(userId, start, end);
+
+        // 3. 데이터가 존재하지 않으면 0 반환
+        if (yearlySettlements.isEmpty()) {
+            new YearlySettlementResponse(
+                    (short) startDate.getYear(),
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0L
             );
         }
 
-        BigDecimal totalSales = BigDecimal.ZERO;
-        BigDecimal totalFee = BigDecimal.ZERO;
-        BigDecimal totalVat = BigDecimal.ZERO;
-        BigDecimal totalRefund = BigDecimal.ZERO;
-        BigDecimal totalSettlement = BigDecimal.ZERO;
-        int totalCount = settlements.size();
-
-        for (MonthlySettlement m : settlements) {
-            totalSales = totalSales.add(m.getTotalSales());
-            totalFee = totalFee.add(m.getTotalFee());
-            totalVat = totalVat.add(m.getTotalVat());
-            totalRefund = totalRefund.add(m.getTotalRefund());
-            totalSettlement = totalSettlement.add(m.getTotalSettlement());
-            totalCount++;
+        // 4. 응답 반환
+        List<YearlySettlementResponse> yearlySettlement = new ArrayList<>(yearlySettlements.getNumberOfElements());
+        for (YearlySettlement y : yearlySettlements.getContent()) {
+            yearlySettlement.add(new YearlySettlementResponse(
+                    y.getYear(),
+                    y.getTotalSales(),
+                    y.getTotalFee(),
+                    y.getTotalVat(),
+                    y.getTotalRefund(),
+                    y.getTotalSettlement(),
+                    totalCount
+            ));
         }
-
-        return new YearlySettlementResponse(
-                (long) firstDayOfYear.getYear(),
-                totalSales,
-                totalFee,
-                totalVat,
-                totalRefund,
-                totalSettlement,
-                totalCount
-        );
+        return new PageImpl<>(yearlySettlement, pageable, totalCount);
     }
 
-    // 연 집계
+    // 연별 집계
     public void getYearlySettlement(Long userId) {
         Short prevYear = null;
         List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
         if (settlements == null || settlements.isEmpty()) {
-            System.out.println("조회된 정산 데이터가 없어요");
+            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
         BigDecimal totalSales = BigDecimal.ZERO;
         BigDecimal totalFee = BigDecimal.ZERO;
@@ -114,7 +117,7 @@ public class YearlySettlementService {
             totalSettlement = totalSettlement.add(y.getTotalSettlement());
         }
         // 마지막 연도
-        if(prevYear != null) {
+        if (prevYear != null) {
             yearlySettlementRepository.upsertYearly(
                     userId,
                     prevYear,

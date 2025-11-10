@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,14 +19,14 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
     @Query("SELECT d FROM DailySettlement d WHERE d.userId = :userId")
     List<DailySettlement> findByDailySettlement(@Param("userId") Long userId);
 
+    // 일별 정산 건수 조회
     @Query("""
-            SELECT COUNT(d) FROM DailySettlement d
-            WHERE d.userId = :userId
-              AND d.settlementDate >= :start
-              AND d.settlementDate <  :endEx
-            """)
-    int countByUserIdInRange(Long userId, LocalDateTime start, LocalDateTime endEx);
-
+    SELECT COUNT(d) FROM DailySettlement d
+    WHERE d.userId = :userId
+       AND d.settlementDate >= :startDate
+       AND d.settlementDate < :endDate
+    """)
+    int countByUserIdInRange(Long userId, LocalDate startDate, LocalDate endDate);
 
     // upsert(update로 가야함)
     @Modifying
@@ -55,9 +56,11 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
 
     // 일별 집계 조회
     @Query(value = """
-    SELECT d FROM DailySettlement d WHERE d.userId =:userId
-        AND d.settlementDate >= :startDate AND d.settlementDate < :endDate
-        ORDER BY d.settlementDate DESC
+    SELECT d FROM DailySettlement d
+    WHERE d.userId =:userId
+      AND d.settlementDate >= :startDate
+      AND d.settlementDate < :endDate
+    ORDER BY d.settlementDate DESC
     """)
     Page<DailySettlement> findByDailySettlementByRange(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 }
