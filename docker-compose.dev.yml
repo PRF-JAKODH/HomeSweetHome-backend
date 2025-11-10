@@ -40,113 +40,40 @@ services:
     networks:
       - homesweet-network
 
-  ### --- ZOOKEEPER CLUSTER (3 nodes) ---
-  zookeeper-1:
+  ### Zookeeper (단일)
+  zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper-1
+    container_name: zookeeper
     environment:
-      ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_CLIENT_PORT: 22181
+      ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
     ports:
-      - "22181:22181"
+      - "2181:2181"
     networks:
       - homesweet-network
 
-  zookeeper-2:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper-2
-    environment:
-      ZOOKEEPER_SERVER_ID: 2
-      ZOOKEEPER_CLIENT_PORT: 22182
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
-    ports:
-      - "22182:22182"
-    networks:
-      - homesweet-network
-
-  zookeeper-3:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper-3
-    environment:
-      ZOOKEEPER_SERVER_ID: 3
-      ZOOKEEPER_CLIENT_PORT: 22183
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
-    ports:
-      - "22183:22183"
-    networks:
-      - homesweet-network
-
-  ### --- KAFKA BROKER CLUSTER (3 brokers) ---
-  kafka-1:
+  ### Kafka (단일)
+  kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka-1
+    container_name: kafka
     depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
+      - zookeeper
     ports:
-      - "29092:29092"
+      - "9092:9092"   # 외부(Spring Boot) 접근
+      - "29092:29092" # 내부(Docker 간 통신)
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:22181,zookeeper-2:22182,zookeeper-3:22183
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-    networks:
-      - homesweet-network
-
-  kafka-2:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka-2
-    depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
-    ports:
-      - "29093:29093"
-    environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:22181,zookeeper-2:22182,zookeeper-3:22183
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-    networks:
-      - homesweet-network
-
-  kafka-3:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka-3
-    depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
-    ports:
-      - "29094:29094"
-    environment:
-      KAFKA_BROKER_ID: 3
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:22181,zookeeper-2:22182,zookeeper-3:22183
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:29094
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # 내부/외부 리스너 설정
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:29092,PLAINTEXT_EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:29092,PLAINTEXT_EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      # replication 관련 완화 (로컬 개발용)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - homesweet-network
 
@@ -159,12 +86,10 @@ services:
     restart: always
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka-1:29092,kafka-2:29093,kafka-3:29094
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper-1:22181
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      - kafka
     networks:
       - homesweet-network
 
@@ -188,7 +113,7 @@ services:
     image: docker.elastic.co/logstash/logstash:8.15.0
     container_name: logstash
     depends_on:
-      - kafka-1
+      - kafka
       - elasticsearch
     ports:
       - "5044:5044"
@@ -212,7 +137,6 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     networks:
       - homesweet-network
-
 
 networks:
   homesweet-network:
