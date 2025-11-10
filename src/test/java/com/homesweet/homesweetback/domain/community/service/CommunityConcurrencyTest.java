@@ -55,9 +55,9 @@ class CommunityConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트용 사용자 100명 생성
+        // 테스트용 사용자 생성
         testUsers = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             User user = User.builder()
                     .email("user" + i + "@test.com")
                     .name("유저" + i)
@@ -71,8 +71,8 @@ class CommunityConcurrencyTest {
         // 테스트용 게시글 생성
         testPost = CommunityPostEntity.builder()
                 .author(testUsers.get(0))
-                .title("동시성 테스트 게시글")
-                .content("100명이 동시에 좋아요 누르면?")
+                .title("동시성 테스트 제목")
+                .content("동시성 테스트 본문?")
                 .category("테스트")
                 .build();
         testPost = postRepository.save(testPost);
@@ -81,22 +81,22 @@ class CommunityConcurrencyTest {
         testComment = CommunityCommentEntity.builder()
                 .post(testPost)
                 .author(testUsers.get(0))
-                .content("동시성 테스트용 댓글입니다!")
+                .content("동시성 테스트용 댓글")
                 .build();
         testComment = commentRepository.save(testComment);
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 100명이 동시에 좋아요 클릭")
+    @DisplayName("동시성 테스트 - 동시에 좋아요 클릭")
     void concurrentPostLike() throws InterruptedException {
         // given
-        int threadCount = 100;
+        int threadCount = 1000;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
-        // when - 100명이 동시에 좋아요 클릭
+        // when - 동시에 좋아요 클릭
         for (int i = 0; i < threadCount; i++) {
             final int userIndex = i;
             executorService.submit(() -> {
@@ -118,25 +118,18 @@ class CommunityConcurrencyTest {
         // then
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
-        System.out.println("=== 동시성 테스트 결과 ===");
-        System.out.println("성공 횟수: " + successCount.get());
-        System.out.println("실패 횟수: " + failCount.get());
-        System.out.println("실제 좋아요 수: " + result.getLikeCount());
-        System.out.println("예상 좋아요 수: 100");
-
-        // 동시성 제어가 제대로 되면 100이어야 함
-        assertThat(result.getLikeCount()).isEqualTo(100);
+        assertThat(result.getLikeCount()).isEqualTo(1000);
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 100명이 동시에 조회수 증가")
+    @DisplayName("동시성 테스트 - 동시에 조회수 증가")
     void concurrentViewCount() throws InterruptedException {
         // given
-        int threadCount = 100;
+        int threadCount = 1000;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        // when - 100명이 동시에 게시글 조회
+        // when - 동시에 게시글 조회
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
@@ -155,24 +148,19 @@ class CommunityConcurrencyTest {
         // then
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
-        System.out.println("=== 조회수 동시성 테스트 결과 ===");
-        System.out.println("실제 조회수: " + result.getViewCount());
-        System.out.println("예상 조회수: 100");
-
-        // 동시성 제어가 안 되면 100보다 작을 수 있음
-        assertThat(result.getViewCount()).isEqualTo(100);
+        assertThat(result.getViewCount()).isEqualTo(1000);
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 좋아요 토글 (추가/취소)")
+    @DisplayName("동시성 테스트 - 좋아요 토글")
     void concurrentToggleLike() throws InterruptedException {
         // given
-        int threadCount = 10;
-        int toggleCount = 10; // 각 사용자가 10번씩 토글
+        int threadCount = 1000;
+        int toggleCount = 1000;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
 
-        // when - 10명이 각각 10번씩 토글 (총 100번)
+        // when -   n명이 n번씩 토글
         for (int i = 0; i < threadCount; i++) {
             final int userIndex = i;
             for (int j = 0; j < toggleCount; j++) {
@@ -194,25 +182,20 @@ class CommunityConcurrencyTest {
         // then
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
-        System.out.println("=== 좋아요 토글 동시성 테스트 결과 ===");
-        System.out.println("실제 좋아요 수: " + result.getLikeCount());
-        System.out.println("예상 좋아요 수: 0 (10번씩 토글하면 모두 취소됨)");
-
-        // 각 사용자가 짝수 번 토글하면 최종적으로 좋아요가 없어야 함
         assertThat(result.getLikeCount()).isZero();
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 100명이 동시에 댓글 좋아요 클릭")
+    @DisplayName("동시성 테스트 - 동시에 댓글 좋아요 클릭")
     void concurrentCommentLike() throws InterruptedException {
         // given
-        int threadCount = 100;
+        int threadCount = 1000;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
-        // when - 100명이 동시에 댓글 좋아요 클릭
+        // when - 동시에 댓글 좋아요 클릭
         for (int i = 0; i < threadCount; i++) {
             final int userIndex = i;
             executorService.submit(() -> {
@@ -234,26 +217,19 @@ class CommunityConcurrencyTest {
         // then
         CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
 
-        System.out.println("=== 댓글 좋아요 동시성 테스트 결과 ===");
-        System.out.println("성공 횟수: " + successCount.get());
-        System.out.println("실패 횟수: " + failCount.get());
-        System.out.println("실제 좋아요 수: " + result.getLikeCount());
-        System.out.println("예상 좋아요 수: 100");
-
-        // 동시성 제어가 제대로 되면 100이어야 함
-        assertThat(result.getLikeCount()).isEqualTo(100);
+        assertThat(result.getLikeCount()).isEqualTo(1000);
     }
 
     @Test
-    @DisplayName("동시성 테스트 - 댓글 좋아요 토글 (추가/취소)")
+    @DisplayName("동시성 테스트 - 댓글 좋아요 토글")
     void concurrentCommentToggleLike() throws InterruptedException {
         // given
-        int threadCount = 10;
-        int toggleCount = 10; // 각 사용자가 10번씩 토글
+        int threadCount = 1000;
+        int toggleCount = 1000;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
 
-        // when - 10명이 각각 10번씩 토글 (총 100번)
+        // when - n명이 n번씩 토글
         for (int i = 0; i < threadCount; i++) {
             final int userIndex = i;
             for (int j = 0; j < toggleCount; j++) {
@@ -275,11 +251,6 @@ class CommunityConcurrencyTest {
         // then
         CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
 
-        System.out.println("=== 댓글 좋아요 토글 동시성 테스트 결과 ===");
-        System.out.println("실제 좋아요 수: " + result.getLikeCount());
-        System.out.println("예상 좋아요 수: 0 (10번씩 토글하면 모두 취소됨)");
-
-        // 각 사용자가 짝수 번 토글하면 최종적으로 좋아요가 없어야 함
         assertThat(result.getLikeCount()).isZero();
     }
 }
