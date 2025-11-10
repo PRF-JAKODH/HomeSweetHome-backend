@@ -2,9 +2,10 @@ package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
-import com.homesweet.homesweetback.domain.chat.dto.response.ChatRoomDetailResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomListCommonResponseDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.*;
+import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
+import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -12,19 +13,23 @@ public interface ChatRoomService {
 
     RoomDto createOrGetIndividualRoom(Long meId, Long targetId);
 
-    GroupRoomResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request);
+    GroupRoomCreateResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request);
 
-    // 사용자가 속한 개인 채팅방 목록 조회
-//    List<RoomListResponseDto> findMyIndividualRooms(Long myUserId);
+    IndividualChatDetailResponse getIndividualChatDetail(Long userId, Long roomId);
 
-    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
+    GroupChatDetailResponse getGroupChatDetail(Long userId, Long roomId);
 
-    List<RoomListCommonResponseDto> findAllMyRooms(Long userId);
+    void joinRoom(Long roomId, Long userId);
 
-    List<RoomListCommonResponseDto> findMyIndividualRooms(Long userId);
+    List<IndividualRoomListResponse> findMyIndividualRooms(Long userId);
 
-    List<RoomListCommonResponseDto> findMyGroupRooms(Long userId);
+    List<GroupRoomListResponse> findMyGroupRooms(Long userId);
 
     boolean isUserInRoom(Long userId, Long roomId);
 
+    List<GroupRoomListResponse> getAllGroupRooms();
+
+//    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
+
+    void exitRoom(Long roomId, Long userId);
 }

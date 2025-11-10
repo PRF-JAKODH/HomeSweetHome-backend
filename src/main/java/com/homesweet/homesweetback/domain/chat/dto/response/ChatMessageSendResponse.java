@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
 
 import java.time.LocalDateTime;
 
-public record ChatMessageResponse (
+public record ChatMessageSendResponse(
         Long messageId,
         Long roomId,
         Long senderId,
@@ -17,8 +17,8 @@ public record ChatMessageResponse (
         Boolean isRead
 ) {
 
-    public static ChatMessageResponse from(ChatMessage message, Long currentUserId) {
-        return new ChatMessageResponse(
+    public static ChatMessageSendResponse from(ChatMessage message, Long currentUserId) {
+        return new ChatMessageSendResponse(
                 message.getId(),
                 message.getRoom().getId(),
                 message.getSender().getId(),
@@ -31,4 +31,24 @@ public record ChatMessageResponse (
         );
     }
 
+    public static ChatMessageSendResponse from(
+            ChatMessage message,
+            Long roomId,
+            Long senderId,
+            String senderName,
+            String senderProfileImg,
+            Long currentUserId
+    ) {
+        return new ChatMessageSendResponse(
+                message.getId(),
+                roomId,
+                senderId,
+                senderName,
+                senderProfileImg,
+                message.getMessageType(),
+                message.getContent(),
+                message.getSentAt(),
+                senderId.equals(currentUserId)
+        );
+    }
 }
