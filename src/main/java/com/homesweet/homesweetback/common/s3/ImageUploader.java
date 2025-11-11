@@ -14,7 +14,7 @@ public interface ImageUploader {
 
     String upload(MultipartFile file, String fileName);
 
-    List<String> uploadFiles(List<MultipartFile> files, String directory);
+    List<String> uploadFiles(List<? extends MultipartFile> files, String directory);
 
     void delete(String fileName);
 }
