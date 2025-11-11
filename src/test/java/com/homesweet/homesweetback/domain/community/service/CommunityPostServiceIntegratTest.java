@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
@@ -42,7 +41,8 @@ import io.awspring.cloud.s3.S3Template;
 /**
  * - 실제 DB(H2)를 사용하여 전체 플로우 검증
  * - 트랜잭션 롤백으로 테스트 격리 보장
- * - Mock ImageUploader를 사용하여 외부 의존성 제거
+ * - S3Template, S3ImageUploader는 다른 서비스(ChatRoomServiceImpl 등)에서 직접 의존하므로 MockitoBean 필요
+ * - CommunityImageUploader를 Mock하여 S3 업로드를 시뮬레이션
  */
 @SpringBootTest
 @ActiveProfiles("test")
