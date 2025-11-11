@@ -1,16 +1,22 @@
 package com.homesweet.homesweetback.common.config.interceptor;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.security.jwt.JwtTokenProvider;
+import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -23,93 +29,132 @@ public class ChatPreHandler implements ChannelInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final ChatRoomRepository chatRoomRepository;
+    private final RoomMemberRepository roomMemberRepository;
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel){
-        StompHeaderAccessor accessHeader = StompHeaderAccessor.getAccessor(message,StompHeaderAccessor.class);
-        if(accessHeader == null || accessHeader.getCommand() == null) return message;
+    public Message<?> preSend(Message<?> message, MessageChannel channel) {
 
-        switch (accessHeader.getCommand()) {
-            case CONNECT :
-                Long connectUser = (Long)accessHeader.getSessionAttributes().get("userId");
-                accessHeader.setUser(new UsernamePasswordAuthenticationToken(connectUser, null, List.of()));
-                break;
+        StompHeaderAccessor accessor = StompHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null || accessor.getCommand() == null) return message;
 
-            case SUBSCRIBE :
-                Long subUser = (Long)accessHeader.getSessionAttributes().get("userId");
-                Long subRoomId = extractRoomId(accessHeader.getDestination());
-                chatMessageService.checkMember(subRoomId, subUser);
-                break;
+        StompCommand command = accessor.getCommand();
 
-            case SEND:
-                Long sendUser = (Long)accessHeader.getSessionAttributes().get("userId");
-                break;
+        log.info("🔍 Command: {}, SessionId: {}, Destination: {}",
+                command, accessor.getSessionId(), accessor.getDestination());
 
-            default:
-                break;
+        try {
+            switch (command) {
+
+                /**
+                 * ✅ CONNECT — 최초 연결 시 JWT 토큰 검증 & 세션에 사용자 등록
+                 */
+                case CONNECT -> handleConnect(accessor);
+
+                /**
+                 * ✅ SUBSCRIBE — 구독 요청 시 방 참여자 여부 검증
+                 */
+                case SUBSCRIBE -> handleSubscribe(accessor);
+
+                /**
+                 * ✅ SEND — 메시지 전송 시 권한 검증 (퇴장 여부 등)
+                 */
+                case SEND -> handleSend(accessor);
+
+                default -> { /* 나머지 명령어는 무시 */ }
+            }
+
+        } catch (Exception e) {
+            log.error("❌ WebSocket Interceptor Error: {}", e.getMessage());
+            throw e;
         }
 
-         return message;
+        return message;
     }
 
+    /**
+     * CONNECT 단계 처리 (JWT 인증)
+     */
+    private void handleConnect(StompHeaderAccessor accessor) {
+        String authorization = accessor.getFirstNativeHeader("Authorization");
+
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            throw new BusinessException(ErrorCode.TOKEN_MISSING);
+        }
+
+        String token = authorization.substring(7);
+
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
+        if (jwtTokenProvider.isRefreshToken(token)) {
+            throw new BusinessException(ErrorCode.TOKEN_REFRESH_NOT_ALLOWED);
+        }
+
+        Claims claims = jwtTokenProvider.getClaimsFromToken(token);
+        Long userId = Long.valueOf(claims.getSubject());
+        String role = claims.get("role", String.class);
+
+        // 세션에 유저 정보 저장
+        accessor.getSessionAttributes().put("userId", userId);
+
+        // SecurityContext와 연계되도록 인증 정보 설정
+        accessor.setUser(new UsernamePasswordAuthenticationToken(
+                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
+        ));
+
+        log.info("✅ CONNECT 성공 | userId={} | role={}", userId, role);
+    }
+
+    /**
+     * SUBSCRIBE 단계 처리 (구독 권한 검증)
+     */
+    private void handleSubscribe(StompHeaderAccessor accessor) {
+        Long userId = (Long) accessor.getSessionAttributes().get("userId");
+        Long roomId = extractRoomId(accessor.getDestination());
+
+        if (userId == null || roomId == null) {
+            throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
+        }
+
+        boolean isMember = chatRoomService.isUserInRoom(userId, roomId);
+        if (!isMember) {
+            throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
+        }
+
+        log.info("✅ SUBSCRIBE 성공 | userId={} | roomId={}", userId, roomId);
+    }
+
+    /**
+     * SEND 단계 처리 (메시지 전송 권한 검증)
+     */
+    private void handleSend(StompHeaderAccessor accessor) {
+        Long userId = (Long) accessor.getSessionAttributes().get("userId");
+        Long roomId = extractRoomId(accessor.getDestination());
+
+        if (userId == null || roomId == null) {
+            throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
+        }
+
+        boolean canSend = chatMessageService.canSendMessage(userId, roomId);
+        if (!canSend) {
+            throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
+        }
+
+        log.info("✅ SEND 권한 확인 완료 | userId={} | roomId={}", userId, roomId);
+    }
+
+    /**
+     * Destination 문자열에서 roomId 추출
+     * ex) /sub/rooms/12 → 12
+     */
     private Long extractRoomId(String destination) {
-        if(destination == null) return null;
+        if (destination == null) return null;
         try {
             return Long.parseLong(destination.substring(destination.lastIndexOf('/') + 1));
-        }catch(Exception e) {
+        } catch (Exception e) {
             return null;
         }
-
     }
-
 }
-////        // 최초 연결 시 — 토큰 인증 (JWT 파싱, 유효성 검사), CONNECT에서만 인증 처리
-////        if (!StompCommand.CONNECT.equals(accessHeader.getCommand())) {
-////            log.debug("connect");
-////
-////
-////            // Authorization 헤더 추출
-////            String authorization = accessHeader.getFirstNativeHeader("Authorization");
-////
-////            if (authorization == null || !authorization.startsWith("Bearer ")) {
-////                throw new BusinessException(ErrorCode.TOKEN_MISSING);
-////            }
-////
-////            // 토큰 분리
-////            String token = authorization.substring(7);
-////
-////            // 토큰 유효성 검증
-////            if (!jwtTokenProvider.validateToken(token)) {
-////                throw new BusinessException(ErrorCode.TOKEN_INVALID);
-////            }
-////
-////            // 타입 검증 : refresh token이면 예외 (Access만 허용)
-////            if (jwtTokenProvider.isRefreshToken(token)) {
-////                throw new BusinessException(ErrorCode.TOKEN_REFRESH_NOT_ALLOWED);
-////            }
-////
-////            Claims claims = jwtTokenProvider.getClaimsFromToken(token);
-////            Long userId = Long.valueOf(claims.getSubject());
-////            String email = claims.get("email", String.class).toString();
-////            String role = claims.get("role", String.class).toString();
-////
-////            // 인증된 사용자 정보
-////            Authentication authentication =
-////                    new UsernamePasswordAuthenticationToken(
-////                            userId,
-////                            null,
-////                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-////                    );
-////
-////            accessHeader.setUser(authentication);
-////
-////            // 구독 요청 - 접근권한 검증
-////        } else if (StompCommand.SUBSCRIBE.equals(accessHeader.getCommand())) {
-////
-////            // 메세지 전송 - 인증된 사용자만 허용
-////        } else if(StompCommand.SEND.equals(accessHeader.getCommand())){
-////
-////        }
-////            return message;
-//
-//

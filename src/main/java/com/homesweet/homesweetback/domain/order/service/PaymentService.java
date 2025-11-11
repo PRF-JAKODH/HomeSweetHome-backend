@@ -17,6 +17,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPAR
 // --- Exception Imports ---
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
 import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
+import com.homesweet.homesweetback.domain.settlement.service.SettlementService;
 import jakarta.persistence.EntityNotFoundException;
 
 // --- Spring & Java Imports ---
@@ -36,7 +37,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+
+import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -48,8 +53,11 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final SkuJPARepository skuJPARepository; // ★ 재고 차감용
+    private final CartRepository cartRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+
+    private final SettlementService settlementService;
 
     @Value("${payments.toss.secretKey}")
     private String tossSecretKey;
@@ -61,14 +69,14 @@ public class PaymentService {
      * API 2: 결제 검증 및 완료
      * (재고 차감 로직 포함)
      */
-    @Transactional
+    //@Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
-        // dto의 orderId와 order의 id는 같지 않다.
-        // dto.orderId == order.orderNumber
-        String[] s = dto.orderId().split("-");
-
         // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
-        Order order = orderRepository.findById(Long.parseLong(s[2]))
+
+        //TODO: 지금 비효율적이다.(조금 효율적으로 하면 좋을것 같다)
+//        saveDB();
+//        callTossAPI();
+        Order order = orderRepository.findByOrderNumber(dto.orderId()) // 👈 ✨ 여기를 수정!
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
         log.debug(order.toString());
         log.debug(order.getOrderStatus().toString());
@@ -90,6 +98,8 @@ public class PaymentService {
             throw new PaymentMismatchException("이미 처리된 주문입니다.");
         }
 
+        //TODO: 결제가 됬는데 배송이 안와요 기븐이 안좋겟죠(개발자가 잘 처리해야합니다)
+        //TODO: 결국 케이스 마다 쪼개시다보면 그게 TC, 트랜잭션을 자연스럽게 분리하게 됩니다.
         // 5. [★핵심★] 토스페이먼츠 결제 승인 API 호출
         HttpHeaders headers = new HttpHeaders();
         String encodedKey = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
@@ -148,12 +158,46 @@ public class PaymentService {
             sku.decreaseStock(item.getQuantity());
         }
 
-        // 9. 최종 응답 반환
+        // 9. 구매 완료된 상품 장바구니에서 삭제
+        try {
+            List<Long> purchasedSkuIds = order.getOrderItems().stream()
+                    .map(orderItem -> orderItem.getSku().getId())
+                    .collect(Collectors.toList());
+
+            if (!purchasedSkuIds.isEmpty()) {
+                cartRepository.deleteByUserIdAndSkuIdIn(userId, purchasedSkuIds);
+                log.info("[Payment Success] 사용자의 장바구니에서 {}개의 SKU를 삭제했습니다. (UserId: {})", purchasedSkuIds.size(), userId);
+            }
+        } catch (Exception e) {
+            // (중요) 장바구니 삭제에 실패하더라도,
+            // 이미 결제 승인/재고 차감이 완료되었으므로 이 트랜잭션을 롤백하면 안 됩니다.
+            // 따라서 예외를 잡아서 로그만 남깁니다.
+            log.error("[Payment Success - Cart Clear Failed] 장바구니 삭제 중 오류 발생. (UserId: {}): {}", userId, e.getMessage());
+        }
+
+        // 10. 최종 응답 반환
         return new PaymentConfirmResponse(
                 order.getId(),
                 order.getOrderStatus().name()
         );
     }
+
+
+    //DB만 저장해
+    @Transactional
+    public void saveDB(String[] args) {
+
+        //db 저장
+    }
+
+
+    //HTTP ,WS 네트워크 통신만해
+    public void callTossAPI(String[] args) {
+        //xhtm api
+    }
+
+
+
 
     /**
      * API 3: 주문 취소 (환불)
@@ -223,7 +267,6 @@ public class PaymentService {
         order.setOrderStatus(OrderStatus.FAILED); // (정책: 취소 시 '결제 실패'로 처리)
         order.setDeliveryStatus(DeliveryStatus.CANCELLED);
         payment.setPaymentStatus("CANCELED"); // Payment 상태도 변경
-
         log.info("주문 취소 완료 (환불 및 재고 복구): orderId={}", orderId);
     }
 }

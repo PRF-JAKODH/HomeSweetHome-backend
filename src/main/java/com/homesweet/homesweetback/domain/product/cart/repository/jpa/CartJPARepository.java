@@ -5,6 +5,9 @@ import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.Car
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl.CustomCartRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +32,8 @@ public interface CartJPARepository extends JpaRepository<CartEntity, Long>, Cust
     void deleteAllByUserIdAndIdIn(Long userId, List<Long> cartIds);
 
     int countByUser_Id(Long userId);
+
+    @Modifying
+    @Query("DELETE FROM CartEntity c WHERE c.user.id = :userId AND c.sku.id IN :skuIds")
+    void deleteByUserIdAndSkuIdIn(@Param("userId") Long userId, @Param("skuIds") List<Long> skuIds); // 장바구니에서 구매가 완료된 SKU 목록 삭제 - 안채호
 }

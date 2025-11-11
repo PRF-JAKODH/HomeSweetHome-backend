@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,6 +63,9 @@ public class OrderService {
         long totalAmount = 0L;
         int totalShippingPrice = 0;
 
+        // 배송비를 계산한 상품 ID를 저장할 Set
+        java.util.Set<Long> processedProductIds = new java.util.HashSet<>();
+
         // 2. 주문 항목(SKU) 조회 및 총액 계산
         for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()) {
             // 2-1. SKU 조회 (ProductEntity 포함)
@@ -72,18 +76,25 @@ public class OrderService {
             ProductEntity product = sku.getProduct();
 
             // 2-2. 주문 항목 가격 계산 (할인 적용된 '단가')
+            //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다
             long discountedPrice = calculateDiscountedPrice(product.getBasePrice(), sku.getPriceAdjustment(), product.getDiscountRate());
 
             // 2-3. 총 주문 금액 계산 (상품 총액)
             totalAmount += (discountedPrice * itemDto.quantity());
 
-            // 2-4. 총 배송비 계산
-            totalShippingPrice += product.getShippingPrice();
+//            totalShippingPrice += product.getShippingPrice();
+            // 2-4. 총 배송비 계산 (productId 기준 1회만)
+            //TODO: 배송한테 값얼만지 요청해야한다.
+            Long currentProductId = product.getId();
+            if (!processedProductIds.contains(currentProductId)) {
+                totalShippingPrice += product.getShippingPrice();
+                processedProductIds.add(currentProductId);
+            }
 
             // 2-5. OrderItem 엔티티 생성
             OrderItem orderItem = OrderItem.builder()
                     .sku(sku)
-                    .quantity((long) itemDto.quantity())
+                    .quantity((long) itemDto.quantity()) //TODO: long 타입 변환이 필요한가? dto 변환
                     .price(discountedPrice) // 주문 시점의 '단가' 스냅샷
                     .build();
             orderItemsList.add(orderItem);
@@ -92,12 +103,15 @@ public class OrderService {
         // 3. 최종 결제 금액 = 상품 총액 + 총 배송비
         totalAmount += totalShippingPrice;
 
+        String newOrderNumber = this.generateOrderNumber();
+
         // 4. Order 엔티티 생성 (PENDING, BEFORE_SHIPMENT 상태)
         Order order = Order.builder()
                 .user(user)
                 .orderStatus(OrderStatus.PENDING)
                 .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
                 .totalAmount(totalAmount)
+                .orderNumber(newOrderNumber)
                 .build();
 
         // 5. 연관관계 설정 (Order <-> OrderItem)
@@ -109,8 +123,6 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         // 7. OrderReadyResponse DTO 생성
-        String orderNumber = savedOrder.generateOrderNumber();
-
         List<OrderReadyResponse.OrderItemDetail> itemDetails = savedOrder.getOrderItems().stream()
                 .map(oi -> {
                     SkuEntity sku = oi.getSku();
@@ -135,7 +147,7 @@ public class OrderService {
 
         return new OrderReadyResponse(
                 savedOrder.getId(),
-                orderNumber,
+                newOrderNumber,
                 user.getName(),
                 user.getAddress(),
                 user.getPhoneNumber(),
@@ -147,6 +159,7 @@ public class OrderService {
 
     public List<MyOrderItemResponse> getMyOrders(Long userId) {
         // 1. 사용자(User) 조회
+        //TODO: userRepo를 참조해서 order에서 검증하는게 맞나?
         User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
         // 2. 주문 목록 조회 (N+1 방지용 쿼리 사용)
@@ -184,7 +197,7 @@ public class OrderService {
                     // 3-4. DTO 생성
                     return MyOrderItemResponse.builder()
                             .orderId(order.getId())
-                            .orderNumber(order.generateOrderNumber())
+                            .orderNumber(order.getOrderNumber())
                             .orderDate(order.getOrderedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
                             .productName(productName) // "A상품 외 1건"
                             .imageUrl(imageUrl)       // "A상품 이미지"
@@ -198,11 +211,17 @@ public class OrderService {
 
     // (상품 가격 계산 헬퍼 메서드)
     private long calculateDiscountedPrice(Integer basePrice, Integer adjustment, BigDecimal discountRate) {
-        BigDecimal pricePerItemBD = BigDecimal.valueOf(basePrice + adjustment);
+
+        // 1. [수정] 기본가(basePrice)에만 할인을 먼저 적용
+        BigDecimal basePriceBD = BigDecimal.valueOf(basePrice);
         BigDecimal HUNDRED = new BigDecimal("100");
         BigDecimal rate = discountRate.divide(HUNDRED, 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal discountAmount = pricePerItemBD.multiply(rate);
-        BigDecimal finalPrice = pricePerItemBD.subtract(discountAmount);
+        BigDecimal discountAmount = basePriceBD.multiply(rate);
+        BigDecimal discountedBasePrice = basePriceBD.subtract(discountAmount);
+
+        // 2. [수정] 할인된 기본가에 옵션가(adjustment)를 더함
+        BigDecimal finalPrice = discountedBasePrice.add(BigDecimal.valueOf(adjustment));
+
         return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
     }
 
@@ -214,6 +233,7 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         // 2. (보안) 주문자 본인 확인
+        //TODO: 캡슐화 적용!!
         if (!order.getUser().getId().equals(userId)) {
             // (권한 없음 - 403 Forbidden이 더 적절할 수 있음)
             throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
@@ -224,13 +244,27 @@ public class OrderService {
         Payment payment = paymentRepository.findByOrder(order)
                 .orElse(null); // 결제 대기중인 주문은 payment가 null일 수 있음
 
-        // 4. 총 배송비 계산 (단순 합산)
+        // 4. 총 배송비 계산
         // (OrderReadyResponse DTO 정의에 따라 Integer로 반환)
         Integer totalShippingPrice = order.getOrderItems().stream()
-                .mapToInt(item -> item.getSku().getProduct().getShippingPrice())
+                .map(item -> item.getSku().getProduct()) // OrderItem -> Product
+                .map(ProductEntity::getId)               // Product -> Product ID
+                .distinct()                              // [핵심] Product ID 중복 제거
+                .mapToInt(productId -> order.getOrderItems().stream()
+                        .filter(oi -> oi.getSku().getProduct().getId().equals(productId))
+                        .findFirst() // 각 Product ID당 첫 번째 아이템만 찾음
+                        .map(oi -> oi.getSku().getProduct().getShippingPrice()) // 그 아이템의 배송비
+                        .orElse(0))
                 .sum();
 
         // 5. DTO로 변환
         return OrderDetailResponse.of(order, payment, order.getUser(), totalShippingPrice);
+    }
+
+
+    private String generateOrderNumber() {
+        String uuid = UUID.randomUUID().toString();
+        String cleanUuid = uuid.replace("-", "");
+        return "ORD-" + cleanUuid.toUpperCase();
     }
 }

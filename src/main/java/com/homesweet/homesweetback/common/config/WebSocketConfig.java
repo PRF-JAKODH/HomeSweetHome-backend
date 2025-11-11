@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.common.config;
 
+import com.homesweet.homesweetback.common.config.interceptor.AuthHandshakeInterceptor;
 import com.homesweet.homesweetback.common.config.interceptor.ChatPreHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-//    private final AuthHandshakeInterceptor authHandshakeInterceptor;
+    private final AuthHandshakeInterceptor authHandshakeInterceptor;
     private final ChatPreHandler chatPreHandler;
     private final ChannelInterceptor channelInterceptor;
 
@@ -33,7 +34,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
 //                .setAllowedOrigins("*");
-//                .addInterceptors(authHandshakeInterceptor)
+                .addInterceptors(authHandshakeInterceptor)
                 .withSockJS();
     }
 

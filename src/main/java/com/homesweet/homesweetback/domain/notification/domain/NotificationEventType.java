@@ -306,6 +306,18 @@ public enum NotificationEventType {
      * "{promotionName} 프로모션이 종료되었습니다."
      */
     PROMOTION_END("프로모션 종료", NotificationCategoryType.PROMOTION),
+
+    // ==================== 판매자 등록 완료 관련 ====================
+    /**
+     * 판매자 등록 완료 알림
+     * 
+     * 📋 필요한 contextData:
+     * - userName: String - 사용자 이름
+     * 
+     * 📝 Content 템플릿:
+     * "판매자 등록이 완료되었습니다."
+     */
+    SELLER_REGISTRATION_COMPLETE("판매자 등록 완료", NotificationCategoryType.SYSTEM),
     
     // ==================== 커스텀 알림 ====================
     /**

@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "room_member")
 @Getter
@@ -37,8 +39,37 @@ public class RoomMember {
     private Long lastReadId;
 
 
+    // ⚠setter는 막는다 (상태를 직접 바꾸지 못하게)
+    protected void setExit(boolean exit) {
+        this.isExit = exit;
+    }
+
+    public void join() {
+        if (this.isExit) {               // 퇴장 상태일 때만 입장 가능
+            this.isExit = false;
+        }
+    }
+    public void exit() {
+
+        this.isExit = true;
+    }
+    public boolean isActive() {
+        // 퇴장 상태(isExit이 true)가 아니면 활성 상태입니다.
+        return !this.isExit;
+    }
     public void updateLastReadMessageId(Long lastReadMessageId) {
         this.lastReadId = lastReadMessageId;
+    }
+
+    // 새로운 멤버 생성.
+    public static RoomMember createMember(ChatRoom room, User user, ChatUserRole role) {
+        RoomMember member = new RoomMember();
+        member.room = room;
+        member.user = user;
+        member.role = (role != null) ? role : ChatUserRole.MEMBER;
+        member.isExit = false;
+        member.lastReadId = null;
+        return member;
     }
 }
 

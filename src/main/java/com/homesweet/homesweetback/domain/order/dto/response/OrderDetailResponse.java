@@ -53,7 +53,7 @@ public record OrderDetailResponse(
 
         return OrderDetailResponse.builder()
                 .orderId(order.getId())
-                .orderNumber(order.generateOrderNumber())
+                .orderNumber(order.getOrderNumber())
                 .orderDate(order.getOrderedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
                 .orderStatus(order.getOrderStatus().name())
                 .deliveryStatus(order.getDeliveryStatus().name())

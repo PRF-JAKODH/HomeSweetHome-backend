@@ -14,6 +14,7 @@ import org.hibernate.annotations.BatchSize;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
@@ -25,7 +26,7 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
-    private Long id;
+    private Long id; //TODO: 총 몇개까지 저장될까요? TSID
 
     // (N:1) 한 명의 사용자(User)는 여러 주문(Order)을 생성 가능
     @ManyToOne(fetch = FetchType.LAZY)
@@ -56,6 +57,9 @@ public class Order {
     @Column(name = "ordered_at", nullable = false, updatable = false)
     private LocalDateTime orderedAt;
 
+    @Column(name = "order_number", nullable = false, unique = true, length = 36)
+    private String orderNumber;
+
     // 마지막 수정 시각
     @LastModifiedDate
     @Column(name = "updated_at")
@@ -68,16 +72,12 @@ public class Order {
     }
 
     @Builder
-    public Order(User user, OrderStatus orderStatus, DeliveryStatus deliveryStatus, Long totalAmount) {
+    public Order(User user, OrderStatus orderStatus, DeliveryStatus deliveryStatus, Long totalAmount, String orderNumber) {
         this.user = user;
         this.orderStatus = orderStatus;
         this.deliveryStatus = deliveryStatus;
         this.totalAmount = totalAmount;
-    }
-    public String generateOrderNumber() {
-        return String.format("ORD-%d-%05d",
-                orderedAt.getYear(),
-                id);
+        this.orderNumber = orderNumber;
     }
 
     public void setOrderStatus(OrderStatus orderStatus) {

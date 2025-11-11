@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.homesweet'
@@ -12,6 +13,10 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 configurations {
@@ -79,6 +84,50 @@ dependencies {
 
 }
 
-tasks.named('test') {
+tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(false)
+    }
+        // 디렉터리/파일명
+    def qTypes = []
+    for(qPattern in "**/entity/QA" .. "**/entity/QZ"){
+        qTypes.add(qPattern + "*")
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: ["**/*Application*"] + qTypes)
+        }))
+    }
+
+    finalizedBy(tasks.jacocoTestCoverageVerification)
+}
+
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    def qTypes = new ArrayList<String>()
+    for (qPattern in '*.entity.QA'..'*.entity.QZ') {
+        qTypes.add(qPattern + '*')
+    }
+    violationRules {
+        rule {
+            element = 'CLASS'
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+//                minimum = 0.8
+            }
+            excludes = ['*.common.*', '*.domain.Q*'] + qTypes
+        }
+    }
 }

@@ -17,6 +17,8 @@ public record ProductUploadRequest(
         @NotNull
         MultipartFile mainImage,
         @Size(max = 5, message = "상세 이미지는 최대 5개까지 업로드 할 수 있습니다")
+        //TODO: 이미지에 대해서 dto 고민을 하면 좋을것 같음
         List<MultipartFile> detailImages
+//        List<ProductImageDto> productImageDtos
 ) {
 }

@@ -16,5 +16,4 @@ public class RoomDto {
     private String partnerName;
     private String pairKey;  // 1:1일 때만 값 존재
     private boolean reused;
-
 }

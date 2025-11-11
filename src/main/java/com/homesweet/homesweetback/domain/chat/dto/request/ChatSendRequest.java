@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.dto.request;
 
 public record ChatSendRequest(
-        Long senderId,
+        Long senderId,          // 전송자 (본인)
         Long roomId,
-        String text
+        String content
 ) { }
