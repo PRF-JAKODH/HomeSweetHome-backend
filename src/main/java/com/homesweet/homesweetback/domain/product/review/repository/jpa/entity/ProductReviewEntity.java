@@ -56,15 +56,6 @@ public class ProductReviewEntity {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Builder
-    public ProductReviewEntity(ProductEntity product, User user, Integer rating, String comment, String imageUrl) {
-        this.product = product;
-        this.user = user;
-        this.rating = rating;
-        this.comment = comment;
-        this.imageUrl = imageUrl;
-    }
-
     public void update(Integer rating, String comment, String imageUrl) {
         if (rating != null) this.rating = rating;
         if (comment != null) this.comment = comment;
