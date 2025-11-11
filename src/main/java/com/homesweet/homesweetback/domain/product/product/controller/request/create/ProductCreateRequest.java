@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.controller.request.create;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 10. 22.
  */
+@Builder
 public record ProductCreateRequest(
 
         @NotNull(message = "카테고리 ID는 필수입니다.")

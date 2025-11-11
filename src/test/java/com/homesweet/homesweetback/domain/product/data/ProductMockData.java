@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.data;
 
+import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;

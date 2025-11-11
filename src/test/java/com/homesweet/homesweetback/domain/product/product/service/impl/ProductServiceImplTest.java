@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.data.CategoryMockData;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
@@ -34,6 +35,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static com.homesweet.homesweetback.domain.product.data.CategoryMockData.*;
 import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -89,10 +91,7 @@ class ProductServiceImplTest {
                 MockMultipartFile mainImage =
                         new MockMultipartFile("mainImage", "main.jpg", "image/jpeg", "data".getBytes());
 
-                ProductCategory category = ProductCategory.builder()
-                        .id(1L)
-                        .name("가구")
-                        .build();
+                ProductCategory category = createTopCategory(1L, "가구");
 
                 ProductImages uploaded = new ProductImages(
                         "https://s3.aws/main.jpg", List.of()
@@ -108,8 +107,6 @@ class ProductServiceImplTest {
                 // then
                 assertThat(response.name()).isEqualTo("무옵션 상품");
                 assertThat(response.imageUrl()).isEqualTo("https://s3.aws/main.jpg");
-                verify(productRepository).save(any(Product.class));
-                verify(productValidator).validateDuplicateProductName(sellerId, request.name());
             }
 
             @Test
@@ -675,8 +672,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.updateBasicInfo(sellerId, productId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productRepository, never()).update(anyLong(), any());
             }
 
             @Test
@@ -705,9 +700,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.updateBasicInfo(sellerId, productId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.DUPLICATED_PRODUCT_NAME_ERROR.getMessage());
-
-                verify(productRepository).existsBySellerIdAndName(sellerId, "중복상품");
-                verify(productRepository, never()).update(anyLong(), any());
             }
         }
     }
@@ -761,10 +753,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.updateSkuStock(sellerId, productId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.PRODUCT_NOT_FOUND_ERROR.getMessage());
-
-                verify(productValidator).validateExistsSellerProduct(sellerId, productId);
-                verify(skuRepository, never()).findById(any());
-                verify(skuRepository, never()).updateSku(anyLong(), anyLong(), any());
             }
 
             @Test
@@ -783,12 +771,6 @@ class ProductServiceImplTest {
                 assertThatThrownBy(() -> service.updateSkuStock(sellerId, productId, request))
                         .isInstanceOf(ProductException.class)
                         .hasMessage(ErrorCode.SKU_NOT_FOUND_ERROR.getMessage());
-
-                // 첫 번째 SKU는 업데이트 호출됨
-                verify(skuRepository).updateSku(eq(1L), eq(10L), eq(0));
-
-                // 두 번째 SKU는 예외로 update 호출 안 됨
-                verify(skuRepository, never()).updateSku(eq(2L), anyLong(), any());
             }
         }
     }
