@@ -49,13 +49,6 @@ public class CommunityController {
             @RequestPart("request") @Valid CommunityPostRequest request,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityPostResponse response = CommunityPostService.createPost(images, request, 1L);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityPostResponse response = CommunityPostService.createPost(images, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -79,13 +72,6 @@ public class CommunityController {
             @RequestBody @Valid CommunityPostRequest request,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityPostResponse response = CommunityPostService.updatePost(postId, request, 1L);
-            return ResponseEntity.ok(response);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityPostResponse response = CommunityPostService.updatePost(postId, request, principal.getUserId());
         return ResponseEntity.ok(response);
@@ -99,13 +85,6 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityPostService.deletePost(postId, 1L);
-            return ResponseEntity.noContent().build();
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityPostService.deletePost(postId, principal.getUserId());
         return ResponseEntity.noContent().build();
@@ -120,13 +99,6 @@ public class CommunityController {
             @RequestBody @Valid CommunityCommentRequest request,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, 1L);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -152,13 +124,6 @@ public class CommunityController {
             @RequestBody @Valid CommunityCommentRequest request,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, 1L);
-            return ResponseEntity.ok(response);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, principal.getUserId());
         return ResponseEntity.ok(response);
@@ -173,13 +138,6 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        // 개발 중 임시 처리
-        if (authentication == null) {
-            // 테스트용 userId 사용
-            CommunityCommentService.deleteComment(commentId, postId, 1L);
-            return ResponseEntity.noContent().build();
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityCommentService.deleteComment(commentId, postId, principal.getUserId());
         return ResponseEntity.noContent().build();
@@ -202,11 +160,6 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        if (authentication == null) {
-            CommunityCountService.togglePostLike(postId, 1L);
-            return ResponseEntity.ok().build();
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityCountService.togglePostLike(postId, principal.getUserId());
         return ResponseEntity.ok().build();
@@ -220,10 +173,6 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        if (authentication == null) {
-            return ResponseEntity.ok(false);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         boolean isLiked = CommunityCountService.isPostLiked(postId, principal.getUserId());
         return ResponseEntity.ok(isLiked);
@@ -238,11 +187,6 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        if (authentication == null) {
-            CommunityCountService.toggleCommentLike(commentId, 1L);
-            return ResponseEntity.ok().build();
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         CommunityCountService.toggleCommentLike(commentId, principal.getUserId());
         return ResponseEntity.ok().build();
@@ -257,10 +201,6 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        if (authentication == null) {
-            return ResponseEntity.ok(false);
-        }
-
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
         boolean isLiked = CommunityCountService.isCommentLiked(commentId, principal.getUserId());
         return ResponseEntity.ok(isLiked);

@@ -39,21 +39,21 @@ public class CommunityCountService {
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
     /**
-     * 게시글 조회수 증가
+     * 게시글 조회수 증가 (동시성 제어 적용)
      */
     @Transactional
     public void increaseViewCount(Long postId) {
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
         post.increaseViewCount();
     }
 
     /**
-     * 게시글 좋아요 토글화
+     * 게시글 좋아요 토글화 (동시성 제어 적용)
      */
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
@@ -93,7 +93,7 @@ public class CommunityCountService {
      */
     @Transactional
     public void toggleCommentLike(Long commentId, Long userId) {
-        CommunityCommentEntity comment = commentRepository.findById(commentId)
+        CommunityCommentEntity comment = commentRepository.findByIdWithPessimisticLock(commentId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
 
         User user = userRepository.findById(userId)
