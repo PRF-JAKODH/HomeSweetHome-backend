@@ -2,7 +2,7 @@
 
 # HomeSweetHome 로컬 Docker 배포 파이프라인
 # 작성자: HomeSweetHome Team
-# 설명: 로컬에서 테스트 실행 → Docker 빌드 → 버전 히스토리 업데이트 → SSH 서버 배포
+# 설명: 로컬에서 테스트 실행 → Docker 빌드 → SSH 서버 배포 → 배포 성공 시 버전 히스토리 업데이트
 
 set -e  # 에러 발생 시 스크립트 중단
 
@@ -67,7 +67,7 @@ cleanup_docker_images() {
 }
 
 # 설정 변수
-DOCKER_REGISTRY="${DOCKER_REGISTRY:-homesweethome}"
+DOCKER_REGISTRY="${DOCKER_REGISTRY:-homesweethome-backend}"
 PROJECT_NAME="homesweethome-backend"
 DOCKER_HISTORY_FILE="DOCKER_VERSIONS.md"
 CURRENT_BRANCH=$(git branch --show-current)
@@ -171,61 +171,17 @@ else
     fi
 fi
 
-# 2. Docker-History.md 업데이트
-log_step "2단계: Docker-Versions.md 파일 업데이트 중..."
+# 2. SSH를 통한 서버 배포
+log_step "2단계: SSH를 통한 서버 배포 시작..."
 
-# 현재 커밋 메시지 가져오기
-COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" 2>/dev/null || echo "${DEPLOY_DESCRIPTION}")
-
-# 파일이 없으면 초기화
-if [ ! -f "${DOCKER_HISTORY_FILE}" ]; then
-    log_info "히스토리 파일이 없습니다. 새로 생성합니다."
-    cat > "${DOCKER_HISTORY_FILE}" << EOF
-# Docker 배포 버전 히스토리
-
-이 파일은 HomeSweetHome 프로젝트의 Docker 이미지 배포 이력을 기록합니다.
-
-| 날짜 | 시간 | 이미지 태그 | 빌드 명령 | 플랫폼 | 설명 |
-|------|------|-------------|-----------|--------|------|
-EOF
-fi
-
-# 백업 생성
-if [ -f "${DOCKER_HISTORY_FILE}" ]; then
-    cp "${DOCKER_HISTORY_FILE}" "${DOCKER_HISTORY_FILE}.backup"
-    log_info "기존 히스토리 파일 백업 생성: ${DOCKER_HISTORY_FILE}.backup"
-fi
-
-# 새로운 엔트리를 기존 파일의 7번째 줄 다음에 삽입
-TEMP_FILE=$(mktemp)
-
-# 헤더 부분 (1-6줄)
-head -n 6 "${DOCKER_HISTORY_FILE}" > "${TEMP_FILE}"
-
-# 새로운 엔트리 추가
-echo "| ${CURRENT_DATE} | ${CURRENT_TIME} | \`${DOCKER_REGISTRY}/${PROJECT_NAME}:${VERSION_TAG}\` | \`${DOCKER_COMMAND}\` | linux/amd64 | ${DEPLOY_DESCRIPTION} |" >> "${TEMP_FILE}"
-
-# 기존 데이터 부분 (8줄부터 끝까지)
-tail -n +7 "${DOCKER_HISTORY_FILE}" >> "${TEMP_FILE}" 2>/dev/null || true
-
-# 원본 파일 교체
-mv "${TEMP_FILE}" "${DOCKER_HISTORY_FILE}"
-
-log_success "✅ Docker-Versions.md 업데이트 완료"
-
-# Docker 빌드가 성공했으므로 백업 파일 삭제
-if [ -f "${DOCKER_HISTORY_FILE}.backup" ]; then
-    rm "${DOCKER_HISTORY_FILE}.backup"
-    log_info "백업 파일 삭제: ${DOCKER_HISTORY_FILE}.backup"
-fi
-
-# 3. SSH를 통한 서버 배포
-log_step "3단계: SSH를 통한 서버 배포 시작..."
+# 배포 성공 여부 추적 변수
+DEPLOY_SUCCESS=false
 
 if [ "${SSH_HOST}" == "your-server.com" ]; then
     log_warning "⚠️  SSH 호스트가 설정되지 않았습니다."
     log_warning "deploy.env 파일을 생성하고 SSH_HOST, SSH_USER, SSH_KEY_PATH를 설정하세요."
     log_warning ""
+    log_warning "배포를 건너뛰므로 Docker-Versions.md 파일을 업데이트하지 않습니다."
 else
     # SSH 연결 테스트
     log_info "SSH 연결 테스트 중: ${SSH_USER}@${SSH_HOST}"
@@ -260,8 +216,8 @@ else
                 # 백업 생성
                 cp docker-compose.yml docker-compose.yml.backup.\$(date +%Y%m%d_%H%M%S)
                 
-                # 이미지 태그 업데이트
-                sed -i "s|image:.*\(homesweet\|homesweethome\).*-backend.*|image: ${DOCKER_IMAGE}|g" docker-compose.yml
+                # 이미지 태그 업데이트 (registry prefix 포함하여 매칭)
+                sed -i "s|^\([[:space:]]*image:[[:space:]]*\).*homesweethome-backend.*|\1${DOCKER_IMAGE}|g" docker-compose.yml
                 
                 echo "✅ docker-compose.yml 이미지 태그 업데이트 완료"
                 echo "📋 업데이트된 이미지: ${DOCKER_IMAGE}"
@@ -312,9 +268,30 @@ else
                     docker system prune -f >/dev/null 2>&1 || true
                     echo "✅ Docker 시스템 정리 완료"
                     
+                    # docker-compose.yml 백업 파일 정리 (최근 5개만 유지)
+                    echo "🧹 오래된 docker-compose.yml 백업 파일 정리 중..."
+                    BACKUP_FILES=\$(ls -t docker-compose.yml.backup.* 2>/dev/null | tail -n +6 || true)
+                    
+                    if [ ! -z "\$BACKUP_FILES" ]; then
+                        deleted_backup_count=0
+                        for backup_file in \$BACKUP_FILES; do
+                            if rm -f "\$backup_file" 2>/dev/null; then
+                                deleted_backup_count=\$((deleted_backup_count + 1))
+                                echo "삭제됨: \$backup_file"
+                            fi
+                        done
+                        
+                        if [ \$deleted_backup_count -gt 0 ]; then
+                            echo "✅ \$deleted_backup_count 개의 오래된 백업 파일 삭제 완료 (최근 5개 유지)"
+                        fi
+                    else
+                        echo "📝 정리할 백업 파일이 없습니다."
+                    fi
+                    
                 else
                     echo "⚠️  서비스 상태를 확인하세요."
                     docker compose logs --tail=20
+                    exit 1
                 fi
                 
             else
@@ -323,6 +300,7 @@ else
                 echo "docker stop homesweet-backend || true"
                 echo "docker rm homesweet-backend || true"
                 echo "docker run -d --name homesweet-backend -p 8080:8080 ${DOCKER_IMAGE}"
+                exit 1
             fi
             
             echo "🎉 서버 배포 완료!"
@@ -330,11 +308,65 @@ EOF
         
         if [ $? -eq 0 ]; then
             log_success "✅ 서버 배포 완료!"
+            DEPLOY_SUCCESS=true
         else
             log_error "❌ 서버 배포 중 오류 발생"
+            log_warning "배포 실패로 인해 Docker-Versions.md 파일을 업데이트하지 않습니다."
             exit 1
         fi
     fi
+fi
+
+# 3. Docker-Versions.md 업데이트 (배포 성공 시에만)
+if [ "$DEPLOY_SUCCESS" = true ]; then
+    log_step "3단계: Docker-Versions.md 파일 업데이트 중..."
+    
+    # 현재 커밋 메시지 가져오기
+    COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" 2>/dev/null || echo "${DEPLOY_DESCRIPTION}")
+    
+    # 파일이 없으면 초기화
+    if [ ! -f "${DOCKER_HISTORY_FILE}" ]; then
+        log_info "히스토리 파일이 없습니다. 새로 생성합니다."
+        cat > "${DOCKER_HISTORY_FILE}" << EOF
+# Docker 배포 버전 히스토리
+
+이 파일은 HomeSweetHome 프로젝트의 Docker 이미지 배포 이력을 기록합니다.
+
+| 날짜 | 시간 | 이미지 태그 | 빌드 명령 | 플랫폼 | 설명 |
+|------|------|-------------|-----------|--------|------|
+EOF
+    fi
+    
+    # 백업 생성
+    if [ -f "${DOCKER_HISTORY_FILE}" ]; then
+        cp "${DOCKER_HISTORY_FILE}" "${DOCKER_HISTORY_FILE}.backup"
+        log_info "기존 히스토리 파일 백업 생성: ${DOCKER_HISTORY_FILE}.backup"
+    fi
+    
+    # 새로운 엔트리를 기존 파일의 7번째 줄 다음에 삽입
+    TEMP_FILE=$(mktemp)
+    
+    # 헤더 부분 (1-6줄)
+    head -n 6 "${DOCKER_HISTORY_FILE}" > "${TEMP_FILE}"
+    
+    # 새로운 엔트리 추가
+    echo "| ${CURRENT_DATE} | ${CURRENT_TIME} | \`${DOCKER_REGISTRY}/${PROJECT_NAME}:${VERSION_TAG}\` | \`${DOCKER_COMMAND}\` | linux/amd64 | ${DEPLOY_DESCRIPTION} |" >> "${TEMP_FILE}"
+    
+    # 기존 데이터 부분 (8줄부터 끝까지)
+    tail -n +7 "${DOCKER_HISTORY_FILE}" >> "${TEMP_FILE}" 2>/dev/null || true
+    
+    # 원본 파일 교체
+    mv "${TEMP_FILE}" "${DOCKER_HISTORY_FILE}"
+    
+    log_success "✅ Docker-Versions.md 업데이트 완료"
+    
+    # 배포가 성공했으므로 백업 파일 삭제
+    if [ -f "${DOCKER_HISTORY_FILE}.backup" ]; then
+        rm "${DOCKER_HISTORY_FILE}.backup"
+        log_info "백업 파일 삭제: ${DOCKER_HISTORY_FILE}.backup"
+    fi
+else
+    log_warning "⚠️  배포가 성공하지 않아 Docker-Versions.md 파일을 업데이트하지 않습니다."
 fi
 
 # 4. 로컬 환경 정리 작업
@@ -378,7 +410,9 @@ echo "🎉 ============================================="
 echo ""
 echo "📦 배포된 이미지: ${DOCKER_IMAGE}"
 echo "🌐 서버: ${SSH_HOST}"
-echo "📝 히스토리: ${DOCKER_HISTORY_FILE} 업데이트됨"
+if [ "$DEPLOY_SUCCESS" = true ]; then
+    echo "📝 히스토리: ${DOCKER_HISTORY_FILE} 업데이트됨"
+fi
 echo "⏰ 배포 시간: $(date)"
 echo ""
 
