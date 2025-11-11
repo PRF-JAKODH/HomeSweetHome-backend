@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder.Default;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "orders")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Order {
@@ -34,6 +38,7 @@ public class Order {
     private User user;
 
     // (1:N) 한 주문은 여러 개의 SKU(상품 옵션)을 포함 */
+    @Builder.Default
     @BatchSize(size = 100)
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -71,7 +76,6 @@ public class Order {
         orderItem.setOrder(this);
     }
 
-    @Builder
     public Order(User user, OrderStatus orderStatus, DeliveryStatus deliveryStatus, Long totalAmount, String orderNumber) {
         this.user = user;
         this.orderStatus = orderStatus;

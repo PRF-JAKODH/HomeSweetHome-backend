@@ -61,10 +61,10 @@ public record OrderDetailResponse(
                 .customerPhone(user.getPhoneNumber())
                 .customerEmail(user.getEmail())
                 .shippingAddress(user.getAddress()) // User의 주소를 배송지로 사용
-                .paymentMethod(payment.getMethod())
-                .totalAmount(payment.getAmount())
+                .paymentMethod(paymentMethod)
+                .totalAmount(totalAmount)
                 .totalShippingPrice(totalShippingPrice) // (OrderService에서 계산 필요)
-                .usedPoint(0L) // (TODO: Order 엔티티에 used_point가 없으므로 임시 0)
+                .usedPoint(usedPoint) // (TODO: Order 엔티티에 used_point가 없으므로 임시 0)
                 .orderItems(itemDetails)
                 .build();
     }

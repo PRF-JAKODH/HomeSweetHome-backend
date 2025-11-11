@@ -2,15 +2,15 @@ package com.homesweet.homesweetback.domain.order.entity;
 
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "order_items")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class OrderItem {
 
     @Id
@@ -36,7 +36,6 @@ public class OrderItem {
     @Column(name = "price", nullable = false)
     private Long price;
 
-    @Builder
     public OrderItem(SkuEntity sku, Long quantity, Long price) {
         this.sku = sku;
         this.quantity = quantity;
