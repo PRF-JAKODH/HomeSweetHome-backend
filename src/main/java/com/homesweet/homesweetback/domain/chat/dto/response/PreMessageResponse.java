@@ -8,6 +8,7 @@ import lombok.Getter;
 
 import java.util.List;
 
+// 이전 메세지 dto
 @Getter
 @AllArgsConstructor
 @Builder

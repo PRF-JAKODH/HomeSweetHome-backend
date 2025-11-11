@@ -144,7 +144,7 @@ public class NotificationSendServiceImpl implements NotificationSendService {
             .content(template.getContent())
             .redirectUrl(template.getRedirectUrl())
             .contextData(payload.toMap())
-            .categoryType(template.getCategory().getCategoryType())
+            .categoryType(NotificationCategoryType.fromCategoryId(template.getCategory().getId()))
             .isRead(false)
             .createdAt(LocalDateTime.now())
             .build();
@@ -158,9 +158,10 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * @param redirectUrl 알림 리다이렉트 URL
      * @return 커스텀 알림 템플릿
      */
-    private NotificationTemplate createAndSaveCustomNotificationTemplate(NotificationCategoryType categoryType, String title, String content, String redirectUrl) {
+    @Transactional
+    public NotificationTemplate createAndSaveCustomNotificationTemplate(NotificationCategoryType categoryType, String title, String content, String redirectUrl) {
         // 마이그레이션으로 미리 저장된 카테고리를 조회하여 영속 엔티티 연결
-        // DB 조회 없이 FK 프록시를 사용 (마이그레이션으로 이미 존재한다는 전제)
+        // DB 조회 없이 FK 프록시를 사용 
         NotificationCategory category = notificationCategoryRepository.getReferenceById(categoryType.getCategoryId());
 
         NotificationTemplate template = NotificationTemplate.builder()

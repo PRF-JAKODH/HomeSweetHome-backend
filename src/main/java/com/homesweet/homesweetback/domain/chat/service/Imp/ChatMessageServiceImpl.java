@@ -1,9 +1,10 @@
-package com.homesweet.homesweetback.domain.chat.service;
+package com.homesweet.homesweetback.domain.chat.service.Imp;
 
 
+import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
-import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
@@ -12,17 +13,18 @@ import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.homesweet.homesweetback.domain.chat.entity.QChatMessage.chatMessage;
 
 
 @Slf4j
@@ -35,38 +37,53 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private final RoomMemberRepository roomMemberRepository;
     private final UserRepository userRepository;
 
+
     /**
-     * 채팅 메시지 전송 및 저장
+     * 메시지 저장 (기존 로직 활용)
      */
     @Override
     @Transactional
-    public ChatMessageResponse sendMessage(Long roomId, Long senderId, String content) {
+    public ChatMessageSendResponse sendMessage(Long roomId, Long senderId, String content) {
 
         // 채팅방 조회
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
 
         // 발신자 조회
-        log.info("💬 [메시지 전송 요청] senderId={}, roomId={}", senderId, roomId);
         RoomMember sender = roomMemberRepository.findByUserIdAndRoomId(senderId, roomId);
-        log.info("📌 RoomMember 조회 결과: {}", sender);        // ws세션은 끊지않으므로 퇴장자 검증 필요
-        if (sender == null || sender.getIsExit() == true) {
-            throw new IllegalStateException("🚫 채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
+        if (sender == null || Boolean.TRUE.equals(sender.getIsExit())) {
+            throw new IllegalStateException("채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
         }
+
+        //  트랜잭션 내부에서 User 정보 미리 가져오기
+        User user = sender.getUser();
+        String senderName = user.getName();
+        String senderProfileImg = user.getProfileImageUrl();
 
         // 채팅 메시지 저장
         ChatMessage message = ChatMessage.builder()
                 .room(chatRoom)
                 .messageType(MessageType.TEXT)
                 .content(content)
-                .sender(sender.getUser())
+                .sender(user)
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        log.info("메세지 저장 완료 - message: {}", savedMessage);
+        chatRoom.updateLastMessage(content, savedMessage.getSentAt());
 
-        return ChatMessageResponse.from(savedMessage, senderId);
+        chatRoomRepository.save(chatRoom);
+
+        log.info("메시지 저장 완료 - message: {}", savedMessage);
+
+        return ChatMessageSendResponse.from(
+                savedMessage,
+                roomId,
+                senderId,
+                senderName,
+                senderProfileImg,
+                senderId
+        );
     }
 
     /*
@@ -106,27 +123,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         // 다음 페이지 존재 여부 함께 반환
         return PreMessageResponse.of(messageDtos, slice.hasNext());
-    }
-
-
-    /**
-     * 메시지 읽음 처리 (추후)
-     */
-    @Override
-    @Transactional
-    public void markAsRead(Long roomId, Long userId, Long lastReadMessageId) {
-
-        // 채팅방 멤버 조회 (한 번의 쿼리로 존재 여부와 정보를 모두 확인)
-        RoomMember roomMember = roomMemberRepository.findByRoomIdAndUserId(roomId, userId)
-                .orElseThrow(() -> new IllegalStateException("채팅방 멤버가 아닙니다."));
-
-        // 마지막 읽은 메시지 ID 업데이트
-        roomMember.updateLastReadMessageId(lastReadMessageId);
-    }
-
-    @Override
-    public void checkMember(Long subRoomId, Long subUser) {
-
     }
 
     @Override

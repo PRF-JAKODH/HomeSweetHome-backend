@@ -14,11 +14,13 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Aspect
 @Component
+@Profile("!test")  // 테스트 프로파일에서는 로딩하지 않음
 public class MVCLoggingAspect {
 
     private final ObjectMapper objectMapper = new ObjectMapper();

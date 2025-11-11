@@ -58,6 +58,7 @@ public class Sku {
             List<ProductCreateRequest.SkuRequest> skuRequests,
             List<ProductOptionGroup> optionGroups
     ) {
+        //TODO: 캡슐화가 안되어있음
         if (skuRequests == null || skuRequests.isEmpty()) {
             return List.of();
         }

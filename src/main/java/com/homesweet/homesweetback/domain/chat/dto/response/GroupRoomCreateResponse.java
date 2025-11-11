@@ -2,10 +2,10 @@ package com.homesweet.homesweetback.domain.chat.dto.response;
 
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import lombok.Builder;
-import lombok.Getter;
 
+// 채팅방 생성 응답 (비회원 그룹채팅 전제 조회 경우)
 @Builder
-public record GroupRoomResponse (
+public record GroupRoomCreateResponse(
     Long ownerId,
     Long roomId,
     String roomName,

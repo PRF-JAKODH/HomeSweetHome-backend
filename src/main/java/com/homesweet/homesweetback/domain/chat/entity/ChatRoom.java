@@ -44,10 +44,36 @@ public class ChatRoom {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "last_message_id", nullable = true)
-    private Long lastMessageId;
-
-    @Column(name = "thumbnail_url", nullable = true, length = 100)
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
+
+    @Column(name = "last_message", nullable = true)
+    private String lastMessage;
+
+    @Column(name = "last_message_sent_at", nullable = true)
+    private LocalDateTime lastMessageAt;
+
+    /**
+     *  삭제된 방인지 확인
+     */
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    /**
+     * 채팅방 소프트 삭제
+     */
+    public void delete() {
+
+        this.isDeleted = true;
+    }
+
+    /**
+     * 마지막 메시지 정보 업데이트
+     */
+    public void updateLastMessage(String message, LocalDateTime sentAt) {
+        this.lastMessage = message;
+        this.lastMessageAt = sentAt;
+    }
 
 }

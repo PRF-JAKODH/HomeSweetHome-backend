@@ -50,3 +50,4 @@ logs
 application-dev.yml
 
 .env
+deploy.env

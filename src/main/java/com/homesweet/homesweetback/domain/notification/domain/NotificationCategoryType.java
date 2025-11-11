@@ -33,4 +33,13 @@ public enum NotificationCategoryType {
         }
         throw new IllegalArgumentException("Unknown notification category type: " + code);
     }
+
+    public static NotificationCategoryType fromCategoryId(Long categoryId) {
+        for (NotificationCategoryType type : values()) {
+            if (type.categoryId.equals(categoryId)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown notification category type: " + categoryId);
+    }
 }

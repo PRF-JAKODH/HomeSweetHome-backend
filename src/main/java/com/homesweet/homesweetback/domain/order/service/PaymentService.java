@@ -69,9 +69,13 @@ public class PaymentService {
      * API 2: 결제 검증 및 완료
      * (재고 차감 로직 포함)
      */
-    @Transactional
+    //@Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
         // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
+
+        //TODO: 지금 비효율적이다.(조금 효율적으로 하면 좋을것 같다)
+//        saveDB();
+//        callTossAPI();
         Order order = orderRepository.findByOrderNumber(dto.orderId()) // 👈 ✨ 여기를 수정!
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
         log.debug(order.toString());
@@ -94,6 +98,8 @@ public class PaymentService {
             throw new PaymentMismatchException("이미 처리된 주문입니다.");
         }
 
+        //TODO: 결제가 됬는데 배송이 안와요 기븐이 안좋겟죠(개발자가 잘 처리해야합니다)
+        //TODO: 결국 케이스 마다 쪼개시다보면 그게 TC, 트랜잭션을 자연스럽게 분리하게 됩니다.
         // 5. [★핵심★] 토스페이먼츠 결제 승인 API 호출
         HttpHeaders headers = new HttpHeaders();
         String encodedKey = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
@@ -151,8 +157,6 @@ public class PaymentService {
             // (가정한 메서드) SkuEntity의 재고 차감 로직 호출
             sku.decreaseStock(item.getQuantity());
         }
-        settlementService.createSettlement(order);
-
 
         // 9. 구매 완료된 상품 장바구니에서 삭제
         try {
@@ -177,6 +181,23 @@ public class PaymentService {
                 order.getOrderStatus().name()
         );
     }
+
+
+    //DB만 저장해
+    @Transactional
+    public void saveDB(String[] args) {
+
+        //db 저장
+    }
+
+
+    //HTTP ,WS 네트워크 통신만해
+    public void callTossAPI(String[] args) {
+        //xhtm api
+    }
+
+
+
 
     /**
      * API 3: 주문 취소 (환불)
@@ -246,7 +267,6 @@ public class PaymentService {
         order.setOrderStatus(OrderStatus.FAILED); // (정책: 취소 시 '결제 실패'로 처리)
         order.setDeliveryStatus(DeliveryStatus.CANCELLED);
         payment.setPaymentStatus("CANCELED"); // Payment 상태도 변경
-
         log.info("주문 취소 완료 (환불 및 재고 복구): orderId={}", orderId);
     }
 }

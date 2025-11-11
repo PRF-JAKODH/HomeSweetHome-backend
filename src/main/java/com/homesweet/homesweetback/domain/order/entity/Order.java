@@ -26,7 +26,7 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
-    private Long id;
+    private Long id; //TODO: 총 몇개까지 저장될까요? TSID
 
     // (N:1) 한 명의 사용자(User)는 여러 주문(Order)을 생성 가능
     @ManyToOne(fetch = FetchType.LAZY)
