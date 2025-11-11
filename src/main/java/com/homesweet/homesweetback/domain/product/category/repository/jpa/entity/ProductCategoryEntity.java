@@ -41,8 +41,8 @@ public class ProductCategoryEntity {
     private Long parentId;
 
     @NotNull(message = "카테고리 깊이는 필수입니다.")
-    @Min(0)
-    @Max(2)
+    @Min(value = 0, message = "카테고리 깊이는 최소 0 이상이어야 합니다")
+    @Max(value = 2, message = "카테고리 깊이는 최대 2까지 가능합니다")
     private Integer depth;
 
     @CreatedDate

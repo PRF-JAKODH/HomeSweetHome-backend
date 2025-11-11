@@ -69,7 +69,7 @@ class ProductCategoryEntityTest {
             // then
             assertThat(violations)
                     .extracting(ConstraintViolation::getMessage)
-                    .anyMatch(msg -> msg.contains("2 이하여야 합니다"));
+                    .anyMatch(msg -> msg.contains("카테고리 깊이는 최대 2까지 가능합니다"));
         }
 
         @Test
