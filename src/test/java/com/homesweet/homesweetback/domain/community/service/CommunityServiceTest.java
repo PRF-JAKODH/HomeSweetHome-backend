@@ -803,7 +803,7 @@ class CommunityServiceTest {
 
         // when, then
         assertThatThrownBy(() ->
-                communityCommentService.updateComment(postId, request, otherUserId))
+                communityCommentService.updateComment(commentId, request, otherUserId))
 
                 .isInstanceOf(CommunityException.class)
                 .hasMessage("본인이 작성한 댓글만 수정/삭제할 수 있습니다")
