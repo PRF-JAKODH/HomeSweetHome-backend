@@ -175,7 +175,7 @@ public class ProductServiceImpl implements ProductService {
 
         // 1. 대표 이미지 교체
         if (request.hasMainImage()) {
-            productImageUploader.deleteProductImage(product.getImageUrl());
+            productImageUploader.deleteImage(product.getImageUrl());
 
             String newMainImageUrl = productImageUploader.uploadProductMainImage(request.mainImage());
 
@@ -184,7 +184,7 @@ public class ProductServiceImpl implements ProductService {
 
         // 2. 상세 이미지 삭제
         if (request.hasDeleteTargets()) {
-            request.deleteDetailImageUrls().forEach(productImageUploader::deleteProductImage);
+            request.deleteDetailImageUrls().forEach(productImageUploader::deleteImage);
 
             productRepository.deleteDetailImages(productId, request.deleteDetailImageUrls());
         }
