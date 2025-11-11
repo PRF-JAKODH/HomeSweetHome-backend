@@ -11,13 +11,15 @@ import com.homesweet.homesweetback.domain.community.repository.CommunityCommentR
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
+import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
+import io.awspring.cloud.s3.S3Template;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -51,7 +53,13 @@ class CommunityCountServiceIntegratTest {
     @Autowired
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
+    private S3Template s3Template;
+
+    @MockitoBean
+    private S3ImageUploader s3ImageUploader;
+
+    @MockitoBean
     private NotificationSendService notificationSendService;
 
     private User testUser;

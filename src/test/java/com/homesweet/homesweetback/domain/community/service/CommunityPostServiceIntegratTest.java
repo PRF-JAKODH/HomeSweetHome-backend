@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.community.service;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.s3.ImageUploader;
+import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
@@ -15,8 +15,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,6 +36,8 @@ import static org.mockito.Mockito.when;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
+import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
+import io.awspring.cloud.s3.S3Template;
 
 /**
  * - 실제 DB(H2)를 사용하여 전체 플로우 검증
@@ -59,8 +61,17 @@ class CommunityPostServiceIntegratTest {
     @Autowired
     private CommunityImageRepository imageRepository;
 
-    @MockBean
-    private ImageUploader imageUploader;
+    @MockitoBean
+    private S3Template s3Template;
+
+    @MockitoBean
+    private S3ImageUploader s3ImageUploader;
+
+    @MockitoBean
+    private CommunityImageUploader communityImageUploader;
+
+    @MockitoBean
+    private NotificationSendService notificationSendService;
 
     private User testUser;
     private User anotherUser;
@@ -86,13 +97,12 @@ class CommunityPostServiceIntegratTest {
                 .build();
         anotherUser = userRepository.save(anotherUser);
 
-        // Mock ImageUploader - S3 업로드를 시뮬레이션
-        when(imageUploader.uploadFiles(anyList(), any(String.class)))
+        // Mock CommunityImageUploader - S3 업로드를 시뮬레이션
+        when(communityImageUploader.uploadCommunityImages(anyList()))
                 .thenAnswer(invocation -> {
                     List<MultipartFile> files = invocation.getArgument(0);
-                    String directory = invocation.getArgument(1);
                     return files.stream()
-                            .map(file -> "https://test-bucket.s3.amazonaws.com/" + directory + "/" + file.getOriginalFilename())
+                            .map(file -> "https://test-bucket.s3.amazonaws.com/community/" + file.getOriginalFilename())
                             .collect(Collectors.toList());
                 });
     }

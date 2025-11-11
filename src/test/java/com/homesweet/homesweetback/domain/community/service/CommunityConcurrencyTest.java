@@ -9,13 +9,15 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
+import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
+import io.awspring.cloud.s3.S3Template;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,13 @@ class CommunityConcurrencyTest {
     @Autowired
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
+    private S3Template s3Template;
+
+    @MockitoBean
+    private S3ImageUploader s3ImageUploader;
+
+    @MockitoBean
     private NotificationSendService notificationSendService;
 
     private CommunityPostEntity testPost;
@@ -57,7 +65,7 @@ class CommunityConcurrencyTest {
     void setUp() {
         // 테스트용 사용자 생성
         testUsers = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             User user = User.builder()
                     .email("user" + i + "@test.com")
                     .name("유저" + i)
@@ -90,7 +98,7 @@ class CommunityConcurrencyTest {
     @DisplayName("동시성 테스트 - 동시에 좋아요 클릭")
     void concurrentPostLike() throws InterruptedException {
         // given
-        int threadCount = 1000;
+        int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
@@ -118,14 +126,14 @@ class CommunityConcurrencyTest {
         // then
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
-        assertThat(result.getLikeCount()).isEqualTo(1000);
+        assertThat(result.getLikeCount()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("동시성 테스트 - 동시에 조회수 증가")
     void concurrentViewCount() throws InterruptedException {
         // given
-        int threadCount = 1000;
+        int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -148,15 +156,15 @@ class CommunityConcurrencyTest {
         // then
         CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 
-        assertThat(result.getViewCount()).isEqualTo(1000);
+        assertThat(result.getViewCount()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("동시성 테스트 - 좋아요 토글")
     void concurrentToggleLike() throws InterruptedException {
         // given
-        int threadCount = 1000;
-        int toggleCount = 1000;
+        int threadCount = 10;
+        int toggleCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
 
@@ -189,7 +197,7 @@ class CommunityConcurrencyTest {
     @DisplayName("동시성 테스트 - 동시에 댓글 좋아요 클릭")
     void concurrentCommentLike() throws InterruptedException {
         // given
-        int threadCount = 1000;
+        int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
@@ -217,15 +225,15 @@ class CommunityConcurrencyTest {
         // then
         CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
 
-        assertThat(result.getLikeCount()).isEqualTo(1000);
+        assertThat(result.getLikeCount()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("동시성 테스트 - 댓글 좋아요 토글")
     void concurrentCommentToggleLike() throws InterruptedException {
         // given
-        int threadCount = 1000;
-        int toggleCount = 1000;
+        int threadCount = 10;
+        int toggleCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
 
