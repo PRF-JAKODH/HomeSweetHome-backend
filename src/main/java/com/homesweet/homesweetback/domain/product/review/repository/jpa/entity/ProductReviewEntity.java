@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.entity;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "products_reviews")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class ProductReviewEntity {
