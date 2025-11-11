@@ -494,7 +494,7 @@ class ProductReviewServiceImplTest {
 
                 given(productReviewRepository.findById(reviewId)).willReturn(Optional.of(existing));
                 willDoNothing().given(productValidator).validateDuplicateWriter(existing, userId);
-                willDoNothing().given(imageUploader).deleteProductReviewImage(existing.imageUrl());
+                willDoNothing().given(imageUploader).deleteImage(existing.imageUrl());
                 given(imageUploader.uploadProductReviewImage(newImage)).willReturn(newImageUrl);
                 given(productReviewRepository.update(any(ProductReview.class))).willReturn(updated);
 

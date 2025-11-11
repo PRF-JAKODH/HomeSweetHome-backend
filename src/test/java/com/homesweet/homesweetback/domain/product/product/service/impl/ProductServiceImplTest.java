@@ -868,7 +868,7 @@ class ProductServiceImplTest {
                 ProductImageUpdateRequest request = new ProductImageUpdateRequest(newMain, List.of(), List.of());
 
                 given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
-                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                willDoNothing().given(productImageUploader).deleteImage(anyString());
                 given(productImageUploader.uploadProductMainImage(newMain)).willReturn("https://s3.aws/new_main.jpg");
                 willDoNothing().given(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
 
@@ -876,7 +876,7 @@ class ProductServiceImplTest {
                 service.updateImages(sellerId, productId, request);
 
                 // then
-                verify(productImageUploader).deleteProductImage("https://s3.aws/old_main.jpg");
+                verify(productImageUploader).deleteImage("https://s3.aws/old_main.jpg");
                 verify(productImageUploader).uploadProductMainImage(newMain);
                 verify(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
                 verifyNoMoreInteractions(productImageUploader, productRepository);
@@ -898,14 +898,14 @@ class ProductServiceImplTest {
                 ProductImageUpdateRequest request = new ProductImageUpdateRequest(null, List.of(), deleteTargets);
 
                 given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
-                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                willDoNothing().given(productImageUploader).deleteImage(anyString());
                 willDoNothing().given(productRepository).deleteDetailImages(productId, deleteTargets);
 
                 // when
                 service.updateImages(sellerId, productId, request);
 
                 // then
-                verify(productImageUploader, times(2)).deleteProductImage(anyString());
+                verify(productImageUploader, times(2)).deleteImage(anyString());
                 verify(productRepository).deleteDetailImages(productId, deleteTargets);
             }
 
@@ -957,7 +957,7 @@ class ProductServiceImplTest {
                         new ProductImageUpdateRequest(newMain, newDetails, deleteTargets);
 
                 given(productRepository.findByIdAndSellerId(productId, sellerId)).willReturn(Optional.of(product));
-                willDoNothing().given(productImageUploader).deleteProductImage(anyString());
+                willDoNothing().given(productImageUploader).deleteImage(anyString());
                 given(productImageUploader.uploadProductMainImage(newMain))
                         .willReturn("https://s3.aws/new_main.jpg");
                 given(productImageUploader.uploadProductDetailImages(newDetails))
@@ -970,9 +970,9 @@ class ProductServiceImplTest {
                 service.updateImages(sellerId, productId, request);
 
                 // then
-                verify(productImageUploader).deleteProductImage("https://s3.aws/old_main.jpg");
+                verify(productImageUploader).deleteImage("https://s3.aws/old_main.jpg");
                 verify(productImageUploader).uploadProductMainImage(newMain);
-                verify(productImageUploader).deleteProductImage("https://s3.aws/old_detail.jpg");
+                verify(productImageUploader).deleteImage("https://s3.aws/old_detail.jpg");
                 verify(productValidator).validateDetailImageLimit(product, deleteTargets, newDetails);
                 verify(productImageUploader).uploadProductDetailImages(newDetails);
                 verify(productRepository).updateMainImage(productId, "https://s3.aws/new_main.jpg");
