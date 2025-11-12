@@ -3,10 +3,12 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
@@ -89,6 +91,79 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
+    }
+
+    @Override
+    public List<ProductPreviewResponse> findProductsByOptionFilter(
+            Long cursorId,
+            ProductFilterRequest request,
+            int limit,
+            ProductSortType sortType
+    ) {
+        QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
+
+        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(request.categoryId());
+
+        BooleanExpression keywordCondition = buildKeywordCondition(product, request.keyword());
+        BooleanExpression cursorCondition = buildCursorCondition(product, cursorId, sortType);
+        BooleanExpression categoryCondition = buildCategoryCondition(product, allSubCategoryIds);
+        BooleanExpression statusCondition = buildStatusCondition(product);
+        BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
+
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (keywordCondition != null) {
+            builder.and(keywordCondition);
+        }
+        if (cursorCondition != null) {
+            builder.and(cursorCondition);
+        }
+        if (categoryCondition != null) {
+            builder.and(categoryCondition);
+        }
+        if (statusCondition != null) {
+            builder.and(statusCondition);
+        }
+        if (optionCondition != null) {
+            builder.and(optionCondition);
+        }
+
+        OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
+
+        List<ProductPreviewResponse> results = queryFactory
+                .select(Projections.constructor(ProductPreviewResponse.class,
+                        product.id,
+                        product.category.id,
+                        product.seller.id,
+                        product.name,
+                        product.imageUrl,
+                        product.brand,
+                        product.basePrice,
+                        product.discountRate,
+                        product.description,
+                        product.shippingPrice,
+                        product.status,
+                        JPAExpressions
+                                .select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        JPAExpressions
+                                .select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        product.createdAt,
+                        product.updatedAt
+                ))
+                .from(product)
+                .where(builder)
+                .orderBy(orderSpecifier)
+                .limit(limit + 1)
+                .fetch();
+
+        results.forEach(r -> log.info("상품명: {}", r.name()));
+
+        return results;
     }
 
     @Override
@@ -207,6 +282,76 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .where(condition)
                 .orderBy(product.createdAt.desc())
                 .fetch();
+    }
+
+    /**
+     * 옵션 필터 조건 생성
+     * 같은 그룹 내에서는 OR (색상=빨강 OR 색상=파랑)
+     * 다른 그룹 간에는 AND (색상 조건 AND 사이즈 조건)
+     */
+    private BooleanExpression buildOptionFilterCondition(
+            QProductEntity product,
+            ProductFilterRequest request
+    ) {
+        if (!request.hasOptionFilters()) {
+            return null;
+        }
+
+        QProductOptionGroupEntity optionGroup = productOptionGroupEntity;
+        QProductOptionValueEntity optionValue = productOptionValueEntity;
+
+        BooleanExpression finalCondition = null;
+
+        // 각 옵션 그룹별로 처리
+        for (Map.Entry<String, List<String>> entry : request.optionFilters().entrySet()) {
+            String groupName = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+
+            log.info("옵션 필터 처리 - 그룹: {}, 값: {}", groupName, values);
+
+            // 해당 그룹 내에서는 OR 조건
+            BooleanExpression groupCondition;
+
+            if (values.size() == 1) {
+                // 값이 하나일 때는 eq 사용
+                groupCondition = JPAExpressions
+                        .selectOne()
+                        .from(optionGroup)
+                        .join(optionGroup.values, optionValue)
+                        .where(
+                                optionGroup.product.id.eq(product.id),
+                                optionGroup.groupName.eq(groupName),
+                                optionValue.value.eq(values.get(0))
+                        )
+                        .exists();
+            } else {
+                // 값이 여러 개일 때는 in 사용
+                groupCondition = JPAExpressions
+                        .selectOne()
+                        .from(optionGroup)
+                        .join(optionGroup.values, optionValue)
+                        .where(
+                                optionGroup.product.id.eq(product.id),
+                                optionGroup.groupName.eq(groupName),
+                                optionValue.value.in(values)
+                        )
+                        .exists();
+            }
+
+            log.info("생성된 그룹 조건: {}", groupCondition);
+
+            // 그룹 간에는 AND 조건
+            finalCondition = (finalCondition == null)
+                    ? groupCondition
+                    : finalCondition.and(groupCondition);
+        }
+
+        log.info("최종 옵션 조건: {}", finalCondition);
+        return finalCondition;
     }
 
     // 판매자 상품 조회 시작일
