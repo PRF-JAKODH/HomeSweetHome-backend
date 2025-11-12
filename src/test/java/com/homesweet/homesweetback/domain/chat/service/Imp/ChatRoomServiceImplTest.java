@@ -174,8 +174,8 @@ public class ChatRoomServiceImplTest {
                     .build();
 
             GroupRoomCreateResponse expectedResponse = new GroupRoomCreateResponse(
-                    100L,
                     1L,
+                    100L,
                     "테스트 그룹방",
                     GROUP,
                     uploadedUrl
