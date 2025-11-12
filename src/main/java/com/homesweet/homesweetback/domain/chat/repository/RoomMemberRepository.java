@@ -21,7 +21,7 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     /**
      * 특정 채팅방의 특정 사용자 멤버 정보 조회
      */
-    Optional<RoomMember> findByRoomIdAndUserId(Long roomId, Long userId);
+    Optional<RoomMember> findByRoomIdAndUserId(Long userId, Long roomId);
 
     // 개인 채팅방 목록 - 더 간단해짐!
     @Query("""

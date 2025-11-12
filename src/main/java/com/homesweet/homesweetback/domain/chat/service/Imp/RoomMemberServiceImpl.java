@@ -38,6 +38,7 @@ public class RoomMemberServiceImpl implements RoomMemberService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
             RoomMember newMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
+            roomMemberRepository.save(newMember);
             return;
         }
 
