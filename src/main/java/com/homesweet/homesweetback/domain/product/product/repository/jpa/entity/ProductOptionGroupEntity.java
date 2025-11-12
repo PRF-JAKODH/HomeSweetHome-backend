@@ -37,6 +37,7 @@ public class ProductOptionGroupEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
+    @Builder.Default
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductOptionValueEntity> values = new ArrayList<>();
 
