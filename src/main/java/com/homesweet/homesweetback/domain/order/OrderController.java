@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.order.controller;
+package com.homesweet.homesweetback.domain.order;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.order.dto.request.CreateOrderRequest;
