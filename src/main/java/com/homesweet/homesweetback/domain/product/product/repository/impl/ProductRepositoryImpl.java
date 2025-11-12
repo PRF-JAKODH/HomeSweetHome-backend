@@ -29,54 +29,59 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProductRepositoryImpl implements ProductRepository {
 
-    private final ProductJPARepository jpaRepository;
+    private final ProductJPARepository productRepository;
     private final ProductMapper mapper;
 
     @Override
     public Product save(Product product) {
-        ProductEntity entity = jpaRepository.save(mapper.toEntity(product));
-        return mapper.toDomain(entity);
+        ProductEntity entity = mapper.toEntity(product);
+
+        if (entity == null) {
+            throw new IllegalStateException("ProductEntity 매핑 실패했습니다");
+        }
+        return mapper.toDomain(productRepository.save(entity));
     }
 
     @Override
     public boolean existsById(Long productId) {
-        return jpaRepository.existsById(productId);
+        return productRepository.existsById(productId);
     }
 
     @Override
-    public Optional<Product> findByIdAndSellerId(Long sellerId, Long productId) {
-        return jpaRepository.findByIdAndSellerId(productId, sellerId)
+    public Optional<Product> findByIdAndSellerId(Long productId, Long sellerId) {
+        return productRepository.findByIdAndSellerId(productId, sellerId)
                 .map(mapper::toDomain);
     }
 
     @Override
     public boolean existsBySellerIdAndName(Long sellerId, String name) {
-        return jpaRepository.existsBySellerIdAndName(sellerId, name);
+        return productRepository.existsBySellerIdAndName(sellerId, name);
     }
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
-        return jpaRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
+        return productRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
     }
 
     @Override
     public List<SkuStockResponse> findSkuStocksByProductId(Long productId) {
-        return jpaRepository.findSkuStocksByProductId(productId);
+        return productRepository.findSkuStocksByProductId(productId);
     }
 
     @Override
     public ProductDetailResponse findProductDetailById(Long productId) {
-        return jpaRepository.findProductDetailById(productId);
+        return productRepository.findProductDetailById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
     }
 
     @Override
     public List<ProductManageResponse> findProductsForSeller(Long sellerId, String startDate, String endDate) {
-        return jpaRepository.findProductsForSeller(sellerId, startDate, endDate);
+        return productRepository.findProductsForSeller(sellerId, startDate, endDate);
     }
 
     @Override
     public void updateStatus(Long productId, ProductStatus status) {
-        ProductEntity entity = jpaRepository.findById(productId)
+        ProductEntity entity = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         entity.updateStatus(status);
@@ -84,7 +89,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public void update(Long productId, Product product) {
-        ProductEntity entity = jpaRepository.findById(productId)
+        ProductEntity entity = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         entity.updateBasicInfo(product);
@@ -92,23 +97,15 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public void updateMainImage(Long productId, String newImageUrl) {
-        ProductEntity entity = jpaRepository.findById(productId)
+        ProductEntity entity = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         entity.updateMainImage(newImageUrl);
     }
 
     @Override
-    public void deleteDetailImages(Long productId, List<String> imageUrls) {
-        ProductEntity entity = jpaRepository.findById(productId)
-                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
-
-        entity.removeDetailImagesByUrls(imageUrls);
-    }
-
-    @Override
     public void addDetailImages(Long productId, List<String> imageUrls) {
-        ProductEntity entity = jpaRepository.findById(productId)
+        ProductEntity entity = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         imageUrls.forEach(url -> {
@@ -120,8 +117,16 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public void deleteDetailImages(Long productId, List<String> imageUrls) {
+        ProductEntity entity = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
+
+        entity.removeDetailImagesByUrls(imageUrls);
+    }
+
+    @Override
     public Product findByProductId(Long productId) {
-        return jpaRepository.findById(productId)
+        return productRepository.findById(productId)
                 .map(mapper::toDomain)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
     }

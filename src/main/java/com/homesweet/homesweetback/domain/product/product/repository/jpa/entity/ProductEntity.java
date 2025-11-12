@@ -44,13 +44,13 @@ public class ProductEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User seller;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(name = "image_url", nullable = false, length = 1000)
     private String imageUrl;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 100)
     private String brand;
 
     @Column(name = "base_price", nullable = false)

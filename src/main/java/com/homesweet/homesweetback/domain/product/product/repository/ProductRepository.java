@@ -22,7 +22,7 @@ public interface ProductRepository {
 
     boolean existsById(Long productId);
 
-    Optional<Product> findByIdAndSellerId(Long sellerId, Long productId);
+    Optional<Product> findByIdAndSellerId(Long productId, Long sellerId);
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
 
@@ -40,9 +40,9 @@ public interface ProductRepository {
 
     void updateMainImage(Long productId, String newImageUrl);
 
-    void deleteDetailImages(Long productId, List<String> imageUrls);
-
     void addDetailImages(Long productId, List<String> imageUrls);
+
+    void deleteDetailImages(Long productId, List<String> imageUrls);
 
     // 알림용
     Product findByProductId(Long productId);

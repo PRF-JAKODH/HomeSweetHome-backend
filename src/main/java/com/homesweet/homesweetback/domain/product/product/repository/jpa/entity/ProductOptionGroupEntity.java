@@ -18,6 +18,8 @@ import java.util.List;
 @Entity
 @Table(name = "product_option_group")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class ProductOptionGroupEntity {

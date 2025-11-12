@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.review.service.impl;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
@@ -38,6 +39,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProductReviewServiceImpl implements ProductReviewService {
 
+    private final ProductValidator productValidator;
     private final ProductReviewRepository productReviewRepository;
     private final ProductRepository productRepository;
     private final ProductImageUploader imageUploader;
@@ -48,9 +50,9 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     @Transactional
     public ProductReviewResponse createReview(Long productId, Long userId, ProductReviewCreateRequest request) {
 
-        validateExistProduct(productId);
+        productValidator.validateExistsProduct(productId);
 
-        validateDuplicateReview(productId, userId);
+        productValidator.validateDuplicateReview(productId, userId);
 
         String imageUrl = Optional.ofNullable(request.image())
                 .filter(file -> !file.isEmpty())
@@ -117,17 +119,15 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         ProductReview productReview = productReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_REVIEW_NOT_FOUND_ERROR));
 
-        if (!productReview.userId().equals(userId)) {
-            throw new ProductException(ErrorCode.PRODUCT_REVIEW_FORBIDDEN);
-        }
+        productValidator.validateDuplicateWriter(productReview, userId);
 
         String newImageUrl = productReview.imageUrl();
 
         // 새로운 이미지가 존재할 때
-        if (request.image() != null && !request.image().isEmpty()) {
-            // 기존 이미지를 제거합니다
-            if (productReview.imageUrl() != null) {
-                imageUploader.deleteProductReviewImage(productReview.imageUrl());
+        if (request.existImage()) {
+            // 기존 이미지가 있다면 제거합니다
+            if (productReview.existsImage()) {
+                imageUploader.deleteImage(productReview.imageUrl());
             }
 
             newImageUrl = imageUploader.uploadProductReviewImage(request.image());
@@ -143,19 +143,5 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     @Transactional(readOnly = true)
     public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
         return productReviewRepository.getReviewStatistics(productId);
-    }
-
-    // 제품이 등록되어 있는지 검증
-    private void validateExistProduct(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR);
-        }
-    }
-
-    // 사용자가 제품에 대한 리뷰를 이미 등록한 적 있는지 검증
-    private void validateDuplicateReview(Long productId, Long userId) {
-        if (productReviewRepository.existsByProductIdAndUserId(productId, userId)) {
-            throw new ProductException(ErrorCode.ALREADY_REVIEW_EXISTS);
-        }
     }
 }

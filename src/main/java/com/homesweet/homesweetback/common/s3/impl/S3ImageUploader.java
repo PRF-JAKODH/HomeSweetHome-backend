@@ -69,7 +69,7 @@ public class S3ImageUploader implements ImageUploader {
      * 다중 이미지 업로드
      */
     @Override
-    public List<String> uploadFiles(List<MultipartFile> files, String directory) {
+    public List<String> uploadFiles(List<? extends MultipartFile> files, String directory) {
         if (files == null || files.isEmpty()) {
             return new ArrayList<>();
         }

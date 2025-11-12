@@ -18,4 +18,8 @@ public record ProductReviewUpdateRequest(
         Integer rating,
         String comment,
         MultipartFile image
-) {}
+) {
+    public boolean existImage() {
+        return image != null && !image.isEmpty();
+    }
+}
