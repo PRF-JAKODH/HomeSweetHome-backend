@@ -12,7 +12,7 @@ public interface ChatMessageService {
     PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size);
 
     boolean canSendMessage(Long userId, Long roomId);
-
+//
     // 채팅방 메시지 읽음 처리
 //    void markAsRead(Long roomId, Long userId, Long lastReadMessageId);
 

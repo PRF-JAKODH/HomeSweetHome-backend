@@ -47,17 +47,17 @@ public class ChatPreHandler implements ChannelInterceptor {
             switch (command) {
 
                 /**
-                 * ✅ CONNECT — 최초 연결 시 JWT 토큰 검증 & 세션에 사용자 등록
+                 * CONNECT — 최초 연결 시 JWT 토큰 검증 & 세션에 사용자 등록
                  */
                 case CONNECT -> handleConnect(accessor);
 
                 /**
-                 * ✅ SUBSCRIBE — 구독 요청 시 방 참여자 여부 검증
+                 *  SUBSCRIBE — 구독 요청 시 방 참여자 여부 검증
                  */
                 case SUBSCRIBE -> handleSubscribe(accessor);
 
                 /**
-                 * ✅ SEND — 메시지 전송 시 권한 검증 (퇴장 여부 등)
+                 *  SEND — 메시지 전송 시 권한 검증 (퇴장 여부 등)
                  */
                 case SEND -> handleSend(accessor);
 
@@ -65,7 +65,7 @@ public class ChatPreHandler implements ChannelInterceptor {
             }
 
         } catch (Exception e) {
-            log.error("❌ WebSocket Interceptor Error: {}", e.getMessage());
+            log.error(" WebSocket Interceptor Error: {}", e.getMessage());
             throw e;
         }
 
@@ -104,7 +104,7 @@ public class ChatPreHandler implements ChannelInterceptor {
                 userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
         ));
 
-        log.info("✅ CONNECT 성공 | userId={} | role={}", userId, role);
+        log.info("CONNECT 성공 | userId={} | role={}", userId, role);
     }
 
     /**
@@ -123,7 +123,7 @@ public class ChatPreHandler implements ChannelInterceptor {
             throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
         }
 
-        log.info("✅ SUBSCRIBE 성공 | userId={} | roomId={}", userId, roomId);
+        log.info(" SUBSCRIBE 성공 | userId={} | roomId={}", userId, roomId);
     }
 
     /**
@@ -142,7 +142,7 @@ public class ChatPreHandler implements ChannelInterceptor {
             throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
         }
 
-        log.info("✅ SEND 권한 확인 완료 | userId={} | roomId={}", userId, roomId);
+        log.info("SEND 권한 확인 완료 | userId={} | roomId={}", userId, roomId);
     }
 
     /**

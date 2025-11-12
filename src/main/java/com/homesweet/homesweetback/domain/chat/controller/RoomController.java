@@ -1,10 +1,13 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import jakarta.validation.Valid;
@@ -16,8 +19,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import static com.homesweet.homesweetback.domain.chat.entity.QChatRoom.chatRoom;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @RestController
@@ -40,8 +47,11 @@ public class RoomController {
         Long meId = principal.getUserId();
         Long targetId = request.getTargetId();
 
-        RoomDto response = chatRoomService.createOrGetIndividualRoom(meId, targetId);
+        if (meId.equals(targetId)) {
+            throw new ResponseStatusException(BAD_REQUEST, "자기 자신과는 1:1 채팅을 만들 수 없습니다.");
+        }
 
+        RoomDto response = chatRoomService.createOrGetIndividualRoom(meId, targetId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -78,8 +88,14 @@ public class RoomController {
     public ResponseEntity<GroupChatDetailResponse> getGroupRoomInfo(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @PathVariable Long roomId) {
+
         Long userId = principal.getUserId();
         GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(userId, roomId);
+
+        // 방 타입 확인: 그룹방이 아니면 예외 처리
+        if (response.roomType().getType() != ChatRoomType.GROUP) {
+            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
+        }
 
         return ResponseEntity.ok(response);
 
@@ -137,13 +153,13 @@ public class RoomController {
     }
 
     // 퇴장
-//    @PostMapping("/{roomId}/exit")
-//    public ResponseEntity<Void> exitRoom(
-//            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-//            @PathVariable Long roomId
-//    ) {
-//        chatRoomService.exitRoom(roomId, principal.getUserId());
-//        return ResponseEntity.ok().build();
-//    }
+    @PostMapping("/{roomId}/exit")
+    public ResponseEntity<Void> exitRoom(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long roomId
+    ) {
+        chatRoomService.exitRoom(roomId, principal.getUserId());
+        return ResponseEntity.ok().build();
+    }
 
 }

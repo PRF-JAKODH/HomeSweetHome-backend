@@ -29,7 +29,7 @@ public interface ChatRoomService {
 
     List<GroupRoomListResponse> getAllGroupRooms();
 
-//    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
-
     void exitRoom(Long roomId, Long userId);
+
+//    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
 }
