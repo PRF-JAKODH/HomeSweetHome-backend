@@ -55,7 +55,7 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
               FROM daily_settlements d
               WHERE d.user_id = :userId
                 AND d.settlement_date >= :weekStartDate
-                AND d.settlement_date <  DATE_ADD(:weekStartDate, INTERVAL 7 DAY)
+                AND d.settlement_date < DATE_ADD(:weekStartDate, INTERVAL 7 DAY)
             ) AS new
             ON DUPLICATE KEY UPDATE
               total_sales      = new.total_sales,
@@ -78,6 +78,4 @@ public interface WeeklySettlementRepository extends JpaRepository<WeeklySettleme
             @Param("totalRefund") BigDecimal totalRefund,
             @Param("totalSettlement") BigDecimal totalSettlement
     );
-    //
-
 }

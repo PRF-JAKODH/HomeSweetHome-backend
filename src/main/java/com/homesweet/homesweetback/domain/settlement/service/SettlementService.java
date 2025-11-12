@@ -3,16 +3,15 @@ package com.homesweet.homesweetback.domain.settlement.service;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.entity.UserRole;
-import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
 import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
-import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
+import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
+import com.homesweet.homesweetback.domain.settlement.util.SettlementCalculater;
 import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -30,32 +28,34 @@ import java.time.LocalDateTime;
 public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final GradeService gradeService;
-    private final UserRepository userRepository;
-    private final OrderRepository orderRepository;
+    private final SettlementValidator settlementValidator;
+    private final SettlementCalculater settlementCalculater;
+    private final ExtractedSeller extractedSeller;
+    // 정산 생성 스케줄러
 
-    //TODO: 결제에서 받지말고 한번에 처리하게끔 구조를 변경
+
+    // TODO: 결제에서 받지말고 한번에 처리하게끔 구조를 변경
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
     public void createSettlement(Order order) {
-        // 1. 주문 상태가 주문 완료인지 확인
-        if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_CREATED);
-        }
-        // 2. 주문 제품이 비어있는 지 확인
-        if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
-            throw new BusinessException(ErrorCode.ORDER_ITEMS_EMPTY);
-        }
-        // 3. 판매자가 맞는 지 확인
-        User seller = settlementRepository.findBySellerId(order.getId());
-        if (seller == null) {
-            throw new BusinessException(ErrorCode.SELLER_NOT_FOUND);
-        }
-        if (seller.getRole() != UserRole.SELLER) {
-            throw new BusinessException(ErrorCode.INVALID_SELLER_ROLE);
-        }
-        //TODO: 계산 로직만 메서드를 분리한다면 순숫하게 테스트 가능
-        // 4. 정산 금액 계산
-        Result result = getResult(order, seller);
+//        ZoneId KST = ZoneId.of("Asia/Seoul");
+//        LocalDateTime cutoffTime = LocalDateTime.now(KST);
+//        List<Order> unsettledOrders = settlementRepository.findUnSettlementOrders(OrderStatus.COMPLETED, cutoffTime);
+//
+//        // 검증
+//        settlementValidator.validateUnsettledOrders(unsettledOrders);
+
+        // 검증
+        settlementValidator.validateOrder(order);
+
+        // 판매자 정보 가져오기
+        User seller = extractedSeller.extractSeller(order);
+        // 검증
+        settlementValidator.validateSeller(seller);
+
+        //TODO: 계산 로직만 메서드를 분리한다면 순수하게 테스트 가능
+        // 4. 정산 금액 계산(메소드 분리)
+        SettlementCalculater.Result result = settlementCalculater.getResult(order, seller);
 
         // 5. 계산된 금액 저장
         Settlement settlement = Settlement.builder()
@@ -71,19 +71,6 @@ public class SettlementService {
                 .build();
 
         settlementRepository.save(settlement);
-    }
-    // 계산 -> 메소드 분리
-    private Result getResult(Order order, User seller) {
-        BigDecimal fee = gradeService.calculateFeeforUser(BigDecimal.valueOf(order.getTotalAmount()), seller);
-        BigDecimal refundAmount = BigDecimal.ZERO;
-        BigDecimal vat = BigDecimal.valueOf(order.getTotalAmount()).multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalAmount());
-        BigDecimal settlementAmount = totalAmount.subtract(fee).subtract(refundAmount).setScale(2, RoundingMode.HALF_UP);
-        Result result = new Result(fee, refundAmount, vat, totalAmount, settlementAmount);
-        return result;
-    }
-
-    private record Result(BigDecimal fee, BigDecimal refundAmount, BigDecimal vat, BigDecimal totalAmount, BigDecimal settlementAmount) {
     }
 
     // 전체 주문건별 정산내역 상태별 조회(기간 + 상태)
@@ -134,5 +121,4 @@ public class SettlementService {
             throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
     }
-
 }

@@ -91,4 +91,8 @@ public class Order {
     public void setDeliveryStatus(DeliveryStatus deliveryStatus) {
         this.deliveryStatus = deliveryStatus;
     }
+
+    public boolean isOrderItemEmpty() {
+        return this.orderItems == null || this.orderItems.isEmpty();
+    }
 }

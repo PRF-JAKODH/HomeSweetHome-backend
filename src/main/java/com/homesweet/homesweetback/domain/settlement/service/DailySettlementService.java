@@ -41,11 +41,8 @@ public class DailySettlementService {
 
         // 1. 페이지로 정산일시 기준 정산 목록 조회(실제 리스트)
         Page<DailySettlement> dailySettlements = dailySettlementRepository.findByDailySettlementByRange(userId, start, end, pageable);
-        log.info("daily rows size={}, start={}, endEx={}", dailySettlements.getNumberOfElements(), start, end);
-        System.out.println("daily rows size=" + dailySettlements.getNumberOfElements());
         if (!dailySettlements.isEmpty()) {
             DailySettlement first = dailySettlements.getContent().get(0);
-            log.info("first row => date={}, sales={}", first.getSettlementDate(), first.getTotalSales());
         } else {
             log.warn("EMPTY PAGE -> will return zero row");
         }

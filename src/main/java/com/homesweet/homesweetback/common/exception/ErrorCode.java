@@ -97,7 +97,11 @@ public enum ErrorCode {
     INVALID_SELLER_ROLE(HttpStatus.FORBIDDEN, "유효한 판매자가 아닙니다."),
     INVALID_SETTLEMENT_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 정산 상태입니다."),
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "시작일은 종료일보다 이후일 수 없습니다."),
-    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "주문 상태가 유효하지 않습니다.")
+    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "주문 상태가 유효하지 않습니다."),
+    ORDERS_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 건이 없습니다."),
+    ORDER_CANCELED_NOT_FOUND(HttpStatus.NOT_FOUND, "정산 취소 주문 건이 없습니다."),
+    DELIVERY_STATUS_NOT_DELIVERED(HttpStatus.NOT_FOUND, "배송상태가 주문 취소가 아닙니다."),
+    DUPLICATE_SETTLEMENT(HttpStatus.BAD_REQUEST, "정산은 중복될 수 없습니다.")
     ;
 
 
