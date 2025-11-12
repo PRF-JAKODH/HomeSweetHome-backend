@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
@@ -61,6 +62,16 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
         return productRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
+    }
+
+    @Override
+    public List<ProductPreviewResponse> findProductsByOptionFilter(
+            Long cursorId,
+            ProductFilterRequest request,
+            int limit,
+            ProductSortType sortType
+    ) {
+        return productRepository.findProductsByOptionFilter(cursorId, request, limit, sortType);
     }
 
     @Override

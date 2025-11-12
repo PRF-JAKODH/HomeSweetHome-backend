@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductUploadRequest;
+import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
@@ -19,7 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 /**
  * 제품 컨트롤러
  * /api/v1/products POST 상품 등록
@@ -62,7 +62,22 @@ public class ProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType
     ) {
-        ScrollResponse<ProductPreviewResponse> response = service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
+        ScrollResponse<ProductPreviewResponse> response =
+                service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 2. 옵션 필터링 검색 (POST) - 새로 추가
+    @PostMapping("/previews/filter")
+    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> filterProductsByOptions(
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
+            @Valid @RequestBody ProductFilterRequest request
+    ) {
+        ScrollResponse<ProductPreviewResponse> response =
+                service.filterProductsByOptions(cursorId, request, limit, sortType);
 
         return ResponseEntity.ok(response);
     }

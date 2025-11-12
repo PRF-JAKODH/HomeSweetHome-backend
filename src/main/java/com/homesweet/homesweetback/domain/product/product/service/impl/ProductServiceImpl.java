@@ -6,6 +6,7 @@ import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
@@ -92,6 +93,34 @@ public class ProductServiceImpl implements ProductService {
     ) {
         List<ProductPreviewResponse> products =
                 productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
+
+        boolean hasNext = products.size() > limit;
+        if (hasNext) {
+            products = products.subList(0, limit);
+        }
+
+        Long nextCursorId = hasNext
+                ? products.get(products.size() - 1).id()
+                : null;
+
+        return ScrollResponse.of(products, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ScrollResponse<ProductPreviewResponse> filterProductsByOptions(
+            Long cursorId,
+            ProductFilterRequest request,
+            int limit,
+            ProductSortType sortType
+    ) {
+        List<ProductPreviewResponse> products =
+                productRepository.findProductsByOptionFilter(
+                        cursorId,
+                        request,
+                        limit + 1,
+                        sortType
+                );
 
         boolean hasNext = products.size() > limit;
         if (hasNext) {
