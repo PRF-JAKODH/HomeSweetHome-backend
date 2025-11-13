@@ -2,7 +2,9 @@ package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.domain.product.product.service.RecentSearchService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -14,6 +16,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 11. 13.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecentSearchServiceImpl implements RecentSearchService {
@@ -25,6 +28,7 @@ public class RecentSearchServiceImpl implements RecentSearchService {
     private static final Duration TTL = Duration.ofDays(1);
 
     // 최근 검색어 저장
+    @Async("recentSearchTaskExecutor")
     @Override
     public void save(Long userId, String keyword) {
 
