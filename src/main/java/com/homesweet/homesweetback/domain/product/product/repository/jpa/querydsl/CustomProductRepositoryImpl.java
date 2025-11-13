@@ -361,14 +361,13 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             String groupName = entry.getKey();
             ProductFilterRequest.RangeFilter range = entry.getValue();
 
-            // MySQL의 REGEXP를 사용하여 숫자 추출 및 비교
             BooleanExpression groupCondition = JPAExpressions
                     .selectOne()
                     .from(optionGroup)
                     .join(optionGroup.values, optionValue)
                     .where(
                             optionGroup.product.id.eq(product.id),
-                            optionGroup.groupName.eq(groupName),
+                            optionGroup.groupName.containsIgnoreCase(groupName),
                             buildNumericRangeCondition(optionValue, range)
                     )
                     .exists();
