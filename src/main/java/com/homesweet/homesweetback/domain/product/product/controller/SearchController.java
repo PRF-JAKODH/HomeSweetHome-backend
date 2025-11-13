@@ -27,7 +27,7 @@ public class SearchController {
     private final ProductSearchService searchService;
     private final RecentSearchService recentSearchService;
 
-    @GetMapping("/search")
+    @GetMapping("/authenticated")
     public ResponseEntity<ScrollResponse<ProductPreviewResponse>> search(
             @RequestParam(required = false) Long cursorId,
             @RequestParam(required = false) Long categoryId,
