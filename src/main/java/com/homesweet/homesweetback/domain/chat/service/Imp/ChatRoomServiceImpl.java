@@ -19,6 +19,7 @@ import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
+import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,25 +42,21 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomMapper chatRoomMapper;
     private final S3ImageUploader s3ImageUploader;
+    private final RoomMemberService roomMemberService;
 
 
     /**
      * 개인 채팅방 생성
+     * 서비스 로직에 대해서만 서비스에서 검증할 수 있도록
      */
     @Override
     @Transactional
     public RoomDto createOrGetIndividualRoom(Long meId, Long targetId) {
 
-        if (meId == null || targetId == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "meId와 targetId가 필요합니다.");
-        }
-        if (meId.equals(targetId)) {
-            throw new ResponseStatusException(BAD_REQUEST, "자기 자신과는 1:1 채팅을 만들 수 없습니다.");
-        }
-
-        String pairKey = buildPairKey(meId, targetId);
+        String pairKey = roomMemberService.buildPairKey(meId, targetId);
         Optional<ChatRoom> existing = chatRoomRepository.findByTypeAndPairKey(ChatRoomType.INDIVIDUAL, pairKey);
 
+        // 기존 방이 있다면 재사용
         if  (existing.isPresent()) {
             ChatRoom chatRoom = existing.get();
             return RoomDto.builder()
@@ -67,7 +64,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     .reused(true)
                     .build();
         }
-
         // 방 생성
         ChatRoom room = ChatRoom.builder()
                 .type(ChatRoomType.INDIVIDUAL)
@@ -76,25 +72,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .build();
         chatRoomRepository.saveAndFlush(room);
 
-
-        User me = userRepository.getReferenceById(meId);
-        User target = userRepository.getReferenceById(targetId);
-
-        // 채팅 요청 주체
-        roomMemberRepository.save(RoomMember.builder()
-                .room(room)
-                .user(me)
-                .role(ChatUserRole.OWNER)
-                .isExit(false)
-                .build());
-
-        // 채팅 요청 받는 사람
-        roomMemberRepository.save(RoomMember.builder()
-                .room(room)
-                .user(target)
-                .role(ChatUserRole.MEMBER)
-                .isExit(false)
-                .build());
+        // 멤버 저장
+        roomMemberService.registerIndividualMember(room, meId, targetId);
 
         return RoomDto.builder()
                 .roomId(room.getId())
@@ -105,11 +84,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .build();
     }
 
-    private String buildPairKey(Long a, Long b) {
-        long low = Math.min(a, b);
-        long high = Math.max(a, b);
-        return low + ":" + high;
-    }
 
     /**
      * 그룹 채팅방 생성
@@ -119,15 +93,18 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     public GroupRoomCreateResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request) {
 
         User owner = userRepository.findById(ownerId)
-               .orElseThrow(() -> new RuntimeException("User not found"));
+               .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        String thumbnailUrl = s3ImageUploader.upload(request.roomThumbnailUrl(),"group/chat/thumbnail");
+        String thumbnailUrl = s3ImageUploader.upload(
+                request.roomThumbnailUrl(),
+                "group/chat/thumbnail"
+        );
 
         // 요청 받아온 dto를 엔터티 객체로 생성
         ChatRoom chatRoom = chatRoomMapper.toEntity(request, thumbnailUrl);
 
         // 채팅방 정보 저장
-        chatRoomRepository.save(chatRoom);
+        chatRoomRepository.saveAndFlush(chatRoom);
 
         // 방장 정보 저장
         roomMemberRepository.save(RoomMember.builder()
@@ -139,7 +116,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         );
         // 저장된 정보 응답
         return chatRoomMapper.toDto(chatRoom, ownerId);
-
     }
 
 
@@ -152,7 +128,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
-                log.info("roomId: {}, userId: {}", roomId, userId);
 
         // 방 타입 확인: 개인방(Individual/Private)이 아니면 예외 처리
         if (!chatRoom.getType().equals(ChatRoomType.INDIVIDUAL)) {
@@ -161,7 +136,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
         log.info("방타입 확인 roomId: {}, userId: {}", roomId, userId);
         // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
-        ensureRoomMembership(chatRoom, userId);
+
+        roomMemberService.ensureRoomMembership(chatRoom, userId);
 
         // 2.  findPartnerUserInRoom 쿼리를 사용하여 상대방 User를 바로 조회
         User partner = roomMemberRepository.findPartnerUserInRoom(roomId, userId)
@@ -187,13 +163,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // 방 타입 확인: 그룹방이 아니면 예외 처리
-        if (!chatRoom.getType().equals(ChatRoomType.GROUP)) {
-            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
-        }
-
         // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
-        ensureRoomMembership(chatRoom, userId);
+        roomMemberService.ensureRoomMembership(chatRoom, userId);
 
         // 2. 퇴장하지 않은 모든 활성 멤버 조회
         List<RoomMember> activeMembers = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);
@@ -217,31 +188,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .build();
     }
 
-    // ChatRoomService 내부에 private 또는 protected로 정의
-    private RoomMember ensureRoomMembership(ChatRoom chatRoom, Long userId) {
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(chatRoom.getId(), userId);
-
-        if (memberOptional.isEmpty()) {
-            //  1. 멤버가 없으면 신규 생성 (자동 등록)
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-            RoomMember newMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
-            return roomMemberRepository.save(newMember);
-        }
-
-        // 2. 멤버가 존재함
-        RoomMember member = memberOptional.get();
-
-        // 3. 퇴장 상태면 재입장 처리 (자동 재입장)
-        if (member.getIsExit()) {
-            member.join(); // @Transactional에 의해 DB에 반영됨
-            log.info("재입장 처리 - roomId: {}, userId: {}", chatRoom.getId(), userId);
-        }
-
-        return member;
-    }
-
 
     /**
      * 채팅방 입장
@@ -251,20 +197,17 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     public void joinRoom(Long roomId, Long userId) {
         log.info("채팅방 입장 시도 - roomId: {}, userId: {}", roomId, userId);
 
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(roomId, userId);
+        RoomMember member = roomMemberRepository
+                .findByRoomIdAndUserId(userId, roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND));
 
-        if (memberOptional.isEmpty()) {
-            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
-        }
-
-        RoomMember member = memberOptional.get();
         member.join();
 
         log.info("채팅방 입장 - roomId: {}, userId: {}", roomId, userId);
     }
 
     /**
-     * 채팅방 퇴장
+     * 채팅방 퇴장 (미연동)
      */
     @Transactional
     @Override
@@ -296,7 +239,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     /**
-     * 빈 그룹 채팅방 자동 삭제
+     * 빈 그룹 채팅방 자동 삭제 (미연동)
      */
     private void checkAndDeleteEmptyGroupRoom(ChatRoom room, Long roomId) {
         List<RoomMember> activeMember = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);

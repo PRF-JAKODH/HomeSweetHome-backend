@@ -44,7 +44,7 @@ public class ChatRoom {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    @Column(name = "thumbnail_url", length = 500 )
     private String thumbnailUrl;
 
     @Column(name = "last_message", nullable = true)

@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.chat.dto.response;
 
+import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import lombok.Builder;
 
 import java.util.List;
@@ -10,7 +11,8 @@ public record GroupChatDetailResponse(
         String roomName,
         String roomThumbnailUrl,
         Integer memberCount,
-        List<MemberInfo> participants
+        List<MemberInfo> participants,
+        ChatRoom roomType
 
 ) {
     @Builder

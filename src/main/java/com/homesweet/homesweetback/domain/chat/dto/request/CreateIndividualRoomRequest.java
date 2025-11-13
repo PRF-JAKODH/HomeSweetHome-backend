@@ -12,6 +12,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CreateIndividualRoomRequest {
 
-    @NotNull
+    @NotNull(message = "대상 사용자 ID는 필수입니다.")
     private Long targetId;
 }

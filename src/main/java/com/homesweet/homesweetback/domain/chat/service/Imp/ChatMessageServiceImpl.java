@@ -39,7 +39,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 
     /**
-     * 메시지 저장 (기존 로직 활용)
+     * 메시지 전송/저장 (기존 로직 활용)
      */
     @Override
     @Transactional

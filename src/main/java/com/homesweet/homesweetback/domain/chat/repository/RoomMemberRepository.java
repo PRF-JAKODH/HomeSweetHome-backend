@@ -21,7 +21,7 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     /**
      * 특정 채팅방의 특정 사용자 멤버 정보 조회
      */
-    Optional<RoomMember> findByRoomIdAndUserId(Long roomId, Long userId);
+    Optional<RoomMember> findByRoomIdAndUserId(Long userId, Long roomId);
 
     // 개인 채팅방 목록 - 더 간단해짐!
     @Query("""
@@ -46,7 +46,7 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
  """)
     List<IndividualRoomListResponse> findMyIndividualRoomList(@Param("myUserId") Long myUserId);
 
-    // 그룹 채팅방 목록 - User JOIN 불필요!
+    // 그룹 채팅방 목록
     @Query("""
      SELECT new com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomListResponse(
          r.id,
@@ -91,8 +91,6 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
         """)
     Map<Long, Long> countMembersByRoomIds(@Param("roomIds") List<Long> roomIds);
 
-    List<RoomMember> room(ChatRoom room);
-
     /**
      * 개인 채팅방에서 상대방 User 찾기 (최적화)
      * 기존: 전체 조회 후 for문 → 개선: 쿼리로 바로 찾기
@@ -109,6 +107,6 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
             @Param("myUserId") Long myUserId
     );
 
-    List<RoomMember> roomId(Long roomId);
+//    List<RoomMember> roomId(Long roomId);
 }
 
