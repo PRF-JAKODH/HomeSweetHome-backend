@@ -49,7 +49,7 @@ public class RecentViewServiceImpl implements RecentViewService {
     // 최근 본 상품 캐싱
     @Async("recentSearchTaskExecutor")
     @Override
-    public void cachePreview(Long productId, ProductDetailResponse detail) {
+    public void cacheDetail(Long productId, ProductDetailResponse detail) {
         redisTemplate.opsForValue().set(
                 PREVIEW_KEY_PREFIX + productId,
                 JsonUtils.toJson(RecentViewPreviewResponse.fromDetail(detail)),
@@ -82,14 +82,28 @@ public class RecentViewServiceImpl implements RecentViewService {
 
     @Override
     public void deleteOne(Long userId, Long productId) {
-        redisTemplate.opsForZSet().remove(
-                VIEW_KEY_PREFIX + userId,
-                productId.toString()
-        );
+        String viewKey = VIEW_KEY_PREFIX + userId;
+        String previewKey = PREVIEW_KEY_PREFIX + productId;
+
+        // ZSET에서 제거
+        redisTemplate.opsForZSet().remove(viewKey, productId.toString());
+
+        // Preview 캐시 제거
+        redisTemplate.delete(previewKey);
     }
 
     @Override
     public void clearAll(Long userId) {
-        redisTemplate.delete(VIEW_KEY_PREFIX + userId);
+        String viewKey = VIEW_KEY_PREFIX + userId;
+
+        Set<String> productIds = redisTemplate.opsForZSet().range(viewKey, 0, -1);
+
+        if (productIds != null) {
+            for (String pid : productIds) {
+                redisTemplate.delete(PREVIEW_KEY_PREFIX + pid);
+            }
+        }
+
+        redisTemplate.delete(viewKey);
     }
 }

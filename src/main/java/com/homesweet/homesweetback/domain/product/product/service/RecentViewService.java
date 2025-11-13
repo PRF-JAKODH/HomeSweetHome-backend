@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface RecentViewService {
     void saveView(Long userId, Long productId);
-    void cachePreview(Long productId, ProductDetailResponse detail);
+    void cacheDetail(Long productId, ProductDetailResponse detail);
 
     List<Long> getRecentViewsIds(Long userId);
     RecentViewPreviewResponse getCachedPreview(Long productId);
