@@ -24,9 +24,6 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --requirepass ${REDIS_PASSWORD:-redispass}
-    environment:
-      - REDIS_PASSWORD=redispass
     volumes:
       - redisdata:/data
     networks:
