@@ -23,6 +23,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
@@ -49,6 +51,39 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Test
+    @DisplayName("getUserById() 메서드 테스트_성공")
+    void testGetUserById_Success() {
+        // given
+        Long userId = 1L;
+        User user = createTestUser(userId, UserRole.USER);
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when
+        User result = userService.getUserById(userId);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(userId);
+        assertThat(result.getEmail()).isEqualTo("test@test.com");
+        assertThat(result.getName()).isEqualTo("test");
+        assertThat(result.getRole()).isEqualTo(UserRole.USER);
+    }
+
+    @Test
+    @DisplayName("getUserById() 메서드 테스트_실패_사용자 없음")
+    void testGetUserById_Fail_UserNotFound() {
+        // given
+        Long userId = 999L;
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.getUserById(userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
+        verify(userRepository, times(1)).findById(userId);
+    }
 
     @Test
     @DisplayName("getUserInfo() 메서드 테스트_성공")
@@ -79,8 +114,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserInfo(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -160,8 +195,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserInfo(userId, request, Optional.empty()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -181,8 +216,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserInfo(userId, request, Optional.empty()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("올바른 핸드폰 번호 형식이 아닙니다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.INVALID_PHONE_NUMBER_FORMAT.getMessage());
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, never()).save(any(User.class));
     }
@@ -203,8 +238,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserInfo(userId, request, profileImage))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("프로필 이미지 삭제에 실패했습니다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.FILE_STREAM_ERROR.getMessage());
         verify(userRepository, times(1)).findById(userId);
         verify(imageUploader, times(1)).delete(anyString());
         verify(imageUploader, never()).upload(any(MultipartFile.class), anyString());
@@ -227,8 +262,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserInfo(userId, request, profileImage))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("프로필 이미지 업로드에 실패했습니다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.FILE_STREAM_ERROR.getMessage());
         verify(userRepository, times(1)).findById(userId);
         verify(imageUploader, times(1)).delete(anyString());
         verify(imageUploader, times(1)).upload(any(MultipartFile.class), anyString());
@@ -260,8 +295,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.deleteUser(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, never()).delete(any(User.class));
     }
@@ -300,8 +335,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserRole(userId, request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
         verify(gradeRepository, never()).findById(any(Integer.class));
     }
@@ -350,8 +385,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserGrade(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -398,8 +433,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserGradeName(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -447,8 +482,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserFeeRate(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -495,8 +530,8 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.hasUserGrade(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + userId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
         verify(userRepository, times(1)).findById(userId);
     }
 

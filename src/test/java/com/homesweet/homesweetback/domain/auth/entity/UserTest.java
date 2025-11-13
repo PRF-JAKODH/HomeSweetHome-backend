@@ -52,13 +52,11 @@ class UserTest {
                 .providerId("123456789")
                 .build();
 
-        // when
-        // 현재 GOOGLE만 지원하므로 다른 Provider는 테스트할 수 없지만,
-        // 메서드 로직은 정상적으로 동작함을 확인
-        boolean isSameProvider = user.isSameProvider(OAuth2Provider.GOOGLE);
+        // whe
+        boolean isSameProvider = user.isSameProvider(OAuth2Provider.KAKAO);
 
         // then
-        assertThat(isSameProvider).isTrue();
+        assertThat(isSameProvider).isFalse();
     }
 
     @Test

@@ -20,6 +20,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
@@ -105,9 +107,9 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserInfo(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
-    }
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
+    }       
 
     @Test
     @DisplayName("updateUserInfo() 테스트_성공_이미지 없음")
@@ -222,8 +224,8 @@ class UserServiceIntegrationTest {
                 request,
                 Optional.empty()
         ))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -243,8 +245,8 @@ class UserServiceIntegrationTest {
                 request,
                 Optional.empty()
         ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("올바른 핸드폰 번호 형식이 아닙니다");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.INVALID_PHONE_NUMBER_FORMAT.getMessage());
     }
 
     @Test
@@ -269,8 +271,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.deleteUser(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -302,8 +304,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.updateUserRole(invalidUserId, request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -340,8 +342,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserGrade(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -376,8 +378,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserGradeName(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -412,8 +414,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.getUserFeeRate(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -448,8 +450,8 @@ class UserServiceIntegrationTest {
 
         // when & then
         assertThatThrownBy(() -> userService.hasUserGrade(invalidUserId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id: " + invalidUserId);
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }
 
     @Test

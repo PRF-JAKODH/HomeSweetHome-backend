@@ -371,8 +371,11 @@ class AuthServiceTest {
     @DisplayName("logout() 메서드 테스트_성공_Authorization 헤더 없음")
     void testLogout_Success_NoAuthorizationHeader() {
         // given
-        Cookie deleteCookie = new Cookie("refresh_token", "");
+        Cookie deleteCookie = new Cookie("refresh_token", "test-refresh-token");
         given(request.getHeader("Authorization")).willReturn(null);
+        given(cookieUtil.getRefreshTokenFromCookie(request)).willReturn("test-refresh-token");
+        given(jwtTokenProvider.validateToken("test-refresh-token")).willReturn(true);
+        willDoNothing().given(refreshTokenRepository).deleteByRefreshToken("test-refresh-token");
         given(cookieUtil.createRefreshTokenCookieForDeletion()).willReturn(deleteCookie);
 
         // when
@@ -380,8 +383,9 @@ class AuthServiceTest {
 
         // then
         verify(request, times(1)).getHeader("Authorization");
-        verify(jwtTokenProvider, never()).validateToken(anyString());
-        verify(refreshTokenRepository, never()).deleteByEmail(anyString());
+        verify(cookieUtil, times(1)).getRefreshTokenFromCookie(request);
+        verify(jwtTokenProvider, times(1)).validateToken("test-refresh-token");
+        verify(refreshTokenRepository, times(1)).deleteByRefreshToken("test-refresh-token");
         verify(cookieUtil, times(1)).createRefreshTokenCookieForDeletion();
         verify(response, times(1)).addCookie(deleteCookie);
     }
@@ -391,9 +395,13 @@ class AuthServiceTest {
     void testLogout_Success_InvalidAccessToken() {
         // given
         String accessToken = "invalid-access-token";
-        Cookie deleteCookie = new Cookie("refresh_token", "");
+        String refreshToken = "test-refresh-token";
+        Cookie deleteCookie = new Cookie("refresh_token", refreshToken);
         given(request.getHeader("Authorization")).willReturn("Bearer " + accessToken);
         given(jwtTokenProvider.validateToken(accessToken)).willReturn(false);
+        given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
+        willDoNothing().given(refreshTokenRepository).deleteByRefreshToken("test-refresh-token");
+        given(cookieUtil.getRefreshTokenFromCookie(request)).willReturn(refreshToken);
         given(cookieUtil.createRefreshTokenCookieForDeletion()).willReturn(deleteCookie);
 
         // when
@@ -402,7 +410,8 @@ class AuthServiceTest {
         // then
         verify(request, times(1)).getHeader("Authorization");
         verify(jwtTokenProvider, times(1)).validateToken(accessToken);
-        verify(refreshTokenRepository, never()).deleteByEmail(anyString());
+        verify(jwtTokenProvider, times(1)).validateToken(refreshToken);
+        verify(refreshTokenRepository, times(1)).deleteByRefreshToken("test-refresh-token");
         verify(cookieUtil, times(1)).createRefreshTokenCookieForDeletion();
         verify(response, times(1)).addCookie(deleteCookie);
     }

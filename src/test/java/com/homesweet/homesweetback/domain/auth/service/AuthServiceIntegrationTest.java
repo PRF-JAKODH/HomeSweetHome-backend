@@ -430,22 +430,21 @@ class AuthServiceIntegrationTest {
     @DisplayName("logout() 테스트_성공_Authorization 헤더 없음")
     void testLogout_Success_NoAuthorizationHeader() {
         // given
+        // Authorization 헤더 없이 Refresh Token만 있음
         String refreshToken = jwtTokenProvider.createRefreshToken(testUser);
         refreshTokenRepository.save(testUser.getEmail(), refreshToken);
         
         Cookie cookie = cookieUtil.createRefreshTokenCookie(refreshToken);
         request.setCookies(cookie);
-        // Authorization 헤더 없음
 
         // when
         authService.logout(request, response);
 
-        // then
-        // Refresh Token은 삭제되지 않음 (Authorization 헤더가 없으므로)
+        // then Refresh Token이 삭제되었는지 확인
         String storedToken = refreshTokenRepository.findByEmail(testUser.getEmail());
-        assertThat(storedToken).isNotNull();
+        assertThat(storedToken).isNull();
         
-        // Cookie 삭제는 설정됨
+        // Cookie 삭제가 설정되었는지 확인
         Cookie[] cookies = response.getCookies();
         assertThat(cookies).isNotEmpty();
     }
@@ -465,11 +464,11 @@ class AuthServiceIntegrationTest {
         authService.logout(request, response);
 
         // then
-        // Refresh Token은 삭제되지 않음 (유효하지 않은 토큰이므로)
+        // Refresh Token이 삭제되었는지 확인
         String storedToken = refreshTokenRepository.findByEmail(testUser.getEmail());
-        assertThat(storedToken).isNotNull();
+        assertThat(storedToken).isNull();
         
-        // Cookie 삭제는 설정됨
+        // Cookie 삭제가 설정되었는지 확인
         Cookie[] cookies = response.getCookies();
         assertThat(cookies).isNotEmpty();
     }

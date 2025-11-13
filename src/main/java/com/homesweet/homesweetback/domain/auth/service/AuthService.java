@@ -138,12 +138,17 @@ public class AuthService {
         // Authorization 헤더에서 Access Token 추출
         String accessToken = getAccessTokenFromRequest(request);
 
-        if (jwtTokenProvider.validateToken(accessToken)) {
+        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
             String email = jwtTokenProvider.getEmailFromToken(accessToken);
                 
             log.info("User logout successful: userId={}, email={}", userId, email);
             refreshTokenRepository.deleteByEmail(email);
+        } else {
+            String refreshToken = getRefreshTokenFromRequest(request);
+            if (refreshToken != null && jwtTokenProvider.validateToken(refreshToken)) {
+                refreshTokenRepository.deleteByRefreshToken(refreshToken);
+            }
         }
         
         // Refresh Token Cookie 삭제
@@ -202,11 +207,7 @@ public class AuthService {
      * Refresh Token으로 사용자 정보를 조회합니다.
      */
     private User getUserFromRefreshToken(HttpServletRequest request) {
-        String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
-        
-        if (refreshToken == null) {
-            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
-        }
+        String refreshToken = getRefreshTokenFromRequest(request);
         
         if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
