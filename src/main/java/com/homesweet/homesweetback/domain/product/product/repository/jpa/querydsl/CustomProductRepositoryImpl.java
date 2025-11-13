@@ -394,14 +394,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     )
                     .exists();
 
-            log.info("생성된 범위 조건: {}", groupCondition);
-
             finalCondition = (finalCondition == null)
                     ? groupCondition
                     : finalCondition.and(groupCondition);
         }
 
-        log.info("최종 범위 조건: {}", finalCondition);
         return finalCondition;
     }
 
