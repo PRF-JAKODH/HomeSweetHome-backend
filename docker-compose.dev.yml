@@ -1,18 +1,5 @@
 version: '3.9'
 services:
-#  spring:
-#    image: homesweet-backend
-#    container_name: homesweet-backend
-#    ports:
-#      - "8080:8080"
-#    env_file:
-#      - .env
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=dev
-#    networks:
-#      - homesweet-network
-#    depends_on:
-#      - db
   db:
     image: mysql:8.0
     container_name: homesweet-db
@@ -25,6 +12,32 @@ services:
       - "3306:3306"
     volumes:
       - mysqldata:/var/lib/mysql
+    networks:
+      - homesweet-network
+
+  redis:
+    image: redis:7.2
+    container_name: homesweet-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-redispass}
+    environment:
+      - REDIS_PASSWORD=redispass
+    volumes:
+      - redisdata:/data
+    networks:
+      - homesweet-network
+
+  redis_insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    restart: always
+    ports:
+      - "5540:5540"
     networks:
       - homesweet-network
 
@@ -47,9 +60,10 @@ services:
     networks:
       - homesweet-network
 
-
 networks:
   homesweet-network:
     driver: bridge
+
 volumes:
   mysqldata:
+  redisdata:
