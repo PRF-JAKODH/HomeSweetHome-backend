@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.notification.domain.notification.TemplateNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
@@ -83,8 +84,9 @@ class ProductReviewServiceImplTest {
                 given(productReviewRepository.save(any(ProductReview.class))).willReturn(saved);
                 given(productRepository.findByProductId(productId)).willReturn(product);
                 given(userRepository.findById(product.getSellerId())).willReturn(Optional.of(seller));
+                given(userRepository.findById(userId)).willReturn(Optional.of(seller)); // 알림 관련 유저
                 willDoNothing().given(notificationSendService)
-                        .sendTemplateNotificationToSingleUser(anyLong(), any(), any());
+                        .sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
 
                 // when
                 ProductReviewResponse response = service.createReview(productId, userId, request);
@@ -111,11 +113,12 @@ class ProductReviewServiceImplTest {
                 willDoNothing().given(productValidator).validateExistsProduct(productId);
                 willDoNothing().given(productValidator).validateDuplicateReview(productId, userId);
                 willDoNothing().given(notificationSendService)
-                        .sendTemplateNotificationToSingleUser(anyLong(), any(), any());
+                        .sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
                 given(imageUploader.uploadProductReviewImage(image)).willReturn("https://s3.aws/review.jpg");
                 given(productReviewRepository.save(any(ProductReview.class))).willReturn(saved);
                 given(productRepository.findByProductId(productId)).willReturn(product);
                 given(userRepository.findById(product.getSellerId())).willReturn(Optional.of(seller));
+                given(userRepository.findById(userId)).willReturn(Optional.of(seller)); // 알림 관련 유저
 
                 // when
                 ProductReviewResponse response = service.createReview(productId, userId, request);

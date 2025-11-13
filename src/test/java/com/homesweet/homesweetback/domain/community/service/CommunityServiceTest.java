@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.community.dto.*;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.*;
 import com.homesweet.homesweetback.domain.community.repository.*;
+import com.homesweet.homesweetback.domain.notification.domain.notification.TemplateNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -575,6 +577,7 @@ class CommunityServiceTest {
         CommunityPostEntity fakePost = CommunityPostEntity.builder()
                 .postId(1L)
                 .author(fakeUser)
+                .title("Test Title")
                 .build();
         CommunityCommentEntity fakeComment = CommunityCommentEntity.builder()
                 .commentId(commentId)
@@ -587,6 +590,7 @@ class CommunityServiceTest {
         when(commentRepository.findByIdWithPessimisticLock(commentId)).thenReturn(Optional.of(fakeComment));
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser)).thenReturn(Optional.empty());
+        willDoNothing().given(notificationSendService).sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
 
         // when
         communityCountService.toggleCommentLike(commentId, userId);
@@ -608,6 +612,7 @@ class CommunityServiceTest {
         CommunityPostEntity fakePost = CommunityPostEntity.builder()
                 .postId(1L)
                 .author(fakeUser)
+                .title("Test Title")
                 .build();
         CommunityCommentEntity fakeComment = CommunityCommentEntity.builder()
                 .commentId(commentId)
@@ -626,7 +631,7 @@ class CommunityServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
         when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser))
                 .thenReturn(Optional.of(existingLike));
-
+        willDoNothing().given(notificationSendService).sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
         // when
         communityCountService.toggleCommentLike(commentId, userId);
 
