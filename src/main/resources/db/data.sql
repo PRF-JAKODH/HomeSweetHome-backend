@@ -47,14 +47,17 @@ INSERT INTO notification_template (notification_category_id, template_type, titl
     -- 커뮤니티 관련
     (3, 'NEW_COMMENT', '새 댓글', '{userName}님이 {postTitle}에 댓글을 남겼습니다.', '/community/posts/{postId}'),
     (3, 'NEW_LIKE', '새 좋아요', '{userName}님이 {postTitle}에 좋아요를 눌렀습니다.', '/community/posts/{postId}'),
+    (3, 'NEW_COMMENT_LIKE', '새 댓글 좋아요', '{userName}님이 댓글에 좋아요를 눌렀습니다.', '/community/posts/{postId}'),
     
     -- 정산 관련
     (4, 'SETTLEMENT_COMPLETED', '정산 완료', '{userName}님의 {settlementName} 정산이 완료되었습니다. (금액: {amount}원)', '/settlements/{settlementId}'),
+    (4, 'SETTLEMENT_FAILED', '정산 실패', '{userName}님의 {settlementName} 정산이 실패했습니다. (정산 ID: {settlementId})', '/settlements/{settlementId}'),
     
     -- 상품 관련
     (5, 'PRODUCT_APPROVED', '상품 승인', '{userName}님의 상품이 승인되었습니다. (상품명: {productName})', '/products/{productId}'),
     (5, 'PRODUCT_REJECTED', '상품 거부', '{userName}님의 상품이 거부되었습니다. (상품명: {productName})', '/products/{productId}'),
     (5, 'PRODUCT_LOW_STOCK', '재고 부족', '{userName}님의 {productName} 상품 재고가 부족합니다. (현재 재고: {currentStock})', '/products/{productId}'),
+    (5, 'NEW_REVIEW', '새 리뷰 등록', '{userName}님이 {productName} 상품에 리뷰를 등록했습니다.', '/products/{productId}'),
     
     -- 채팅 관련
     (6, 'NEW_MESSAGE', '새 메시지', '{userName}님이 {roomName} 채팅방에서 메시지를 보냈습니다: {message}', '/chat/{roomId}'),
@@ -62,6 +65,7 @@ INSERT INTO notification_template (notification_category_id, template_type, titl
     -- 시스템 관련
     (7, 'SYSTEM_MAINTENANCE', '시스템 점검', '시스템 점검 안내: {maintenanceTime}', '/system/notice'),
     (7, 'SYSTEM_UPDATE', '시스템 업데이트', '시스템이 업데이트되었습니다. (버전: {version})', '/system/update'),
+    (7, 'SELLER_REGISTRATION_COMPLETE', '판매자 등록 완료', '판매자 등록이 완료되었습니다.', '/seller'),
     
     -- 프로모션 관련
     (8, 'PROMOTION_START', '프로모션 시작', '{promotionName} 프로모션이 시작되었습니다!', '/promotions/{promotionId}'),

@@ -10,8 +10,7 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntit
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
-import com.homesweet.homesweetback.domain.notification.domain.payload.CommunityNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -61,11 +60,13 @@ public class CommunityCommentService {
         post.increaseCommentCount();
 
         // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(post.getAuthor().getId(), NotificationEventType.NEW_COMMENT, CommunityNotificationPayload.NewCommentPayload.builder()
-                .userName(author.getName())
-                .postId(post.getPostId())
-                .postTitle(post.getTitle())
-                .build());
+        notificationSendService.sendTemplateNotificationToSingleUser(
+                post.getAuthor().getId(),
+                CommunityNotification.NewComment.builder()
+                        .userName(author.getName())
+                        .postId(post.getPostId())
+                        .postTitle(post.getTitle())
+                        .build());
 
 
         return CommunityCommentResponse.from(savedComment);

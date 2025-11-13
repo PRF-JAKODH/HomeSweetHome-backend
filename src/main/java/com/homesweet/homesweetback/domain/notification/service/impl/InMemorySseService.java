@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.notification.service.impl;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
 import com.homesweet.homesweetback.domain.notification.service.SseService;
 
 import lombok.RequiredArgsConstructor;
@@ -7,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -42,7 +45,10 @@ public class InMemorySseService implements SseService{
             } catch (Exception e) {
                 sseEmitters.remove(userId);
                 emitter.completeWithError(e);
+                throw new NotificationException(ErrorCode.SSE_CONNECTION_ERROR, "SSE 연결 중 오류가 발생했습니다. userId: " + userId);
             }
+        } else {
+            throw new NotificationException(ErrorCode.SSE_CONNECTION_NOT_FOUND, "SSE 연결을 찾을 수 없습니다. userId: " + userId);
         }
     }
 }
