@@ -10,10 +10,30 @@ services:
       - .env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - REDIS_HOST=redis                 # Redis Host 연결
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     networks:
       - homesweet-network
     restart: always
     mem_limit: 1024m
+
+  redis:
+    image: redis:7.2
+    container_name: homesweet-redis
+    restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - homesweet-network
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -37,3 +57,6 @@ services:
 networks:
   homesweet-network:
     driver: bridge
+
+volumes:
+  redisdata:
