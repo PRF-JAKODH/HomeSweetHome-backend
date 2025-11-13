@@ -107,20 +107,24 @@ public class ProductMapper {
 
         // 옵션 그룹 추가 (Cascade로 옵션 값도 함께 저장됨)
         if (domain.getOptionGroups() != null) {
-            domain.getOptionGroups().forEach(group ->
-                    entity.addOption(
-                            ProductOptionGroupEntity.builder()
-                                    .groupName(group.getGroupName())
-                                    .values(
-                                            group.getValues().stream()
-                                                    .map(value -> ProductOptionValueEntity.builder()
-                                                            .value(value.getValue())
-                                                            .build())
-                                                    .toList()
-                                    )
-                                    .build()
-                    )
-            );
+            domain.getOptionGroups().forEach(groupDomain -> {
+                ProductOptionGroupEntity groupEntity = ProductOptionGroupEntity.builder()
+                        .groupName(groupDomain.getGroupName())
+                        .build();
+
+                // 값 추가 시 부모 세팅 필수
+                if (groupDomain.getValues() != null) {
+                    groupDomain.getValues().forEach(valueDomain -> {
+                        ProductOptionValueEntity valueEntity = ProductOptionValueEntity.builder()
+                                .value(valueDomain.getValue())
+                                .build();
+
+                        groupEntity.addOptionValue(valueEntity);
+                    });
+                }
+
+                entity.addOption(groupEntity);
+            });
         }
 
         // SKU 추가 - 이미 entity에 추가된 옵션을 인덱스로 참조
