@@ -3,15 +3,18 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +92,68 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
+    }
+
+    @Override
+    public List<ProductPreviewResponse> findProductsByOptionFilter(
+            Long cursorId,
+            ProductFilterRequest request,
+            int limit,
+            ProductSortType sortType
+    ) {
+        QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
+
+        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(request.categoryId());
+
+        BooleanExpression keywordCondition = buildKeywordCondition(product, request.keyword());
+        BooleanExpression cursorCondition = buildCursorCondition(product, cursorId, sortType);
+        BooleanExpression categoryCondition = buildCategoryCondition(product, allSubCategoryIds);
+        BooleanExpression statusCondition = buildStatusCondition(product);
+        BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
+        BooleanExpression rangeFilterCondition = buildRangeFilterCondition(product, request);
+
+        BooleanBuilder builder = new BooleanBuilder()
+                .and(keywordCondition)
+                .and(cursorCondition)
+                .and(categoryCondition)
+                .and(statusCondition)
+                .and(optionCondition)
+                .and(rangeFilterCondition);
+
+        OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
+
+        List<ProductPreviewResponse> results = queryFactory
+                .select(Projections.constructor(ProductPreviewResponse.class,
+                        product.id,
+                        product.category.id,
+                        product.seller.id,
+                        product.name,
+                        product.imageUrl,
+                        product.brand,
+                        product.basePrice,
+                        product.discountRate,
+                        product.description,
+                        product.shippingPrice,
+                        product.status,
+                        JPAExpressions
+                                .select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        JPAExpressions
+                                .select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        product.createdAt,
+                        product.updatedAt
+                ))
+                .from(product)
+                .where(builder)
+                .orderBy(orderSpecifier)
+                .limit(limit + 1)
+                .fetch();
+
+        return results;
     }
 
     @Override
@@ -207,6 +272,137 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .where(condition)
                 .orderBy(product.createdAt.desc())
                 .fetch();
+    }
+
+    /**
+     * 옵션 필터 조건 생성
+     * 같은 그룹 내에서는 OR (색상=빨강 OR 색상=파랑)
+     * 다른 그룹 간에는 AND (색상 조건 AND 사이즈 조건)
+     */
+    private BooleanExpression buildOptionFilterCondition(
+            QProductEntity product,
+            ProductFilterRequest request
+    ) {
+        if (!request.hasOptionFilters()) {
+            return null;
+        }
+
+        QProductOptionGroupEntity optionGroup = productOptionGroupEntity;
+        QProductOptionValueEntity optionValue = productOptionValueEntity;
+
+        BooleanExpression finalCondition = null;
+
+        // 각 옵션 그룹별로 처리
+        for (Map.Entry<String, List<String>> entry : request.optionFilters().entrySet()) {
+            String groupName = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+
+            // 해당 그룹 내에서는 OR 조건
+            BooleanExpression groupCondition;
+
+            if (values.size() == 1) {
+                // 값이 하나일 때는 eq 사용
+                groupCondition = JPAExpressions
+                        .selectOne()
+                        .from(optionGroup)
+                        .join(optionGroup.values, optionValue)
+                        .where(
+                                optionGroup.product.id.eq(product.id),
+                                optionGroup.groupName.containsIgnoreCase(groupName),
+                                optionValue.value.eq(values.getFirst())
+                        )
+                        .exists();
+            } else {
+                // 값이 여러 개일 때는 in 사용
+                groupCondition = JPAExpressions
+                        .selectOne()
+                        .from(optionGroup)
+                        .join(optionGroup.values, optionValue)
+                        .where(
+                                optionGroup.product.id.eq(product.id),
+                                optionGroup.groupName.containsIgnoreCase(groupName),
+                                optionValue.value.in(values)
+                        )
+                        .exists();
+            }
+
+            // 그룹 간에는 AND 조건
+            finalCondition = (finalCondition == null)
+                    ? groupCondition
+                    : finalCondition.and(groupCondition);
+        }
+
+        return finalCondition;
+    }
+
+    /**
+     * 범위 필터 조건 생성
+     * 옵션 값에서 숫자를 추출하여 범위 비교
+     * 예: "가로 길이" 옵션에 "100cm", "100" 등의 값이 있고, 범위가 90-110이면 매칭
+     */
+    private BooleanExpression buildRangeFilterCondition(
+            QProductEntity product,
+            ProductFilterRequest request
+    ) {
+        if (!request.hasRangeFilters()) {
+            return null;
+        }
+
+        QProductOptionGroupEntity optionGroup = productOptionGroupEntity;
+        QProductOptionValueEntity optionValue = productOptionValueEntity;
+
+        BooleanExpression finalCondition = null;
+
+        for (Map.Entry<String, ProductFilterRequest.RangeFilter> entry : request.rangeFilters().entrySet()) {
+            String groupName = entry.getKey();
+            ProductFilterRequest.RangeFilter range = entry.getValue();
+
+            BooleanExpression groupCondition = JPAExpressions
+                    .selectOne()
+                    .from(optionGroup)
+                    .join(optionGroup.values, optionValue)
+                    .where(
+                            optionGroup.product.id.eq(product.id),
+                            optionGroup.groupName.containsIgnoreCase(groupName),
+                            buildNumericRangeCondition(optionValue, range)
+                    )
+                    .exists();
+
+            finalCondition = (finalCondition == null)
+                    ? groupCondition
+                    : finalCondition.and(groupCondition);
+        }
+
+        return finalCondition;
+    }
+
+    /**
+     * 옵션 값에서 숫자를 추출하여 범위 비교
+     * 예: "100" → 100
+     */
+    private BooleanExpression buildNumericRangeCondition(
+            QProductOptionValueEntity optionValue,
+            ProductFilterRequest.RangeFilter range
+    ) {
+        NumberExpression<Integer> numericValue =
+                optionValue.value.castToNum(Integer.class);
+
+        BooleanExpression condition = null;
+
+        if (range.hasMin()) {
+            condition = numericValue.goe(range.minValue());
+        }
+
+        if (range.hasMax()) {
+            BooleanExpression maxCondition = numericValue.loe(range.maxValue());
+            condition = (condition == null) ? maxCondition : condition.and(maxCondition);
+        }
+
+        return condition;
     }
 
     // 판매자 상품 조회 시작일
