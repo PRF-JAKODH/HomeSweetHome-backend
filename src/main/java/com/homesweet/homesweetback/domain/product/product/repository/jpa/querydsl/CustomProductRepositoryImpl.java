@@ -14,6 +14,7 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +111,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         BooleanExpression categoryCondition = buildCategoryCondition(product, allSubCategoryIds);
         BooleanExpression statusCondition = buildStatusCondition(product);
         BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
+        BooleanExpression rangeFilterCondition = buildRangeFilterCondition(product, request);
 
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -127,6 +129,10 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         }
         if (optionCondition != null) {
             builder.and(optionCondition);
+        }
+
+        if (rangeFilterCondition != null) {
+            builder.and(rangeFilterCondition);
         }
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
@@ -324,8 +330,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         .join(optionGroup.values, optionValue)
                         .where(
                                 optionGroup.product.id.eq(product.id),
-                                optionGroup.groupName.eq(groupName),
-                                optionValue.value.eq(values.get(0))
+                                optionGroup.groupName.containsIgnoreCase(groupName),
+                                optionValue.value.eq(values.getFirst())
                         )
                         .exists();
             } else {
@@ -336,13 +342,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         .join(optionGroup.values, optionValue)
                         .where(
                                 optionGroup.product.id.eq(product.id),
-                                optionGroup.groupName.eq(groupName),
+                                optionGroup.groupName.containsIgnoreCase(groupName),
                                 optionValue.value.in(values)
                         )
                         .exists();
             }
-
-            log.info("생성된 그룹 조건: {}", groupCondition);
 
             // 그룹 간에는 AND 조건
             finalCondition = (finalCondition == null)
@@ -350,8 +354,95 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     : finalCondition.and(groupCondition);
         }
 
-        log.info("최종 옵션 조건: {}", finalCondition);
         return finalCondition;
+    }
+
+    /**
+     * 범위 필터 조건 생성
+     * 옵션 값에서 숫자를 추출하여 범위 비교
+     * 예: "가로 길이" 옵션에 "100cm", "100" 등의 값이 있고, 범위가 90-110이면 매칭
+     */
+    private BooleanExpression buildRangeFilterCondition(
+            QProductEntity product,
+            ProductFilterRequest request
+    ) {
+        if (!request.hasRangeFilters()) {
+            return null;
+        }
+
+        QProductOptionGroupEntity optionGroup = productOptionGroupEntity;
+        QProductOptionValueEntity optionValue = productOptionValueEntity;
+
+        BooleanExpression finalCondition = null;
+
+        for (Map.Entry<String, ProductFilterRequest.RangeFilter> entry : request.rangeFilters().entrySet()) {
+            String groupName = entry.getKey();
+            ProductFilterRequest.RangeFilter range = entry.getValue();
+
+            log.info("범위 필터 처리 - 그룹: {}, 범위: {}-{}",
+                    groupName, range.minValue(), range.maxValue());
+
+            // MySQL의 REGEXP를 사용하여 숫자 추출 및 비교
+            BooleanExpression groupCondition = JPAExpressions
+                    .selectOne()
+                    .from(optionGroup)
+                    .join(optionGroup.values, optionValue)
+                    .where(
+                            optionGroup.product.id.eq(product.id),
+                            optionGroup.groupName.eq(groupName),
+                            buildNumericRangeCondition(optionValue, range)
+                    )
+                    .exists();
+
+            log.info("생성된 범위 조건: {}", groupCondition);
+
+            finalCondition = (finalCondition == null)
+                    ? groupCondition
+                    : finalCondition.and(groupCondition);
+        }
+
+        log.info("최종 범위 조건: {}", finalCondition);
+        return finalCondition;
+    }
+
+    /**
+     * 옵션 값에서 숫자를 추출하여 범위 비교
+     * 예: "100cm" → 100, "150" → 150, "길이 200cm" → 200
+     */
+    private BooleanExpression buildNumericRangeCondition(
+            QProductOptionValueEntity optionValue,
+            ProductFilterRequest.RangeFilter range
+    ) {
+        // MySQL의 CAST(REGEXP_REPLACE(value, '[^0-9]', '') AS UNSIGNED)를 사용
+        // 옵션 값에서 숫자만 추출하여 정수로 변환
+
+        NumberExpression<Integer> numericValue = Expressions.numberTemplate(
+                Integer.class,
+                "CAST(REGEXP_REPLACE({0}, '[^0-9]', '') AS UNSIGNED)",
+                optionValue.value
+        );
+
+        BooleanExpression condition = null;
+
+        // 최소값 조건
+        if (range.hasMin()) {
+            BooleanExpression minCondition = numericValue.goe(range.minValue());
+            condition = (condition == null) ? minCondition : condition.and(minCondition);
+        }
+
+        // 최대값 조건
+        if (range.hasMax()) {
+            BooleanExpression maxCondition = numericValue.loe(range.maxValue());
+            condition = (condition == null) ? maxCondition : condition.and(maxCondition);
+        }
+
+        // 숫자가 추출 가능한 값만 (빈 문자열 제외)
+        BooleanExpression hasNumber = Expressions.stringTemplate(
+                "REGEXP_REPLACE({0}, '[^0-9]', '')",
+                optionValue.value
+        ).ne("");
+
+        return condition != null ? condition.and(hasNumber) : hasNumber;
     }
 
     // 판매자 상품 조회 시작일
