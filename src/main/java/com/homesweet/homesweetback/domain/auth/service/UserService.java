@@ -43,6 +43,12 @@ public class UserService {
         return UserResponse.of(user);
     }
 
+    @Transactional(readOnly = true)
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    }
+
     /**
      * 사용자 정보 수정
      */
