@@ -8,6 +8,8 @@ import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.grade.repository.GradeRepository;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.common.util.PhoneNumberValidator;
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 
 import java.math.BigDecimal;
@@ -37,10 +39,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserInfo(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         log.debug("User info retrieved: {}", user.getEmail());
         return UserResponse.of(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     /**
@@ -49,21 +57,21 @@ public class UserService {
     @Transactional
     public UserResponse updateUserInfo(Long userId, UpdateUserRequest request, Optional<MultipartFile> profileImage) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         if (profileImage.isPresent()) {
             try{
                 imageUploader.delete(user.getProfileImageUrl());
             } catch (Exception e) {
                 log.error("프로필 이미지 삭제 실패: userId={}", userId, e);
-                throw new RuntimeException("프로필 이미지 삭제에 실패했습니다: " + e.getMessage());
+                throw new BusinessException(ErrorCode.FILE_STREAM_ERROR);
             }
             try{
                 String uploadedUrl = imageUploader.upload(profileImage.get(), "user/profile/" + userId);
                 user.setProfileImageUrl(uploadedUrl);
             } catch (Exception e) {
                 log.error("프로필 이미지 업로드 실패: userId={}", userId, e);
-                throw new RuntimeException("프로필 이미지 업로드에 실패했습니다: " + e.getMessage());
+                throw new BusinessException(ErrorCode.FILE_STREAM_ERROR);
             }
         }
         
@@ -75,7 +83,7 @@ public class UserService {
         if (request.phoneNumber() != null) {
             // 핸드폰 번호 검증
             if (!PhoneNumberValidator.isValid(request.phoneNumber())) {
-                throw new IllegalArgumentException("올바른 핸드폰 번호 형식이 아닙니다");
+                throw new BusinessException(ErrorCode.INVALID_PHONE_NUMBER_FORMAT);
             }
             user.setPhoneNumber(PhoneNumberValidator.format(request.phoneNumber()));
         }
@@ -100,7 +108,7 @@ public class UserService {
     @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId) 
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         userRepository.delete(user);
         log.info("User account deleted: {}", user.getEmail());
@@ -112,13 +120,13 @@ public class UserService {
     @Transactional
     public UserResponse updateUserRole(Long userId, UpdateUserRoleRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         user.setRole(request.role());
         
         // 판매자 등급 랜덤 설정
         Integer gradeId = ThreadLocalRandom.current().nextInt(1, 6);
         Grade grade = gradeRepository.findById(gradeId)
-            .orElseThrow(() -> new RuntimeException("Grade not found with id: " + gradeId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.GRADE_NOT_FOUND));
         user.setGrade(grade);
         
         return UserResponse.of(userRepository.save(user));
@@ -131,7 +139,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<Grade> getUserGrade(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         return user.getGradeOptional();
     }
@@ -143,7 +151,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public String getUserGradeName(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         return user.getGradeName();
     }
@@ -155,7 +163,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public BigDecimal getUserFeeRate(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         return user.getFeeRate();
     }
@@ -166,7 +174,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public boolean hasUserGrade(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         return user.hasGrade();
     }

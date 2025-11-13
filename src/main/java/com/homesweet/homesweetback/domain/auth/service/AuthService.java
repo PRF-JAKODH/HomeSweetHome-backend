@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.auth.service;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.security.jwt.JwtTokenProvider;
 import com.homesweet.homesweetback.common.util.CookieUtil;
 import com.homesweet.homesweetback.domain.auth.dto.*;
@@ -35,30 +37,16 @@ public class AuthService {
     @Transactional
     public AccessTokenResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Cookie에서 Refresh Token 추출
-        String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
-
-        if (refreshToken == null) {
-            throw new IllegalArgumentException("Refresh token not found");
-        }
+        String refreshToken = getRefreshTokenFromRequest(request);
 
         // Refresh Token 유효성 검증
-        if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
-            // 유효하지 않은 refresh token인 경우 cookie 삭제
-            Cookie deleteCookie = cookieUtil.createRefreshTokenCookieForDeletion();
-            response.addCookie(deleteCookie);
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
+        validateRefreshToken(response, refreshToken);
 
-        // ✅ 수정: userId로 먼저 사용자 조회
-        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Refresh Token으로 사용자 조회
+        User user = getUserById(jwtTokenProvider.getUserIdFromToken(refreshToken));
 
-        // ✅ 수정: 조회한 사용자의 email로 저장된 토큰 확인
-        String storedRefreshToken = refreshTokenRepository.findByEmail(user.getEmail());
-        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
+        // 조회한 사용자의 email로 저장된 토큰 확인
+        validateStoredRefreshToken(refreshToken, user);
 
         // 새로운 Access Token과 Refresh Token 생성
         String newAccessToken = jwtTokenProvider.createAccessToken(user);
@@ -72,24 +60,6 @@ public class AuthService {
         log.info("Token refreshed successfully for user: {}", user.getEmail());
 
         return new AccessTokenResponse(newAccessToken,UserResponse.of(user));
-    }
-    /**
-     * Refresh Token으로 사용자 정보를 조회합니다.
-     */
-    public User getUserFromRefreshToken(HttpServletRequest request) {
-        String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
-        
-        if (refreshToken == null) {
-            throw new IllegalArgumentException("Refresh token not found");
-        }
-        
-        if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
-        
-        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
-        return userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
 
@@ -133,14 +103,9 @@ public class AuthService {
         // Refresh Token으로 사용자 조회
         User user = getUserFromRefreshToken(request);
         
-        // 핸드폰 번호 검증
-        if (!PhoneNumberValidator.isValid(signupRequest.phoneNumber())) {
-            throw new IllegalArgumentException("올바른 핸드폰 번호 형식이 아닙니다");
-        }
-        
         // 생일 검증 (미래 날짜 불가)
         if (signupRequest.birthDate().isAfter(java.time.LocalDate.now())) {
-            throw new IllegalArgumentException("생일은 미래 날짜가 될 수 없습니다");
+            throw new BusinessException(ErrorCode.INVALID_BIRTH_DATE);
         }
         
         // 사용자 정보 업데이트
@@ -171,16 +136,18 @@ public class AuthService {
      */
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         // Authorization 헤더에서 Access Token 추출
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7);
-            
-            if (jwtTokenProvider.validateToken(accessToken)) {
-                Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-                String email = jwtTokenProvider.getEmailFromToken(accessToken);
+        String accessToken = getAccessTokenFromRequest(request);
+
+        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
+            Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+            String email = jwtTokenProvider.getEmailFromToken(accessToken);
                 
-                log.info("User logout successful: userId={}, email={}", userId, email);
-                refreshTokenRepository.deleteByEmail(email);
+            log.info("User logout successful: userId={}, email={}", userId, email);
+            refreshTokenRepository.deleteByEmail(email);
+        } else {
+            String refreshToken = getRefreshTokenFromRequest(request);
+            if (refreshToken != null && jwtTokenProvider.validateToken(refreshToken)) {
+                refreshTokenRepository.deleteByRefreshToken(refreshToken);
             }
         }
         
@@ -188,4 +155,76 @@ public class AuthService {
         Cookie deleteCookie = cookieUtil.createRefreshTokenCookieForDeletion();
         response.addCookie(deleteCookie);
     }
+
+    // 내부 메서드
+
+    /**
+     * Authorization 헤더에서 Access Token을 추출합니다.
+     */
+    private String getAccessTokenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    /**
+     * Cookie에서 Refresh Token을 추출합니다.
+     */
+    private String getRefreshTokenFromRequest(HttpServletRequest request) {
+        String refreshToken = cookieUtil.getRefreshTokenFromCookie(request);
+
+        if (refreshToken == null) {
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
+        return refreshToken;
+    }
+
+
+    /**
+     * Refresh Token 유효성 검증
+     */
+    private void validateRefreshToken(HttpServletResponse response, String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+            // 유효하지 않은 refresh token인 경우 cookie 삭제
+            Cookie deleteCookie = cookieUtil.createRefreshTokenCookieForDeletion();
+            response.addCookie(deleteCookie);
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+    }
+
+    /**
+     * User ID로 사용자 정보를 조회합니다.
+     */
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+
+    /**
+     * Refresh Token으로 사용자 정보를 조회합니다.
+     */
+    private User getUserFromRefreshToken(HttpServletRequest request) {
+        String refreshToken = getRefreshTokenFromRequest(request);
+        
+        if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+        
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        return getUserById(userId);
+    }
+
+    /**
+     * 저장된 Refresh Token과 비교하여 유효성 검증
+     */
+    private void validateStoredRefreshToken(String refreshToken, User user) {
+        String storedRefreshToken = refreshTokenRepository.findByEmail(user.getEmail());
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+    }
+
 }

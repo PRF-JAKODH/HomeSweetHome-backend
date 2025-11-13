@@ -11,26 +11,10 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    
-    Optional<User> findByEmail(String email);
-    
-    boolean existsByEmail(String email);
-    
     /**
      * OAuth Provider와 Provider ID로 사용자 조회
      */
     Optional<User> findByProviderAndProviderId(OAuth2Provider provider, String providerId);
-    
-    /**
-     * OAuth Provider와 Provider ID로 사용자 존재 여부 확인
-     */
-    boolean existsByProviderAndProviderId(OAuth2Provider provider, String providerId);
-    
-    /**
-     * 이메일과 Provider로 사용자 조회
-     */
-    Optional<User> findByEmailAndProvider(String email, OAuth2Provider provider);
-
 
 
     List<User> findAllByRole(UserRole role);

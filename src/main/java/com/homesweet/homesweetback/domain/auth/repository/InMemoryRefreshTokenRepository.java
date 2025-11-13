@@ -25,4 +25,9 @@ public class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
     public void deleteByEmail(String email) {
         refreshTokenMap.remove(email);
     }
+
+    @Override
+    public void deleteByRefreshToken(String refreshToken) {
+        refreshTokenMap.values().remove(refreshToken);
+    }
 }

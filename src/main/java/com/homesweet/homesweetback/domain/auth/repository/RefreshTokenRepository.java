@@ -6,4 +6,5 @@ public interface RefreshTokenRepository {
     boolean save(String email, String refreshToken);
     String findByEmail(String email);
     void deleteByEmail(String email);
+    void deleteByRefreshToken(String refreshToken);
 }
