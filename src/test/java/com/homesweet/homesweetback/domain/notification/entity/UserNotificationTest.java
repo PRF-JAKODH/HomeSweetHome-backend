@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
 
 @DisplayName("UserNotification 테스트")
@@ -99,7 +99,7 @@ public class UserNotificationTest {
             .category(NotificationCategory.builder()
                 .categoryType(NotificationCategoryType.ORDER)
                 .build())
-            .templateType(NotificationEventType.ORDER_COMPLETED)
+            .templateType(NotificationTemplateType.ORDER_COMPLETED)
             .title("주문 완료")
             .content("주문이 완료되었습니다.")
             .redirectUrl("app://order/{orderId}")

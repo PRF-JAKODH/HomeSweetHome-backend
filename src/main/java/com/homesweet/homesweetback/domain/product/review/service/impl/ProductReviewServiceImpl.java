@@ -6,8 +6,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
-import com.homesweet.homesweetback.domain.notification.domain.payload.ProductNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.domain.notification.ProductNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
@@ -68,14 +67,16 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         User seller = userRepository.findById(product.getSellerId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        User reviewer = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
                 
         notificationSendService.sendTemplateNotificationToSingleUser(
             seller.getId(),
-            NotificationEventType.NEW_REVIEW,
-            ProductNotificationPayload.NewReviewPayload.builder()
+            ProductNotification.NewReview.builder()
                 .productId(productId.toString())
                 .productName(product.getName())
-                .userName(seller.getName())
+                .userName(reviewer.getName())
                 .build()
         );
 

@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
-import com.homesweet.homesweetback.domain.notification.domain.payload.OrderNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.domain.notification.OrderNotification;
 import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import com.homesweet.homesweetback.domain.notification.service.SseService;
@@ -37,14 +36,14 @@ public class NotificationController {
     /**
      * SSE 알림 테스트
      * 
-    **/
+     **/
     @GetMapping("/test")
     public void testMessage(){
-        var payload = OrderNotificationPayload.OrderCompletedPayload.builder()
+        var notification = OrderNotification.OrderCompleted.builder()
             .userName("test")
             .orderId("12345")
             .build();
-        notificationSendService.sendTemplateNotificationToSingleUser(12L, NotificationEventType.ORDER_COMPLETED, payload);
+        notificationSendService.sendTemplateNotificationToSingleUser(12L, notification);
     }
 
     @GetMapping(value = "/subscribe", produces = "text/event-stream")

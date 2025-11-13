@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.notification.entity;
 
 import com.homesweet.homesweetback.common.BaseEntity;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,7 +30,7 @@ public class NotificationTemplate extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "template_type", nullable = false, length = 50)
-    private NotificationEventType templateType;
+    private NotificationTemplateType templateType;
 
     @Column(name = "title", nullable = false, length = 50)
     private String title;
@@ -43,7 +43,7 @@ public class NotificationTemplate extends BaseEntity {
 
     @Builder
     public NotificationTemplate(NotificationCategory category, 
-                            NotificationEventType templateType, 
+                            NotificationTemplateType templateType, 
                             String title, 
                             String content, 
                             String redirectUrl) {

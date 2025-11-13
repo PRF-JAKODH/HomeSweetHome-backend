@@ -12,8 +12,7 @@ import com.homesweet.homesweetback.domain.community.repository.CommunityCommentL
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
-import com.homesweet.homesweetback.domain.notification.domain.payload.CommunityNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -73,11 +72,13 @@ public class CommunityCountService {
             post.increaseLikeCount();
 
             // 알림 전송
-            notificationSendService.sendTemplateNotificationToSingleUser(post.getAuthor().getId(), NotificationEventType.NEW_LIKE, CommunityNotificationPayload.NewLikePayload.builder()
-                    .userName(user.getName())
-                    .postId(post.getPostId())
-                    .postTitle(post.getTitle())
-                    .build());
+            notificationSendService.sendTemplateNotificationToSingleUser(
+                    post.getAuthor().getId(),
+                    CommunityNotification.NewLike.builder()
+                            .userName(user.getName())
+                            .postId(post.getPostId())
+                            .postTitle(post.getTitle())
+                            .build());
         }
     }
 
@@ -115,12 +116,14 @@ public class CommunityCountService {
         }
 
         // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(comment.getAuthor().getId(), NotificationEventType.NEW_COMMENT_LIKE, CommunityNotificationPayload.NewCommentLikePayload.builder()
-                .userName(user.getName())
-                .postId(comment.getPost().getPostId())
-                .postTitle(comment.getPost().getTitle())
-                .commentId(comment.getCommentId())
-                .build());
+        notificationSendService.sendTemplateNotificationToSingleUser(
+                comment.getAuthor().getId(),
+                CommunityNotification.NewCommentLike.builder()
+                        .userName(user.getName())
+                        .postId(comment.getPost().getPostId())
+                        .postTitle(comment.getPost().getTitle())
+                        .commentId(comment.getCommentId())
+                        .build());
     }  
 
     /**

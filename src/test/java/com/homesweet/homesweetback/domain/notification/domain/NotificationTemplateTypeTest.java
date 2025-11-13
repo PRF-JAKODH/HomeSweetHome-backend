@@ -7,8 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("NotificationEventType 테스트")
-public class NotificationEventTypeTest {
-    private final NotificationEventType eventType = NotificationEventType.ORDER_COMPLETED;
+public class NotificationTemplateTypeTest {
+    private final NotificationTemplateType eventType = NotificationTemplateType.ORDER_COMPLETED;
 
     @Test
     @DisplayName("NotificationEventType 테스트")
@@ -20,12 +20,12 @@ public class NotificationEventTypeTest {
     @Test
     @DisplayName("NotificationEventType fromCode 테스트_성공")
     void testNotificationEventTypeFromCode_Success() {
-        assertThat(NotificationEventType.fromCode("ORDER_COMPLETED")).isEqualTo(eventType);
+        assertThat(NotificationTemplateType.fromCode("ORDER_COMPLETED")).isEqualTo(eventType);
     }
 
     @Test
     @DisplayName("NotificationEventType fromCode 테스트_실패")
     void testNotificationEventTypeFromCode_Failure() {
-        assertThatThrownBy(() -> NotificationEventType.fromCode("INVALID_EVENT_TYPE")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> NotificationTemplateType.fromCode("INVALID_EVENT_TYPE")).isInstanceOf(IllegalArgumentException.class);
     }
 }

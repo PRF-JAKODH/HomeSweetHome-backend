@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.notification.service;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -16,13 +17,11 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
+import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
-import com.homesweet.homesweetback.domain.notification.entity.NotificationCategory;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
 import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
-import com.homesweet.homesweetback.domain.notification.repository.NotificationCategoryRepository;
 import com.homesweet.homesweetback.domain.notification.repository.NotificationTemplateRepository;
 import com.homesweet.homesweetback.domain.notification.repository.UserNotificationRepository;
 import com.homesweet.homesweetback.domain.notification.service.impl.NotificationAPIService;
@@ -51,13 +50,9 @@ class NotificationAPIServiceTest {
     private UserRepository userRepository;
     
     @Autowired
-    private NotificationCategoryRepository notificationCategoryRepository;
-    
-    @Autowired
     private NotificationTemplateRepository notificationTemplateRepository;
     
     private User testUser;
-    private NotificationCategory testCategory;
     private NotificationTemplate testTemplate;
 
     @BeforeAll
@@ -65,17 +60,8 @@ class NotificationAPIServiceTest {
 
         // 테스트 사용자 생성
         testUser = userRepository.save(createTestUser());
-         // 테스트 카테고리 생성
-        testCategory = notificationCategoryRepository.save(NotificationCategory.builder()
-                .categoryType(NotificationCategoryType.ORDER)
-                .build());
-        notificationCategoryRepository.save(NotificationCategory.builder()
-                .categoryType(NotificationCategoryType.CUSTOM)
-                .build());
         // 테스트 템플릿 생성
-        testTemplate = notificationTemplateRepository.save(createTestNotificationTemplate());
-                // 테스트 카테고리 데이터베이스 설정 -> Category는 항상 데이터베이스에 있다고 가정
-                setUpNotificationCategoryOnDatabase();
+        testTemplate = notificationTemplateRepository.findByTemplateType(NotificationTemplateType.ORDER_COMPLETED).orElseThrow(() -> new RuntimeException("ORDER_COMPLETED 템플릿을 찾을 수 없습니다."));
     }
 
     @AfterEach
@@ -98,7 +84,7 @@ class NotificationAPIServiceTest {
         assertThat(result.get(0).getTitle()).isEqualTo(testTemplate.getTitle());
         assertThat(result.get(0).getContextData()).containsEntry("orderId", "39");
         assertThat(result.get(0).isRead()).isFalse();
-        assertThat(result.get(0).getCategoryType()).isEqualTo(testTemplate.getCategory().getCategoryType());
+        assertThat(result.get(0).getCategoryType()).isEqualTo(NotificationCategoryType.ORDER);
         assertThat(result.get(0).getCreatedAt()).isNotNull();
         assertThat(result.get(0).getNotificationId()).isNotNull();
         
@@ -121,7 +107,7 @@ class NotificationAPIServiceTest {
         assertThat(result.get(0).getTitle()).isEqualTo(testTemplate.getTitle());
         assertThat(result.get(0).getContextData()).containsEntry("orderId", "39");
         assertThat(result.get(0).isRead()).isFalse();
-        assertThat(result.get(0).getCategoryType()).isEqualTo(testTemplate.getCategory().getCategoryType());
+        assertThat(result.get(0).getCategoryType()).isEqualTo(NotificationCategoryType.ORDER);
         assertThat(result.get(0).getCreatedAt()).isNotNull();
         assertThat(result.get(0).getNotificationId()).isNotNull();
     }
@@ -346,15 +332,6 @@ class NotificationAPIServiceTest {
             .isDeleted(false)
             .build();
     }
-
-    private void setUpNotificationCategoryOnDatabase() {
-        NotificationCategoryType[] categoryTypes = NotificationCategoryType.values();
-        for (NotificationCategoryType categoryType : categoryTypes) {
-            notificationCategoryRepository.save(NotificationCategory.builder()
-                .categoryType(categoryType)
-                .build());
-        }
-    }
     private User createTestUser() {
         return createTestUser("홍길동", "honggildong@example.com");
     }
@@ -366,16 +343,6 @@ class NotificationAPIServiceTest {
             .provider(OAuth2Provider.KAKAO)
             .providerId("123456789")
             .role(UserRole.USER)
-            .build();
-    }   
-
-    private NotificationTemplate createTestNotificationTemplate() {
-        return NotificationTemplate.builder()
-            .category(testCategory)  // 저장된 카테고리 사용
-            .templateType(NotificationEventType.ORDER_COMPLETED)
-            .title("주문 완료")
-            .content("주문이 완료되었습니다.")
-            .redirectUrl("/order/{orderId}")
             .build();
     }   
 }

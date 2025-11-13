@@ -12,8 +12,7 @@ import jakarta.validation.Valid;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
-import com.homesweet.homesweetback.domain.notification.domain.NotificationEventType;
-import com.homesweet.homesweetback.domain.notification.domain.payload.SystemNotificationPayload;
+import com.homesweet.homesweetback.domain.notification.domain.notification.SystemNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
 import java.util.Optional;
@@ -62,11 +61,11 @@ public class UserController {
         UserResponse userResponse = userService.updateUserRole(userId, request);
 
         // 알림 전송
-        SystemNotificationPayload.SellerRegistrationCompletePayload payload = SystemNotificationPayload.SellerRegistrationCompletePayload.builder()
+        SystemNotification.SellerRegistrationComplete notification = SystemNotification.SellerRegistrationComplete.builder()
             .userName(userResponse.name())
             .build();
 
-        notificationSendService.sendTemplateNotificationToSingleUser(userId, NotificationEventType.SELLER_REGISTRATION_COMPLETE, payload);
+        notificationSendService.sendTemplateNotificationToSingleUser(userId, notification);
 
         return ResponseEntity.ok(userResponse);
     }
