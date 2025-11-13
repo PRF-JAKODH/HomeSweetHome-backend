@@ -1,7 +1,11 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
+import com.homesweet.homesweetback.common.util.JsonUtil;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
+import org.flywaydb.core.internal.util.JsonUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -22,30 +26,40 @@ public class RecentViewServiceImpl implements RecentViewService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String KEY_PREFIX = "recent:view:";
+    private static final String VIEW_KEY_PREFIX = "recent:view:";
+    private static final String PREVIEW_KEY_PREFIX = "product:preview:";
+
     private static final long MAX_PRODUCTS = 10;
-    private static final Duration TTL = Duration.ofDays(1);
+    private static final Duration VIEW_TTL = Duration.ofDays(1);
+    private static final Duration PREVIEW_TTL = Duration.ofHours(12);
 
     @Async("recentSearchTaskExecutor")
     @Override
     public void saveView(Long userId, Long productId) {
+        String key = VIEW_KEY_PREFIX + userId;
+        double score = System.currentTimeMillis(); // 최신순 정렬
 
-        String key = getKey(userId);
-        double score = System.currentTimeMillis(); // timestamp 기반 score
-
-        // 1. 해당 productId 업데이트 또는 추가
         redisTemplate.opsForZSet().add(key, productId.toString(), score);
 
-        // 2. 최신 10개만 유지
         redisTemplate.opsForZSet().removeRange(key, 0, -(MAX_PRODUCTS + 1));
 
-        // 3. TTL 설정
-        redisTemplate.expire(key, TTL);
+        redisTemplate.expire(key, VIEW_TTL);
+    }
+
+    // 최근 본 상품 캐싱
+    @Async("recentSearchTaskExecutor")
+    @Override
+    public void cachePreview(Long productId, ProductDetailResponse detail) {
+        redisTemplate.opsForValue().set(
+                PREVIEW_KEY_PREFIX + productId,
+                JsonUtils.toJson(RecentViewPreviewResponse.fromDetail(detail)),
+                PREVIEW_TTL
+        );
     }
 
     @Override
-    public List<Long> getRecentViews(Long userId) {
-        String key = getKey(userId);
+    public List<Long> getRecentViewsIds(Long userId) {
+        String key = VIEW_KEY_PREFIX + userId;
 
         Set<String> result = redisTemplate.opsForZSet()
                 .reverseRange(key, 0, MAX_PRODUCTS - 1);
@@ -56,16 +70,26 @@ public class RecentViewServiceImpl implements RecentViewService {
     }
 
     @Override
+    public RecentViewPreviewResponse getCachedPreview(Long productId) {
+
+        String json = redisTemplate.opsForValue()
+                .get(PREVIEW_KEY_PREFIX + productId);
+
+        if (json == null) return null;
+
+        return JsonUtil.fromJson(json, RecentViewPreviewResponse.class);
+    }
+
+    @Override
     public void deleteOne(Long userId, Long productId) {
-        redisTemplate.opsForZSet().remove(getKey(userId), productId.toString());
+        redisTemplate.opsForZSet().remove(
+                VIEW_KEY_PREFIX + userId,
+                productId.toString()
+        );
     }
 
     @Override
     public void clearAll(Long userId) {
-        redisTemplate.delete(getKey(userId));
-    }
-
-    private String getKey(Long userId) {
-        return KEY_PREFIX + userId;
+        redisTemplate.delete(VIEW_KEY_PREFIX + userId);
     }
 }
