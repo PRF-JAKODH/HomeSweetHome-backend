@@ -153,8 +153,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .limit(limit + 1)
                 .fetch();
 
-        results.forEach(r -> log.info("상품명: {}", r.name()));
-
         return results;
     }
 
@@ -303,8 +301,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 continue;
             }
 
-            log.info("옵션 필터 처리 - 그룹: {}, 값: {}", groupName, values);
-
             // 해당 그룹 내에서는 OR 조건
             BooleanExpression groupCondition;
 
@@ -364,9 +360,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         for (Map.Entry<String, ProductFilterRequest.RangeFilter> entry : request.rangeFilters().entrySet()) {
             String groupName = entry.getKey();
             ProductFilterRequest.RangeFilter range = entry.getValue();
-
-            log.info("범위 필터 처리 - 그룹: {}, 범위: {}-{}",
-                    groupName, range.minValue(), range.maxValue());
 
             // MySQL의 REGEXP를 사용하여 숫자 추출 및 비교
             BooleanExpression groupCondition = JPAExpressions
