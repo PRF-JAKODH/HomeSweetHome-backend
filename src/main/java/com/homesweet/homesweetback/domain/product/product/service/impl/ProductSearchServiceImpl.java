@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.service.ProductSearchService;
@@ -22,8 +24,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductSearchServiceImpl implements ProductSearchService {
 
+    private final ProductValidator productValidator;
     private final ProductRepository productRepository;
     private final RecentSearchService recentSearchService;
+    private final RecentViewServiceImpl recentViewService;
 
     @Override
     @Transactional(readOnly = true)
@@ -44,5 +48,16 @@ public class ProductSearchServiceImpl implements ProductSearchService {
                 : null;
 
         return ScrollResponse.of(products, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDetailResponse getProductDetail(Long userId, Long productId) {
+
+        recentViewService.saveView(userId, productId);
+
+        productValidator.validateExistsProduct(productId);
+
+        return productRepository.findProductDetailById(productId);
     }
 }
