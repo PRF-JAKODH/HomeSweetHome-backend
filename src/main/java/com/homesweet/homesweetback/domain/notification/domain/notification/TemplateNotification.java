@@ -31,15 +31,9 @@ public interface TemplateNotification {
     @SuppressWarnings("unchecked")
     default Map<String, Object> toMap() {
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.convertValue(this, Map.class);
+        Map<String, Object> map = objectMapper.convertValue(this, Map.class);
+        map.remove("eventType");
+        return map;
     }
-    
-    /**
-     * 알림 검증
-     * 필수 필드 검증을 수행합니다.
-     * 
-     * @throws IllegalArgumentException 필수 필드 누락 시
-     */
-    void validate();
 }
 

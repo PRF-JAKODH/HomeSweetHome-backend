@@ -50,7 +50,7 @@ public class NotificationSendServiceUnitTest {
         Long userId = 1L;
         OrderNotification.OrderCompleted notification = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
         
         // When
@@ -73,7 +73,7 @@ public class NotificationSendServiceUnitTest {
         List<Long> userIds = List.of(1L, 2L, 3L);
         OrderNotification.OrderCompleted notification = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
         
         // When

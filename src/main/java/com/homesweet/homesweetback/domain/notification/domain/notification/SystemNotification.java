@@ -39,11 +39,6 @@ public class SystemNotification {
         public NotificationTemplateType getEventType() {
             return eventType;
         }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
-        }
     }
     
     /**
@@ -76,11 +71,6 @@ public class SystemNotification {
         public NotificationTemplateType getEventType() {
             return eventType;
         }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
-        }
     }
     
     /**
@@ -106,11 +96,6 @@ public class SystemNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }

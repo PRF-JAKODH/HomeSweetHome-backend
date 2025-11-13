@@ -17,13 +17,13 @@ public class ProductNotificationTest {
         // Given
         ProductNotification.ProductApproved productApproved = ProductNotification.ProductApproved.builder()
             .userName("홍길동")
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .build();
 
         // Then
         assertThat(productApproved.getUserName()).isEqualTo("홍길동");
-        assertThat(productApproved.getProductId()).isEqualTo("prod-123");
+        assertThat(productApproved.getProductId()).isEqualTo(12345L);
         assertThat(productApproved.getProductName()).isEqualTo("상품명");
         assertThat(productApproved.getEventType()).isEqualTo(NotificationTemplateType.PRODUCT_APPROVED);
     }
@@ -34,7 +34,7 @@ public class ProductNotificationTest {
         // When & Then
         assertThatThrownBy(() -> ProductNotification.ProductApproved.builder()
             .userName(null)
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .build())
             .isInstanceOf(IllegalArgumentException.class);
@@ -46,24 +46,24 @@ public class ProductNotificationTest {
         // Given
         ProductNotification.ProductRejected productRejected = ProductNotification.ProductRejected.builder()
             .userName("홍길동")
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .build();
 
         // Then
         assertThat(productRejected.getUserName()).isEqualTo("홍길동");
-        assertThat(productRejected.getProductId()).isEqualTo("prod-123");
+        assertThat(productRejected.getProductId()).isEqualTo(12345L);
         assertThat(productRejected.getProductName()).isEqualTo("상품명");
         assertThat(productRejected.getEventType()).isEqualTo(NotificationTemplateType.PRODUCT_REJECTED);
     }
 
     @Test
-    @DisplayName("ProductRejected 생성 테스트_실패_productId_blank")
-    void testCreateProductRejected_Failure_ProductIdBlank() {
+    @DisplayName("ProductRejected 생성 테스트_실패_productId_null")
+    void testCreateProductRejected_Failure_ProductIdNull() {
         // When & Then
         assertThatThrownBy(() -> ProductNotification.ProductRejected.builder()
             .userName("홍길동")
-            .productId("")
+            .productId(null)
             .productName("상품명")
             .build())
             .isInstanceOf(IllegalArgumentException.class);
@@ -74,13 +74,13 @@ public class ProductNotificationTest {
     void testCreateProductLowStock() {
         // Given
         ProductNotification.ProductLowStock productLowStock = ProductNotification.ProductLowStock.builder()
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .currentStock("5")
             .build();
 
         // Then
-        assertThat(productLowStock.getProductId()).isEqualTo("prod-123");
+        assertThat(productLowStock.getProductId()).isEqualTo(12345L);
         assertThat(productLowStock.getProductName()).isEqualTo("상품명");
         assertThat(productLowStock.getCurrentStock()).isEqualTo("5");
         assertThat(productLowStock.getEventType()).isEqualTo(NotificationTemplateType.PRODUCT_LOW_STOCK);
@@ -91,7 +91,7 @@ public class ProductNotificationTest {
     void testCreateProductLowStock_Failure_CurrentStockNull() {
         // When & Then
         assertThatThrownBy(() -> ProductNotification.ProductLowStock.builder()
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .currentStock(null)
             .build())
@@ -104,25 +104,25 @@ public class ProductNotificationTest {
         // Given
         ProductNotification.NewReview newReview = ProductNotification.NewReview.builder()
             .userName("홍길동")
-            .productId("prod-123")
+            .productId(12345L)
             .productName("상품명")
             .build();
 
         // Then
         assertThat(newReview.getUserName()).isEqualTo("홍길동");
-        assertThat(newReview.getProductId()).isEqualTo("prod-123");
+        assertThat(newReview.getProductId()).isEqualTo(12345L);
         assertThat(newReview.getProductName()).isEqualTo("상품명");
         assertThat(newReview.getEventType()).isEqualTo(NotificationTemplateType.NEW_REVIEW);
     }
 
     @Test
-    @DisplayName("NewReview 생성 테스트_실패_productName_blank")
-    void testCreateNewReview_Failure_ProductNameBlank() {
+    @DisplayName("NewReview 생성 테스트_실패_productName_null")
+    void testCreateNewReview_Failure_ProductNameNull() {
         // When & Then
         assertThatThrownBy(() -> ProductNotification.NewReview.builder()
             .userName("홍길동")
-            .productId("prod-123")
-            .productName("")
+            .productId(12345L)
+            .productName(null)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }

@@ -20,7 +20,7 @@ public class TemplateNotificationEventTest {
         // Given
         TemplateNotificationEvent event = new TemplateNotificationEvent(1L, OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build());
 
         // Then
@@ -35,7 +35,7 @@ public class TemplateNotificationEventTest {
         // Given
         TemplateNotificationEvent event = new TemplateNotificationEvent(List.of(1L, 2L, 3L), OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build());
 
         // Then

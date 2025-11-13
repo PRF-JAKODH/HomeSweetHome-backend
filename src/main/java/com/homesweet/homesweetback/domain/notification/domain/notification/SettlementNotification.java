@@ -20,28 +20,28 @@ public class SettlementNotification {
      * 
      * 📋 필요한 필드:
      * - userName: String - 사용자 이름
-     * - settlementId: String - 정산 ID
-     * - amount: String - 정산 금액
+     * - settlementId: Long - 정산 ID
+     * - amount: Long - 정산 금액
      * - settlementName: String - 정산 이름
      */
     @Getter
     public static class SettlementCompleted implements TemplateNotification {
         private final String userName;
-        private final String settlementId;
-        private final String amount;
+        private final Long settlementId;
+        private final Long amount;
         private final String settlementName;
         
         private final NotificationTemplateType eventType = NotificationTemplateType.SETTLEMENT_COMPLETED;
         
         @Builder
-        public SettlementCompleted(String userName, String settlementId, String amount, String settlementName) {
+        public SettlementCompleted(String userName, Long settlementId, Long amount, String settlementName) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for SETTLEMENT_COMPLETED notification");
             }
-            if (settlementId == null || settlementId.isBlank()) {
+            if (settlementId == null) {
                 throw new IllegalArgumentException("settlementId is required for SETTLEMENT_COMPLETED notification");
             }
-            if (amount == null || amount.isBlank()) {
+            if (amount == null) {
                 throw new IllegalArgumentException("amount is required for SETTLEMENT_COMPLETED notification");
             }
             if (settlementName == null || settlementName.isBlank()) {
@@ -57,11 +57,6 @@ public class SettlementNotification {
         public NotificationTemplateType getEventType() {
             return eventType;
         }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
-        }
     }
     
     /**
@@ -69,21 +64,21 @@ public class SettlementNotification {
      * 
      * 📋 필요한 필드:
      * - userName: String - 사용자 이름
-     * - settlementId: String - 정산 ID
+     * - settlementId: Long - 정산 ID
      */
     @Getter
     public static class SettlementFailed implements TemplateNotification {
         private final String userName;
-        private final String settlementId;
+        private final Long settlementId;
         
         private final NotificationTemplateType eventType = NotificationTemplateType.SETTLEMENT_FAILED;
         
         @Builder
-        public SettlementFailed(String userName, String settlementId) {
+        public SettlementFailed(String userName, Long settlementId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for SETTLEMENT_FAILED notification");
             }
-            if (settlementId == null || settlementId.isBlank()) {
+            if (settlementId == null) {
                 throw new IllegalArgumentException("settlementId is required for SETTLEMENT_FAILED notification");
             }
             this.userName = userName;
@@ -93,11 +88,6 @@ public class SettlementNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }

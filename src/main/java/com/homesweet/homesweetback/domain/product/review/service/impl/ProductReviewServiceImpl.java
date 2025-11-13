@@ -74,7 +74,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         notificationSendService.sendTemplateNotificationToSingleUser(
             seller.getId(),
             ProductNotification.NewReview.builder()
-                .productId(productId.toString())
+                .productId(product.getId())
                 .productName(product.getName())
                 .userName(reviewer.getName())
                 .build()

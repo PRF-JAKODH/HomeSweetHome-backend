@@ -1,7 +1,6 @@
 package com.homesweet.homesweetback.domain.notification.domain.event;
 
 import java.util.List;
-import java.util.Map;
 
 import com.homesweet.homesweetback.domain.notification.domain.notification.CustomNotification;
 

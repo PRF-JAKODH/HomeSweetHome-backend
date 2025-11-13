@@ -17,12 +17,12 @@ public class OrderNotificationTest {
         // Given
         OrderNotification.OrderCompleted orderCompleted = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         // Then
         assertThat(orderCompleted.getUserName()).isEqualTo("홍길동");
-        assertThat(orderCompleted.getOrderId()).isEqualTo("12345");
+        assertThat(orderCompleted.getOrderId()).isEqualTo(12345L);
         assertThat(orderCompleted.getEventType()).isEqualTo(NotificationTemplateType.ORDER_COMPLETED);
     }
 
@@ -32,7 +32,7 @@ public class OrderNotificationTest {
         // When & Then
         assertThatThrownBy(() -> OrderNotification.OrderCompleted.builder()
             .userName(null)
-            .orderId("12345")
+            .orderId(12345L)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }
@@ -43,7 +43,7 @@ public class OrderNotificationTest {
         // When & Then
         assertThatThrownBy(() -> OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("")
+            .orderId(null)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }
@@ -54,12 +54,12 @@ public class OrderNotificationTest {
         // Given
         OrderNotification.OrderCancelled orderCancelled = OrderNotification.OrderCancelled.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         // Then
         assertThat(orderCancelled.getUserName()).isEqualTo("홍길동");
-        assertThat(orderCancelled.getOrderId()).isEqualTo("12345");
+        assertThat(orderCancelled.getOrderId()).isEqualTo(12345L);
         assertThat(orderCancelled.getEventType()).isEqualTo(NotificationTemplateType.ORDER_CANCELLED);
     }
 
@@ -80,22 +80,22 @@ public class OrderNotificationTest {
         // Given
         OrderNotification.OrderShipped orderShipped = OrderNotification.OrderShipped.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         // Then
         assertThat(orderShipped.getUserName()).isEqualTo("홍길동");
-        assertThat(orderShipped.getOrderId()).isEqualTo("12345");
+        assertThat(orderShipped.getOrderId()).isEqualTo(12345L);
         assertThat(orderShipped.getEventType()).isEqualTo(NotificationTemplateType.ORDER_SHIPPED);
     }
 
     @Test
-    @DisplayName("OrderShipped 생성 테스트_실패_userName_blank")
-    void testCreateOrderShipped_Failure_UserNameBlank() {
+    @DisplayName("OrderShipped 생성 테스트_실패_userName_null")
+    void testCreateOrderShipped_Failure_UserNameNull() {
         // When & Then
         assertThatThrownBy(() -> OrderNotification.OrderShipped.builder()
-            .userName("")
-            .orderId("12345")
+            .userName(null)
+            .orderId(12345L)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }
@@ -106,22 +106,22 @@ public class OrderNotificationTest {
         // Given
         OrderNotification.OrderDelivered orderDelivered = OrderNotification.OrderDelivered.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         // Then
         assertThat(orderDelivered.getUserName()).isEqualTo("홍길동");
-        assertThat(orderDelivered.getOrderId()).isEqualTo("12345");
+        assertThat(orderDelivered.getOrderId()).isEqualTo(12345L);
         assertThat(orderDelivered.getEventType()).isEqualTo(NotificationTemplateType.ORDER_DELIVERED);
     }
 
     @Test
-    @DisplayName("OrderDelivered 생성 테스트_실패_orderId_blank")
+    @DisplayName("OrderDelivered 생성 테스트_실패_orderId_null")
     void testCreateOrderDelivered_Failure_OrderIdBlank() {
         // When & Then
         assertThatThrownBy(() -> OrderNotification.OrderDelivered.builder()
             .userName("홍길동")
-            .orderId("")
+            .orderId(null)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }

@@ -11,10 +11,8 @@ import com.homesweet.homesweetback.domain.notification.domain.notification.Custo
 import com.homesweet.homesweetback.domain.notification.domain.notification.OrderNotification;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
-import com.homesweet.homesweetback.domain.notification.repository.NotificationCategoryRepository;
 import com.homesweet.homesweetback.domain.notification.repository.NotificationTemplateRepository;
 import com.homesweet.homesweetback.domain.notification.repository.UserNotificationRepository;
-import com.homesweet.homesweetback.domain.notification.service.impl.NotificationEventListener;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,13 +48,7 @@ public class NotificationEventListenerTest {
     private NotificationTemplateRepository notificationTemplateRepository;
 
     @Autowired
-    private NotificationCategoryRepository notificationCategoryRepository;
-
-    @Autowired
     private UserNotificationRepository userNotificationRepository;
-
-    @Autowired
-    private NotificationEventListener eventListener;
 
     private User testUser;
     private User testUser2;
@@ -93,12 +85,11 @@ public class NotificationEventListenerTest {
         // Given
         OrderNotification.OrderCompleted notification = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         // When
-        //eventPublisher.publishEvent(new TemplateNotificationEvent(List.of(testUser.getId()), notification));
-        eventListener.handleTemplateNotificationEvent(new TemplateNotificationEvent(List.of(testUser.getId()), notification));
+        eventPublisher.publishEvent(new TemplateNotificationEvent(List.of(testUser.getId()), notification));
 
         // Then
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -106,7 +97,7 @@ public class NotificationEventListenerTest {
             assertThat(userNotifications).isNotNull();
             assertThat(userNotifications.size()).isEqualTo(1);
             assertThat(userNotifications.get(0).getTemplate().getTemplateType()).isEqualTo(testTemplate.getTemplateType());
-            assertThat(userNotifications.get(0).getContextData()).isEqualTo(notification.toMap());
+            assertThat(userNotifications.get(0).getContextData()).isEqualTo(Map.of("userName", "홍길동", "orderId", 12345));
             assertThat(userNotifications.get(0).getIsRead()).isFalse();
         });
     }
@@ -117,7 +108,7 @@ public class NotificationEventListenerTest {
         // Given
         OrderNotification.OrderCompleted notification = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
 
         eventPublisher.publishEvent(new TemplateNotificationEvent(List.of(testUser.getId(), testUser2.getId()), notification));
@@ -128,7 +119,7 @@ public class NotificationEventListenerTest {
             assertThat(userNotifications).isNotNull();
             assertThat(userNotifications.size()).isEqualTo(1);
             assertThat(userNotifications.get(0).getTemplate().getTemplateType()).isEqualTo(testTemplate.getTemplateType());
-            assertThat(userNotifications.get(0).getContextData()).isEqualTo(notification.toMap());
+            assertThat(userNotifications.get(0).getContextData()).isEqualTo(Map.of("userName", "홍길동", "orderId", 12345));
             assertThat(userNotifications.get(0).getIsRead()).isFalse();
         });
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -136,7 +127,7 @@ public class NotificationEventListenerTest {
             assertThat(userNotifications).isNotNull();
             assertThat(userNotifications.size()).isEqualTo(1);
             assertThat(userNotifications.get(0).getTemplate().getTemplateType()).isEqualTo(testTemplate.getTemplateType());
-            assertThat(userNotifications.get(0).getContextData()).isEqualTo(notification.toMap());
+            assertThat(userNotifications.get(0).getContextData()).isEqualTo(Map.of("userName", "홍길동", "orderId", 12345));
             assertThat(userNotifications.get(0).getIsRead()).isFalse();
             userNotificationRepository.deleteAll();
         });
@@ -148,7 +139,7 @@ public class NotificationEventListenerTest {
         // Given
         OrderNotification.OrderCompleted notification = OrderNotification.OrderCompleted.builder()
             .userName("홍길동")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
         // 존재하지 않는 사용자와 존재하는 사용자 혼합
         List<Long> userIds = List.of(10001L, testUser.getId());

@@ -17,15 +17,15 @@ public class SettlementNotificationTest {
         // Given
         SettlementNotification.SettlementCompleted settlementCompleted = SettlementNotification.SettlementCompleted.builder()
             .userName("홍길동")
-            .settlementId("settle-123")
-            .amount("100000")
+            .settlementId(12345L)
+            .amount(100000L)
             .settlementName("1월 정산")
             .build();
 
         // Then
         assertThat(settlementCompleted.getUserName()).isEqualTo("홍길동");
-        assertThat(settlementCompleted.getSettlementId()).isEqualTo("settle-123");
-        assertThat(settlementCompleted.getAmount()).isEqualTo("100000");
+        assertThat(settlementCompleted.getSettlementId()).isEqualTo(12345L);
+        assertThat(settlementCompleted.getAmount()).isEqualTo(100000L);
         assertThat(settlementCompleted.getSettlementName()).isEqualTo("1월 정산");
         assertThat(settlementCompleted.getEventType()).isEqualTo(NotificationTemplateType.SETTLEMENT_COMPLETED);
     }
@@ -36,21 +36,21 @@ public class SettlementNotificationTest {
         // When & Then
         assertThatThrownBy(() -> SettlementNotification.SettlementCompleted.builder()
             .userName(null)
-            .settlementId("settle-123")
-            .amount("100000")
+            .settlementId(12345L)
+            .amount(100000L)
             .settlementName("1월 정산")
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("SettlementCompleted 생성 테스트_실패_amount_blank")
-    void testCreateSettlementCompleted_Failure_AmountBlank() {
+    @DisplayName("SettlementCompleted 생성 테스트_실패_amount_null")
+    void testCreateSettlementCompleted_Failure_AmountNull() {
         // When & Then
         assertThatThrownBy(() -> SettlementNotification.SettlementCompleted.builder()
             .userName("홍길동")
-            .settlementId("settle-123")
-            .amount("")
+            .settlementId(12345L)
+            .amount(null)   
             .settlementName("1월 정산")
             .build())
             .isInstanceOf(IllegalArgumentException.class);
@@ -62,12 +62,12 @@ public class SettlementNotificationTest {
         // Given
         SettlementNotification.SettlementFailed settlementFailed = SettlementNotification.SettlementFailed.builder()
             .userName("홍길동")
-            .settlementId("settle-123")
+            .settlementId(12345L)
             .build();
 
         // Then
         assertThat(settlementFailed.getUserName()).isEqualTo("홍길동");
-        assertThat(settlementFailed.getSettlementId()).isEqualTo("settle-123");
+        assertThat(settlementFailed.getSettlementId()).isEqualTo(12345L);
         assertThat(settlementFailed.getEventType()).isEqualTo(NotificationTemplateType.SETTLEMENT_FAILED);
     }
 

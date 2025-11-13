@@ -30,7 +30,6 @@ public class CommunityNotification {
         private final Long postId;
         private final String postTitle;
         
-        @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.NEW_COMMENT;
         
         @Builder
@@ -52,11 +51,6 @@ public class CommunityNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -96,11 +90,6 @@ public class CommunityNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -146,11 +135,6 @@ public class CommunityNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }

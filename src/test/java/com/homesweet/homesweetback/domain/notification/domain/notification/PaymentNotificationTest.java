@@ -54,22 +54,22 @@ public class PaymentNotificationTest {
         // Given
         PaymentNotification.PaymentFailed paymentFailed = PaymentNotification.PaymentFailed.builder()
             .userName("홍길동")
-            .orderId("order-123")
+            .orderId(12345L)
             .build();
 
         // Then
         assertThat(paymentFailed.getUserName()).isEqualTo("홍길동");
-        assertThat(paymentFailed.getOrderId()).isEqualTo("order-123");
+        assertThat(paymentFailed.getOrderId()).isEqualTo(12345L);
         assertThat(paymentFailed.getEventType()).isEqualTo(NotificationTemplateType.PAYMENT_FAILED);
     }
 
     @Test
-    @DisplayName("PaymentFailed 생성 테스트_실패_orderId_blank")
-    void testCreatePaymentFailed_Failure_OrderIdBlank() {
+    @DisplayName("PaymentFailed 생성 테스트_실패_orderId_null")
+    void testCreatePaymentFailed_Failure_OrderIdNull() {
         // When & Then
         assertThatThrownBy(() -> PaymentNotification.PaymentFailed.builder()
             .userName("홍길동")
-            .orderId("")
+            .orderId(null)
             .build())
             .isInstanceOf(IllegalArgumentException.class);
     }
@@ -80,12 +80,12 @@ public class PaymentNotificationTest {
         // Given
         PaymentNotification.PaymentRefunded paymentRefunded = PaymentNotification.PaymentRefunded.builder()
             .userName("홍길동")
-            .amount("50000")
+            .amount(50000L)
             .build();
 
         // Then
         assertThat(paymentRefunded.getUserName()).isEqualTo("홍길동");
-        assertThat(paymentRefunded.getAmount()).isEqualTo("50000");
+        assertThat(paymentRefunded.getAmount()).isEqualTo(50000L);
         assertThat(paymentRefunded.getEventType()).isEqualTo(NotificationTemplateType.PAYMENT_REFUNDED);
     }
 

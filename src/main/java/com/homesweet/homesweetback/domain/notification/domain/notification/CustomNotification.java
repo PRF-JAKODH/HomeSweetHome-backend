@@ -53,9 +53,4 @@ public class CustomNotification implements TemplateNotification {
     public Map<String, Object> toMap() {
         return contextData;
     }
-    
-    @Override
-    public void validate() {
-        // 생성자에서 이미 검증됨
-    }
 }

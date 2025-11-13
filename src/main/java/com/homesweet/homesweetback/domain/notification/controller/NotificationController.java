@@ -41,7 +41,7 @@ public class NotificationController {
     public void testMessage(){
         var notification = OrderNotification.OrderCompleted.builder()
             .userName("test")
-            .orderId("12345")
+            .orderId(12345L)
             .build();
         notificationSendService.sendTemplateNotificationToSingleUser(12L, notification);
     }

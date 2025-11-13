@@ -27,18 +27,18 @@ public class ChatNotification {
     @Getter
     public static class NewMessage implements TemplateNotification {
         private final String userName;
-        private final String roomId;
+        private final Long roomId;
         private final String roomName;
         private final String message;
         
         private final NotificationTemplateType eventType = NotificationTemplateType.NEW_MESSAGE;
         
         @Builder
-        public NewMessage(String userName, String roomId, String roomName, String message) {
+        public NewMessage(String userName, Long roomId, String roomName, String message) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for NEW_MESSAGE notification");
             }
-            if (roomId == null || roomId.isBlank()) {
+            if (roomId == null) {
                 throw new IllegalArgumentException("roomId is required for NEW_MESSAGE notification");
             }
             if (roomName == null || roomName.isBlank()) {
@@ -56,11 +56,6 @@ public class ChatNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }

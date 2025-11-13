@@ -26,17 +26,16 @@ public class OrderNotification {
     @Getter
     public static class OrderCompleted implements TemplateNotification {
         private final String userName;
-        private final String orderId;
+        private final Long orderId;
         
-        @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.ORDER_COMPLETED;
         
         @Builder
-        public OrderCompleted(String userName, String orderId) {
+        public OrderCompleted(String userName, Long orderId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_COMPLETED notification");
             }
-            if (orderId == null || orderId.isBlank()) {
+            if (orderId == null) {
                 throw new IllegalArgumentException("orderId is required for ORDER_COMPLETED notification");
             }
             this.userName = userName;
@@ -46,11 +45,6 @@ public class OrderNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -64,17 +58,17 @@ public class OrderNotification {
     @Getter
     public static class OrderCancelled implements TemplateNotification {
         private final String userName;
-        private final String orderId;
+        private final Long orderId;
         
         @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.ORDER_CANCELLED;
         
         @Builder
-        public OrderCancelled(String userName, String orderId) {
+        public OrderCancelled(String userName, Long orderId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_CANCELLED notification");
             }
-            if (orderId == null || orderId.isBlank()) {
+            if (orderId == null) {
                 throw new IllegalArgumentException("orderId is required for ORDER_CANCELLED notification");
             }
             this.userName = userName;
@@ -84,11 +78,6 @@ public class OrderNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -102,17 +91,17 @@ public class OrderNotification {
     @Getter
     public static class OrderShipped implements TemplateNotification {
         private final String userName;
-        private final String orderId;
+        private final Long orderId;
         
         @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.ORDER_SHIPPED;
         
         @Builder
-        public OrderShipped(String userName, String orderId) {
+        public OrderShipped(String userName, Long orderId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_SHIPPED notification");
             }
-            if (orderId == null || orderId.isBlank()) {
+            if (orderId == null) {
                 throw new IllegalArgumentException("orderId is required for ORDER_SHIPPED notification");
             }
             this.userName = userName;
@@ -122,11 +111,6 @@ public class OrderNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -140,17 +124,17 @@ public class OrderNotification {
     @Getter
     public static class OrderDelivered implements TemplateNotification {
         private final String userName;
-        private final String orderId;
+        private final Long orderId;
         
         @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.ORDER_DELIVERED;
         
         @Builder
-        public OrderDelivered(String userName, String orderId) {
+        public OrderDelivered(String userName, Long orderId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for ORDER_DELIVERED notification");
             }
-            if (orderId == null || orderId.isBlank()) {
+            if (orderId == null) {
                 throw new IllegalArgumentException("orderId is required for ORDER_DELIVERED notification");
             }
             this.userName = userName;
@@ -160,11 +144,6 @@ public class OrderNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }

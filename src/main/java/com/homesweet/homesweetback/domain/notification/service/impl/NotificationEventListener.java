@@ -97,7 +97,7 @@ public class NotificationEventListener {
     /**
      * 커스텀 알림 이벤트 처리
      */
-    //@Async("notificationTaskExecutor")
+    @Async("notificationTaskExecutor")
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCustomNotificationEvent(CustomNotificationEvent event) {

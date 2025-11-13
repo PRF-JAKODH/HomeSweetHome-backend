@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.notification.domain.notification;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 
 import lombok.Builder;
@@ -28,7 +27,6 @@ public class PaymentNotification {
         private final String userName;
         private final String amount;
         
-        @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.PAYMENT_SUCCESS;
         
         @Builder
@@ -47,11 +45,6 @@ public class PaymentNotification {
         public NotificationTemplateType getEventType() {
             return eventType;
         }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
-        }
     }
     
     /**
@@ -64,17 +57,16 @@ public class PaymentNotification {
     @Getter
     public static class PaymentFailed implements TemplateNotification {
         private final String userName;
-        private final String orderId;
+        private final Long orderId;
         
-        @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.PAYMENT_FAILED;
         
         @Builder
-        public PaymentFailed(String userName, String orderId) {
+        public PaymentFailed(String userName, Long orderId) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for PAYMENT_FAILED notification");
             }
-            if (orderId == null || orderId.isBlank()) {
+            if (orderId == null) {
                 throw new IllegalArgumentException("orderId is required for PAYMENT_FAILED notification");
             }
             this.userName = userName;
@@ -84,11 +76,6 @@ public class PaymentNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
     
@@ -102,17 +89,16 @@ public class PaymentNotification {
     @Getter
     public static class PaymentRefunded implements TemplateNotification {
         private final String userName;
-        private final String amount;
+        private final Long amount;
         
-        @JsonIgnore
         private final NotificationTemplateType eventType = NotificationTemplateType.PAYMENT_REFUNDED;
         
         @Builder
-        public PaymentRefunded(String userName, String amount) {
+        public PaymentRefunded(String userName, Long amount) {
             if (userName == null || userName.isBlank()) {
                 throw new IllegalArgumentException("userName is required for PAYMENT_REFUNDED notification");
             }
-            if (amount == null || amount.isBlank()) {
+            if (amount == null) {
                 throw new IllegalArgumentException("amount is required for PAYMENT_REFUNDED notification");
             }
             this.userName = userName;
@@ -122,11 +108,6 @@ public class PaymentNotification {
         @Override
         public NotificationTemplateType getEventType() {
             return eventType;
-        }
-        
-        @Override
-        public void validate() {
-            // 생성자에서 이미 검증됨
         }
     }
 }
