@@ -100,9 +100,10 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "주문 상태가 유효하지 않습니다."),
     ORDERS_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 건이 없습니다."),
     ORDER_CANCELED_NOT_FOUND(HttpStatus.NOT_FOUND, "정산 취소 주문 건이 없습니다."),
-    DELIVERY_STATUS_NOT_DELIVERED(HttpStatus.NOT_FOUND, "배송상태가 주문 취소가 아닙니다."),
-    DUPLICATE_SETTLEMENT(HttpStatus.BAD_REQUEST, "정산은 중복될 수 없습니다.")
-    ;
+    DELIVERY_STATUS_NOT_DELIVERED(HttpStatus.NOT_FOUND, "배송상태가 배송완료가 아닙니다."),
+    DUPLICATE_SETTLEMENT(HttpStatus.BAD_REQUEST, "정산은 중복될 수 없습니다."),
+    ALREADY_SETTLEMENT_CANCELED(HttpStatus.BAD_REQUEST, "이미 취소된 정산입니다."),
+    INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "금액은 음수가 될 수 없습니다.");
 
 
     private final HttpStatus status;

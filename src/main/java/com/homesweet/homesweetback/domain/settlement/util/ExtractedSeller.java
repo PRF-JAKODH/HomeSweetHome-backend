@@ -14,6 +14,7 @@ public class ExtractedSeller {
         if(order.getOrderItems() == null || order.getOrderItems().isEmpty()){
             throw new BusinessException(ErrorCode.ORDER_ITEMS_EMPTY);
         }
+
         return order.getOrderItems()
                 .stream()
                 .findFirst()

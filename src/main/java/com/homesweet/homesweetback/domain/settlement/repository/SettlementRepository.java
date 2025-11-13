@@ -102,15 +102,15 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     long countAllByOrderedAt(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 
     // 주문 취소시 환불금액 생성 및 정산 금액 변경
-    @Modifying
-    @Query("""
-    UPDATE Settlement s
-    SET s.refundAmount = s.refundAmount + :refundAmount,
-        s.settlementAmount = (s.salesAmount + s.vat) - s.fee - (s.refundAmount + :refundAmount),
-        s.settlementStatus = 'CANCELED'
-    WHERE s.order.id =:orderId
-    """)
-    int applyRefundAmount(@Param("orderId") Long orderId, @Param("refundAmount") BigDecimal refundAmount);
+//    @Modifying
+//    @Query("""
+//    UPDATE Settlement s
+//    SET s.refundAmount = s.refundAmount + :refundAmount,
+//        s.settlementAmount = (s.salesAmount + s.vat) - s.fee - (s.refundAmount + :refundAmount),
+//        s.settlementStatus = 'CANCELED'
+//    WHERE s.order.id =:orderId
+//    """)
+//    int applyRefundAmount(@Param("orderId") Long orderId, @Param("refundAmount") BigDecimal refundAmount);
 
     Optional<Settlement>findByOrderId(@Param("orderId")Long orderId);
 
