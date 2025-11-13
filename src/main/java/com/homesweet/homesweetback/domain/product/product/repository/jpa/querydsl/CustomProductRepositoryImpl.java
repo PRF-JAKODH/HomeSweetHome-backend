@@ -113,27 +113,13 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
         BooleanExpression rangeFilterCondition = buildRangeFilterCondition(product, request);
 
-        BooleanBuilder builder = new BooleanBuilder();
-
-        if (keywordCondition != null) {
-            builder.and(keywordCondition);
-        }
-        if (cursorCondition != null) {
-            builder.and(cursorCondition);
-        }
-        if (categoryCondition != null) {
-            builder.and(categoryCondition);
-        }
-        if (statusCondition != null) {
-            builder.and(statusCondition);
-        }
-        if (optionCondition != null) {
-            builder.and(optionCondition);
-        }
-
-        if (rangeFilterCondition != null) {
-            builder.and(rangeFilterCondition);
-        }
+        BooleanBuilder builder = new BooleanBuilder()
+                .and(keywordCondition)
+                .and(cursorCondition)
+                .and(categoryCondition)
+                .and(statusCondition)
+                .and(optionCondition)
+                .and(rangeFilterCondition);
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
