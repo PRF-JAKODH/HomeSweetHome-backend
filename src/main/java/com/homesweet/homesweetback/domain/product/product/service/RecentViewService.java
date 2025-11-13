@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.domain.product.product.service;
 
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.controller.response.RecentViewPreviewResponse;
+
 import java.util.List;
 
 /**
@@ -10,7 +13,11 @@ import java.util.List;
  */
 public interface RecentViewService {
     void saveView(Long userId, Long productId);
-    List<Long> getRecentViews(Long userId);
+    void cachePreview(Long productId, ProductDetailResponse detail);
+
+    List<Long> getRecentViewsIds(Long userId);
+    RecentViewPreviewResponse getCachedPreview(Long productId);
+
     void deleteOne(Long userId, Long productId);
     void clearAll(Long userId);
 }

@@ -26,7 +26,7 @@ public class RecentViewController {
     private final ProductSearchService productSearchService;
     private final RecentViewService recentViewService;
 
-    @GetMapping("/{productId}")
+    @GetMapping("/{productId}/authenticated")
     public ResponseEntity<ProductDetailResponse> getProductDetail(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @PathVariable Long productId) {
@@ -45,7 +45,7 @@ public class RecentViewController {
     public ResponseEntity<List<Long>> getRecentViews(
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ) {
-        List<Long> views = recentViewService.getRecentViews(principal.getUserId());
+        List<Long> views = recentViewService.getRecentViewsIds(principal.getUserId());
         return ResponseEntity.ok(views);
     }
 

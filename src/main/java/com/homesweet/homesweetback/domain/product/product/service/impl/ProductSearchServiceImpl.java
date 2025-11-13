@@ -54,10 +54,16 @@ public class ProductSearchServiceImpl implements ProductSearchService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long userId, Long productId) {
 
-        recentViewService.saveView(userId, productId);
-
         productValidator.validateExistsProduct(productId);
 
-        return productRepository.findProductDetailById(productId);
+        // DB 상세 조회
+        ProductDetailResponse detail = productRepository.findProductDetailById(productId);
+
+        // productId 저장
+        recentViewService.saveView(userId, productId);
+
+        recentViewService.cachePreview(productId, detail);
+
+        return detail;
     }
 }
