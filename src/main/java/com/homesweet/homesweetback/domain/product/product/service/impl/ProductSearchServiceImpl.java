@@ -62,7 +62,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         // productId 저장
         recentViewService.saveView(userId, productId);
 
-        recentViewService.cachePreview(productId, detail);
+        recentViewService.cacheDetail(productId, detail);
 
         return detail;
     }

@@ -1,9 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.service.ProductSearchService;
-import com.homesweet.homesweetback.domain.product.product.service.ProductService;
+import com.homesweet.homesweetback.domain.product.product.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,31 +21,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecentViewController {
 
-    private final ProductSearchService productSearchService;
     private final RecentViewService recentViewService;
-
-    @GetMapping("/{productId}/authenticated")
-    public ResponseEntity<ProductDetailResponse> getProductDetail(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @PathVariable Long productId) {
-
-        Long userId = principal.getUserId();
-
-        ProductDetailResponse response = productSearchService.getProductDetail(userId, productId);
-
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * 최근 본 상품 조회 (최신순)
      */
     @GetMapping
-    public ResponseEntity<List<Long>> getRecentViews(
+    public ResponseEntity<List<RecentViewPreviewResponse>> getRecentViews(
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ) {
-        List<Long> views = recentViewService.getRecentViewsIds(principal.getUserId());
-        return ResponseEntity.ok(views);
+        Long userId = principal.getUserId();
+
+        // 1. 최근 본 상품 ID 목록 가져오기
+        List<Long> ids = recentViewService.getRecentViewsIds(userId);
+
+        // 2. Preview 캐시에서 가져오기
+        List<RecentViewPreviewResponse> previews = ids.stream()
+                .map(recentViewService::getCachedPreview)
+                .filter(x -> x != null)
+                .toList();
+
+        return ResponseEntity.ok(previews);
     }
+
 
     /**
      * 특정 상품 삭제

@@ -3,15 +3,13 @@ package com.homesweet.homesweetback.domain.product.product.controller;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.service.ProductSearchService;
-import com.homesweet.homesweetback.domain.product.product.service.RecentSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 최근 검색어 조회
@@ -25,7 +23,6 @@ import java.util.List;
 public class SearchController {
 
     private final ProductSearchService searchService;
-    private final RecentSearchService recentSearchService;
 
     @GetMapping("/authenticated")
     public ResponseEntity<ScrollResponse<ProductPreviewResponse>> search(
@@ -45,38 +42,15 @@ public class SearchController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 최근 검색어 보기
-     */
-    @GetMapping("/recent")
-    public List<String> recent(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
-
-        Long userId = principal.getUserId();
-
-        return recentSearchService.getRecent(userId);
-    }
-
-    /**
-     * 특정 검색어 삭제
-     */
-    @DeleteMapping("/recent/keyword")
-    public void deleteKeyword(
+    @GetMapping("/{productId}/authenticated")
+    public ResponseEntity<ProductDetailResponse> getProductDetail(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @RequestParam String keyword) {
+            @PathVariable Long productId) {
 
         Long userId = principal.getUserId();
 
-        recentSearchService.deleteKeyword(userId, keyword);
-    }
+        ProductDetailResponse response = searchService.getProductDetail(userId, productId);
 
-    /**
-     * 전체 삭제
-     */
-    @DeleteMapping("/recent")
-    public void clearAll(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
-
-        Long userId = principal.getUserId();
-
-        recentSearchService.clearAll(userId);
+        return ResponseEntity.ok(response);
     }
 }
