@@ -24,12 +24,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
-
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @Service
@@ -47,7 +44,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     /**
      * 개인 채팅방 생성
-     * 서비스 로직에 대해서만 서비스에서 검증할 수 있도록
      */
     @Override
     @Transactional
@@ -100,6 +96,10 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 "group/chat/thumbnail"
         );
 
+        // 방 타입 확인: 그룹방이 아니면 예외 처리
+        if (!request.roomType().equals(ChatRoomType.GROUP)) {
+            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
+        }
         // 요청 받아온 dto를 엔터티 객체로 생성
         ChatRoom chatRoom = chatRoomMapper.toEntity(request, thumbnailUrl);
 
@@ -120,7 +120,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
 
     /**
-     * 개인 채팅방 상세 조회 (멤버 자동 등록/재입장 포함)
+     * 개인 채팅방 상세 조회 (재입장 포함)
      */
     @Override
     @Transactional
@@ -129,19 +129,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // 방 타입 확인: 개인방(Individual/Private)이 아니면 예외 처리
         if (!chatRoom.getType().equals(ChatRoomType.INDIVIDUAL)) {
             throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
         }
 
-        log.info("방타입 확인 roomId: {}, userId: {}", roomId, userId);
-        // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
-
-        roomMemberService.ensureRoomMembership(chatRoom, userId);
-
-        // 2.  findPartnerUserInRoom 쿼리를 사용하여 상대방 User를 바로 조회
-        User partner = roomMemberRepository.findPartnerUserInRoom(roomId, userId)
+        User partner = roomMemberRepository.findPartnerUserInRoom(userId, roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND));
+
 
         // 3. 응답 DTO 생성
         return IndividualChatDetailResponse.builder()
@@ -154,7 +148,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
 
     /**
-     * 그룹 채팅방 상세 조회 (멤버 자동 등록/재입장 포함)
+     * 그룹 채팅방 상세 조회 (새로운 멤버 자동 등록/재입장 포함)
      */
     @Override
     @Transactional
@@ -164,7 +158,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
-        roomMemberService.ensureRoomMembership(chatRoom, userId);
+        roomMemberService.registerGroupMember(chatRoom, userId);
 
         // 2. 퇴장하지 않은 모든 활성 멤버 조회
         List<RoomMember> activeMembers = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);
@@ -182,39 +176,97 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return GroupChatDetailResponse.builder()
                 .roomId(chatRoom.getId())
                 .roomName(chatRoom.getName())
-                .roomThumbnailUrl(chatRoom.getThumbnailUrl()) // ChatRoom에 해당 필드가 있다고 가정
-                .memberCount(participants.size()) // Long to Integer 변환 대신 List size 사용
+                .roomThumbnailUrl(chatRoom.getThumbnailUrl())
+                .memberCount(participants.size())
                 .participants(participants)
                 .build();
     }
 
 
     /**
-     * 채팅방 입장
+     * 채팅방 입장 (is_exit = false)
      */
     @Transactional
     @Override
-    public void joinRoom(Long roomId, Long userId) {
-        log.info("채팅방 입장 시도 - roomId: {}, userId: {}", roomId, userId);
+    public void joinRoom(Long userId, Long roomId) {
 
-        RoomMember member = roomMemberRepository
-                .findByRoomIdAndUserId(userId, roomId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND));
+        Optional<RoomMember> member = roomMemberRepository
+                .findByRoomIdAndUserId(userId, roomId);
 
-        member.join();
+        member.get().join();
 
-        log.info("채팅방 입장 - roomId: {}, userId: {}", roomId, userId);
+        log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
     }
 
     /**
-     * 채팅방 퇴장 (미연동)
+     * 내가 속한 1:1 채팅방 목록 조회
+     */
+    @Override
+    public List<IndividualRoomListResponse> findMyIndividualRooms(Long userId) {
+        return roomMemberRepository.findMyIndividualRoomList(userId);
+    }
+
+    /**
+     * 내가 속한 그룹 채팅방 목록 조회
+     */
+    @Override
+    public List<GroupRoomListResponse> findMyGroupRooms(Long userId) {
+        return roomMemberRepository.findMyGroupRoomList(userId);
+    }
+
+    @Override
+    public List<GroupRoomListResponse> getAllGroupRooms() {
+        List<ChatRoom> groupRooms = chatRoomRepository.findByType(ChatRoomType.GROUP);
+
+        return groupRooms.stream()
+                .map(room -> {
+                    // 마지막 메시지 조회
+                    ChatMessage lastMessage = chatMessageRepository
+                            .findTopByRoomOrderBySentAtDesc(room)
+                            .orElse(null);
+
+                    // 방 참여자 수 계산
+                    Long memberCount = roomMemberRepository.countByRoomId(room.getId());
+
+                    // 매퍼로 DTO 변환
+                    return chatRoomMapper.toGroupRoomListDto(room, lastMessage, memberCount);
+                })
+                .toList();
+    }
+
+    @Override
+    public boolean isUserInRoom(Long userId, Long roomId) {
+        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId, userId);
+    }
+
+
+    /**
+     * 채팅방 재입장(is_exit = true) (미연동)
      */
     @Transactional
     @Override
-    public void exitRoom(Long roomId, Long userId) {
-        log.info("채팅방 퇴장 시도 - roomId: {}, userId: {}", roomId, userId);
+    public RoomMember reJoinRoom(Long userId, Long roomId) {
 
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(roomId, userId);
+        Optional<RoomMember> member = roomMemberRepository
+                .findByRoomIdAndUserId(userId, roomId);
+
+        if (member.get().getIsExit() == true)
+            member.get().join();
+
+        log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
+
+        return member.get();
+
+    }
+
+    /**
+     * 채팅방 퇴장 (사용자 입장) (미연동)
+     */
+    @Transactional
+    @Override
+    public void exitRoom(Long userId, Long roomId) {
+
+        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(userId, roomId);
 
         if (memberOptional.isEmpty()) {
             throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
@@ -252,47 +304,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
             log.info("그룹 채팅방 활성 멤버 수 - roomId: {}, count: {}명",
                     room.getId(), activeMember.size());
         }
-    }
-
-    /**
-     * 내가 속한 1:1 채팅방 목록 조회
-     */
-    @Override
-    public List<IndividualRoomListResponse> findMyIndividualRooms(Long userId) {
-        return roomMemberRepository.findMyIndividualRoomList(userId);
-    }
-
-    /**
-     * 내가 속한 그룹 채팅방 목록 조회
-     */
-    @Override
-    public List<GroupRoomListResponse> findMyGroupRooms(Long userId) {
-        return roomMemberRepository.findMyGroupRoomList(userId);
-    }
-
-    @Override
-    public boolean isUserInRoom(Long userId, Long roomId) {
-        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId, userId);
-    }
-
-    @Override
-    public List<GroupRoomListResponse> getAllGroupRooms() {
-        List<ChatRoom> groupRooms = chatRoomRepository.findByType(ChatRoomType.GROUP);
-
-        return groupRooms.stream()
-                .map(room -> {
-                    // 마지막 메시지 조회
-                    ChatMessage lastMessage = chatMessageRepository
-                            .findTopByRoomOrderBySentAtDesc(room)
-                            .orElse(null);
-
-                    // 방 참여자 수 계산
-                    Long memberCount = roomMemberRepository.countByRoomId(room.getId());
-
-                    // 매퍼로 DTO 변환
-                    return chatRoomMapper.toGroupRoomListDto(room, lastMessage, memberCount);
-                })
-                .toList();
     }
 
 

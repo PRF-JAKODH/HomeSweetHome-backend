@@ -92,13 +92,7 @@ public class RoomController {
         Long userId = principal.getUserId();
         GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(userId, roomId);
 
-        // 방 타입 확인: 그룹방이 아니면 예외 처리
-        if (response.roomType().getType() != ChatRoomType.GROUP) {
-            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
-        }
-
         return ResponseEntity.ok(response);
-
     }
 
     /**
@@ -157,6 +151,7 @@ public class RoomController {
     public ResponseEntity<Void> exitRoom(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @PathVariable Long roomId
+
     ) {
         chatRoomService.exitRoom(roomId, principal.getUserId());
         return ResponseEntity.ok().build();

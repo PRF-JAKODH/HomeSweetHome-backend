@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 
 public interface RoomMemberService {
 
-    void ensureRoomMembership(ChatRoom chatRoom, Long userId);
+    void registerGroupMember(ChatRoom chatRoom, Long userId);
 
     String buildPairKey(Long a, Long b);
 
