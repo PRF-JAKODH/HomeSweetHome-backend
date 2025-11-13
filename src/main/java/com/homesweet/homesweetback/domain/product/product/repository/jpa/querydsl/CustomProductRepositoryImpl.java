@@ -407,42 +407,27 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     /**
      * 옵션 값에서 숫자를 추출하여 범위 비교
-     * 예: "100cm" → 100, "150" → 150, "길이 200cm" → 200
+     * 예: "100" → 100
      */
     private BooleanExpression buildNumericRangeCondition(
             QProductOptionValueEntity optionValue,
             ProductFilterRequest.RangeFilter range
     ) {
-        // MySQL의 CAST(REGEXP_REPLACE(value, '[^0-9]', '') AS UNSIGNED)를 사용
-        // 옵션 값에서 숫자만 추출하여 정수로 변환
-
-        NumberExpression<Integer> numericValue = Expressions.numberTemplate(
-                Integer.class,
-                "CAST(REGEXP_REPLACE({0}, '[^0-9]', '') AS UNSIGNED)",
-                optionValue.value
-        );
+        NumberExpression<Integer> numericValue =
+                optionValue.value.castToNum(Integer.class);
 
         BooleanExpression condition = null;
 
-        // 최소값 조건
         if (range.hasMin()) {
-            BooleanExpression minCondition = numericValue.goe(range.minValue());
-            condition = (condition == null) ? minCondition : condition.and(minCondition);
+            condition = numericValue.goe(range.minValue());
         }
 
-        // 최대값 조건
         if (range.hasMax()) {
             BooleanExpression maxCondition = numericValue.loe(range.maxValue());
             condition = (condition == null) ? maxCondition : condition.and(maxCondition);
         }
 
-        // 숫자가 추출 가능한 값만 (빈 문자열 제외)
-        BooleanExpression hasNumber = Expressions.stringTemplate(
-                "REGEXP_REPLACE({0}, '[^0-9]', '')",
-                optionValue.value
-        ).ne("");
-
-        return condition != null ? condition.and(hasNumber) : hasNumber;
+        return condition;
     }
 
     // 판매자 상품 조회 시작일
