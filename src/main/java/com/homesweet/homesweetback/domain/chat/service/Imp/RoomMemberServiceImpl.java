@@ -26,8 +26,6 @@ public class RoomMemberServiceImpl implements RoomMemberService {
     private final RoomMemberRepository roomMemberRepository;
     private final UserRepository userRepository;
 
-
-    // TODO : 그룹채팅방에만 넣어두면 될 듯
     @Override
     @Transactional
     public void registerGroupMember(ChatRoom chatRoom, Long userId) {
@@ -43,16 +41,15 @@ public class RoomMemberServiceImpl implements RoomMemberService {
             return ;
         }
 
-        // 2. 멤버가 존재함
+        // 2. 멤버 받아옴
         RoomMember member = memberOptional.get();
 
-        // 3. 퇴장 상태면 재입장 처리 (자동 재입장)
-        if (member.getIsExit() == true) {
+//        // 3. 퇴장 상태면 재입장 처리 (자동 재입장)
+        if (member.getIsExit()) {
             member.join();
             log.info("재입장 처리 - roomId: {}, userId: {}", chatRoom.getId(), userId);
         }
     }
-
 
     @Override
     @Transactional

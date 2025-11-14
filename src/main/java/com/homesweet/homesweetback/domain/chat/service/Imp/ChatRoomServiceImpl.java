@@ -157,7 +157,11 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
+        if (!chatRoom.getType().equals(ChatRoomType.GROUP)) {
+            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
+        }
+
+        // 1. 멤버 확인 및 자동 등록/입장 처리 (ensureRoomMembership 재사용)
         roomMemberService.registerGroupMember(chatRoom, userId);
 
         // 2. 퇴장하지 않은 모든 활성 멤버 조회
@@ -179,12 +183,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .roomThumbnailUrl(chatRoom.getThumbnailUrl())
                 .memberCount(participants.size())
                 .participants(participants)
+                .roomType(ChatRoomType.GROUP)
                 .build();
     }
 
 
     /**
-     * 채팅방 입장 (is_exit = false)
+     * 채팅방 입장
      */
     @Transactional
     @Override

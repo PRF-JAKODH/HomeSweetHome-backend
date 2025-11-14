@@ -103,8 +103,8 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
               AND rm.isExit = false
         """)
     Optional<User> findPartnerUserInRoom(
-            @Param("roomId") Long roomId,
-            @Param("myUserId") Long myUserId
+            @Param("myUserId") Long myUserId,
+            @Param("roomId") Long roomId
     );
 }
 
