@@ -10,7 +10,7 @@ import { check, sleep } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '10s', target: 10000 },    // 1분 동안 5000명
+    { duration: '10s', target: 9000 },    // 1초 동안 5000명
   ],
 
   thresholds: {
