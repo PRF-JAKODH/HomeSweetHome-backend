@@ -134,7 +134,7 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 목록 조회 (페이지네이션)
+     * 게시글 목록 조회 (페이지네이션) -> n+1 문제 발생할수있나?
      */
     public Page<CommunityPostResponse> getPosts(Pageable pageable) {
         Page<CommunityPostEntity> posts = postRepository.findByIsDeletedFalse(pageable);

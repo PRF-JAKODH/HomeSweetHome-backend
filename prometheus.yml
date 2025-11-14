@@ -1,0 +1,47 @@
+# Prometheus 설정 파일
+global:
+  scrape_interval: 15s      # 기본 수집 주기 15초
+  evaluation_interval: 15s  # 규칙 평가 주기
+  external_labels:
+    monitor: 'homesweet-monitor'
+
+# 알림 규칙 파일 (옵션)
+# rule_files:
+#   - 'alert.rules.yml'
+
+# 메트릭 수집 대상 설정
+scrape_configs:
+  # Prometheus 자체 모니터링
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Spring Boot Application
+  - job_name: 'homesweet-backend'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s  # 10초마다 수집
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # Docker에서 호스트 접근
+        labels:
+          application: 'homesweet-back'
+          environment: 'dev'
+
+  # k6 메트릭 수집 (Prometheus Remote Write)
+  # k6를 --out experimental-prometheus-rw 옵션으로 실행하면 자동으로 Prometheus로 전송됨
+
+  # Node Exporter - 시스템 메트릭
+  - job_name: 'node-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'homesweet-host'
+          environment: 'dev'
+
+  # cAdvisor - 컨테이너 메트릭
+  - job_name: 'cadvisor'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['cadvisor:8080']  # 컨테이너 내부에서는 8080 포트 사용
+        labels:
+          environment: 'dev'

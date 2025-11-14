@@ -1,5 +1,11 @@
 server:
   port: 8080
+  tomcat:
+  accept-count: 1024         # 대기 큐 크기 (기본값: 100)
+  max-connections: 10000     # 최대 동시 연결 수 (기본값: 8192)
+  threads:
+  max: 200                 # 최대 스레드 수 (기본값: 200)
+  min-spare: 10            # 최소 유휴 스레드 (기본값: 10)
 
 spring:
   application:
@@ -87,4 +93,10 @@ management:
     metrics:
       export:
         enabled: true
+  tracing:
+    sampling:
+      probability: 1.0  # 개발환경에서는 모든 요청 추적 (운영환경에서는 0.1 정도 권장)
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces  # Jaeger OTLP endpoint
 
