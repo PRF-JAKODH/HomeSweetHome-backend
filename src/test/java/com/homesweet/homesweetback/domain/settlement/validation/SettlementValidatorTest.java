@@ -23,6 +23,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -40,37 +43,75 @@ public class SettlementValidatorTest {
     @Mock
     private SettlementRepository settlementRepository;
 
+    @Nested
+    @DisplayName("성공 케이스")
+    class Success {
 
-    // 주문 검증
-    @Test
-    @DisplayName("[성공] 정산을 하기 위한 주문에 대한 검증")
-    void validateOrder_Success() {
-        // given
-        Order order = HelperData.getOrder(HelperData.getUser());
-        order.setOrderStatus(OrderStatus.COMPLETED);
-        order.setDeliveryStatus(DeliveryStatus.DELIVERED);
+        // 주문 검증
+        @Test
+        @DisplayName("정산을 하기 위한 주문에 대한 검증")
+        void validateOrder_Success() {
+            // given
+            Order order = HelperData.getOrder(HelperData.getUser());
+            order.setOrderStatus(OrderStatus.COMPLETED);
+            order.setDeliveryStatus(DeliveryStatus.DELIVERED);
 
-        Grade grade = HelperData.getGrade();
-        User seller = HelperData.getSeller(grade);
-        User user = HelperData.getUser();
-        ProductCategoryEntity category = HelperData.getCategory();
-        ProductEntity product = HelperData.getProduct(seller, category);
-        SkuEntity sku = HelperData.getSkuEntity(product);
-        OrderItem orderItem = HelperData.getOrderItem(sku);
-        order.addOrderItem(orderItem);
+            Grade grade = HelperData.getGrade();
+            User seller = HelperData.getSeller(grade);
+            User user = HelperData.getUser();
+            ProductCategoryEntity category = HelperData.getCategory();
+            ProductEntity product = HelperData.getProduct(seller, category);
+            SkuEntity sku = HelperData.getSkuEntity(product);
+            OrderItem orderItem = HelperData.getOrderItem(sku);
+            order.addOrderItem(orderItem);
 
-        assertThatCode(() -> settlementValidator.validateOrder(order)).doesNotThrowAnyException();
+            assertThatCode(() -> settlementValidator.validateOrder(order)).doesNotThrowAnyException();
+        }
+
+        // 판매자 검증
+        @Test
+        @DisplayName("판매자에 대한 검증")
+        void validateSeller_Success() {
+            // given
+            User seller = HelperData.getSeller(HelperData.getGrade());
+
+            assertThatCode(() -> settlementValidator.validateSeller(seller)).doesNotThrowAnyException();
+        }
+        // 주문 취소시 환불 금액 반영
+        @Test
+        @DisplayName("환불 및 정산 금액 반영에 대한 검증-정산상태: COMPLETED")
+        void validateCanceled_StatusIsCompleted_Success() {
+            Settlement settlement = HelperData.getSettlement();
+            settlement.setSettlementStatus("COMPLETED");
+            Order order = HelperData.getOrder(HelperData.getUser());
+            order.setDeliveryStatus(DeliveryStatus.CANCELLED);
+
+            assertThatCode(() -> settlementValidator.validateCanceled(settlement, order)).doesNotThrowAnyException();
+        }
+        @Test
+        @DisplayName("환불 및 정산 금액 반영에 대한 검증-정산상태: COMPLETED")
+        void validateCanceled_StatusIsPending_Success() {
+            Settlement settlement = HelperData.getSettlement();
+            settlement.setSettlementStatus("PENDING");
+            Order order = HelperData.getOrder(HelperData.getUser());
+            order.setDeliveryStatus(DeliveryStatus.CANCELLED);
+
+            assertThatCode(() -> settlementValidator.validateCanceled(settlement, order)).doesNotThrowAnyException();
+        }
+
+
+        // 정산 내역이 있는지
+        @Test
+        @DisplayName("집계를 하기 위해 주문건별 정산내역이 있는지에 대한 검증")
+        void validateDaily_Success(){
+            Settlement settlement = HelperData.getSettlement();
+            List<Settlement> settlements = List.of(settlement);
+
+            assertThatCode(() -> settlementValidator.validateDaily(settlements)).doesNotThrowAnyException();
+        }
+
     }
 
-    // 판매자 검증
-    @Test
-    @DisplayName("[성공] 판매자에 대한 검증")
-    void validateSeller_Success() {
-        // given
-        User seller = HelperData.getSeller(HelperData.getGrade());
-
-        assertThatCode(() -> settlementValidator.validateSeller(seller)).doesNotThrowAnyException();
-    }
 
     @Nested
     @DisplayName("실패 케이스")
@@ -257,7 +298,6 @@ public class SettlementValidatorTest {
                 assertThatThrownBy(() -> settlementValidator.validateCanceled(settlement, order))
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.INVALID_ORDER_STATUS.getMessage());
-
             }
 
             @Test
@@ -270,6 +310,25 @@ public class SettlementValidatorTest {
                 assertThatThrownBy(() -> settlementValidator.validateCanceled(settlement, order))
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.INVALID_ORDER_STATUS.getMessage());
+            }
+            @Nested
+            @DisplayName("집계시 기간별 집계정산 예외 케이스")
+            class aggregate_Fail{
+                @Test
+                @DisplayName("정산 데이터가 null이면 예외 발생")
+                void validateDaily_null_Failure() {
+                    assertThatThrownBy(() -> settlementValidator.validateDaily(null))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+
+                @Test
+                @DisplayName("정산 데이터가 빈 리스트면 예외 발생")
+                void validateDaily_empty_list_Failure() {
+                    assertThatThrownBy(() -> settlementValidator.validateDaily(Collections.emptyList()))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
             }
         }
     }

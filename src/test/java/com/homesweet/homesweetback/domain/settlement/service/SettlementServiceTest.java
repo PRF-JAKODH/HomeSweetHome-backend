@@ -15,7 +15,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
-import com.homesweet.homesweetback.domain.settlement.util.SettlementCalculator;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -192,7 +192,6 @@ class SettlementServiceTest {
 
             then(settlementValidator).should(times(1)).validateOrder(order);
         }
-
 
         @Test
         @DisplayName("취소된 주문이면 정산 생성 예외 발생")

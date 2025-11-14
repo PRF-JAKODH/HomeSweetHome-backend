@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,6 +65,16 @@ public class ExtractedSellerTest {
         void validateOrder_NotExistOrder_Failure() {
             Order order = mock(Order.class);
             given(order.getOrderItems()).willReturn(null);
+
+            assertThatThrownBy(() -> extractedSeller.extractSeller(order))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessage(ErrorCode.ORDER_ITEMS_EMPTY.getMessage());
+        }
+        @Test
+        @DisplayName("주문이 비어있으면 예외 발생")
+        void validateDaily_empty_list_Failure() {
+            Order order = mock(Order.class);
+            given(order.getOrderItems()).willReturn(Collections.emptyList());
 
             assertThatThrownBy(() -> extractedSeller.extractSeller(order))
                     .isInstanceOf(BusinessException.class)
