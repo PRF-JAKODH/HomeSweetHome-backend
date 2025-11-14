@@ -57,15 +57,4 @@ public class RecentViewController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 전체 삭제
-     */
-    @DeleteMapping("/all")
-    public ResponseEntity<Void> clearAll(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal
-    ) {
-        recentViewService.clearAll(principal.getUserId());
-        return ResponseEntity.ok().build();
-    }
-
 }

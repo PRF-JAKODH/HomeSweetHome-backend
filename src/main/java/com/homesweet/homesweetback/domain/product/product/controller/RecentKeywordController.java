@@ -24,7 +24,7 @@ public class RecentKeywordController {
     /**
      * 최근 검색어 보기
      */
-    @GetMapping("/recent")
+    @GetMapping
     public List<String> recent(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
 
         Long userId = principal.getUserId();
@@ -35,7 +35,7 @@ public class RecentKeywordController {
     /**
      * 특정 검색어 삭제
      */
-    @DeleteMapping("/recent/keyword")
+    @DeleteMapping
     public void deleteKeyword(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @RequestParam String keyword) {
@@ -48,7 +48,7 @@ public class RecentKeywordController {
     /**
      * 전체 삭제
      */
-    @DeleteMapping("/recent")
+    @DeleteMapping("/all")
     public void clearAll(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
 
         Long userId = principal.getUserId();

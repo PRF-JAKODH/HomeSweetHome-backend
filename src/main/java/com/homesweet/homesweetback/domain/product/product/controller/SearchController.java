@@ -42,7 +42,7 @@ public class SearchController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{productId}/authenticated")
+    @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProductDetail(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @PathVariable Long productId) {

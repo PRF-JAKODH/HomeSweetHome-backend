@@ -19,5 +19,4 @@ public interface RecentViewService {
     RecentViewPreviewResponse getCachedPreview(Long productId);
 
     void deleteOne(Long userId, Long productId);
-    void clearAll(Long userId);
 }

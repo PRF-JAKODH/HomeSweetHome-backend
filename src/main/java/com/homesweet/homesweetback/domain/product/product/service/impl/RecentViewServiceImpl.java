@@ -30,8 +30,7 @@ public class RecentViewServiceImpl implements RecentViewService {
     private static final String PREVIEW_KEY_PREFIX = "product:preview:";
 
     private static final long MAX_PRODUCTS = 10;
-    private static final Duration VIEW_TTL = Duration.ofDays(1);
-    private static final Duration PREVIEW_TTL = Duration.ofHours(12);
+    private static final Duration TTL = Duration.ofDays(1);
 
     @Async("recentSearchTaskExecutor")
     @Override
@@ -43,7 +42,7 @@ public class RecentViewServiceImpl implements RecentViewService {
 
         redisTemplate.opsForZSet().removeRange(key, 0, -(MAX_PRODUCTS + 1));
 
-        redisTemplate.expire(key, VIEW_TTL);
+        redisTemplate.expire(key, TTL);
     }
 
     // 최근 본 상품 캐싱
@@ -53,7 +52,7 @@ public class RecentViewServiceImpl implements RecentViewService {
         redisTemplate.opsForValue().set(
                 PREVIEW_KEY_PREFIX + productId,
                 JsonUtils.toJson(RecentViewPreviewResponse.fromDetail(detail)),
-                PREVIEW_TTL
+                TTL
         );
     }
 
@@ -92,18 +91,4 @@ public class RecentViewServiceImpl implements RecentViewService {
         redisTemplate.delete(previewKey);
     }
 
-    @Override
-    public void clearAll(Long userId) {
-        String viewKey = VIEW_KEY_PREFIX + userId;
-
-        Set<String> productIds = redisTemplate.opsForZSet().range(viewKey, 0, -1);
-
-        if (productIds != null) {
-            for (String pid : productIds) {
-                redisTemplate.delete(PREVIEW_KEY_PREFIX + pid);
-            }
-        }
-
-        redisTemplate.delete(viewKey);
-    }
 }
