@@ -2,38 +2,21 @@ package com.homesweet.homesweetback.domain.settlement.mapper;
 
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
-import org.springframework.data.domain.Page;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
+// 일별 응답 매핑
 @Component
 public class DailySettlementMapper {
-//    private static void extracted(Page<DailySettlement> dailySettlements, List<DailySettlementResponse> dailySettlement) {
-//    for (DailySettlement d : dailySettlements.getContent()) { // 페이지의 실제 리스트
-//        LocalDate settlementDate = d.getSettlementDate().toLocalDate(); // 정산일시
-//
-//        // 기본은 PENDING
-//        String settlementStatus = (completedCount == totalCount) ? "COMPLETED" : "PENDING";
-//        dailySettlement.add(new DailySettlementResponse(
-//                d.getTotalSales(),
-//                d.getTotalFee(),
-//                d.getTotalVat(),
-//                d.getTotalRefund(),
-//                d.getTotalSettlement(),
-//                settlementDate,
-//                settlementStatus,
-//                completedRate,
-//                totalCount
-//        ));
-//    }
-
-    public DailySettlementResponse toDailySettlementResponse(DailySettlement d, long totalCount, long completedCount, double completedRate) {
+    public DailySettlementResponse toDailySettlementResponse(DailySettlement d, SettlementCalculator.SettlementStats stats) {
         LocalDate settlementDate = d.getSettlementDate().toLocalDate(); // 정산일시
+
         // 기본은 PENDING
-        String settlementStatus = (completedCount == totalCount) ? "COMPLETED" : "PENDING";
+        String settlementStatus = (stats.completedCount() == stats.totalCount()) ? "COMPLETED" : "PENDING";
         return new DailySettlementResponse(
                 d.getTotalSales(),
                 d.getTotalFee(),
@@ -42,15 +25,15 @@ public class DailySettlementMapper {
                 d.getTotalSettlement(),
                 settlementDate,
                 settlementStatus,
-                completedRate,
-                totalCount
+                stats.completedRate(),
+                stats.totalCount()
         );
     }
-    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, long totalCount, long completedCount, double completedRate) {
-        List<DailySettlementResponse> dailySettlementResponseList = new ArrayList<>(dailySettlement.size());
-        for (DailySettlement d : dailySettlement){
-            dailySettlementResponseList.add(toDailySettlementResponse(d, totalCount, completedCount, completedRate));
-        }
-        return dailySettlementResponseList;
+
+    // 리스트 매핑
+    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, Function<DailySettlement, SettlementCalculator.SettlementStats> stats) {
+//        List<DailySettlementResponse> dailySettlementResponseList = new ArrayList<>(dailySettlement.size());
+
+        return dailySettlement.stream().map(d-> toDailySettlementResponse(d, stats.apply(d))).toList();
     }
 }

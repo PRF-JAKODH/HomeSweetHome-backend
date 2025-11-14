@@ -13,6 +13,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import org.springframework.cglib.core.Local;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -110,6 +111,8 @@ public class HelperData {
                 .salesAmount(BigDecimal.valueOf(150000))
                 .fee(BigDecimal.valueOf(7500))
                 .vat(BigDecimal.valueOf(15000))
+                .refundAmount(BigDecimal.ZERO)
+                .settlementAmount(BigDecimal.valueOf(127500))
                 .build();
         return settlement;
     }
@@ -121,6 +124,7 @@ public class HelperData {
                 .totalFee(BigDecimal.valueOf(75000))
                 .totalVat(BigDecimal.valueOf(150000))
                 .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(1575000))
                 .settlementDate(LocalDateTime.of(2025, 11, 10, 0, 0))
                 .build();
         return dailySettlement;
@@ -129,7 +133,7 @@ public class HelperData {
     public static DailySettlementResponse getDailySettlementResponse() {
         DailySettlementResponse dailySettlementResponse = new DailySettlementResponse(
                 BigDecimal.valueOf(1500000),
-                BigDecimal.valueOf(750000),
+                BigDecimal.valueOf(75000),
                 BigDecimal.valueOf(150000),
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(1575000),
@@ -139,5 +143,32 @@ public class HelperData {
                 10L
         );
         return dailySettlementResponse;
+    }
+
+    public static DailySettlementResponse emptyDailySettlementResponse(LocalDate date) {
+        return new DailySettlementResponse(
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                date,
+                "CANCELED",
+                0.0,
+                0L
+        );
+    }
+
+    // 정산 날짜
+    public static Settlement getSettlementWithDate(LocalDate date) {
+        return Settlement.builder()
+                .settlementId(1L)
+                .salesAmount(BigDecimal.valueOf(150000))
+                .fee(BigDecimal.valueOf(7500))
+                .vat(BigDecimal.valueOf(15000))
+                .refundAmount(BigDecimal.ZERO)
+                .settlementAmount(BigDecimal.valueOf(127500))
+                .settlementDate(date.atTime(10, 0))
+                .build();
     }
 }

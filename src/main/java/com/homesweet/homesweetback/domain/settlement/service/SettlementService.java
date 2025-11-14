@@ -7,7 +7,7 @@ import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.settlement.repository.querydsl.CustomSettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
-import com.homesweet.homesweetback.domain.settlement.util.SettlementCalculator;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;

@@ -6,6 +6,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import java.time.LocalDateTime;
 
 public class ValidateAndDateRange {
+    // 인스턴스화 금지
     private ValidateAndDateRange() {}
 
     public static DateRange validateAndDateRange(LocalDateTime startDate, LocalDateTime endDate) {

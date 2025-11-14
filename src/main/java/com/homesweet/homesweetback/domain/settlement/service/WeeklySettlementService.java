@@ -31,7 +31,6 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class WeeklySettlementService {
-    private static final Logger log = LogManager.getLogger(WeeklySettlementService.class);
     private final WeeklySettlementRepository weeklySettlementRepository;
     private final SettlementRepository settlementRepository;
     private final DailySettlementRepository dailySettlementRepository;
@@ -116,7 +115,6 @@ public class WeeklySettlementService {
         // 2.
         for (DailySettlement s : settlements) {
             LocalDate stDate = s.getSettlementDate().toLocalDate();
-            log.debug(stDate.toString());
 
             // 현재 데이터의 주 시작일, 주 종료일
             WeekFields weekFields = WeekFields.of(DayOfWeek.MONDAY, 4); // 시작일이 월요일

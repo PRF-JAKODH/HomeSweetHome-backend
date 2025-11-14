@@ -21,12 +21,12 @@ import java.util.List;
 public class SettlementValidator {
     private final SettlementRepository settlementRepository;
 
-    public void validateUnsettledOrders(List<Order> unsettledOrders) {
-        // 신규 주문건
-        if (unsettledOrders.isEmpty()) {
-            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
-        }
-    }
+//    public void validateUnsettledOrders(List<Order> unsettledOrders) {
+//        // 신규 주문건
+//        if (unsettledOrders.isEmpty()) {
+//            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
+//        }
+//    }
 
     // 정산 가능한 주문인지 확인
     public void validateOrder(Order order) {
@@ -115,6 +115,17 @@ public class SettlementValidator {
     private void validateDeliveryStatusCanceled(Order order) {
         if (order.getDeliveryStatus() != DeliveryStatus.CANCELLED) {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+    }
+
+    // 집계를 하기 위한 검증
+    public void validateDaily(List<Settlement> settlements) {
+        validateExistSettlement(settlements);
+    }
+    // 1. 주문 건별 정산 내역이 존재하는지
+    private void validateExistSettlement(List<Settlement> settlements) {
+        if(settlements == null || settlements.isEmpty()) {
+            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
     }
 }

@@ -8,10 +8,13 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
+
+// 빈 일별 응답
 @Component
-public class DailyResponseFactory {
+public class EmptyDailyResponse {
     public DailySettlementResponse createEmptyDaily(LocalDate startDate) {
         return new DailySettlementResponse(
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
@@ -19,6 +22,6 @@ public class DailyResponseFactory {
         );
     }
     public Page<DailySettlementResponse> createEmptyDaily(LocalDate startDate, Pageable pageable) {
-        return new PageImpl<>(List.of(createEmptyDaily(startDate)), pageable, 0);
+        return new PageImpl<>(Collections.emptyList(), pageable, 0);
     }
 }
