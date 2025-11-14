@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.dto.request;
 
 
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ public record CreateGroupRoomRequest (
     @NotBlank(message = "방 이름은 필수입니다.")
     String roomName,
 
-    MultipartFile roomThumbnailUrl
+    MultipartFile roomThumbnailUrl,
 
+    ChatRoomType roomType
 ) {}

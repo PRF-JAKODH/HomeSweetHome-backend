@@ -118,8 +118,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 ))
                 .collect(Collectors.toList());
 
-        // 오래된 메시지 → 최신 메시지 순으로 뒤집기
-        Collections.reverse(messageDtos);
 
         // 다음 페이지 존재 여부 함께 반환
         return PreMessageResponse.of(messageDtos, slice.hasNext());

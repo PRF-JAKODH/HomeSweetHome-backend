@@ -39,18 +39,12 @@ public class RoomMember {
     private Long lastReadId;
 
 
-    // ⚠setter는 막는다 (상태를 직접 바꾸지 못하게)
-    protected void setExit(boolean exit) {
-        this.isExit = exit;
-    }
-
     public void join() {
-        if (this.isExit) {               // 퇴장 상태일 때만 입장 가능
+        if (this.isExit) {
             this.isExit = false;
         }
     }
     public void exit() {
-
         this.isExit = true;
     }
     public boolean isActive() {

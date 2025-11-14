@@ -32,6 +32,10 @@ public class ChatPreHandler implements ChannelInterceptor {
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
 
+
+    // channel mock객체로 둬서 테스트 해보자요
+    // send, connect 연결은 메서드 호출해서 사용할 수 있을 듯
+
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
 

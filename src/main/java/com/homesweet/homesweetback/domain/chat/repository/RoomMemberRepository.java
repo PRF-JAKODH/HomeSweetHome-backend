@@ -82,14 +82,14 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     Long countByRoomId(Long roomId);
 
     //여러 방의 멤버 수 한번에 조회
-    @Query("""
-            SELECT rm.room.id, COUNT(rm)
-            FROM RoomMember rm
-            WHERE rm.room.id IN :roomIds
-              AND (rm.isExit = false OR rm.isExit IS NULL)
-            GROUP BY rm.room.id
-        """)
-    Map<Long, Long> countMembersByRoomIds(@Param("roomIds") List<Long> roomIds);
+//    @Query("""
+//            SELECT rm.room.id, COUNT(rm)
+//            FROM RoomMember rm
+//            WHERE rm.room.id IN :roomIds
+//              AND (rm.isExit = false OR rm.isExit IS NULL)
+//            GROUP BY rm.room.id
+//        """)
+//    Map<Long, Long> countMembersByRoomIds(@Param("roomIds") List<Long> roomIds);
 
     /**
      * 개인 채팅방에서 상대방 User 찾기 (최적화)
@@ -106,7 +106,5 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
             @Param("roomId") Long roomId,
             @Param("myUserId") Long myUserId
     );
-
-//    List<RoomMember> roomId(Long roomId);
 }
 
