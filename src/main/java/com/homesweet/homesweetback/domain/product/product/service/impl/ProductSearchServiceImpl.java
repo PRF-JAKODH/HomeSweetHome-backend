@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.response.Pr
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.service.ProductSearchService;
 import com.homesweet.homesweetback.domain.product.product.service.RecentSearchService;
+import com.homesweet.homesweetback.domain.product.product.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
     private final ProductValidator productValidator;
     private final ProductRepository productRepository;
     private final RecentSearchService recentSearchService;
-    private final RecentViewServiceImpl recentViewService;
+    private final RecentViewService recentViewService;
 
     @Override
     @Transactional(readOnly = true)
