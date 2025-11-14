@@ -247,31 +247,31 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     public boolean isUserInRoom(Long userId, Long roomId) {
-        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId, userId);
+        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(userId, roomId);
     }
 
 
 
 
     /**
-     * 채팅방 퇴장 (사용자 입장) (미연동)
+     * 채팅방 퇴장 (사용자 입장)
      */
     @Transactional
     @Override
     public void exitRoom(Long userId, Long roomId) {
 
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(userId, roomId);
+        log.info("exitRoom called: userId={}, roomId={}", userId, roomId);
+
+        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(roomId, userId);
 
         if (memberOptional.isEmpty()) {
+            log.warn("이미 방에서 나간 사용자입니다. userId={}, roomId={}", userId, roomId);
             throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
         }
 
         RoomMember member = memberOptional.get();
         member.exit();
 
-        log.info(" 채팅방 퇴장 - roomId: {}, userId: {}", roomId, userId);
-
-        // 그룹 채팅방인 경우 자동 삭제 체크
         Optional<ChatRoom> roomOptional = chatRoomRepository.findById(roomId);
         if (roomOptional.isEmpty()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
@@ -282,16 +282,17 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         if (room.getType().equals(ChatRoomType.GROUP)) {
             checkAndDeleteEmptyGroupRoom(room, roomId);
         }
+
     }
 
     /**
-     * 빈 그룹 채팅방 자동 삭제 (미연동)
+     * 빈 그룹 채팅방 자동 삭제
      */
     private void checkAndDeleteEmptyGroupRoom(ChatRoom room, Long roomId) {
         List<RoomMember> activeMember = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);
 
         if (activeMember.isEmpty()) {
-            room.delete();
+            room.softDelete();
             log.warn("그룹 채팅방 자동 삭제 - roomId: {}, roomName: {} (활성 멤버 0명)",
                     room.getId(), room.getName());
         } else {

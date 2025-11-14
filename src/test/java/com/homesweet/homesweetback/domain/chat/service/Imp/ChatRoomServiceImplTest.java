@@ -249,7 +249,7 @@ public class ChatRoomServiceImplTest {
             assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
             assertThat(savedMember.getUser()).isEqualTo(owner);
             assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.OWNER);
-            assertThat(savedMember.getIsExit()).isFalse();
+            assertThat(savedMember.isExit()).isFalse();
         }
 
         @Test
@@ -524,6 +524,7 @@ public class ChatRoomServiceImplTest {
             assertThat(result.roomId()).isEqualTo(100L);
             assertThat(result.roomName()).isEqualTo(chatRoom.getName());
             assertThat(result.roomThumbnailUrl()).isEqualTo(chatRoom.getThumbnailUrl());
+            assertThat(result.roomType()).isEqualTo(chatRoom.getType());
         }
 
         @Test

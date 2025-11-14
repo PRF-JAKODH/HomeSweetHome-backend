@@ -51,7 +51,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         // 발신자 조회
         RoomMember sender = roomMemberRepository.findByUserIdAndRoomId(senderId, roomId);
-        if (sender == null || Boolean.TRUE.equals(sender.getIsExit())) {
+        if (sender == null || sender.isExit()) {
             throw new IllegalStateException("채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
         }
 
@@ -126,8 +126,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     @Override
     public boolean canSendMessage(Long userId, Long roomId) {
         RoomMember roomMember = roomMemberRepository.findByUserIdAndRoomId(userId, roomId);
-        if (roomMember == null) return false;
-        if (Boolean.TRUE.equals(roomMember.getIsExit())) return false;
+        if (roomMember == null || roomMember.isExit()) return false;
         return true;
     }
 

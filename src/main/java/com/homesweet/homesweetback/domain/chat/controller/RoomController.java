@@ -137,14 +137,15 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{roomId}/join")
-    public ResponseEntity<Void> joinRoom(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @PathVariable Long roomId
-    ) {
-        chatRoomService.joinRoom(roomId, principal.getUserId());
-        return ResponseEntity.ok().build();
-    }
+//    // ??
+//    @PostMapping("/{roomId}/join")
+//    public ResponseEntity<Void> joinRoom(
+//            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+//            @PathVariable Long roomId
+//    ) {
+//        chatRoomService.joinRoom(roomId, principal.getUserId());
+//        return ResponseEntity.ok().build();
+//    }
 
     // 퇴장
     @PostMapping("/{roomId}/exit")
@@ -153,7 +154,9 @@ public class RoomController {
             @PathVariable Long roomId
 
     ) {
-        chatRoomService.exitRoom(roomId, principal.getUserId());
+        Long userId = principal.getUserId();
+
+        chatRoomService.exitRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
 

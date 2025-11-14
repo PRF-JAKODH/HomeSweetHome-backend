@@ -3,22 +3,17 @@ package com.homesweet.homesweetback.domain.chat.entity;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Pattern;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "room_member")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class RoomMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "room_member_id",nullable = false)
+    @Column(name = "room_member_id", nullable = false)
     private Long id;
 
     @JoinColumn(name = "user_id", nullable = false)
@@ -33,36 +28,44 @@ public class RoomMember {
     @Column(nullable = false, length = 100)
     private ChatUserRole role;
 
-    private Boolean isExit;
+    @Column(nullable = false)
+    private boolean isExit = false;
 
     @Column(name = "last_read_message_id", nullable = true)
     private Long lastReadId;
 
+    @Builder
+    private RoomMember(User user, ChatRoom room, ChatUserRole role,
+                       Boolean isExit, Long lastReadId) {
+        this.user = user;
+        this.room = room;
+        this.role = role != null ? role : ChatUserRole.MEMBER;
+        this.isExit = isExit != null ? isExit : false;
+        this.lastReadId = lastReadId;
+    }
+
+    public static RoomMember createMember(ChatRoom room, User user, ChatUserRole role) {
+        return RoomMember.builder()
+                .room(room)
+                .user(user)
+                .role(role != null ? role : ChatUserRole.MEMBER)
+                .isExit(false)
+                .build();
+    }
+
     public void join() {
-            this.isExit = false;
+        this.isExit = false;
     }
 
     public void exit() {
         this.isExit = true;
     }
-//    public boolean isActive() {
-//        // 퇴장 상태(isExit이 true)가 아니면 활성 상태입니다.
-//        return !this.isExit;
-//    }
+
     public void updateLastReadMessageId(Long lastReadMessageId) {
         this.lastReadId = lastReadMessageId;
     }
 
-    // 새로운 멤버 생성.
-    public static RoomMember createMember(ChatRoom room, User user, ChatUserRole role) {
-        RoomMember member = new RoomMember();
-        member.room = room;
-        member.user = user;
-        member.role = (role != null) ? role : ChatUserRole.MEMBER;
-        member.isExit = false;
-        member.lastReadId = null;
-        return member;
+    public boolean isActive() {
+        return !this.isExit;
     }
 }
-
-

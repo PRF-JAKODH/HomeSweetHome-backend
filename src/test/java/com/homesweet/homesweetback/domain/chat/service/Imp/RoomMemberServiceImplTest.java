@@ -153,7 +153,7 @@ class RoomMemberServiceImplTest {
                 assertThat(savedMember.getUser()).isEqualTo(user);
                 assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
                 assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
-                assertThat(savedMember.getIsExit()).isFalse();
+                assertThat(savedMember.isExit()).isFalse();
             }
 
             @Test
@@ -174,7 +174,7 @@ class RoomMemberServiceImplTest {
 
                 // then
                 verify(roomMemberRepository, never()).save(any());
-                assertThat(exitedMember.getIsExit()).isFalse();
+                assertThat(exitedMember.isExit()).isFalse();
             }
 
             @Test
