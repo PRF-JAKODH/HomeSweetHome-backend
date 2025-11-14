@@ -29,8 +29,6 @@ public interface ChatRoomService {
 
     List<GroupRoomListResponse> getAllGroupRooms();
 
-    RoomMember reJoinRoom(Long userId, Long roomId);
-
     void exitRoom(Long roomId, Long userId);
 
 //    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);

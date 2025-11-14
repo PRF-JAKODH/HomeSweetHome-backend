@@ -38,19 +38,17 @@ public class RoomMember {
     @Column(name = "last_read_message_id", nullable = true)
     private Long lastReadId;
 
-
     public void join() {
-        if (this.isExit) {
             this.isExit = false;
-        }
     }
+
     public void exit() {
         this.isExit = true;
     }
-    public boolean isActive() {
-        // 퇴장 상태(isExit이 true)가 아니면 활성 상태입니다.
-        return !this.isExit;
-    }
+//    public boolean isActive() {
+//        // 퇴장 상태(isExit이 true)가 아니면 활성 상태입니다.
+//        return !this.isExit;
+//    }
     public void updateLastReadMessageId(Long lastReadMessageId) {
         this.lastReadId = lastReadMessageId;
     }

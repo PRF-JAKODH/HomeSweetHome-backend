@@ -198,7 +198,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         Optional<RoomMember> member = roomMemberRepository
                 .findByRoomIdAndUserId(userId, roomId);
 
+        // is_exit = false
+
+        if (member.isPresent()) {
         member.get().join();
+        } else {
+            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
+        }
 
         log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
     }
@@ -245,24 +251,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
 
-    /**
-     * 채팅방 재입장(is_exit = true) (미연동)
-     */
-    @Transactional
-    @Override
-    public RoomMember reJoinRoom(Long userId, Long roomId) {
 
-        Optional<RoomMember> member = roomMemberRepository
-                .findByRoomIdAndUserId(userId, roomId);
-
-        if (member.get().getIsExit() == true)
-            member.get().join();
-
-        log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
-
-        return member.get();
-
-    }
 
     /**
      * 채팅방 퇴장 (사용자 입장) (미연동)
