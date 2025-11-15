@@ -62,6 +62,7 @@ public class ProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType
     ) {
+
         ScrollResponse<ProductPreviewResponse> response =
                 service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
 
