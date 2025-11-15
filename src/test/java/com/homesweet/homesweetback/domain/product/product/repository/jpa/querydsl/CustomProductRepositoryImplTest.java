@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.response.Pr
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,19 +57,19 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("최신순 정렬로 상품을 조회할 수 있다")
         void findLatestProducts() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
             assertThat(results).isNotEmpty();
             assertThat(results).allSatisfy(r -> assertThat(r.getStatus()).isNotEqualTo(ProductStatus.SUSPENDED));
-            assertThat(results).extracting(Product::getName)
+            assertThat(results).extracting(ProductEntity::getName)
                     .containsExactlyInAnyOrder("고급 의자", "저가 의자", "책상 세트");
         }
 
         @Test
         @DisplayName("가격 오름차순 정렬로 조회할 수 있다")
         void findPriceLowToHigh() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_LOW);
 
             assertThat(results).isNotEmpty();
@@ -78,14 +79,14 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("가격 내림차순 정렬로 조회할 수 있다")
         void findPriceHighToLow() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_HIGH);
 
             assertThat(results).isNotEmpty();
             assertThat(results.getFirst().getBasePrice()).isGreaterThanOrEqualTo(results.getLast().getBasePrice());
 
             int maxPrice = results.stream()
-                    .mapToInt(Product::getBasePrice)
+                    .mapToInt(ProductEntity::getBasePrice)
                     .max()
                     .orElseThrow();
             assertThat(results.getFirst().getBasePrice()).isEqualTo(maxPrice);
@@ -94,7 +95,7 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("인기순(리뷰 개수 순)으로 상품을 조회할 수 있다")
         void findByPopularity() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.POPULAR);
 
             assertThat(results).isNotEmpty();
@@ -102,14 +103,14 @@ class CustomProductRepositoryImplTest {
             Long previousReviewCount = Long.MAX_VALUE;
 
             // 고급 의자 상품에 리뷰가 2개로 가장 많음
-            Product mostPopular = results.getFirst();
+            ProductEntity mostPopular = results.getFirst();
             assertThat(mostPopular.getName()).isEqualTo("고급 의자");
         }
 
         @Test
         @DisplayName("검색 키워드가 있으면 제품명 또는 브랜드로 검색된다")
         void findByKeyword() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, "홈스윗", ProductSortType.LATEST);
 
             assertThat(results).isNotEmpty();
@@ -121,7 +122,7 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("판매 중지 상품은 조회되지 않는다")
         void excludeSuspendedProducts() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
             assertThat(results).noneMatch(p -> p.getStatus() == ProductStatus.SUSPENDED);
@@ -130,10 +131,10 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("카테고리를 선택하면 하위 카테고리 상품도 함께 조회된다")
         void includeSubCategoryProducts() {
-            List<Product> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
-            assertThat(results).extracting(Product::getCategoryId)
+            assertThat(results).extracting(entity -> entity.getCategory().getId())
                     .contains(2L, 3L);
         }
     }

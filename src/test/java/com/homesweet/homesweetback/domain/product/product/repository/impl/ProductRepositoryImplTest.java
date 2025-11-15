@@ -192,9 +192,9 @@ class ProductRepositoryImplTest {
             @Test
             @DisplayName("상품 리스트를 반환한다")
             void findNextProducts_success() {
-                List<Product> products = List.of(
-                        createMockProduct(1L, 100L, "테이블1"),
-                        createMockProduct(2L, 100L, "테이블2")
+                List<ProductEntity> products = List.of(
+                        createMockProductEntity(1L, "테이블1"),
+                        createMockProductEntity(2L,  "테이블2")
                 );
 
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(products);
