@@ -64,17 +64,8 @@
     <!-- Hibernate가 생성한 SQL 출력 -->
     <logger name="org.hibernate.SQL" level="DEBUG"/>
 
-    <!-- PreparedStatement 파라미터 바인딩 출력 (Hibernate 6 기준) -->
-    <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/>
-
     <!-- Hibernate JPQL → SQL 변환 정보 -->
     <logger name="org.hibernate.engine.query" level="DEBUG"/>
-
-    <!-- JDBC 실행 정보 -->
-    <logger name="org.hibernate.resource.jdbc.internal" level="TRACE"/>
-
-    <!-- HikariCP 커넥션 풀 디버깅 -->
-    <logger name="com.zaxxer.hikari" level="INFO"/>
 
     <!-- dev 환경: 콘솔 + 파일 -->
     <springProfile name="dev">
