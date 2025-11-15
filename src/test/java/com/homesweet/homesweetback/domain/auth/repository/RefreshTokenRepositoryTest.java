@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.auth.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.mapper.Pro
     QueryDslConfig.class,
     ProductCategoryRepositoryImpl.class,
     ProductCategoryMapper.class,
+    ProductMapper.class,
     InMemoryRefreshTokenRepository.class
 })
 class RefreshTokenRepositoryTest {

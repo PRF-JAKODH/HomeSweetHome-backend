@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.queryds
 
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,10 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
  * @author junnukim1007gmail.com
  * @date 25. 11. 10.
  */
-@Import(QueryDslConfig.class)
+@Import(
+        {QueryDslConfig.class,
+        ProductMapper.class}
+)
 @ActiveProfiles("test")
 @DataJpaTest
 @Sql("/sql/product/product_test_data.sql")
