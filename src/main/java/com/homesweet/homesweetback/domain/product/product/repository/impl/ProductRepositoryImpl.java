@@ -37,9 +37,6 @@ public class ProductRepositoryImpl implements ProductRepository {
     public Product save(Product product) {
         ProductEntity entity = mapper.toEntity(product);
 
-        if (entity == null) {
-            throw new IllegalStateException("ProductEntity 매핑 실패했습니다");
-        }
         return mapper.toDomain(productRepository.save(entity));
     }
 
@@ -61,7 +58,11 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
-        return productRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
+        List<ProductEntity> entities = productRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
+
+        return entities.stream()
+                .map(mapper::toPreviewDomain)
+                .toList();
     }
 
     @Override

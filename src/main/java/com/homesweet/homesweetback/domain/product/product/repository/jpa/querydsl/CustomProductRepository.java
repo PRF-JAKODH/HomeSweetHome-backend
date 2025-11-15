@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.Pro
 import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +17,7 @@ import java.util.Optional;
  */
 public interface CustomProductRepository {
 
-    List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType);
+    List<ProductEntity> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType);
 
     List<ProductPreviewResponse> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
 

@@ -68,7 +68,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
     public List<ProductReviewResponse> findNextUserReviews(Long userId, Long cursorId, int limit) {
         BooleanExpression condition = review.user.id.eq(userId);
         if (cursorId != null) {
-            condition = condition.and(review.id.lt(cursorId)); // 최신순
+            condition = condition.and(review.id.lt(cursorId));
         }
 
         return queryFactory

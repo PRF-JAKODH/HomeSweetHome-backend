@@ -24,6 +24,7 @@ import com.homesweet.homesweetback.domain.product.review.controller.response.Pro
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -164,6 +165,7 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findSkuStocksByProductId(productId);
     }
 
+    @PreAuthorize("hasRole('SELLER')")
     @Override
     @Transactional(readOnly = true)
     public List<ProductManageResponse> getSellerProducts(Long sellerId, String startDate, String endDate) {
@@ -186,6 +188,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.update(productId, update);
     }
 
+    @PreAuthorize("hasRole('SELLER')")
     @Override
     public void updateSkuStock(Long sellerId, Long productId, ProductSkuUpdateRequest request) {
         // 판매자가 실제 판매하는 제품인지 확인
@@ -200,6 +203,7 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    @PreAuthorize("hasRole('SELLER')")
     @Override
     public void updateProductStatus(Long sellerId, Long productId, ProductStatusUpdateRequest request) {
 
@@ -209,6 +213,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.updateStatus(domain.getId(), request.status());
     }
 
+    @PreAuthorize("hasRole('SELLER')")
     @Override
     public void updateImages(Long sellerId, Long productId, ProductImageUpdateRequest request) {
         Product product = productRepository.findByIdAndSellerId(productId, sellerId)
