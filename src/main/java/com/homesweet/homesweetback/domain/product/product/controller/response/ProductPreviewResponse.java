@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,5 +31,28 @@ public record ProductPreviewResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+
+    public static ProductPreviewResponse of(
+            Product product,
+            ProductReviewStatisticsResponse stats
+    ) {
+        return new ProductPreviewResponse(
+                product.getId(),
+                product.getCategoryId(),
+                product.getSellerId(),
+                product.getName(),
+                product.getImageUrl(),
+                product.getBrand(),
+                product.getBasePrice(),
+                product.getDiscountRate(),
+                product.getDescription(),
+                product.getShippingPrice(),
+                product.getStatus(),
+                stats.averageRating(),
+                stats.totalCount(),
+                product.getCreatedAt(),
+                product.getUpdatedAt()
+        );
+    }
 
 }

@@ -5,8 +5,10 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
+import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
@@ -46,9 +48,10 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
     private final ProductCategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
     @Override
-    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+    public List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         QProductEntity product = productEntity;
         QProductReviewEntity review = productReviewEntity;
 
@@ -63,35 +66,17 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
-        return queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
-                        product.id,
-                        product.category.id,
-                        product.seller.id,
-                        product.name,
-                        product.imageUrl,
-                        product.brand,
-                        product.basePrice,
-                        product.discountRate,
-                        product.description,
-                        product.shippingPrice,
-                        product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        product.createdAt,
-                        product.updatedAt
-                ))
+        List<ProductEntity> entities = queryFactory
+                .select(product)
                 .from(product)
                 .where(condition)
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
+
+        return entities.stream()
+                .map(productMapper::toDomain)
+                .toList();
     }
 
     @Override

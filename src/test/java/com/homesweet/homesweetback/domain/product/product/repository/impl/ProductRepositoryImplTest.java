@@ -199,7 +199,7 @@ class ProductRepositoryImplTest {
 
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(previews);
 
-                List<ProductPreviewResponse> result =
+                List<Product> result =
                         repository.findNextProducts(1L, 1L, 10, "가구", ProductSortType.LATEST);
 
                 assertThat(result).hasSize(2);
@@ -211,7 +211,7 @@ class ProductRepositoryImplTest {
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any()))
                         .willReturn(Collections.emptyList());
 
-                List<ProductPreviewResponse> result =
+                List<Product> result =
                         repository.findNextProducts(1L, 1L, 10, null, ProductSortType.LATEST);
 
                 assertThat(result).isEmpty();
