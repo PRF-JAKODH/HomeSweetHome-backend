@@ -2,7 +2,9 @@ package com.homesweet.homesweetback.domain.settlement.mapper;
 
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
+import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("일별 매핑 테스트")
-class DailySettlementMapperTest {
+class SettlementMapperTest {
 
     @InjectMocks
-    private DailySettlementMapper dailySettlementMapper;
+    private SettlementMapper settlementMapper;
 
     @Test
     @DisplayName("DailyResponse + stats + 매핑 성공")
@@ -36,7 +38,7 @@ class DailySettlementMapperTest {
         DailySettlement dailySettlement = HelperData.getDailySettlement();
         SettlementCalculator.SettlementStats stats = new SettlementCalculator.SettlementStats(10L, 10L, 100.0);
         // when
-        DailySettlementResponse dailySettlementResponse = dailySettlementMapper.toDailySettlementResponse(dailySettlement, stats);
+        DailySettlementResponse dailySettlementResponse = settlementMapper.toDailySettlementResponse(dailySettlement, stats);
         // then
         assertThat(dailySettlementResponse).isNotNull();
         assertThat(dailySettlementResponse.totalSales()).isEqualTo(BigDecimal.valueOf(1500000));
@@ -79,7 +81,7 @@ class DailySettlementMapperTest {
 
         // when
         List<DailySettlementResponse> result =
-                dailySettlementMapper.toDailySettlementResponseList(list, provider);
+                settlementMapper.toDailySettlementResponseList(list, provider);
 
         // then
         assertThat(result).hasSize(2);
@@ -92,6 +94,79 @@ class DailySettlementMapperTest {
         assertThat(result.get(1).settlementStatus()).isEqualTo("COMPLETED");
         assertThat(result.get(1).totalCount()).isEqualTo(10L);
     }
+
+    @Test
+    @DisplayName("[성공] WeeklySettlement → WeeklySettlementResponse 매핑이 정상적으로 수행된다")
+    void toWeeklySettlementResponse_success() {
+
+        SettlementMapper mapper = new SettlementMapper();
+
+        // given
+        WeeklySettlement w = WeeklySettlement.builder()
+                .year((short) 2025)
+                .month((byte) 11)
+                .weekStartDate(LocalDate.of(2025, 11, 10))
+                .weekEndDate(LocalDate.of(2025, 11, 16))
+                .totalSales(BigDecimal.valueOf(100000))
+                .totalFee(BigDecimal.valueOf(5000))
+                .totalVat(BigDecimal.valueOf(10000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(85000))
+                .build();
+
+        List<WeeklySettlement> list = List.of(w);
+
+        SettlementCalculator.SettlementStats stats =
+                new SettlementCalculator.SettlementStats(10, 5, 50.0);     // totalCount=10, completedRate=50%
+
+        byte week = 2;
+
+        // when
+        List<WeeklySettlementResponse> responses =
+                mapper.toWeeklySettlementResponse(list, stats, week);
+
+        // then
+        assertThat(responses).hasSize(1);
+
+        WeeklySettlementResponse res = responses.get(0);
+
+        // year / month / week
+        assertThat(res.year()).isEqualTo((short) 2025);
+        assertThat(res.month()).isEqualTo((byte) 11);
+        assertThat(res.week()).isEqualTo(week);
+
+        // 날짜
+        assertThat(res.weekStartDate()).isEqualTo(LocalDate.of(2025, 11, 10));
+        assertThat(res.weekEndDate()).isEqualTo(LocalDate.of(2025, 11, 16));
+
+        // 금액
+        assertThat(res.totalSales()).isEqualTo(BigDecimal.valueOf(100000));
+        assertThat(res.totalFee()).isEqualTo(BigDecimal.valueOf(5000));
+        assertThat(res.totalVat()).isEqualTo(BigDecimal.valueOf(10000));
+        assertThat(res.totalRefund()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalSettlement()).isEqualTo(BigDecimal.valueOf(85000));
+
+        // stats 적용 여부
+        assertThat(res.completedRate()).isEqualTo(50.0);
+        assertThat(res.totalCount()).isEqualTo(10);
+    }
+    @Test
+    @DisplayName("[성공] 빈 데이터 입력 시 빈 리스트 반환")
+    void toWeeklySettlementResponse_empty() {
+        SettlementMapper mapper = new SettlementMapper();
+        // given
+        List<WeeklySettlement> emptyList = List.of();
+        SettlementCalculator.SettlementStats stats = new SettlementCalculator.SettlementStats(0, 0, 0.0);
+        byte week = 1;
+
+        // when
+        List<WeeklySettlementResponse> responses =
+                mapper.toWeeklySettlementResponse(emptyList, stats, week);
+
+        // then
+        assertThat(responses).isEmpty();
+    }
+
     @Nested
     @DisplayName("실패 케이스")
     class Fail{
@@ -106,7 +181,7 @@ class DailySettlementMapperTest {
 
             // when
             List<DailySettlementResponse> result =
-                    dailySettlementMapper.toDailySettlementResponseList(emptyList, provider);
+                    settlementMapper.toDailySettlementResponseList(emptyList, provider);
 
             // then
             assertThat(result).isEmpty();
@@ -126,10 +201,24 @@ class DailySettlementMapperTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    dailySettlementMapper.toDailySettlementResponseList(list, provider)
+                    settlementMapper.toDailySettlementResponseList(list, provider)
             ).isInstanceOf(NullPointerException.class);
         }
+        @Test
+        @DisplayName("[실패] WeeklySettlement 리스트에 null 요소가 포함되면 NPE 발생")
+        void toWeeklySettlementResponse_fail_nullElement() {
+            SettlementMapper mapper = new SettlementMapper();
+            // given
+            List<WeeklySettlement> list = new ArrayList<>();
+            list.add(null);   // ← null 허용
 
+            SettlementCalculator.SettlementStats stats = new SettlementCalculator.SettlementStats(0, 0, 0.0);
+            byte week = 1;
 
+            // when & then
+            assertThatThrownBy(() ->
+                    mapper.toWeeklySettlementResponse(list, stats, week)
+            ).isInstanceOf(NullPointerException.class);
+        }
     }
 }

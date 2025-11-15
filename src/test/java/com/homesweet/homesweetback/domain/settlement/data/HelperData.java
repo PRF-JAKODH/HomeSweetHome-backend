@@ -171,4 +171,18 @@ public class HelperData {
                 .settlementDate(date.atTime(10, 0))
                 .build();
     }
+
+    // 일별 정산내역 데이터
+    public static DailySettlement getDailySettlementWithDate(LocalDate date) {
+        return DailySettlement.builder()
+                .dailyId(1L)
+                .userId(1L)
+                .totalSales(BigDecimal.valueOf(1500000))
+                .totalFee(BigDecimal.valueOf(75000))
+                .totalVat(BigDecimal.valueOf(150000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(1275000))
+                .settlementDate(date.atStartOfDay())
+                .build();
+    }
 }

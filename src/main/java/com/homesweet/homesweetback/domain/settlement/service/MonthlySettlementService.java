@@ -31,6 +31,7 @@ public class MonthlySettlementService {
     private final WeeklySettlementRepository weeklySettlementRepository;
     private final SettlementRepository settlementRepository;
 
+    // 월별 데이터 조회(페이지 처리)
     @Transactional(readOnly = true)
     public Page<MonthlySettlementResponse> getMonthlySummary(Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         YearMonth fromYM = YearMonth.from(startDate);

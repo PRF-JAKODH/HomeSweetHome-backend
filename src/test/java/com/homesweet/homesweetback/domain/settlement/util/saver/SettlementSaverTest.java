@@ -1,8 +1,7 @@
 package com.homesweet.homesweetback.domain.settlement.util.saver;
 
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.vo.DailyTotals;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,16 +12,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("upsert ")
-class DailySettlementSaverTest {
+class SettlementSaverTest {
 
     @InjectMocks
-    private DailySettlementSaver dailySettlementSaver;
+    private SettlementSaver settlementSaver;
 
     @Mock
     private DailySettlementRepository dailySettlementRepository;
@@ -33,10 +31,10 @@ class DailySettlementSaverTest {
         // given
         Long userId = 1L;
         LocalDate date = LocalDate.of(2025, 11, 10);
-        DailyTotals totals = DailyTotals.empty();
+        SettlementTotals totals = SettlementTotals.empty();
 
         // when
-        dailySettlementSaver.saveDaily(userId, date, totals);
+        settlementSaver.saveDaily(userId, date, totals);
 
         // then
         verify(dailySettlementRepository, times(1))
@@ -57,14 +55,14 @@ class DailySettlementSaverTest {
         // given
         Long userId = 1L;
         LocalDate date = LocalDate.of(2025, 11, 10);
-        DailyTotals totals = DailyTotals.empty();
+        SettlementTotals totals = SettlementTotals.empty();
 
         doThrow(new RuntimeException("DB ERROR"))
                 .when(dailySettlementRepository)
                 .upsertDaily(anyLong(), any(), any(), any(), any(), any(), any());
 
         // when & then
-        assertThatThrownBy(() -> dailySettlementSaver.saveDaily(userId, date, totals))
+        assertThatThrownBy(() -> settlementSaver.saveDaily(userId, date, totals))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("DB ERROR");
     }

@@ -7,7 +7,10 @@ import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
+import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
+import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -51,6 +54,7 @@ public class SettlementValidator {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS);
         }
     }
+
     // 6. 주문 취소된 건이 아닌지 확인 -> 주문 취소된 건은 정산 불가
     private void validateOrderCanceled(Order order) {
         if (order.getDeliveryStatus() == DeliveryStatus.CANCELLED) {
@@ -106,11 +110,12 @@ public class SettlementValidator {
     }
 
     // 1. 이미 취소된 정산인지
-    private void validateSettlementAlreadyCanceled(Settlement settlement){
-        if("CANCELED".equalsIgnoreCase(settlement.getSettlementStatus())){
+    private void validateSettlementAlreadyCanceled(Settlement settlement) {
+        if ("CANCELED".equalsIgnoreCase(settlement.getSettlementStatus())) {
             throw new BusinessException(ErrorCode.ALREADY_SETTLEMENT_CANCELED);
         }
     }
+
     // 2. 배송상태가 취소인지
     private void validateDeliveryStatusCanceled(Order order) {
         if (order.getDeliveryStatus() != DeliveryStatus.CANCELLED) {
@@ -119,12 +124,26 @@ public class SettlementValidator {
     }
 
     // 집계를 하기 위한 검증
+    // 일별
     public void validateDaily(List<Settlement> settlements) {
-        validateExistSettlement(settlements);
+        validateNotEmpty(settlements);
     }
+
+    public void validateWeekly(List<DailySettlement> settlements) {
+        validateNotEmpty(settlements);
+    }
+
+    public void validateMonthly(List<WeeklySettlement> settlements) {
+        validateNotEmpty(settlements);
+    }
+
+    public void validateYearly(List<MonthlySettlement> settlements) {
+        validateNotEmpty(settlements);
+    }
+
     // 1. 주문 건별 정산 내역이 존재하는지
-    private void validateExistSettlement(List<Settlement> settlements) {
-        if(settlements == null || settlements.isEmpty()) {
+    private <T> void validateNotEmpty(List<T> settlements) {
+        if (settlements == null || settlements.isEmpty()) {
             throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }
     }

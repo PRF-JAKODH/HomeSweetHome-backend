@@ -7,14 +7,14 @@ import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
-import com.homesweet.homesweetback.domain.settlement.mapper.DailySettlementMapper;
+import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyDailyResponse;
+import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.SettlementStatusUpdater;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
-import com.homesweet.homesweetback.domain.settlement.util.saver.DailySettlementSaver;
-import com.homesweet.homesweetback.domain.settlement.util.vo.DailyTotals;
+import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -52,10 +52,10 @@ class DailySettlementServiceTest {
     private DailySettlementRepository dailySettlementRepository;
 
     @Mock
-    private EmptyDailyResponse emptyDailyResponse;
+    private EmptyResponse emptyResponse;
 
     @Mock
-    private DailySettlementMapper dailySettlementMapper;
+    private SettlementMapper settlementMapper;
 
     @Mock
     private SettlementCalculator settlementCalculator;
@@ -70,7 +70,7 @@ class DailySettlementServiceTest {
     private SettlementValidator settlementValidator;
 
     @Mock
-    private DailySettlementSaver dailySettlementSaver;
+    private SettlementSaver settlementSaver;
 
     @Mock
     private SettlementStatusUpdater settlementStatusUpdater;
@@ -95,7 +95,7 @@ class DailySettlementServiceTest {
         given(settlementCalculator.calculateStats(anyLong(), any(LocalDate.class), any(LocalDate.class))).willReturn(stats);
 //        given(dailySettlementMapper.toDailySettlementResponse(any(DailySettlement.class), any())).willReturn(dailySettlementResponse);
 //        given(emptyDailyResponse.createEmptyDaily(any(), any())).willReturn(Page.empty());
-        given(dailySettlementMapper.toDailySettlementResponseList(anyList(), any()))
+        given(settlementMapper.toDailySettlementResponseList(anyList(), any()))
                 .willReturn(List.of(dailySettlementResponse));
 
         // when
@@ -111,7 +111,7 @@ class DailySettlementServiceTest {
     @Test
     @DisplayName("[성공] 일별 집계가 날짜 기준으로 계산된다.")
     void getSettlement() {
-        /// given
+        // given
         Long userId = 1L;
         LocalDateTime start = LocalDateTime.of(2025, 11, 10, 0, 0);
         LocalDateTime end = LocalDateTime.of(2025, 11, 11, 0, 0);
@@ -119,36 +119,39 @@ class DailySettlementServiceTest {
         Settlement s1 = HelperData.getSettlementWithDate(LocalDate.of(2025, 11, 10));
         Settlement s2 = HelperData.getSettlementWithDate(LocalDate.of(2025, 11, 11));
         List<Settlement> settlements = List.of(s1, s2);
-        Map<LocalDate, DailyTotals> map = Map.of(
-                LocalDate.of(2025, 11, 10), DailyTotals.empty(),
-                LocalDate.of(2025, 11, 11), DailyTotals.empty()
-        );
-        // ⭐ Generic 타입 충돌 방지용 캐스팅
-//        @SuppressWarnings("unchecked")
-//        Map<Object, DailyTotals> castedMap = (Map) map;
 
-        // 1. repository mock
+        Map<LocalDate, SettlementTotals> aggregated = Map.of(
+                LocalDate.of(2025, 11, 10), SettlementTotals.empty(),
+                LocalDate.of(2025, 11, 11), SettlementTotals.empty()
+        );
+
+        // repository
         given(settlementRepository.findBySettlementDateRange(userId, start, end))
                 .willReturn(settlements);
 
-        // 2. validator mock
+        // validator
         doNothing().when(settlementValidator).validateDaily(settlements);
 
-        // 3. aggregator mock
-        given(settlementAggregator.aggregate(eq(settlements), any()))
-                .willReturn((Map) map);
+        // aggregator – 핵심!!
+        given(settlementAggregator.aggregate(
+                anyList(),
+                any(),
+                any()
+        )).willReturn((Map) aggregated);
 
         // when
         dailySettlementService.getSettlement(userId, start, end);
 
         // then
-        assertThat(map).hasSize(2); // 단순 map 확인용
+        // aggregator 호출 여부 확인 → 커버리지에 필수
+        verify(settlementAggregator, times(1))
+                .aggregate(anyList(), any(), any());
 
-        // ✔ saveDaily가 정확히 두 번 호출됐는지 확인
-        verify(dailySettlementSaver, times(2))
-                .saveDaily(eq(userId), any(LocalDate.class), any(DailyTotals.class));
+        // saveDaily 두 번 호출
+        verify(settlementSaver, times(2))
+                .saveDaily(eq(userId), any(LocalDate.class), any(SettlementTotals.class));
 
-        // ✔ 마지막으로 완료 처리 호출되었는지 검증
+        // 마지막 상태 업데이트
         verify(settlementStatusUpdater, times(1))
                 .markDailyCompleted(userId, start, end);
     }
@@ -173,7 +176,7 @@ class DailySettlementServiceTest {
             DailySettlementResponse emptyDailySettlementResponse = HelperData.emptyDailySettlementResponse(startDate);
             // 동작
             given(dailySettlementRepository.findByDailySettlementByRange(eq(userId), any(), any(), eq(pageable))).willReturn(emptyPage);
-            given(emptyDailyResponse.createEmptyDaily(eq(startDate), eq(pageable))).willReturn(page);
+            given(emptyResponse.createEmptyDaily(eq(startDate), eq(pageable))).willReturn(page);
 
             // when
             Page<DailySettlementResponse> result = dailySettlementService.getDailySummary(userId, startDate, endDate, pageable);
@@ -203,7 +206,7 @@ class DailySettlementServiceTest {
                     .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
 
             // ★ 실패 시 절대 save / status update가 실행되면 안 됨
-            verify(dailySettlementSaver, never()).saveDaily(any(), any(), any());
+            verify(settlementSaver, never()).saveDaily(any(), any(), any());
             verify(settlementStatusUpdater, never()).markDailyCompleted(any(), any(), any());
         }
 
@@ -224,14 +227,17 @@ class DailySettlementServiceTest {
             doNothing().when(settlementValidator).validateDaily(settlements);
 
             // aggregator가 null을 반환하도록
-            given(settlementAggregator.aggregate(anyList(), any()))
-                    .willReturn(null);
+            given(settlementAggregator.aggregate(
+                    anyList(),
+                    any(),     // keyExtractor
+                    any()      // totalsMapper
+            )).willReturn(null);
 
             // when & then
             assertThatThrownBy(() -> dailySettlementService.getSettlement(userId, start, end))
                     .isInstanceOf(NullPointerException.class);
 
-            verify(dailySettlementSaver, never()).saveDaily(any(), any(), any());
+            verify(settlementSaver, never()).saveDaily(any(), any(), any());
             verify(settlementStatusUpdater, never()).markDailyCompleted(any(), any(), any());
         }
 
@@ -246,20 +252,20 @@ class DailySettlementServiceTest {
             Settlement s1 = HelperData.getSettlementWithDate(LocalDate.of(2025, 11, 10));
             List<Settlement> settlements = List.of(s1);
 
-            Map<LocalDate, DailyTotals> map = Map.of(
-                    LocalDate.of(2025, 11, 10), DailyTotals.empty()
+            Map<LocalDate, SettlementTotals> map = Map.of(
+                    LocalDate.of(2025, 11, 10), SettlementTotals.empty()
             );
 
             given(settlementRepository.findBySettlementDateRange(userId, start, end))
                     .willReturn(settlements);
 
             doNothing().when(settlementValidator).validateDaily(settlements);
-            given(settlementAggregator.aggregate(anyList(), any()))
+            given(settlementAggregator.aggregate(anyList(), any(), any()))
                     .willReturn((Map) map);
 
             // save에서 예외 발생시키기
             doThrow(new RuntimeException("DB error"))
-                    .when(dailySettlementSaver).saveDaily(any(), any(), any());
+                    .when(settlementSaver).saveDaily(any(), any(), any());
 
             // when & then
             assertThatThrownBy(() -> dailySettlementService.getSettlement(userId, start, end))
@@ -280,18 +286,18 @@ class DailySettlementServiceTest {
             Settlement s1 = HelperData.getSettlementWithDate(LocalDate.of(2025, 11, 10));
             List<Settlement> settlements = List.of(s1);
 
-            Map<LocalDate, DailyTotals> map = Map.of(
-                    LocalDate.of(2025, 11, 10), DailyTotals.empty()
+            Map<LocalDate, SettlementTotals> map = Map.of(
+                    LocalDate.of(2025, 11, 10), SettlementTotals.empty()
             );
 
             given(settlementRepository.findBySettlementDateRange(userId, start, end))
                     .willReturn(settlements);
 
             doNothing().when(settlementValidator).validateDaily(settlements);
-            given(settlementAggregator.aggregate(anyList(), any()))
+            given(settlementAggregator.aggregate(anyList(),any(), any()))
                     .willReturn((Map) map);
 
-            doNothing().when(dailySettlementSaver).saveDaily(any(), any(), any());
+            doNothing().when(settlementSaver).saveDaily(any(), any(), any());
 
             // 상태 변경에서 예외
             doThrow(new RuntimeException("Update error"))

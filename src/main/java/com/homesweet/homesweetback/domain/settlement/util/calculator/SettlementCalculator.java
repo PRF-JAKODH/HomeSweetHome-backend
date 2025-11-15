@@ -7,7 +7,7 @@ import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.vo.DailyTotals;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -59,11 +59,10 @@ public class SettlementCalculator {
     }
 
     // 기간별 집계 계산
-    public void accumulate(DailyTotals dailyTotals, Settlement s) {
-        dailyTotals.add(s);
+    public void accumulate(SettlementTotals acc, SettlementTotals add) {
+        acc.add(add);
     }
-
-    // 일별
+    // 총 주문건수, 총 정산 완료 건수, 정산 완료율 (일별, 주별 사용)
     public SettlementStats calculateStats(Long userId, LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
@@ -76,5 +75,4 @@ public class SettlementCalculator {
 
     public record SettlementStats(long totalCount, long completedCount, double completedRate) {
     }
-
 }

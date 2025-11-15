@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.settlement.util;
 
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -12,9 +14,10 @@ import java.util.Collections;
 import java.util.List;
 
 
-// 빈 일별 응답
+// 빈 응답 -> 0
 @Component
-public class EmptyDailyResponse {
+public class EmptyResponse {
+    // 일별
     public DailySettlementResponse createEmptyDaily(LocalDate startDate) {
         return new DailySettlementResponse(
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
@@ -22,6 +25,19 @@ public class EmptyDailyResponse {
         );
     }
     public Page<DailySettlementResponse> createEmptyDaily(LocalDate startDate, Pageable pageable) {
+        return new PageImpl<>(Collections.emptyList(), pageable, 0);
+    }
+
+    public Page<WeeklySettlementResponse> createEmptyWeekly(WeeklyDateRangeCalculator.WeeklyDateRange range, Pageable pageable) {
+        WeeklySettlementResponse res = new WeeklySettlementResponse(
+                (short) range.firstWeekStart().getYear(),
+                (byte) range.firstWeekStart().getMonthValue(),
+                range.week(),
+                range.firstWeekStart(),
+                range.firstWeekStart().plusDays(6),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                0.0, 0L
+        );
         return new PageImpl<>(Collections.emptyList(), pageable, 0);
     }
 }

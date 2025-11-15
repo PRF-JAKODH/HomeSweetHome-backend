@@ -5,13 +5,13 @@ import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlemen
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.util.SettlementStatusUpdater;
-import com.homesweet.homesweetback.domain.settlement.mapper.DailySettlementMapper;
+import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyDailyResponse;
+import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
-import com.homesweet.homesweetback.domain.settlement.util.saver.DailySettlementSaver;
-import com.homesweet.homesweetback.domain.settlement.util.vo.DailyTotals;
+import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,12 +30,12 @@ import java.util.Map;
 public class DailySettlementService {
     private final DailySettlementRepository dailySettlementRepository;
     private final SettlementRepository settlementRepository;
-    private final EmptyDailyResponse emptyDailyResponse;
-    private final DailySettlementMapper dailySettlementMapper;
+    private final EmptyResponse emptyResponse;
+    private final SettlementMapper settlementMapper;
     private final SettlementValidator settlementValidator;
     private final SettlementAggregator settlementAggregator;
     private final SettlementStatusUpdater settlementStatusUpdater;
-    private final DailySettlementSaver dailySettlementSaver;
+    private final SettlementSaver settlementSaver;
     private final SettlementCalculator settlementCalculator;
 
     // 일별 데이터 조회 (페이지 처리)
@@ -53,11 +53,11 @@ public class DailySettlementService {
 
         // 3. 데이터가 존재하지 않으면 0 반환
         if (dailySettlementPage.isEmpty()) {
-            return emptyDailyResponse.createEmptyDaily(startDate, pageable);
+            return emptyResponse.createEmptyDaily(startDate, pageable);
         }
 
         // 4. 페이지의 실제 리스트를 response에 매핑
-        List<DailySettlementResponse> dailySettlementResponses = dailySettlementMapper.toDailySettlementResponseList(
+        List<DailySettlementResponse> dailySettlementResponses = settlementMapper.toDailySettlementResponseList(
                 dailySettlementPage.getContent(),
                 d -> settlementCalculator.calculateStats(userId, d.getSettlementDate().toLocalDate(), d.getSettlementDate().toLocalDate())
         );
@@ -73,18 +73,28 @@ public class DailySettlementService {
     // 일별 집계
     @Transactional
     public void getSettlement(Long userId, LocalDateTime dailyStartDate, LocalDateTime dailyEndDate) {
-        // 1. 정산일 기준 정산 목록 조회 및 검증
+        // 1. 정산일 기준 정산 목록 조회
         List<Settlement> settlements = settlementRepository.findBySettlementDateRange(userId, dailyStartDate, dailyEndDate);
 
         // 2. 검증
         settlementValidator.validateDaily(settlements);
 
         // 3. 공통 집계 처리
-        Map<LocalDate, DailyTotals> dailyTotalsMap = settlementAggregator.aggregate(settlements, settlement -> settlement.getSettlementDate().toLocalDate());
-
+        Map<LocalDate, SettlementTotals> dailyTotalsMap =
+                settlementAggregator.aggregate(
+                        settlements,
+                        s -> s.getSettlementDate().toLocalDate(),
+                        s -> new SettlementTotals(
+                                s.getSalesAmount(),
+                                s.getFee(),
+                                s.getVat(),
+                                s.getRefundAmount(),
+                                s.getSettlementAmount()
+                        )
+                );
         // 4. upsert (저장)
         dailyTotalsMap.forEach((date, totals) -> {
-            dailySettlementSaver.saveDaily(userId, date, totals);
+            settlementSaver.saveDaily(userId, date, totals);
         });
 
         // 5. 정산 상태 변경 -> 'COMPLETED'
