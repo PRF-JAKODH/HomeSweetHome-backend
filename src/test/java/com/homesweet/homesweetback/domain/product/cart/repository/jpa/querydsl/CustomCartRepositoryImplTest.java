@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl;
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author junnukim1007gmail.com
  * @date 25. 11. 10.
  */
-@Import(QueryDslConfig.class)
+@Import(
+        {QueryDslConfig.class,
+        ProductMapper.class}
+)
 @DataJpaTest
 @ActiveProfiles("test")
 @Sql("/sql/product/product_test_data.sql")

@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.product.product.controller.response.Pr
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,7 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author junnukim1007gmail.com
  * @date 25. 11. 9.
  */
-@Import(QueryDslConfig.class)
+@Import(
+        {QueryDslConfig.class,
+        ProductMapper.class}
+)
 @DataJpaTest
 @ActiveProfiles("test")
 @Sql("/sql/product/product_test_data.sql")

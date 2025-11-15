@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.notification.repository;
 
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({
     QueryDslConfig.class,
     ProductCategoryRepositoryImpl.class,
-    ProductCategoryMapper.class
+    ProductCategoryMapper.class,
+    ProductMapper.class,
 })
 public class NotificationTemplateRepositoryTest {
     
