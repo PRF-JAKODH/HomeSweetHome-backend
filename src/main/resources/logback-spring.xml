@@ -58,15 +58,6 @@
         </rollingPolicy>
     </appender>
 
-    <!-- QueryDSL SQL 로그 -->
-    <logger name="com.querydsl" level="DEBUG"/>
-
-    <!-- Hibernate가 생성한 SQL 출력 -->
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-
-    <!-- Hibernate JPQL → SQL 변환 정보 -->
-    <logger name="org.hibernate.engine.query" level="DEBUG"/>
-
     <!-- dev 환경: 콘솔 + 파일 -->
     <springProfile name="dev">
         <root level="INFO">

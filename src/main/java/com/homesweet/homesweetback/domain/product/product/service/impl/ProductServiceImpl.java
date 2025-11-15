@@ -21,6 +21,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.SkuReposito
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 제품 서비스 구현 코드
@@ -103,12 +105,16 @@ public class ProductServiceImpl implements ProductService {
                 ? products.get(products.size() - 1).getId()
                 : null;
 
-        // 4. 각 상품에 대해 리뷰 통계 조회
+        List<Long> productIds = products.stream()
+                .map(Product::getId)
+                .toList();
+
+        Map<Long, ProductReviewStatistics> statsMap =
+                productReviewService.getReviewStatisticsByProductIds(productIds);
+
         List<ProductPreviewResponse> previews = products.stream()
                 .map(product -> {
-                    ProductReviewStatisticsResponse stats =
-                            productReviewService.getReviewStatistics(product.getId());
-
+                    ProductReviewStatistics stats = statsMap.getOrDefault(product.getId(), ProductReviewStatistics.empty());
                     return ProductPreviewResponse.of(product, stats);
                 })
                 .toList();

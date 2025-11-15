@@ -48,7 +48,7 @@ logging:
   level:
     com.homesweet.homesweetback: DEBUG
     org.springframework.security: DEBUG
-    org.hibernate.SQL: debug
+    org.hibernate.SQL: DEBUG
 
 # JWT 개발 환경 설정
 jwt:
