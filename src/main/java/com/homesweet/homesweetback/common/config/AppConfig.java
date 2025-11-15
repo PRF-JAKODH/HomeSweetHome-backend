@@ -12,9 +12,4 @@ public class AppConfig {
     public RestTemplate restTemplate() {
         return new RestTemplate(); // RestTemplate 객체를 생성하여 반환
     }
-
-//    @Bean // ObjectMapper도 Bean으로 등록 (Service에서 필요함)
-//    public ObjectMapper objectMapper() {
-//        return new ObjectMapper();
-//    }
 }
