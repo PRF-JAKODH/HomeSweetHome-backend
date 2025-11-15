@@ -11,6 +11,8 @@ import com.homesweet.homesweetback.domain.product.cart.service.CartService;
 import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class CartServiceImpl implements CartService {
      * - 동일 상품 수량 제한: 최대 10개
      * - 제품 종류 제한: 최대 10종류
      */
+    @CacheEvict(value = "cartCount", key = "#userId")
     @Transactional
     public Cart addToCart(Long userId, CartRequest request) {
         // 장바구니 수량 검증
@@ -72,6 +75,7 @@ public class CartServiceImpl implements CartService {
         return ScrollResponse.of(carts, nextCursorId, hasNext);
     }
 
+    @CacheEvict(value = "cartCount", key = "#userId")
     @Override
     @Transactional
     public void deleteCartItem(Long userId, Long cartId) {
@@ -80,6 +84,7 @@ public class CartServiceImpl implements CartService {
         cartRepository.deleteById(cartId);
     }
 
+    @CacheEvict(value = "cartCount", key = "#userId")
     @Override
     @Transactional
     public void deleteSelectedCartItems(Long userId, List<Long> cartIds) {
@@ -87,6 +92,7 @@ public class CartServiceImpl implements CartService {
         cartRepository.deleteAllByUserIdAndCartIdIn(userId, cartIds);
     }
 
+    @Cacheable(value = "cartCount", key = "#userId")
     @Override
     @Transactional(readOnly = true)
     public int getCartItemCount(Long userId) {
