@@ -19,14 +19,20 @@ import com.homesweet.homesweetback.domain.product.review.controller.request.Prod
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * 제품 리뷰 서비스 구현 코드
@@ -112,6 +118,23 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         Long nextCursorId = hasNext ? reviews.get(reviews.size() - 1).reviewId() : null;
 
         return ScrollResponse.of(reviews, nextCursorId, hasNext);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, ProductReviewStatistics> getReviewStatisticsByProductIds(List<Long> productIds) {
+        if (productIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<ProductReviewStatistics> statistics =
+                productReviewRepository.findStatisticsByProductIds(productIds);
+
+        return statistics.stream()
+                .collect(Collectors.toMap(
+                        ProductReviewStatistics::productId,
+                        Function.identity()
+                ));
     }
 
     @Override
