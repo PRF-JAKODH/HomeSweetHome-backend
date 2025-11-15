@@ -1,15 +1,13 @@
 package com.homesweet.homesweetback.domain.product.cart.controller;
 
-import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.cart.controller.request.CartCountResponse;
+import com.homesweet.homesweetback.domain.product.cart.controller.response.CartCountResponse;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.DeleteCartItemsRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.service.CartService;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
