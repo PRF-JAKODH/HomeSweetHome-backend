@@ -46,12 +46,11 @@ import static com.homesweet.homesweetback.domain.product.review.repository.jpa.e
 @RequiredArgsConstructor
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
-    private final ProductMapper productMapper;
     private final JPAQueryFactory queryFactory;
     private final ProductCategoryRepository categoryRepository;
 
     @Override
-    public List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+    public List<ProductEntity> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         QProductEntity product = productEntity;
 
         List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
@@ -65,7 +64,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
-        List<ProductEntity> entities = queryFactory
+        return queryFactory
                 .select(Projections.fields(ProductEntity.class,
                         product.id,
                         product.category,
@@ -85,10 +84,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
-
-        return entities.stream()
-                .map(productMapper::toPreviewDomain)
-                .toList();
     }
 
     @Override
