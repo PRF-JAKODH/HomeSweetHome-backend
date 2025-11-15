@@ -20,6 +20,8 @@ import com.homesweet.homesweetback.domain.product.product.repository.ProductRepo
 import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.service.ProductService;
+import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
+import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
     private final ProductImageUploader productImageUploader;
+    private final ProductReviewService productReviewService;
 
     @Override
     public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
@@ -84,36 +87,39 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ScrollResponse<ProductPreviewResponse> getProductPreview(
-            Long cursorId,
-            Long categoryId,
-            int limit,
-            String keyword,
-            ProductSortType sortType
-    ) {
-        List<ProductPreviewResponse> products =
+    public ScrollResponse<ProductPreviewResponse> getProductPreview(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+
+        // 1. 상품 목록 조회
+        List<Product> products =
                 productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
 
+        // 2. hasNext 처리
         boolean hasNext = products.size() > limit;
         if (hasNext) {
             products = products.subList(0, limit);
         }
 
         Long nextCursorId = hasNext
-                ? products.get(products.size() - 1).id()
+                ? products.get(products.size() - 1).getId()
                 : null;
 
-        return ScrollResponse.of(products, nextCursorId, hasNext);
+        // 4. 각 상품에 대해 리뷰 통계 조회
+        List<ProductPreviewResponse> previews = products.stream()
+                .map(product -> {
+                    ProductReviewStatisticsResponse stats =
+                            productReviewService.getReviewStatistics(product.getId());
+
+                    return ProductPreviewResponse.of(product, stats);
+                })
+                .toList();
+
+        return ScrollResponse.of(previews, nextCursorId, hasNext);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ScrollResponse<ProductPreviewResponse> filterProductsByOptions(
-            Long cursorId,
-            ProductFilterRequest request,
-            int limit,
-            ProductSortType sortType
-    ) {
+    public ScrollResponse<ProductPreviewResponse> filterProductsByOptions(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType) {
+
         List<ProductPreviewResponse> products =
                 productRepository.findProductsByOptionFilter(
                         cursorId,
