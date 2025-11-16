@@ -15,6 +15,9 @@ RUN chmod +x ./gradlew
 
 # 의존성 다운로드 - 소스 변경 시에도 이 단계는 캐시됨, 매번
 RUN ./gradlew dependencies --no-daemon
+
+RUN bin/elasticsearch-plugin install analysis-nori
+
 # 실제 코드 빌드
 COPY src ./src
 # 빌드 실행
