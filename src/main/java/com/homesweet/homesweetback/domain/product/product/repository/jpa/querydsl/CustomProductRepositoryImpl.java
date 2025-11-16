@@ -125,7 +125,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         product.brand,
                         product.basePrice,
                         product.discountRate,
-                        product.description,
                         product.shippingPrice,
                         product.status,
                         JPAExpressions
