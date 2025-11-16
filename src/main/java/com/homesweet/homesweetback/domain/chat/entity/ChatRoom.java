@@ -63,7 +63,7 @@ public class ChatRoom {
     /**
      * 채팅방 소프트 삭제
      */
-    public void delete() {
+    public void softDelete() {
 
         this.isDeleted = true;
     }

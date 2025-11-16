@@ -17,6 +17,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
 //    boolean existsByTypeAndPairKey(ChatRoomType type, String pairKey);
 
+
 }
 
 

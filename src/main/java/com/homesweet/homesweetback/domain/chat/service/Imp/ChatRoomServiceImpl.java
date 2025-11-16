@@ -157,7 +157,11 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // 1. 멤버 확인 및 자동 등록/재입장 처리 (ensureRoomMembership 재사용)
+        if (!chatRoom.getType().equals(ChatRoomType.GROUP)) {
+            throw new BusinessException(ErrorCode.INVALID_ROOM_TYPE);
+        }
+
+        // 1. 멤버 확인 및 자동 등록/입장 처리 (ensureRoomMembership 재사용)
         roomMemberService.registerGroupMember(chatRoom, userId);
 
         // 2. 퇴장하지 않은 모든 활성 멤버 조회
@@ -179,12 +183,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                 .roomThumbnailUrl(chatRoom.getThumbnailUrl())
                 .memberCount(participants.size())
                 .participants(participants)
+                .roomType(ChatRoomType.GROUP)
                 .build();
     }
 
 
     /**
-     * 채팅방 입장 (is_exit = false)
+     * 채팅방 입장
      */
     @Transactional
     @Override
@@ -193,7 +198,13 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         Optional<RoomMember> member = roomMemberRepository
                 .findByRoomIdAndUserId(userId, roomId);
 
+        // is_exit = false
+
+        if (member.isPresent()) {
         member.get().join();
+        } else {
+            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
+        }
 
         log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
     }
@@ -236,48 +247,31 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     @Override
     public boolean isUserInRoom(Long userId, Long roomId) {
-        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId, userId);
+        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(userId, roomId);
     }
 
 
-    /**
-     * 채팅방 재입장(is_exit = true) (미연동)
-     */
-    @Transactional
-    @Override
-    public RoomMember reJoinRoom(Long userId, Long roomId) {
 
-        Optional<RoomMember> member = roomMemberRepository
-                .findByRoomIdAndUserId(userId, roomId);
-
-        if (member.get().getIsExit() == true)
-            member.get().join();
-
-        log.info("채팅방 입장 - userId: {}, roomId: {}", userId, roomId);
-
-        return member.get();
-
-    }
 
     /**
-     * 채팅방 퇴장 (사용자 입장) (미연동)
+     * 채팅방 퇴장 (사용자 입장)
      */
     @Transactional
     @Override
     public void exitRoom(Long userId, Long roomId) {
 
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(userId, roomId);
+        log.info("exitRoom called: userId={}, roomId={}", userId, roomId);
+
+        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(roomId, userId);
 
         if (memberOptional.isEmpty()) {
+            log.warn("이미 방에서 나간 사용자입니다. userId={}, roomId={}", userId, roomId);
             throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
         }
 
         RoomMember member = memberOptional.get();
         member.exit();
 
-        log.info(" 채팅방 퇴장 - roomId: {}, userId: {}", roomId, userId);
-
-        // 그룹 채팅방인 경우 자동 삭제 체크
         Optional<ChatRoom> roomOptional = chatRoomRepository.findById(roomId);
         if (roomOptional.isEmpty()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
@@ -288,16 +282,17 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         if (room.getType().equals(ChatRoomType.GROUP)) {
             checkAndDeleteEmptyGroupRoom(room, roomId);
         }
+
     }
 
     /**
-     * 빈 그룹 채팅방 자동 삭제 (미연동)
+     * 빈 그룹 채팅방 자동 삭제
      */
     private void checkAndDeleteEmptyGroupRoom(ChatRoom room, Long roomId) {
         List<RoomMember> activeMember = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);
 
         if (activeMember.isEmpty()) {
-            room.delete();
+            room.softDelete();
             log.warn("그룹 채팅방 자동 삭제 - roomId: {}, roomName: {} (활성 멤버 0명)",
                     room.getId(), room.getName());
         } else {
