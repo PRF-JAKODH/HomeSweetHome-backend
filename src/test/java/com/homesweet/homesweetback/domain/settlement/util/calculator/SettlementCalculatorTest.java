@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.util;
+package com.homesweet.homesweetback.domain.settlement.util.calculator;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.domain.auth.entity.User;
@@ -6,8 +6,6 @@ import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
-import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
-import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,11 +33,6 @@ public class SettlementCalculatorTest {
 
     @InjectMocks
     private SettlementCalculator settlementCalculator;
-
-//    @BeforeEach
-//    void setUp() {
-//        settlementCalculator = new SettlementCalculator(gradeService);
-//    }
 
     @Test
     @DisplayName("[성공] 정산 금액을 계산합니다.")

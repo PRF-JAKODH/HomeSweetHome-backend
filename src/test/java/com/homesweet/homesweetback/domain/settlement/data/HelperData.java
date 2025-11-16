@@ -11,11 +11,11 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
-import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import com.homesweet.homesweetback.domain.settlement.entity.*;
 import org.springframework.cglib.core.Local;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -185,4 +185,63 @@ public class HelperData {
                 .settlementDate(date.atStartOfDay())
                 .build();
     }
+
+    // 주별 데이터
+    public static WeeklySettlement getWeeklySettlement() {
+        return WeeklySettlement.builder()
+                .year((short) 2025)
+                .month((byte) 11)
+                .weekStartDate(LocalDate.of(2025, 11, 3))
+                .weekEndDate(LocalDate.of(2025, 11, 9))
+                .totalSales(BigDecimal.valueOf(100000))
+                .totalFee(BigDecimal.valueOf(5000))
+                .totalVat(BigDecimal.valueOf(10000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(85000))
+                .build();
+    }
+    public static WeeklySettlement getWeeklySettlementWithDate(LocalDate date) {
+
+        LocalDate weekStart = date.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = date.with(DayOfWeek.SUNDAY);
+
+        return WeeklySettlement.builder()
+                .year((short) weekStart.getYear())
+                .month((byte) weekStart.getMonthValue())
+                .weekStartDate(weekStart)
+                .weekEndDate(weekEnd)
+                .totalSales(BigDecimal.valueOf(100000))
+                .totalFee(BigDecimal.valueOf(5000))
+                .totalVat(BigDecimal.valueOf(10000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(85000))
+                .build();
+    }
+
+    public static MonthlySettlement getMonthlySettlementWithYearMonth(int year, int month) {
+        return MonthlySettlement.builder()
+                .monthlyId(1L)
+                .userId(1L)
+                .year((short) year)
+                .month((byte) month)
+                .totalSales(BigDecimal.valueOf(100000))
+                .totalFee(BigDecimal.valueOf(5000))
+                .totalVat(BigDecimal.valueOf(10000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(85000))
+                .build();
+    }
+    public static YearlySettlement getYearlySettlement() {
+        return YearlySettlement.builder()
+                .year((short) 2025)
+                .totalSales(BigDecimal.valueOf(1500000))
+                .totalFee(BigDecimal.valueOf(50000))
+                .totalVat(BigDecimal.valueOf(100000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(1350000))
+                .build();
+    }
+
+
+
 }

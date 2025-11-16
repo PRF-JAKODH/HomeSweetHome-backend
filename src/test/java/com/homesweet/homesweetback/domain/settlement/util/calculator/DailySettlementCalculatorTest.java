@@ -1,8 +1,7 @@
-package com.homesweet.homesweetback.domain.settlement.util;
+package com.homesweet.homesweetback.domain.settlement.util.calculator;
 
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

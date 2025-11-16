@@ -128,15 +128,15 @@ public class SettlementValidator {
     public void validateDaily(List<Settlement> settlements) {
         validateNotEmpty(settlements);
     }
-
+    // 주별
     public void validateWeekly(List<DailySettlement> settlements) {
         validateNotEmpty(settlements);
     }
-
+    // 월별
     public void validateMonthly(List<WeeklySettlement> settlements) {
         validateNotEmpty(settlements);
     }
-
+    // 연별
     public void validateYearly(List<MonthlySettlement> settlements) {
         validateNotEmpty(settlements);
     }

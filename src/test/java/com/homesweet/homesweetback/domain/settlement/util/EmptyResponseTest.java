@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.settlement.util;
 
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.MonthlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,15 +74,10 @@ class EmptyResponseTest {
         System.out.println("TotalElements=" + page.getTotalElements());
         System.out.println("Content=" + page.getContent());
         // 전체 데이터는 0개
-        assertThat(page.getTotalElements()).isEqualTo(0L);
+        assertThat(page.getTotalElements()).isEqualTo(1L);
 
         // content 는 placeholder 0개
-        assertThat(page.getContent()).hasSize(0);
-
-//        DailySettlementResponse response = page.getContent().get(0);
-//
-//        assertThat(response.settlementDate()).isEqualTo(startDate);
-//        assertThat(response.settlementStatus()).isEqualTo("CANCELED");
+        assertThat(page.getContent()).hasSize(1);
     }
 
     @Test
@@ -99,13 +97,63 @@ class EmptyResponseTest {
                 emptyResponse.createEmptyWeekly(range, pageable);
 
         assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(0); // ✔ empty list
-        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getContent()).hasSize(1); // ✔ empty list
+        assertThat(result.getTotalElements()).isEqualTo(1L);
 
         // 나머지는 result 자체 값으로만 검증
         assertThat(result.getSize()).isEqualTo(10);
         assertThat(result.getNumber()).isEqualTo(0);
     }
+    @Test
+    @DisplayName("빈 월별 응답 생성 성공")
+    void createEmptyMonthly_success() {
+        YearMonth ym = YearMonth.of(2025, 3);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<MonthlySettlementResponse> page =
+                emptyResponse.createEmptyMonthly(ym, pageable);
+
+        assertThat(page).isNotNull();
+        assertThat(page.getContent()).hasSize(1);
+
+        MonthlySettlementResponse res = page.getContent().get(0);
+
+        assertThat(res.year()).isEqualTo((short) 2025);
+        assertThat(res.month()).isEqualTo((byte) 3);
+        assertThat(res.totalSales()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalSettlement()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalCount()).isEqualTo(0L);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+    }
+    @Test
+    @DisplayName("[성공] 빈 연별 응답 생성 성공")
+    void createEmptyYearly_success() {
+        YearMonth ym = YearMonth.of(2025, 1);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<YearlySettlementResponse> page =
+                emptyResponse.createEmptyYearly(ym, pageable);
+
+        assertThat(page).isNotNull();
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+
+        YearlySettlementResponse res = page.getContent().get(0);
+
+        // year 정상 설정
+        assertThat(res.year()).isEqualTo((short) 2025);
+
+        // 모든 금액 0
+        assertThat(res.totalSales()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalFee()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalVat()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalRefund()).isEqualTo(BigDecimal.ZERO);
+        assertThat(res.totalSettlement()).isEqualTo(BigDecimal.ZERO);
+
+        // totalCount = 0
+        assertThat(res.totalCount()).isEqualTo(0L);
+    }
+
 
 
     @Nested
@@ -117,17 +165,7 @@ class EmptyResponseTest {
             DailySettlementResponse response = emptyResponse.createEmptyDaily(null);
             assertThat(response.settlementDate()).isNull();
         }
-        @Test
-        @DisplayName("totalElements가 0이 아니면 실패")
-        void createEmptyDaily_totalElements_mustBeZero() {
-            LocalDate date = LocalDate.of(2025, 11, 10);
-            Pageable pageable = PageRequest.of(0, 10);
 
-            Page<DailySettlementResponse> page =
-                    emptyResponse.createEmptyDaily(date, pageable);
-
-            assertThat(page.getTotalElements()).isZero();  // 실패해야 정상
-        }
         @Test
         @DisplayName("[실패] WeeklyDateRange가 null이면 NullPointerException")
         void createEmptyWeekly_fail_null_range() {
@@ -150,24 +188,96 @@ class EmptyResponseTest {
             ).isInstanceOf(IllegalArgumentException.class)   // ⬅ 수정됨
                     .hasMessageContaining("Pageable must not be null");
         }
-
         @Test
-        @DisplayName("[실패] 빈 페이지여야 하는데 content가 비어있지 않으면 실패")
-        void createEmptyWeekly_fail_content_not_empty() {
-            WeeklyDateRangeCalculator.WeeklyDateRange range =
-                    new WeeklyDateRangeCalculator.WeeklyDateRange(
-                            LocalDate.of(2025, 11, 10),
-                            LocalDate.of(2025, 11, 17),
-                            (byte) 2
-                    );
+        @DisplayName("[실패] 빈 월별 응답은 content가 비어있으면 안 된다")
+        void createEmptyMonthly_fail_content_empty() {
+            YearMonth ym = YearMonth.of(2025, 3);
             Pageable pageable = PageRequest.of(0, 10);
-            Page<WeeklySettlementResponse> page =
-                    emptyResponse.createEmptyWeekly(range, pageable);
 
-            // 실패 조건을 테스트: 비어 있지 않아야 실패
+            Page<MonthlySettlementResponse> page =
+                    emptyResponse.createEmptyMonthly(ym, pageable);
+
             assertThat(page.getContent())
-                    .as("content must be empty")
-                    .isEmpty();
+                    .as("placeholder row must exist")
+                    .isNotEmpty();
         }
+        @Test
+        @DisplayName("[실패] 빈 월별 응답의 totalElements는 반드시 1이어야 한다")
+        void createEmptyMonthly_fail_wrong_totalElements() {
+            YearMonth ym = YearMonth.of(2025, 3);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Page<MonthlySettlementResponse> page =
+                    emptyResponse.createEmptyMonthly(ym, pageable);
+
+            assertThat(page.getTotalElements())
+                    .as("totalElements must be exactly 1 due to placeholder")
+                    .isEqualTo(1);
+        }
+        @Test
+        @DisplayName("[실패] 빈 월별 응답 placeholder의 모든 금액은 ZERO여야 한다")
+        void createEmptyMonthly_fail_placeholder_values_not_zero() {
+            YearMonth ym = YearMonth.of(2025, 3);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Page<MonthlySettlementResponse> page =
+                    emptyResponse.createEmptyMonthly(ym, pageable);
+
+            MonthlySettlementResponse res = page.getContent().get(0);
+
+            assertThat(res.totalSales()).isZero();
+            assertThat(res.totalFee()).isZero();
+            assertThat(res.totalVat()).isZero();
+            assertThat(res.totalRefund()).isZero();
+            assertThat(res.totalSettlement()).isZero();
+        }
+        @Test
+        @DisplayName("[실패] 빈 월별 응답 placeholder의 연도/월은 입력값과 동일해야 한다")
+        void createEmptyMonthly_fail_wrong_year_month() {
+            YearMonth ym = YearMonth.of(2025, 3);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Page<MonthlySettlementResponse> page =
+                    emptyResponse.createEmptyMonthly(ym, pageable);
+
+            MonthlySettlementResponse res = page.getContent().get(0);
+
+            assertThat(res.year()).isEqualTo((short) ym.getYear());
+            assertThat(res.month()).isEqualTo((byte) ym.getMonthValue());
+        }
+        @Test
+        @DisplayName("[실패] YearMonth 가 null이면 NPE 발생")
+        void createEmptyYearly_fail_nullYearMonth() {
+            Pageable pageable = PageRequest.of(0, 10);
+
+            assertThatThrownBy(() ->
+                    emptyResponse.createEmptyYearly(null, pageable)
+            ).isInstanceOf(NullPointerException.class);
+        }
+        @Test
+        @DisplayName("[실패] pageable 이 null이면 IllegalArgumentException 발생")
+        void createEmptyYearly_fail_nullPageable() {
+            YearMonth ym = YearMonth.of(2025, 1);
+
+            assertThatThrownBy(() ->
+                    emptyResponse.createEmptyYearly(ym, null)
+            )
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Pageable must not be null");
+        }
+        @Test
+        @DisplayName("[실패] placeholder 크기가 1개가 아니면 실패")
+        void createEmptyYearly_fail_wrongContentSize() {
+            YearMonth ym = YearMonth.of(2025, 1);
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Page<YearlySettlementResponse> page =
+                    emptyResponse.createEmptyYearly(ym, pageable);
+
+            assertThat(page.getContent())
+                    .as("Empty yearly content size must be 1")
+                    .hasSize(1);   // 실패 목적: size가 1이 아니면 실패
+        }
+
     }
 }
