@@ -97,7 +97,7 @@ services:
   elasticsearch:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.elasticsearch
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
