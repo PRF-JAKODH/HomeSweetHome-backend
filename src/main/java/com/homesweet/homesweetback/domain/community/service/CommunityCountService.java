@@ -71,14 +71,6 @@ public class CommunityCountService {
             postLikeRepository.save(newLike);
             post.increaseLikeCount();
 
-            // 알림 전송
-            notificationSendService.sendTemplateNotificationToSingleUser(
-                    post.getAuthor().getId(),
-                    CommunityNotification.NewLike.builder()
-                            .userName(user.getName())
-                            .postId(post.getPostId())
-                            .postTitle(post.getTitle())
-                            .build());
         }
     }
 
@@ -115,15 +107,7 @@ public class CommunityCountService {
             comment.increaseLikeCount();
         }
 
-        // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(
-                comment.getAuthor().getId(),
-                CommunityNotification.NewCommentLike.builder()
-                        .userName(user.getName())
-                        .postId(comment.getPost().getPostId())
-                        .postTitle(comment.getPost().getTitle())
-                        .commentId(comment.getCommentId())
-                        .build());
+
     }  
 
     /**

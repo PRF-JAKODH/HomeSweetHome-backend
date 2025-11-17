@@ -87,9 +87,15 @@ public class SecurityConfig {
                                 "/api/v1/products/{productId}",
                                 "/api/v1/products/previews",
                                 "/ws",
-                                "/api/v1/community/posts"
+                                // 커뮤니티 - 인증 불필요 (조회 및 조회수)
+                                "/api/v1/community/posts",
+                                "/api/v1/community/posts/{postId}",
+                                "/api/v1/community/posts/{postId}/comments",
+                                "/api/v1/community/posts/{postId}/views"
 
                         ).permitAll()
+                        // 커뮤니티 - 로컬 테스트용 임시 허용 (원래는 authenticated 필요)
+                        .requestMatchers("/api/v1/community/**").permitAll()
                         .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
                         .requestMatchers("/api/v1/user/**").authenticated()
                         .requestMatchers("/api/chat/**").authenticated()

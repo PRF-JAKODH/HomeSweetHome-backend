@@ -24,12 +24,7 @@ scrape_configs:
     pipeline_stages:
       # Logback 표준 포맷 파싱
       - regex:
-          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\[(?P<thread>[\w-]+)\]\s+(?P<logger>[\w\.]+)\s+:\s+(?P<message>.*)'
-
-      # 타임스탬프 파싱
-      - timestamp:
-          source: timestamp
-          format: '2006-01-02 15:04:05.000'
+          expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\]\s+(?P<level>\w+)\s+\[(?P<thread>[\w-]+)\]\s+(?P<logger>[\w\.]+)\s+:\s+(?P<message>.*)'
 
       # 로그 레벨을 라벨로 추가
       - labels:

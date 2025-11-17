@@ -59,16 +59,6 @@ public class CommunityCommentService {
         // 게시글의 댓글 수 증가
         post.increaseCommentCount();
 
-        // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(
-                post.getAuthor().getId(),
-                CommunityNotification.NewComment.builder()
-                        .userName(author.getName())
-                        .postId(post.getPostId())
-                        .postTitle(post.getTitle())
-                        .build());
-
-
         return CommunityCommentResponse.from(savedComment);
     }
 
