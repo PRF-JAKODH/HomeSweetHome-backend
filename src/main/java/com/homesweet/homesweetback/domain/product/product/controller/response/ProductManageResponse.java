@@ -17,7 +17,6 @@ public record ProductManageResponse(
         Long id,
         String name,
         String imageUrl,
-        // "가구 > 거실가구 > 소파 형식으로 조회되어야 한다!
         String categoryPath,
         Integer basePrice,
         BigDecimal discountRate,
