@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.auth.entity.QUser;
 import com.homesweet.homesweetback.domain.grade.entity.QGrade;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
@@ -48,14 +49,14 @@ import static com.homesweet.homesweetback.domain.product.review.repository.jpa.e
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
-    private final ProductCategoryRepository categoryRepository;
+    private final CacheCategory cacheCategory;
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         QProductEntity product = productEntity;
         QProductReviewEntity review = productReviewEntity;
 
-        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
+        List<Long> allSubCategoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
 
         BooleanExpression condition = Expressions.allOf(
                 buildKeywordCondition(product, keyword),
@@ -106,7 +107,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         QProductEntity product = productEntity;
         QProductReviewEntity review = productReviewEntity;
 
-        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(request.categoryId());
+        List<Long> allSubCategoryIds = cacheCategory.getAllSubCategoryIds(request.categoryId());
 
         BooleanExpression keywordCondition = buildKeywordCondition(product, request.keyword());
         BooleanExpression cursorCondition = buildCursorCondition(product, cursorId, sortType);
