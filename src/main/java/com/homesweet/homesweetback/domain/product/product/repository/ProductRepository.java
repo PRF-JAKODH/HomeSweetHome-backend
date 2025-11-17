@@ -29,7 +29,7 @@ public interface ProductRepository {
 
     List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType);
 
-    List<ProductPreviewResponse> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
+    List<Product> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
 
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 

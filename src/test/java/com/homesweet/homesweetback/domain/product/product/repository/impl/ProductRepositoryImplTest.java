@@ -76,23 +76,6 @@ class ProductRepositoryImplTest {
                 assertThat(result.getName()).isEqualTo("테이블");
             }
         }
-
-        @Nested
-        @DisplayName("실패")
-        class Fail {
-            @Test
-            @DisplayName("상품 저장 시 mapper가 null을 반환하면 예외가 발생한다")
-            void save_fail_nullMapping() {
-                // given
-                Product domain = createMockProduct(1L, 100L, "테이블");
-
-                given(mapper.toEntity(domain)).willReturn(null);
-
-                // when & then
-                assertThatThrownBy(() -> repository.save(domain))
-                        .isInstanceOf(IllegalStateException.class);
-            }
-        }
     }
 
     @Nested

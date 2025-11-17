@@ -127,13 +127,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ScrollResponse<ProductPreviewResponse> filterProductsByOptions(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType) {
 
-        List<ProductPreviewResponse> products =
-                productRepository.findProductsByOptionFilter(
-                        cursorId,
-                        request,
-                        limit + 1,
-                        sortType
-                );
+        List<Product> products = productRepository.findProductsByOptionFilter(cursorId, request, limit + 1, sortType);
 
         boolean hasNext = products.size() > limit;
         if (hasNext) {
@@ -141,10 +135,24 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Long nextCursorId = hasNext
-                ? products.get(products.size() - 1).id()
+                ? products.get(products.size() - 1).getId()
                 : null;
 
-        return ScrollResponse.of(products, nextCursorId, hasNext);
+        List<Long> productIds = products.stream()
+                .map(Product::getId)
+                .toList();
+
+        Map<Long, ProductReviewStatistics> statsMap =
+                productReviewService.getReviewStatisticsByProductIds(productIds);
+
+        List<ProductPreviewResponse> previews = products.stream()
+                .map(product -> {
+                    ProductReviewStatistics stats = statsMap.getOrDefault(product.getId(), ProductReviewStatistics.empty());
+                    return ProductPreviewResponse.of(product, stats);
+                })
+                .toList();
+
+        return ScrollResponse.of(previews, nextCursorId, hasNext);
     }
 
     @Override

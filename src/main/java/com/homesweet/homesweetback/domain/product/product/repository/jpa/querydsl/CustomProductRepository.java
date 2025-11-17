@@ -19,7 +19,7 @@ public interface CustomProductRepository {
 
     List<ProductEntity> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType);
 
-    List<ProductPreviewResponse> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
+    List<ProductEntity> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
 
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 
