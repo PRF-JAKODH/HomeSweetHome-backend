@@ -53,8 +53,7 @@ import static com.homesweet.homesweetback.domain.product.review.repository.jpa.e
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
-    private final CacheCategory cacheCategory;
-    private final EntityManager em;
+    private final ProductCategoryRepository categoryRepository;
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
