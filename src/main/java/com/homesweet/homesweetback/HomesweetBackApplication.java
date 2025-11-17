@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;   // Scheduler드래곤
 
 @SpringBootApplication
-//@EnableScheduling
+@EnableScheduling
 public class HomesweetBackApplication {
     public static void main(String[] args) {
         SpringApplication.run(HomesweetBackApplication.class, args);
