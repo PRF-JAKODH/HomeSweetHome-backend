@@ -30,7 +30,6 @@ import static com.homesweet.homesweetback.domain.product.product.repository.jpa.
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionValueEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductSkuOptionEntity.*;
-import static com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity.*;
 
 /**
  * 제품 QueryDSL 레포 구현체
