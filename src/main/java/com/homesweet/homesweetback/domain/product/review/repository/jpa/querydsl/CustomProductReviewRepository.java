@@ -19,6 +19,4 @@ public interface CustomProductReviewRepository {
     List<ProductReviewResponse> findNextUserReviews(Long userId, Long cursorId, int limit);
 
     ProductReviewStatisticsResponse getReviewStatistics(Long productId);
-
-    List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds);
 }

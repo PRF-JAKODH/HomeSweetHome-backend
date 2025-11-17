@@ -27,9 +27,9 @@ public interface ProductRepository {
 
     boolean existsBySellerIdAndName(Long sellerId, String name);
 
-    List<Product> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType);
+    List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType);
 
-    List<Product> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
+    List<ProductPreviewResponse> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType);
 
     List<SkuStockResponse> findSkuStocksByProductId(Long productId);
 

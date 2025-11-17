@@ -133,20 +133,6 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
         return ProductReviewStatisticsResponse.of(productId, totalCount, averageRating, ratingCounts);
     }
 
-    @Override
-    public List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds) {
-        return queryFactory
-                .select(Projections.constructor(ProductReviewStatistics.class,
-                        review.product.id,
-                        review.count(),
-                        review.rating.avg()
-                        ))
-                .from(review)
-                .where(review.product.id.in(productIds))
-                .groupBy(review.product.id)
-                .fetch();
-    }
-
     // 최신순 기준 → cursorId보다 작은 id만 조회
     private BooleanExpression buildCursorCondition(QProductReviewEntity review, Long productId, Long cursorId) {
         BooleanExpression condition = review.product.id.eq(productId);
