@@ -79,7 +79,6 @@ services:
     image: docker.elastic.co/logstash/logstash:8.15.0
     container_name: logstash
     depends_on:
-      - kafka
       - elasticsearch
     ports:
       - "5044:5044"
