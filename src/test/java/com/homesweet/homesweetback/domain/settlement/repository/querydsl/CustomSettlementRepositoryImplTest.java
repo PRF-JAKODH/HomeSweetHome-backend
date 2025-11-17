@@ -1,7 +1,6 @@
 package com.homesweet.homesweetback.domain.settlement.repository.querydsl;
 
 import com.homesweet.homesweetback.domain.settlement.entity.QSettlement;
-import com.homesweet.homesweetback.domain.settlement.repository.querydsl.CustomSettlementRepositoryImpl;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.jpa.impl.JPAUpdateClause;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,6 @@ class CustomSettlementRepositoryImplTest {
     @Mock
     JPAQueryFactory jpaQueryFactory;
 
-    // 🔥 핵심: set(), where() 등이 모두 this 를 반환하도록 mock 한다.
     @Mock(answer = Answers.RETURNS_SELF)
     JPAUpdateClause jpaUpdateClause;
 

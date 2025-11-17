@@ -23,11 +23,6 @@ import java.util.Optional;
 public class SettlementCalculator {
     private final GradeService gradeService;
     private final SettlementRepository settlementRepository;
-
-//    public SettlementCalculator(GradeService gradeService) {
-//        this.gradeService = gradeService;
-//    }
-
     // 정산 금액 계산
     public Result getResult(Order order, User seller) {
         Long totalSales = order.getTotalAmount();
@@ -42,11 +37,9 @@ public class SettlementCalculator {
         BigDecimal settlementAmount = totalAmount.subtract(fee).subtract(refundAmount).setScale(2, RoundingMode.HALF_UP);
         return new Result(fee, refundAmount, vat, totalAmount, settlementAmount);
     }
-
     public record Result(BigDecimal fee, BigDecimal refundAmount, BigDecimal vat, BigDecimal totalAmount,
                          BigDecimal settlementAmount) {
     }
-
     // 환불된 정산 금액 계산
     public BigDecimal refundResult(Settlement settlement) {
         BigDecimal saleAmount = settlement.getSalesAmount();
@@ -57,7 +50,6 @@ public class SettlementCalculator {
         BigDecimal refundSettlementAmount = curSettlementAmount.subtract(refundAmount);
         return refundSettlementAmount.max(BigDecimal.ZERO);
     }
-
     // 기간별 집계 계산
     public void accumulate(SettlementTotals acc, SettlementTotals add) {
         acc.add(add);
@@ -72,7 +64,6 @@ public class SettlementCalculator {
         double completedRate = totalCount == 0 ? 0.0 : Math.round(((double) completedCount * 100.0 / totalCount) * 10) / 10.0;  // 정산 완료율
         return new SettlementStats(totalCount, completedCount, completedRate);
     }
-
     public record SettlementStats(long totalCount, long completedCount, double completedRate) {
     }
 }

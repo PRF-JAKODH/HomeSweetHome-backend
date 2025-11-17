@@ -68,7 +68,7 @@ class SettlementSaverTest {
                     );
         }
         @Test
-        @DisplayName("[성공] 정상적으로 weekly upsert가 수행된다")
+        @DisplayName("정상적으로 weekly upsert가 수행된다")
         void saveWeekly_success() {
             // given
             Long userId = 1L;
@@ -100,7 +100,7 @@ class SettlementSaverTest {
         }
 
         @Test
-        @DisplayName("[성공] saveMonthly 정상 호출")
+        @DisplayName("saveMonthly 정상 호출")
         void saveMonthly_success() {
             // given
             YearMonth ym = YearMonth.of(2025, 3);
@@ -128,7 +128,7 @@ class SettlementSaverTest {
                     );
         }
         @Test
-        @DisplayName("[성공] saveYearly 정상 호출 - upsertYearly 1회 실행")
+        @DisplayName("saveYearly 정상 호출 - upsertYearly 1회 실행")
         void saveYearly_success() {
             Long userId = 1L;
             Short year = 2025;
@@ -158,7 +158,7 @@ class SettlementSaverTest {
     @DisplayName("실패 케이스")
     class Failure {
         @Test
-        @DisplayName("[실패] Repository가 예외를 던지면 saveDaily도 예외를 전달한다")
+        @DisplayName("Repository가 예외를 던지면 saveDaily도 예외를 전달한다")
         void saveDaily_Failure_RepositoryException() {
             // given
             Long userId = 1L;
@@ -175,7 +175,7 @@ class SettlementSaverTest {
                     .hasMessage("DB ERROR");
         }
         @Test
-        @DisplayName("[실패] totals가 null이면 NullPointerException 발생")
+        @DisplayName("totals가 null이면 NullPointerException 발생")
         void saveWeekly_fail_totalsNull() {
             Long userId = 1L;
             LocalDate weekStart = LocalDate.of(2025, 11, 3);
@@ -185,7 +185,7 @@ class SettlementSaverTest {
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] weekStartDate가 null이면 NullPointerException 발생")
+        @DisplayName("weekStartDate가 null이면 NullPointerException 발생")
         void saveWeekly_fail_weekStartNull() {
             SettlementTotals totals = SettlementTotals.empty();
 
@@ -194,7 +194,7 @@ class SettlementSaverTest {
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] upsertWeekly에서 예외가 발생하면 그대로 전파된다")
+        @DisplayName("upsertWeekly에서 예외가 발생하면 그대로 전파된다")
         void saveWeekly_fail_repositoryThrowsException() {
             Long userId = 1L;
             LocalDate weekStart = LocalDate.of(2025, 11, 3);
@@ -210,7 +210,7 @@ class SettlementSaverTest {
                     .hasMessage("DB error");
         }
         @Test
-        @DisplayName("[실패] totals 가 null 이면 NPE 발생")
+        @DisplayName("totals 가 null 이면 NPE 발생")
         void saveMonthly_fail_totalsNull() {
             YearMonth ym = YearMonth.of(2025, 3);
             assertThatThrownBy(() ->
@@ -221,7 +221,7 @@ class SettlementSaverTest {
                     .upsertMonthly(any(), any(), any(), any(), any(), any(), any(), any());
         }
         @Test
-        @DisplayName("[실패] SettlementTotals 내부 필드가 null이어도 저장 시도 (현재 구현 기준)")
+        @DisplayName("SettlementTotals 내부 필드가 null이어도 저장 시도 (현재 구현 기준)")
         void saveMonthly_fail_totalsFieldNull() {
             YearMonth ym = YearMonth.of(2025, 3);
             SettlementTotals totals = new SettlementTotals(
@@ -251,7 +251,7 @@ class SettlementSaverTest {
                     );
         }
         @Test
-        @DisplayName("[실패] repository.upsertMonthly 에서 예외 발생")
+        @DisplayName("repository.upsertMonthly 에서 예외 발생")
         void saveMonthly_fail_repositoryThrows() {
             YearMonth ym = YearMonth.of(2025, 3);
             SettlementTotals totals = new SettlementTotals(
@@ -272,7 +272,7 @@ class SettlementSaverTest {
                     .hasMessage("DB ERROR");
         }
         @Test
-        @DisplayName("[실패] totals 가 null이면 NPE 발생")
+        @DisplayName("totals 가 null이면 NPE 발생")
         void saveYearly_fail_totalsNull() {
             Long userId = 1L;
             assertThatThrownBy(() ->
@@ -283,7 +283,7 @@ class SettlementSaverTest {
                     .upsertYearly(any(), any(), any(), any(), any(), any(), any());
         }
         @Test
-        @DisplayName("[실패] totals 내부 필드가 null이어도 저장 호출은 이루어진다 → 현재 구조에서는 예외 없음")
+        @DisplayName("totals 내부 필드가 null이어도 저장 호출은 이루어진다 → 현재 구조에서는 예외 없음")
         void saveYearly_fail_totalsFieldNull() {
             SettlementTotals totals = new SettlementTotals(
                     null,
@@ -299,9 +299,8 @@ class SettlementSaverTest {
             verify(yearlySettlementRepository, times(1))
                     .upsertYearly(any(), any(), any(), any(), any(), any(), any());
         }
-
         @Test
-        @DisplayName("[실패] repository 내부 에러 발생 시 예외 전파")
+        @DisplayName("repository 내부 에러 발생 시 예외 전파")
         void saveYearly_fail_repositoryException() {
             SettlementTotals totals = new SettlementTotals(
                     BigDecimal.TEN,
@@ -320,6 +319,5 @@ class SettlementSaverTest {
             ).isInstanceOf(RuntimeException.class)
                     .hasMessage("DB error");
         }
-
     }
 }

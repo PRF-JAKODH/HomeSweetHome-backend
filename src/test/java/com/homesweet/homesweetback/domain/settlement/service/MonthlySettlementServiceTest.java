@@ -13,9 +13,11 @@ import com.homesweet.homesweetback.domain.settlement.repository.SettlementReposi
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.MonthlyDateRangeCalculator;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -76,9 +78,32 @@ class MonthlySettlementServiceTest {
     @Mock
     private SettlementValidator settlementValidator;
 
+    @Mock
+    private SettlementCalculator settlementCalculator;
+
     @Nested
     @DisplayName("성공 케이스")
     class Success {
+        SettlementAggregator settlementAggregator;
+        MonthlySettlementService monthlySettlementService;
+        @BeforeEach
+        void setup() {
+            // 실제 주입
+            SettlementAggregator realAggregator = new SettlementAggregator(settlementCalculator);
+
+            monthlySettlementService = new MonthlySettlementService(
+                    monthlySettlementRepository,
+                    weeklySettlementRepository,
+                    settlementRepository,
+                    monthlyDateRangeCalculator,
+                    emptyResponse,
+                    settlementMapper,
+                    settlementValidator,
+                    realAggregator,   // ← 실제 Aggregator
+                    settlementSaver
+            );
+        }
+
         @Test
         void getMonthlySummary() {
             Long userId = 1L;
@@ -231,8 +256,8 @@ class MonthlySettlementServiceTest {
                     YearMonth.of(2025, 2), SettlementTotals.empty()
             );
 
-            given(settlementAggregator.aggregate(anyList(), any(), any()))
-                    .willReturn((Map) aggregated);
+//            given(settlementAggregator.aggregate(anyList(), any(), any()))
+//                    .willReturn((Map) aggregated);
 
             // when
             monthlySettlementService.getMonthlySettlement(userId);
@@ -244,8 +269,8 @@ class MonthlySettlementServiceTest {
             verify(settlementValidator, times(1))
                     .validateMonthly(settlements);
 
-            verify(settlementAggregator, times(1))
-                    .aggregate(anyList(), any(), any());
+//            verify(settlementAggregator, times(1))
+//                    .aggregate(anyList(), any(), any());
 
             // 저장이 월 개수만큼 호출되는지 검증 → 2번
             verify(settlementSaver, times(2))

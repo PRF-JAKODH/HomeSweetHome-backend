@@ -13,6 +13,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
+import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
@@ -26,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +80,7 @@ public class SettlementValidatorTest {
 
             assertThatCode(() -> settlementValidator.validateSeller(seller)).doesNotThrowAnyException();
         }
+
         // 주문 취소시 환불 금액 반영
         @Test
         @DisplayName("환불 및 정산 금액 반영에 대한 검증-정산상태: COMPLETED")
@@ -91,6 +92,7 @@ public class SettlementValidatorTest {
 
             assertThatCode(() -> settlementValidator.validateCanceled(settlement, order)).doesNotThrowAnyException();
         }
+
         @Test
         @DisplayName("환불 및 정산 금액 반영에 대한 검증-정산상태: COMPLETED")
         void validateCanceled_StatusIsPending_Success() {
@@ -101,17 +103,19 @@ public class SettlementValidatorTest {
 
             assertThatCode(() -> settlementValidator.validateCanceled(settlement, order)).doesNotThrowAnyException();
         }
+
         // 정산 내역이 있는지
         @Test
         @DisplayName("집계를 하기 위해 주문건별 정산내역이 있는지에 대한 검증")
-        void validateDaily_Success(){
+        void validateDaily_Success() {
             Settlement settlement = HelperData.getSettlement();
             List<Settlement> settlements = List.of(settlement);
 
             assertThatCode(() -> settlementValidator.validateDaily(settlements)).doesNotThrowAnyException();
         }
+
         @Test
-        @DisplayName("[성공] WeeklyValidate - 리스트가 비어있지 않으면 성공")
+        @DisplayName("WeeklyValidate - 리스트가 비어있지 않으면 성공")
         void validateWeekly_success() {
             List<DailySettlement> settlements = List.of(
                     HelperData.getDailySettlementWithDate(LocalDate.now())
@@ -120,8 +124,9 @@ public class SettlementValidatorTest {
             assertThatCode(() -> settlementValidator.validateWeekly(settlements))
                     .doesNotThrowAnyException();
         }
+
         @Test
-        @DisplayName("[성공] MonthlyValidate - 리스트가 비어있지 않으면 성공")
+        @DisplayName("MonthlyValidate - 리스트가 비어있지 않으면 성공")
         void validateMonthly_success() {
             WeeklySettlement ws = HelperData.getWeeklySettlementWithDate(LocalDate.now());
 
@@ -130,9 +135,17 @@ public class SettlementValidatorTest {
             assertThatCode(() -> settlementValidator.validateMonthly(settlements))
                     .doesNotThrowAnyException();
         }
+
+        @Test
+        @DisplayName("연별 정산 리스트가 비어있지 않으면 성공")
+        void validateYearly_success() {
+            // given
+            MonthlySettlement ms = new MonthlySettlement();
+            List<MonthlySettlement> list = List.of(ms);
+
+            settlementValidator.validateYearly(list);
+        }
     }
-
-
     @Nested
     @DisplayName("실패 케이스")
     class Fail {
@@ -146,7 +159,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.ORDERS_NOT_FOUND.getMessage());
             }
-
             @Test
             @DisplayName("주문 상태가 주문 완료가 아니면 예외 발생")
             void orderStatusFailure_NotCompleted() {
@@ -159,7 +171,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.INVALID_ORDER_STATUS.getMessage());
             }
-
             @Test
             @DisplayName("배송상태가 주문 취소된 건이면 예외 발생")
             void deliveryCanceled_Order_Failure() {
@@ -178,20 +189,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.ORDER_CANCELED_NOT_FOUND.getMessage());
             }
-
-//            @Test
-//            @DisplayName("배송 상태가 배송취소면 예외 발생")
-//            void deliveryStatusFailure_DeliverCanceled() {
-//                // given
-//                Order order = HelperData.getOrder(HelperData.getUser());
-//                order.setOrderStatus(OrderStatus.COMPLETED);
-//                order.setDeliveryStatus(DeliveryStatus.CANCELLED);
-//
-//                assertThatThrownBy(() -> settlementValidator.validateOrder(order))
-//                        .isInstanceOf(BusinessException.class)
-//                        .hasMessage(ErrorCode.DELIVERY_STATUS_NOT_DELIVERED.getMessage());
-//            }
-
             @Test
             @DisplayName("배송 상태가 배송중이면 예외 발생")
             void deliveryStatusFailure_Delivering() {
@@ -204,7 +201,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.DELIVERY_STATUS_NOT_DELIVERED.getMessage());
             }
-
             @Test
             @DisplayName("배송 상태가 배송전이면 예외 발생")
             void deliveryStatusFailure_Before_shipment() {
@@ -217,7 +213,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.DELIVERY_STATUS_NOT_DELIVERED.getMessage());
             }
-
             @Test
             @DisplayName("주문 제품이 비어있으면 예외 발생")
             void notFound_OrderItems_Failure() {
@@ -231,7 +226,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.ORDER_ITEMS_EMPTY.getMessage());
             }
-
             @Test
             @DisplayName("중복된 주문건이면 예외 발생")
             void duplicated_Order_Failure() {
@@ -254,7 +248,6 @@ public class SettlementValidatorTest {
                         .hasMessage(ErrorCode.DUPLICATE_SETTLEMENT.getMessage());
             }
         }
-
         @Nested
         @DisplayName("판매자 추출시 예외 케이스")
         class extractedSeller_Fail {
@@ -265,7 +258,6 @@ public class SettlementValidatorTest {
                         .isInstanceOf(BusinessException.class)
                         .hasMessage(ErrorCode.SELLER_NOT_FOUND.getMessage());
             }
-
             @Test
             @DisplayName("User의 Role이 SELLER가 아니면 예외 발생")
             void roleCheckFailure() {
@@ -329,7 +321,7 @@ public class SettlementValidatorTest {
             }
             @Nested
             @DisplayName("집계시 기간별 집계정산 예외 케이스")
-            class aggregate_Fail{
+            class aggregate_Fail {
                 @Test
                 @DisplayName("정산 데이터가 null이면 예외 발생")
                 void validateDaily_null_Failure() {
@@ -344,38 +336,57 @@ public class SettlementValidatorTest {
                             .isInstanceOf(BusinessException.class)
                             .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
                 }
-            }
-            @Test
-            @DisplayName("[실패] WeeklyValidate - 리스트가 null이면 BusinessException 발생")
-            void validateWeekly_fail_nullList() {
+                @Test
+                @DisplayName("WeeklyValidate - 리스트가 null이면 BusinessException 발생")
+                void validateWeekly_fail_nullList() {
 
-                assertThatThrownBy(() -> settlementValidator.validateWeekly(null))
-                        .isInstanceOf(BusinessException.class)
-                        .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
-            }
-            @Test
-            @DisplayName("[실패] WeeklyValidate - 리스트가 비어있으면 BusinessException")
-            void validateWeekly_fail_emptyList() {
+                    assertThatThrownBy(() -> settlementValidator.validateWeekly(null))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+                @Test
+                @DisplayName("WeeklyValidate - 리스트가 비어있으면 BusinessException")
+                void validateWeekly_fail_emptyList() {
 
-                assertThatThrownBy(() -> settlementValidator.validateWeekly(List.of()))
-                        .isInstanceOf(BusinessException.class)
-                        .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
-            }
-            @Test
-            @DisplayName("[실패] MonthlyValidate - 리스트가 null이면 BusinessException")
-            void validateMonthly_fail_nullList() {
+                    assertThatThrownBy(() -> settlementValidator.validateWeekly(List.of()))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+                @Test
+                @DisplayName("[실패] MonthlyValidate - 리스트가 null이면 BusinessException")
+                void validateMonthly_fail_nullList() {
 
-                assertThatThrownBy(() -> settlementValidator.validateMonthly(null))
-                        .isInstanceOf(BusinessException.class)
-                        .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
-            }
-            @Test
-            @DisplayName("[실패] MonthlyValidate - 리스트가 비어있으면 BusinessException")
-            void validateMonthly_fail_emptyList() {
+                    assertThatThrownBy(() -> settlementValidator.validateMonthly(null))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+                @Test
+                @DisplayName("MonthlyValidate - 리스트가 비어있으면 BusinessException")
+                void validateMonthly_fail_emptyList() {
 
-                assertThatThrownBy(() -> settlementValidator.validateMonthly(List.of()))
-                        .isInstanceOf(BusinessException.class)
-                        .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                    assertThatThrownBy(() -> settlementValidator.validateMonthly(List.of()))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+                @Test
+                @DisplayName("연별 정산 리스트가 비어있으면 BusinessException 발생")
+                void validateYearly_fail_emptyList() {
+                    // given
+                    List<MonthlySettlement> emptyList = List.of();
+
+                    // when & then
+                    assertThatThrownBy(() -> settlementValidator.validateYearly(emptyList))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
+                @Test
+                @DisplayName("연별 정산 리스트가 null이면 BusinessException 발생")
+                void validateYearly_fail_null() {
+                    // when & then
+                    assertThatThrownBy(() -> settlementValidator.validateYearly(null))
+                            .isInstanceOf(BusinessException.class)
+                            .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+                }
             }
         }
     }

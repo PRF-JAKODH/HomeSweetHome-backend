@@ -61,15 +61,12 @@ public class DailySettlementService {
                 dailySettlementPage.getContent(),
                 d -> settlementCalculator.calculateStats(userId, d.getSettlementDate().toLocalDate(), d.getSettlementDate().toLocalDate())
         );
-
         return new PageImpl<>(dailySettlementResponses, pageable, stats.totalCount());   // 전체 페이지수
     }
-
     public Page<DailySettlement> findDailySettlements(Long userId, Pageable pageable, LocalDateTime start, LocalDateTime end) {
         Page<DailySettlement> dailySettlements = dailySettlementRepository.findByDailySettlementByRange(userId, start, end, pageable);
         return dailySettlements;
     }
-
     // 일별 집계
     @Transactional
     public void getSettlement(Long userId, LocalDateTime dailyStartDate, LocalDateTime dailyEndDate) {

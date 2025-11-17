@@ -10,10 +10,12 @@ import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlemen
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.YearlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.YearlyDateRangeCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,12 +66,32 @@ class YearlySettlementServiceTest {
     private SettlementMapper settlementMapper;
     @Mock
     private SettlementRepository settlementRepository;
+    @Mock
+    private SettlementCalculator settlementCalculator;
 
     @Nested
     @DisplayName("성공 케이스")
     class Success {
+        private YearlySettlementService yearlySettlementService;
+
+        @BeforeEach
+        void setup() {
+            SettlementAggregator realAggregator = new SettlementAggregator(settlementCalculator);
+            yearlySettlementService = new YearlySettlementService(
+                    yearlySettlementRepository,
+                    monthlySettlementRepository,
+                    settlementRepository,
+                    yearlyDateRangeCalculator,
+                    emptyResponse,
+                    settlementMapper,
+                    settlementValidator,
+                    realAggregator,
+                    settlementSaver
+            );
+        }
+
         @Test
-        @DisplayName("[성공] 연별 집계가 정상적으로 수행된다")
+        @DisplayName("연별 집계가 정상적으로 수행된다")
         void getYearlySettlement_success() {
             Long userId = 1L;
             MonthlySettlement m1 = HelperData.getMonthlySettlementWithYearMonth(2025, 1);
@@ -87,21 +109,16 @@ class YearlySettlementServiceTest {
                     (short) 2025, SettlementTotals.empty(),
                     (short) 2026, SettlementTotals.empty()
             );
-
-            given(settlementAggregator.aggregate(anyList(), any(), any()))
-                    .willReturn((Map) aggregated);
-
             // when
             yearlySettlementService.getYearlySettlement(userId);
 
             // then
             verify(monthlySettlementRepository).findByMonthlySettlement(userId);
             verify(settlementValidator).validateYearly(list);
-            verify(settlementAggregator).aggregate(anyList(), any(), any());
             verify(settlementSaver, times(2)).saveYearly(eq(userId), anyShort(), any());
         }
         @Test
-        @DisplayName("[성공] 연별 정산이 비어있으면 EmptyResponse 반환")
+        @DisplayName("연별 정산이 비어있으면 EmptyResponse 반환")
         void getYearlySummary_empty() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
@@ -143,7 +160,7 @@ class YearlySettlementServiceTest {
             assertThat(result.getContent().get(0).totalSales()).isEqualTo(BigDecimal.ZERO);
         }
         @Test
-        @DisplayName("[성공] totalCount 정상 반영")
+        @DisplayName("totalCount 정상 반영")
         void getYearlySummary_totalCount_ok() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2025, 1, 1);
@@ -179,7 +196,7 @@ class YearlySettlementServiceTest {
                     eq(LocalDateTime.of(2026, 1, 1, 0, 0))
             )).willReturn(123L);
 
-            // Mapper stub
+            // Mapper
             given(settlementMapper.toYearlyResponses(page.getContent(), 123L))
                     .willReturn(List.of(
                             new YearlySettlementResponse(
@@ -198,15 +215,12 @@ class YearlySettlementServiceTest {
             // then
             assertThat(result.getTotalElements()).isEqualTo(123L);
         }
-
-
-
     }
     @Nested
     @DisplayName("실패 케이스")
     class Failure {
         @Test
-        @DisplayName("[실패] Range 계산 중 에러 발생 → 예외 전파")
+        @DisplayName("Range 계산 중 에러 발생 → 예외 전파")
         void getYearlySummary_fail_rangeError() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
@@ -223,7 +237,7 @@ class YearlySettlementServiceTest {
         }
 
         @Test
-        @DisplayName("[실패] yearlySettlementRepository 에러 발생")
+        @DisplayName("yearlySettlementRepository 에러 발생")
         void getYearlySummary_fail_repo() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
@@ -251,10 +265,8 @@ class YearlySettlementServiceTest {
             ).isInstanceOf(RuntimeException.class)
                     .hasMessage("DB error");
         }
-
-
         @Test
-        @DisplayName("[실패] totalCount 계산 중 에러 발생")
+        @DisplayName("totalCount 계산 중 에러 발생")
         void getYearlySummary_fail_totalCount() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2025, 1, 1);
@@ -276,16 +288,16 @@ class YearlySettlementServiceTest {
                     .willReturn(new PageImpl<>(List.of()));
 
             given(settlementRepository.countAllByOrderedAt(any(), any(), any()))
-                    .willThrow(new RuntimeException("count fail"));
+                    .willThrow(new RuntimeException("계산 실패"));
 
             assertThatThrownBy(() ->
                     yearlySettlementService.getYearlySummary(userId, start, end, pageable)
             ).isInstanceOf(RuntimeException.class)
-                    .hasMessage("count fail");
+                    .hasMessage("계산 실패");
         }
 
         @Test
-        @DisplayName("[실패] Mapper 가 null 반환 → IllegalArgumentException 발생")
+        @DisplayName("Mapper 가 null 반환 → IllegalArgumentException 발생")
         void getYearlySummary_fail_mapperNull() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2025, 1, 1);
@@ -311,20 +323,18 @@ class YearlySettlementServiceTest {
             given(settlementRepository.countAllByOrderedAt(any(), any(), any()))
                     .willReturn(5L);
 
-            // ★ mapper 가 null 반환
+            // mapper 가 null 반환
             given(settlementMapper.toYearlyResponses(anyList(), eq(5L)))
                     .willReturn(null);
 
             assertThatThrownBy(() ->
                     yearlySettlementService.getYearlySummary(userId, start, end, pageable)
             )
-                    .isInstanceOf(IllegalArgumentException.class)         // ← IllegalArgumentException 으로 변경
-                    .hasMessageContaining("Content must not be null");     // 메시지 검증(선택)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("null이 될 수 없다.");
         }
-
-
         @Test
-        @DisplayName("[실패] Mapper 내부에서 예외 발생 → 전파")
+        @DisplayName("Mapper 내부에서 예외 발생 → 전파")
         void getYearlySummary_fail_mapperException() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
@@ -339,8 +349,6 @@ class YearlySettlementServiceTest {
                             LocalDateTime.of(2024, 1, 1, 0, 0),        // fromDateTime
                             LocalDateTime.of(2025, 1, 1, 0, 0)         // toDateTimeExclusive
                     );
-
-
             given(yearlyDateRangeCalculator.calculate(start, end)).willReturn(range);
 
             YearlySettlement ys = HelperData.getYearlySettlement();

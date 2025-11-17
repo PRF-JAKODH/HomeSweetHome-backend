@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.settlement.service;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.settlement.aggregate.SettlementAggregator;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
@@ -9,6 +10,7 @@ import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
@@ -16,6 +18,7 @@ import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateR
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,13 +30,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,176 +44,190 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("")
 class WeeklySettlementServiceTest {
+    @Mock
+    private WeeklySettlementRepository weeklySettlementRepository;
 
     @Mock
-    WeeklySettlementRepository weeklySettlementRepository;
+    private SettlementCalculator settlementCalculator;
 
     @Mock
-    SettlementCalculator settlementCalculator;
+    private SettlementMapper settlementMapper;
 
     @Mock
-    SettlementMapper settlementMapper;
-
-    @Mock
-    EmptyResponse emptyResponse;
+    private EmptyResponse emptyResponse;
 
     @InjectMocks
-    WeeklySettlementService weeklySettlementService;
+    private WeeklySettlementService weeklySettlementService;
 
     @Mock
-    DailySettlementRepository dailySettlementRepository;
+    private DailySettlementRepository dailySettlementRepository;
 
     @Mock
-    SettlementValidator settlementValidator;
+    private SettlementValidator settlementValidator;
 
     @Mock
-    SettlementAggregator settlementAggregator;
+    private SettlementAggregator settlementAggregator;
 
     @Mock
-    SettlementSaver settlementSaver;
+    private SettlementSaver settlementSaver;
+
+    @Mock
+    private GradeService gradeService;
+    @Mock
+    private SettlementRepository settlementRepository;
 
     Long userId = 1L;
     Pageable pageable = PageRequest.of(0, 10);
 
-    @Test
-    @DisplayName("[성공] 주별 집계가 정상적으로 조회된다")
-    void getWeeklySummary_success() {
-        // given
-        LocalDate start = LocalDate.of(2025, 11, 10);
-        LocalDate end = LocalDate.of(2025, 11, 16);
+    @Nested
+    @DisplayName("성공 케이스")
+    class Success {
+        private WeeklySettlementService weeklySettlementService;
+        private SettlementAggregator settlementAggregator;
 
-        WeeklyDateRangeCalculator.WeeklyDateRange range =
-                WeeklyDateRangeCalculator.getWeeklyDateRange(start, end);
+        @BeforeEach
+        void setUp() {
+            // settlementCalculator는 mock이라서 실제 aggregator 안에서 호출되면 제대로 동작해야 함
+            SettlementAggregator realAggregator = new SettlementAggregator(settlementCalculator);
 
-        WeeklySettlement ws = new WeeklySettlement();
-        Page<WeeklySettlement> page = new PageImpl<>(List.of(ws), pageable, 1);
+            weeklySettlementService = new WeeklySettlementService(
+                    weeklySettlementRepository,     // mock
+                    dailySettlementRepository,      // mock
+                    settlementCalculator,           // mock
+                    emptyResponse,                  // mock
+                    settlementMapper,               // mock
+                    settlementValidator,            // mock
+                    realAggregator,                 // ★ 실제 객체 주입!
+                    settlementSaver                 // mock
+            );
+        }
 
-        given(weeklySettlementRepository.findByWeeklySettlementByRange(
-                userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable
-        )).willReturn(page);
+        @Test
+        @DisplayName("주별 집계가 정상적으로 조회된다")
+        void getWeeklySummary_success() {
+            // given
+            LocalDate start = LocalDate.of(2025, 11, 10);
+            LocalDate end = LocalDate.of(2025, 11, 16);
 
-        SettlementCalculator.SettlementStats stats =
-                new SettlementCalculator.SettlementStats(10, 5, 50.0);
+            WeeklyDateRangeCalculator.WeeklyDateRange range =
+                    WeeklyDateRangeCalculator.getWeeklyDateRange(start, end);
 
-        given(settlementCalculator.calculateStats(userId, start, end))
-                .willReturn(stats);
+            WeeklySettlement ws = new WeeklySettlement();
+            Page<WeeklySettlement> page = new PageImpl<>(List.of(ws), pageable, 1);
 
-        WeeklySettlementResponse mapped = new WeeklySettlementResponse(
-                (short) 2025, (byte) 11, range.week(),
-                start, end,
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                BigDecimal.ZERO, BigDecimal.ZERO,
-                stats.completedRate(), stats.totalCount()
-        );
-        given(settlementMapper.toWeeklySettlementResponse(
-                page.getContent(), stats, range.week()
-        )).willReturn(List.of(mapped));
+            given(weeklySettlementRepository.findByWeeklySettlementByRange(
+                    userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable
+            )).willReturn(page);
 
-        // when
-        Page<WeeklySettlementResponse> result =
-                weeklySettlementService.getWeeklySummary(userId, start, end, pageable);
+            SettlementCalculator.SettlementStats stats =
+                    new SettlementCalculator.SettlementStats(10, 5, 50.0);
 
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).hasSize(1);
+            given(settlementCalculator.calculateStats(userId, start, end))
+                    .willReturn(stats);
 
-        WeeklySettlementResponse res = result.getContent().get(0);
+            WeeklySettlementResponse mapped = new WeeklySettlementResponse(
+                    (short) 2025, (byte) 11, range.week(),
+                    start, end,
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ZERO, BigDecimal.ZERO,
+                    stats.completedRate(), stats.totalCount()
+            );
+            given(settlementMapper.toWeeklySettlementResponse(
+                    page.getContent(), stats, range.week()
+            )).willReturn(List.of(mapped));
 
-        assertThat(res.year()).isEqualTo((short) 2025);
-        assertThat(res.month()).isEqualTo((byte) 11);
-        assertThat(res.completedRate()).isEqualTo(50.0);
-        assertThat(result.getTotalElements()).isEqualTo(stats.totalCount());
+            // when
+            Page<WeeklySettlementResponse> result =
+                    weeklySettlementService.getWeeklySummary(userId, start, end, pageable);
 
-        verify(weeklySettlementRepository, times(1))
-                .findByWeeklySettlementByRange(userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable);
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(1);
 
-        verify(settlementCalculator, times(1))
-                .calculateStats(userId, start, end);
+            WeeklySettlementResponse res = result.getContent().get(0);
+
+            assertThat(res.year()).isEqualTo((short) 2025);
+            assertThat(res.month()).isEqualTo((byte) 11);
+            assertThat(res.completedRate()).isEqualTo(50.0);
+            assertThat(result.getTotalElements()).isEqualTo(stats.totalCount());
+
+            verify(weeklySettlementRepository, times(1))
+                    .findByWeeklySettlementByRange(userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable);
+
+            verify(settlementCalculator, times(1))
+                    .calculateStats(userId, start, end);
+        }
+
+        @Test
+        @DisplayName("주별 데이터가 없으면 빈 Page 응답을 반환한다")
+        void getWeeklySummary_empty_success() {
+            // given
+            LocalDate start = LocalDate.of(2025, 11, 10);
+            LocalDate end = LocalDate.of(2025, 11, 16);
+
+            WeeklyDateRangeCalculator.WeeklyDateRange range =
+                    WeeklyDateRangeCalculator.getWeeklyDateRange(start, end);
+
+            Page<WeeklySettlement> emptyPage =
+                    new PageImpl<>(List.of(), pageable, 0);
+
+            given(weeklySettlementRepository.findByWeeklySettlementByRange(
+                    userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable
+            )).willReturn(emptyPage);
+
+            Page<WeeklySettlementResponse> emptyResponsePage =
+                    new PageImpl<>(List.of(), pageable, 0);
+
+            given(emptyResponse.createEmptyWeekly(range, pageable))
+                    .willReturn(emptyResponsePage);
+
+            // when
+            Page<WeeklySettlementResponse> result =
+                    weeklySettlementService.getWeeklySummary(userId, start, end, pageable);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.getTotalElements()).isZero();
+            assertThat(result.getContent()).isEmpty();
+
+            verify(emptyResponse, times(1))
+                    .createEmptyWeekly(range, pageable);
+        }
+        @Test
+        @DisplayName("주별 집계가 올바르게 계산되고 저장된다.")
+        void getWeeklySettlement_success() {
+            // given
+            Long userId = 1L;
+            LocalDate weekStart = LocalDate.of(2025, 11, 10);
+            LocalDate weekEnd = LocalDate.of(2025, 11, 16);
+
+            DailySettlement d1 = HelperData.getDailySettlementWithDate(LocalDate.of(2025, 11, 10));
+            DailySettlement d2 = HelperData.getDailySettlementWithDate(LocalDate.of(2025, 11, 11));
+
+            List<DailySettlement> settlements = List.of(d1, d2);
+
+            Map<LocalDate, SettlementTotals> aggregated = Map.of(
+                    LocalDate.of(2025, 11, 10), SettlementTotals.empty()
+            );
+            // repository mock
+            given(dailySettlementRepository.findByDailySettlement(userId))
+                    .willReturn(settlements);
+
+            // validator mock — 예외 없이 통과
+            doNothing().when(settlementValidator).validateWeekly(settlements);
+            // when
+            weeklySettlementService.getWeeklySettlement(userId, weekStart, weekEnd);
+
+
+            verify(settlementSaver, times(1))
+                    .saveWeekly(eq(userId), eq(LocalDate.of(2025, 11, 10)), any(SettlementTotals.class));
+        }
     }
-
-    @Test
-    @DisplayName("[성공] 주별 데이터가 없으면 빈 Page 응답을 반환한다")
-    void getWeeklySummary_empty_success() {
-        // given
-        LocalDate start = LocalDate.of(2025, 11, 10);
-        LocalDate end = LocalDate.of(2025, 11, 16);
-
-        WeeklyDateRangeCalculator.WeeklyDateRange range =
-                WeeklyDateRangeCalculator.getWeeklyDateRange(start, end);
-
-        Page<WeeklySettlement> emptyPage =
-                new PageImpl<>(List.of(), pageable, 0);
-
-        given(weeklySettlementRepository.findByWeeklySettlementByRange(
-                userId, range.firstWeekStart(), range.lastWeekStartEx(), pageable
-        )).willReturn(emptyPage);
-
-        Page<WeeklySettlementResponse> emptyResponsePage =
-                new PageImpl<>(List.of(), pageable, 0);
-
-        given(emptyResponse.createEmptyWeekly(range, pageable))
-                .willReturn(emptyResponsePage);
-
-        // when
-        Page<WeeklySettlementResponse> result =
-                weeklySettlementService.getWeeklySummary(userId, start, end, pageable);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getTotalElements()).isZero();
-        assertThat(result.getContent()).isEmpty();
-
-        verify(emptyResponse, times(1))
-                .createEmptyWeekly(range, pageable);
-    }
-
-    @Test
-    @DisplayName("[성공] 주별 집계가 올바르게 계산되고 저장된다.")
-    void getWeeklySettlement_success() {
-        // given
-        Long userId = 1L;
-        LocalDate weekStart = LocalDate.of(2025, 11, 10);
-        LocalDate weekEnd = LocalDate.of(2025, 11, 16);
-
-        DailySettlement d1 = HelperData.getDailySettlementWithDate(LocalDate.of(2025, 11, 10));
-        DailySettlement d2 = HelperData.getDailySettlementWithDate(LocalDate.of(2025, 11, 11));
-
-        List<DailySettlement> settlements = List.of(d1, d2);
-
-        Map<LocalDate, SettlementTotals> aggregated = Map.of(
-                LocalDate.of(2025, 11, 10), SettlementTotals.empty()
-        );
-
-        // repository mock
-        given(dailySettlementRepository.findByDailySettlement(userId))
-                .willReturn(settlements);
-
-        // validator mock — 예외 없이 통과
-        doNothing().when(settlementValidator).validateWeekly(settlements);
-
-        // aggregator mock
-        given(settlementAggregator.aggregate(
-                eq(settlements),
-                any(),
-                any()
-        )).willReturn((Map) aggregated);
-
-        // when
-        weeklySettlementService.getWeeklySettlement(userId, weekStart, weekEnd);
-
-        // then
-        verify(settlementAggregator, times(1))
-                .aggregate(anyList(), any(), any());
-
-        verify(settlementSaver, times(1))
-                .saveWeekly(eq(userId), eq(LocalDate.of(2025, 11, 10)), any(SettlementTotals.class));
-    }
-
     @Nested
     @DisplayName("실패 케이스")
     class fail {
         @Test
-        @DisplayName("[실패] Repository 예외 발생 시 그대로 전파된다")
+        @DisplayName("Repository 예외 발생 시 그대로 전파된다")
         void getWeeklySummary_fail_repositoryThrows() {
             // given
             LocalDate start = LocalDate.of(2025, 11, 10);
@@ -234,7 +248,7 @@ class WeeklySettlementServiceTest {
         }
 
         @Test
-        @DisplayName("[실패] 일별 데이터 없으면 예외 발생")
+        @DisplayName("일별 데이터 없으면 예외 발생")
         void getWeeklySettlement_fail_noDailyData() {
             Long userId = 1L;
 
@@ -252,7 +266,7 @@ class WeeklySettlementServiceTest {
         }
 
         @Test
-        @DisplayName("[실패] 집계 중 aggregator가 null을 반환하면 예외")
+        @DisplayName("집계 중 aggregator가 null을 반환하면 예외 발생")
         void getWeeklySettlement_fail_aggregatorNull() {
             Long userId = 1L;
 
@@ -273,9 +287,8 @@ class WeeklySettlementServiceTest {
 
             verify(settlementSaver, never()).saveWeekly(any(), any(), any());
         }
-
         @Test
-        @DisplayName("[실패] 저장(saveWeekly) 중 예외 발생하면 롤백")
+        @DisplayName("저장(saveWeekly) 중 예외 발생하면 롤백")
         void getWeeklySettlement_fail_saveError() {
             Long userId = 1L;
 
@@ -302,9 +315,8 @@ class WeeklySettlementServiceTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("DB error");
         }
-
         @Test
-        @DisplayName("[실패] DailySettlement 중 null 요소가 존재하면 NullPointerException")
+        @DisplayName("DailySettlement 중 null 요소가 존재하면 NullPointerException")
         void getWeeklySettlement_fail_nullDailySettlementElement() {
             Long userId = 1L;
 

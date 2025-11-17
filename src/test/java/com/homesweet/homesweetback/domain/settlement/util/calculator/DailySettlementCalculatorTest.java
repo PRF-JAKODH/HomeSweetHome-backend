@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.settlement.util.calculator;
 
-import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,17 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(SpringExtension.class)
 @DisplayName("통계 계산 테스트")
 class DailySettlementCalculatorTest {
-
     @InjectMocks
     private SettlementCalculator settlementCalculator;
-
-    @Mock
-    private DailySettlementRepository dailySettlementRepository;
-
     @Mock
     private SettlementRepository settlementRepository;
-
-
     @Test
     @DisplayName("[성공] 총 주문 건수, 총 정산완료건수, 총 정산 완료율 계산 성공")
     void calculateStats() {
@@ -50,7 +42,6 @@ class DailySettlementCalculatorTest {
         assertThat(stats.completedCount()).isEqualTo(8L);
         assertThat(stats.completedRate()).isEqualTo(80.0);
     }
-
     @Nested
     @DisplayName("실패 케이스")
     class Fail {
@@ -71,7 +62,6 @@ class DailySettlementCalculatorTest {
             assertThat(stats.completedCount()).isEqualTo(8L);
             assertThat(stats.completedRate()).isEqualTo(0.0);
         }
-
         @Test
         @DisplayName("총 정산 완료 건수가 0이면 정산 완료율도 0입니다.")
         void calculateCompletedCount_Zero() {
@@ -89,7 +79,6 @@ class DailySettlementCalculatorTest {
             assertThat(stats.completedCount()).isEqualTo(0L);
             assertThat(stats.completedRate()).isEqualTo(0.0);
         }
-
         @Test
         @DisplayName("총 주문건수보다 정산 완료건수가 클 수 없습니다.")
         void calculate_morethan_totalCount() {

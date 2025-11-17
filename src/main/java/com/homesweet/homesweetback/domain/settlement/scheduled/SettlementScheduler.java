@@ -73,14 +73,7 @@ public class SettlementScheduler {
         LocalDateTime cutoffTime = LocalDateTime.now(KST);
         log.info("정산 취소 실행");
         List<Order> canceledOrders = settlementRepository.findCancelSettlement(DeliveryStatus.CANCELLED, cutoffTime);
-//        if (canceledOrders.isEmpty()) {
-//            throw new BusinessException(ErrorCode.ORDER_CANCELED_NOT_FOUND);
-//        }
         for (Order order : canceledOrders) {
-//            if(order.getDeliveryStatus() != DeliveryStatus.CANCELLED) {
-//                log.warn("배송상태가 CANCELED가 아닌 주문은 패스");
-//                continue;
-//            }
             try {
                 settlementService.orderCanceled(order);
                 log.info("정산 취소 완료");

@@ -33,7 +33,6 @@ public class MonthlySettlementService {
     private final MonthlySettlementRepository monthlySettlementRepository;
     private final WeeklySettlementRepository weeklySettlementRepository;
     private final SettlementRepository settlementRepository;
-    private final MonthlyGrowthCalculator monthlyGrowthCalculator;
     private final MonthlyDateRangeCalculator monthlyDateRangeCalculator;
     private final EmptyResponse emptyResponse;
     private final SettlementMapper settlementMapper;

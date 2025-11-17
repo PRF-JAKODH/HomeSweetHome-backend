@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.settlement.aggregate;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,68 +59,70 @@ class SettlementAggregatorTest {
 
         verify(settlementCalculator, times(2)).accumulate(any(), any());
     }
-    @Test
-    @DisplayName("[실패] items가 null이면 NullPointerException 발생")
-    void aggregate_fail_items_null() {
-        // when & then
-        assertThatThrownBy(() ->
-                settlementAggregator.aggregate(
-                        null,
-                        item -> "KEY",
-                        item -> SettlementTotals.empty()
-                )
-        ).isInstanceOf(NullPointerException.class);
+
+    @Nested
+    @DisplayName("실패 케이스")
+    class Fail {
+        @Test
+        @DisplayName("items가 null이면 NullPointerException 발생")
+        void aggregate_fail_items_null() {
+            // when & then
+            assertThatThrownBy(() ->
+                    settlementAggregator.aggregate(
+                            null,
+                            item -> "KEY",
+                            item -> SettlementTotals.empty()
+                    )
+            ).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("keyExtractor null이면 NullPointerException 발생")
+        void aggregate_fail_keyExtractor_null() {
+            // given
+            List<String> items = List.of("A");
+
+            // when & then
+            assertThatThrownBy(() ->
+                    settlementAggregator.aggregate(
+                            items,
+                            null,
+                            item -> SettlementTotals.empty()
+                    )
+            ).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("totalsMapper null이면 NullPointerException 발생")
+        void aggregate_fail_totalsMapper_null() {
+            // given
+            List<String> items = List.of("A");
+
+            // when & then
+            assertThatThrownBy(() ->
+                    settlementAggregator.aggregate(
+                            items,
+                            item -> item,
+                            null
+                    )
+            ).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("[실패] totalsMapper가 null을 반환하면 NullPointerException 발생")
+        void aggregate_fail_mapper_returns_null() {
+            // given
+            List<String> items = List.of("A");
+
+            // when & then
+            assertThatThrownBy(() ->
+                    settlementAggregator.aggregate(
+                            items,
+                            item -> item,
+                            item -> null
+                    )
+            ).isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("totalsMapper returned null");
+        }
     }
-
-    @Test
-    @DisplayName("[실패] keyExtractor null이면 NullPointerException 발생")
-    void aggregate_fail_keyExtractor_null() {
-        // given
-        List<String> items = List.of("A");
-
-        // when & then
-        assertThatThrownBy(() ->
-                settlementAggregator.aggregate(
-                        items,
-                        null,
-                        item -> SettlementTotals.empty()
-                )
-        ).isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    @DisplayName("[실패] totalsMapper null이면 NullPointerException 발생")
-    void aggregate_fail_totalsMapper_null() {
-        // given
-        List<String> items = List.of("A");
-
-        // when & then
-        assertThatThrownBy(() ->
-                settlementAggregator.aggregate(
-                        items,
-                        item -> item,
-                        null
-                )
-        ).isInstanceOf(NullPointerException.class);
-    }
-    @Test
-    @DisplayName("[실패] totalsMapper가 null을 반환하면 NullPointerException 발생")
-    void aggregate_fail_mapper_returns_null() {
-        // given
-        List<String> items = List.of("A");
-
-        // when & then
-        assertThatThrownBy(() ->
-                settlementAggregator.aggregate(
-                        items,
-                        item -> item,
-                        item -> null
-                )
-        ).isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("totalsMapper returned null");
-    }
-
-
-
-
 }

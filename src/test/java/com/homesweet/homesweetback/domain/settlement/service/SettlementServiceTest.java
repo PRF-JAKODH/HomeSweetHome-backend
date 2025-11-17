@@ -4,7 +4,6 @@ import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
-import com.homesweet.homesweetback.domain.grade.service.GradeService;
 import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
@@ -13,8 +12,10 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
+import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
+import com.homesweet.homesweetback.domain.settlement.util.ValidateAndDateRange;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import org.junit.jupiter.api.DisplayName;
@@ -24,9 +25,13 @@ import org.junit.jupiter.api.Nested;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,29 +44,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("정산 생성 테스트")
 class SettlementServiceTest {
-
     @InjectMocks
     private SettlementService settlementService;
-
     @Mock
     private SettlementRepository settlementRepository;
     @Mock
-    private GradeService gradeService;
-
-    @Mock
     private SettlementValidator settlementValidator;
-
     @Mock
     private ExtractedSeller extractedSeller;
-
     @Mock
     private SettlementCalculator settlementCalculator;
-
-
     @Nested
-    @DisplayName("정산 생성 성공 케이스")
+    @DisplayName("성공 케이스")
     class CreateSettlement {
-        // 성공
         @Test
         @DisplayName("주문이 결제 완료 & 배송 완료일 때 정산을 생성합니다.")
         void createSettlement_Success() {
@@ -95,19 +90,44 @@ class SettlementServiceTest {
             then(settlementRepository).should(times(1)).save(any());
             then(settlementCalculator).should(times(1)).getResult(order, seller);
         }
-    }
 
-    // 실패
-    // 주문 상태가 주문 완료가 아닙니다.
-    // 배송 상태가 배송완료가 아닙니다.
-    // 존재하지 않은 주문 제품입니다.
-    // User의 role이 SELLER가 아닙니다.
-    // 판매자가 존재하지 않습니다.
-    // 기존 주문 건이 있습니다.
-    // 취소된 주문 건입니다.
-    // - 계산
-    // totalAmount == null
-    // < 0(음수)
+        @Test
+        @DisplayName("정산 상태 리스트 조회")
+        void getSettlementStatusList_success() {
+            // given
+            Long userId = 1L;
+            LocalDateTime start = LocalDateTime.of(2025, 11, 10, 0, 0);
+            LocalDateTime end = LocalDateTime.of(2025, 11, 12, 0, 0);
+            String status = "COMPLETED";
+            Pageable pageable = PageRequest.of(0, 10);
+
+            // ValidateAndDateRange 내부 동작을 고려해 최종 사용될 range 계산
+            ValidateAndDateRange.DateRange range =
+                    ValidateAndDateRange.validateAndDateRange(start, end);
+
+            given(settlementRepository.findBySettlement(
+                    anyLong(),
+                    any(),
+                    any(),
+                    anyString(),
+                    any(Pageable.class)
+            )).willReturn(Page.empty());
+
+            // when
+            Page<SettlementResponse> result =
+                    settlementService.getSettlementStatusList(userId, start, end, status, pageable);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(settlementRepository).findBySettlement(
+                    eq(userId),
+                    eq(range.start()),
+                    eq(range.end()),
+                    anyString(),
+                    eq(pageable)
+            );
+        }
+    }
     @Nested
     @DisplayName("실패 케이스")
     class Fail {
@@ -129,7 +149,6 @@ class SettlementServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .hasMessage(ErrorCode.SETTLEMENT_NOT_CREATED.getMessage());
         }
-
         @Test
         @DisplayName("배송 상태가 배송중이면 예외 발생")
         void deliveryStatusFailure_Delivering() {
@@ -146,15 +165,6 @@ class SettlementServiceTest {
                     .hasMessage(ErrorCode.DELIVERY_STATUS_NOT_DELIVERED.getMessage());
             then(settlementValidator).should(times(1)).validateOrder(order);
         }
-
-//        @Test
-//        @DisplayName("판매자 정보가 없으면 예외 발생")
-//        void validateSeller_NotFound_Failure() {
-//            assertThatThrownBy(() -> settlementValidator.validateSeller(null))
-//                    .isInstanceOf(BusinessException.class)
-//                    .hasMessage(ErrorCode.SELLER_NOT_FOUND.getMessage());
-//        }
-
         @Test
         @DisplayName("User의 Role이 SELLER가 아니면 예외 발생")
         void roleCheckFailure() {
@@ -172,7 +182,6 @@ class SettlementServiceTest {
                     .hasMessage(ErrorCode.INVALID_SELLER_ROLE.getMessage());
             then(settlementValidator).should(times(1)).validateSeller(any(User.class));
         }
-
         // 기존 주문 건인지(중복 방지)
         @Test
         @DisplayName("정산 완료된 주문 건이면 예외 발생")
@@ -192,7 +201,6 @@ class SettlementServiceTest {
 
             then(settlementValidator).should(times(1)).validateOrder(order);
         }
-
         @Test
         @DisplayName("취소된 주문이면 정산 생성 예외 발생")
         void DeliveryStatusFailure() {

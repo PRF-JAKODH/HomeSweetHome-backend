@@ -57,7 +57,6 @@ public class SettlementStatusListTest {
     @Nested
     @DisplayName("실패 케이스")
     class Failure {
-
         @Test
         @DisplayName("시작일이 종료일보다 늦으면 예외 발생")
         void ValidateAndDateRange_Failure() {
@@ -68,7 +67,6 @@ public class SettlementStatusListTest {
                     .isInstanceOf(BusinessException.class)
                     .hasMessage(ErrorCode.INVALID_DATE_RANGE.getMessage());
         }
-
         @Test
         @DisplayName("시작일이 null이면 예외 발생")
         void ValidateAndDateRange_Failure_StartDateIsNull() {
@@ -82,5 +80,4 @@ public class SettlementStatusListTest {
                     .isInstanceOf(BusinessException.class);
         }
     }
-
 }

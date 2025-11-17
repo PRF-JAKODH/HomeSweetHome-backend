@@ -68,8 +68,6 @@ public class SettlementCanceledTest {
         then(customSettlementRepository).should(times(1)).applyRefundAmount(anyLong(), any(BigDecimal.class));
     }
 
-
-
     @Nested
     @DisplayName("실패 케이스")
     class OrderCanceled_Failure {
@@ -85,7 +83,6 @@ public class SettlementCanceledTest {
                     .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
 
             then(settlementRepository).should(times(1)).findByOrderId(anyLong());
-
         }
 
         // 주문 취소시 환불 금액 발생
@@ -107,20 +104,20 @@ public class SettlementCanceledTest {
                     .isInstanceOf(BusinessException.class)
                     .hasMessage(ErrorCode.INVALID_ORDER_STATUS.getMessage());
         }
-    }
 
-    @Test
-    @DisplayName("환불 금액 update 실패시 예외 발생")
-    void orderCanceled_Update_Failure() {
-        Order order = HelperData.getOrder(HelperData.getUser());
-        ReflectionTestUtils.setField(order, "id", 1L);
-        Settlement settlement = HelperData.getSettlement();
-        given(settlementRepository.findByOrderId(1L)).willReturn(Optional.of(settlement));
-        given(settlementCalculator.refundResult(any(Settlement.class))).willReturn(BigDecimal.ZERO);
-        given(customSettlementRepository.applyRefundAmount(anyLong(), any(BigDecimal.class))).willReturn(0);
+        @Test
+        @DisplayName("환불 금액 update 실패시 예외 발생")
+        void orderCanceled_Update_Failure() {
+            Order order = HelperData.getOrder(HelperData.getUser());
+            ReflectionTestUtils.setField(order, "id", 1L);
+            Settlement settlement = HelperData.getSettlement();
+            given(settlementRepository.findByOrderId(1L)).willReturn(Optional.of(settlement));
+            given(settlementCalculator.refundResult(any(Settlement.class))).willReturn(BigDecimal.ZERO);
+            given(customSettlementRepository.applyRefundAmount(anyLong(), any(BigDecimal.class))).willReturn(0);
 
-        assertThatThrownBy(() -> settlementService.orderCanceled(order))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+            assertThatThrownBy(() -> settlementService.orderCanceled(order))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
+        }
     }
 }

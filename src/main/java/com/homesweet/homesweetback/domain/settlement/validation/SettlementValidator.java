@@ -23,14 +23,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SettlementValidator {
     private final SettlementRepository settlementRepository;
-
 //    public void validateUnsettledOrders(List<Order> unsettledOrders) {
 //        // 신규 주문건
 //        if (unsettledOrders.isEmpty()) {
 //            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
 //        }
 //    }
-
     // 정산 가능한 주문인지 확인
     public void validateOrder(Order order) {
         validateExist(order);

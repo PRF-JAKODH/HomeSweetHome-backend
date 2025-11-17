@@ -64,11 +64,9 @@ public class YearlySettlementService {
         // 6. 페이지 반환
         return new PageImpl<>(yearlySettlement, pageable, totalCount);
     }
-
     private Page<YearlySettlement> getYearlySettlements(Long userId, short fromYear,short toYearExclusive, Pageable pageable) {
         return yearlySettlementRepository.findByYearlySettlementByRange(userId, fromYear, toYearExclusive, pageable);
     }
-
     // 연별 집계
     public void getYearlySettlement(Long userId) {
         Short prevYear = null;

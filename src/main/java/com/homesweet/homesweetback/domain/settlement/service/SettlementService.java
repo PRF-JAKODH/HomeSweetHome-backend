@@ -94,15 +94,15 @@ public class SettlementService {
         // 1. 정산 데이터 확인
         Settlement settlement = settlementRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
-        // 주문취소시 검증
+        // 2.주문취소시 검증
         settlementValidator.validateCanceled(settlement, order);
-        // 4. 환불금액 계산 (판매금액 + 부가세 - 수수료)
+        // 3. 환불금액 계산 (판매금액 + 부가세 - 수수료)
         BigDecimal refundAmount = settlementCalculator.refundResult(settlement);
 
-        // 5. 환불 금액 반영 및 정산 금액 재계산
+        // 4. 환불 금액 반영 및 정산 금액 재계산
         int updated = customSettlementRepository.applyRefundAmount(orderId, refundAmount);
 
-        // 반영 실패시
+        // 5. 반영 실패시
         if(updated != 1){
             throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }

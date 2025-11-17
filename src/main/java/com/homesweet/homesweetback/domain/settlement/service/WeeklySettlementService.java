@@ -60,12 +60,10 @@ public class WeeklySettlementService {
         );
         return new PageImpl<>(weeklySettlementResponses, pageable, stats.totalCount());
     }
-
     private Page<WeeklySettlement> findWeeklySettlements(Long userId, Pageable pageable, LocalDate firstWeekStart, LocalDate lastWeekStartEx) {
         Page<WeeklySettlement> weeklySettlements = weeklySettlementRepository.findByWeeklySettlementByRange(userId, firstWeekStart, lastWeekStartEx, pageable);
         return weeklySettlements;
     }
-
     // 주차별 정산내역
     public void getWeeklySettlement(Long userId, LocalDate weekStart, LocalDate weekEnd) {
         // 1. 일별 집계내역 조회
@@ -92,7 +90,6 @@ public class WeeklySettlementService {
                 settlementSaver.saveWeekly(userId, weekStartDate, totals)
         );
     }
-
     private List<DailySettlement> findDailySettlements(Long userId) {
         List<DailySettlement> settlements = dailySettlementRepository.findByDailySettlement(userId);
         return settlements;

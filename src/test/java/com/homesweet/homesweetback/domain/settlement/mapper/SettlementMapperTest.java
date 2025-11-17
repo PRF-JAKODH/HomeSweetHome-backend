@@ -11,7 +11,6 @@ import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.YearlySettlement;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.MonthlyGrowthCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
-import jakarta.validation.constraints.Min;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -69,7 +68,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] DailySettlementResponse -> List 매핑")
+        @DisplayName("DailySettlementResponse -> List 매핑")
         void toDailySettlementResponseList() {
             DailySettlement d1 = HelperData.getDailySettlement();
             DailySettlement d2 = HelperData.getDailySettlement();
@@ -111,7 +110,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] WeeklySettlement → WeeklySettlementResponse 매핑이 정상적으로 수행된다")
+        @DisplayName("WeeklySettlement → WeeklySettlementResponse 매핑이 정상적으로 수행된다")
         void toWeeklySettlementResponse_success() {
             MonthlyGrowthCalculator calc = mock(MonthlyGrowthCalculator.class);
             SettlementMapper mapper = new SettlementMapper(calc);
@@ -161,7 +160,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] 빈 데이터 입력 시 빈 리스트 반환")
+        @DisplayName("빈 데이터 입력 시 빈 리스트 반환")
         void toWeeklySettlementResponse_empty() {
             MonthlyGrowthCalculator calc = mock(MonthlyGrowthCalculator.class);
             SettlementMapper mapper = new SettlementMapper(calc);
@@ -180,7 +179,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] 월별 응답 매핑 + 성장률 계산이 정상적으로 수행된다")
+        @DisplayName("월별 응답 매핑 + 성장률 계산이 정상적으로 수행된다")
         void toMonthlyResponses_success() {
             // given
             MonthlySettlement m1 = MonthlySettlement.builder()
@@ -240,7 +239,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] 입력 리스트가 비어있으면 빈 리스트 반환")
+        @DisplayName("입력 리스트가 비어있으면 빈 리스트 반환")
         void toMonthlyResponses_emptyList() {
             List<MonthlySettlement> list = List.of();
 
@@ -251,7 +250,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] YearlySettlement 리스트가 정상 변환된다")
+        @DisplayName("YearlySettlement 리스트가 정상 변환된다")
         void toYearlyResponses_success_single() {
             YearlySettlement y = YearlySettlement.builder()
                     .year((short) 2025)
@@ -277,7 +276,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[성공] 여러 개 YearlySettlement가 정상 변환된다")
+        @DisplayName("여러 개 YearlySettlement가 정상 변환된다")
         void toYearlyResponses_success_multiple() {
             YearlySettlement y1 = HelperData.getYearlySettlement();
             YearlySettlement y2 = HelperData.getYearlySettlement();  // 동일 구조지만 다른 내용이라고 가정
@@ -291,10 +290,7 @@ class SettlementMapperTest {
             assertThat(result.get(0).totalCount()).isEqualTo(99L);
             assertThat(result.get(1).totalCount()).isEqualTo(99L);
         }
-
-
     }
-
     @Nested
     @DisplayName("실패 케이스")
     class Fail {
@@ -335,7 +331,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[실패] WeeklySettlement 리스트에 null 요소가 포함되면 NPE 발생")
+        @DisplayName("WeeklySettlement 리스트에 null 요소가 포함되면 NPE 발생")
         void toWeeklySettlementResponse_fail_nullElement() {
             MonthlyGrowthCalculator calc = mock(MonthlyGrowthCalculator.class);
             SettlementMapper mapper = new SettlementMapper(calc);
@@ -354,7 +350,7 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[실패] MonthlySettlement 리스트에 null 요소가 있으면 NPE 발생")
+        @DisplayName("MonthlySettlement 리스트에 null 요소가 있으면 NPE 발생")
         void toMonthlyResponses_fail_nullElement() {
             List<MonthlySettlement> list = new ArrayList<>();
             list.add(null); // 문제 요소
@@ -365,14 +361,14 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("[실패] list 가 null이면 NPE 발생")
+        @DisplayName("list 가 null이면 NPE 발생")
         void toYearlyResponses_fail_nullList() {
             assertThatThrownBy(() ->
                     settlementMapper.toYearlyResponses(null, 10L)
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] list 안에 null 요소가 있으면 NPE 발생")
+        @DisplayName("list 안에 null 요소가 있으면 NPE 발생")
         void toYearlyResponses_fail_containsNull() {
             YearlySettlement y = HelperData.getYearlySettlement();
             List<YearlySettlement> list = Arrays.asList(y, null);
@@ -382,7 +378,7 @@ class SettlementMapperTest {
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] YearlySettlement 리스트에 null 요소가 포함되면 NPE 발생")
+        @DisplayName("YearlySettlement 리스트에 null 요소가 포함되면 NPE 발생")
         void toYearlyResponses_fail_nullElement() {
             List<YearlySettlement> list = Arrays.asList(
                     (YearlySettlement) null  // 명시적 캐스팅으로 warning 제거
