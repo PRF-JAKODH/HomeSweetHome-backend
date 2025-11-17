@@ -3,7 +3,6 @@ package com.homesweet.homesweetback.domain.order.service;
 // --- DTO Imports ---
 
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
-import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import com.homesweet.homesweetback.domain.order.dto.request.CreateOrderRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.MyOrderItemResponse;
 import com.homesweet.homesweetback.domain.order.dto.response.OrderDetailResponse;
@@ -13,6 +12,7 @@ import com.homesweet.homesweetback.domain.order.dto.response.OrderReadyResponse;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.order.entity.*;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 
@@ -69,21 +69,29 @@ public class OrderService {
         // 2. 주문 항목(SKU) 조회 및 총액 계산
         for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()) {
             // 2-1. SKU 조회 (ProductEntity 포함)
-            // (락 불필요, 재고 검증 안 함)
-            SkuEntity sku = skuJPARepository.findById(itemDto.skuId())
+            SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(itemDto.skuId())
                     .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + itemDto.skuId()));
 
             ProductEntity product = sku.getProduct();
 
-            // 2-2. 주문 항목 가격 계산 (할인 적용된 '단가')
-            //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다
-            long discountedPrice = calculateDiscountedPrice(product.getBasePrice(), sku.getPriceAdjustment(), product.getDiscountRate());
+            // 상품 판매 상태 검증
+            if (product.getStatus() != ProductStatus.ON_SALE) {
+                // (테스트 코드의 hasMessageContaining 내용과 일치해야 함)
+                throw new RuntimeException("판매 중인 상품이 아닙니다. 상품 ID: " + product.getId());
+            }
+
+            // 2-2. 주문 항목 가격 계산
+            //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다 v -> skuEntity에 분리함
+            long discountedPrice = sku.getFinalPrice();
 
             // 2-3. 총 주문 금액 계산 (상품 총액)
             totalAmount += (discountedPrice * itemDto.quantity());
 
-//            totalShippingPrice += product.getShippingPrice();
-            // 2-4. 총 배송비 계산 (productId 기준 1회만)
+            // 2-4. ★★★ 재고 선점(차감) ★★★
+            // (decreaseStock 메서드가 재고 부족 시 예외를 던진다고 가정)
+            sku.decreaseStock(itemDto.quantity());
+
+            // 2-5. 총 배송비 계산 (productId 기준 1회만)
             //TODO: 배송한테 값얼만지 요청해야한다.
             Long currentProductId = product.getId();
             if (!processedProductIds.contains(currentProductId)) {
@@ -91,10 +99,10 @@ public class OrderService {
                 processedProductIds.add(currentProductId);
             }
 
-            // 2-5. OrderItem 엔티티 생성
+            // 2-6. OrderItem 엔티티 생성
             OrderItem orderItem = OrderItem.builder()
                     .sku(sku)
-                    .quantity((long) itemDto.quantity()) //TODO: long 타입 변환이 필요한가? dto 변환
+                    .quantity(itemDto.quantity()) //TODO: long 타입 변환이 필요한가? dto 변환 v
                     .price(discountedPrice) // 주문 시점의 '단가' 스냅샷
                     .build();
             orderItemsList.add(orderItem);
@@ -209,23 +217,6 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    // (상품 가격 계산 헬퍼 메서드)
-    private long calculateDiscountedPrice(Integer basePrice, Integer adjustment, BigDecimal discountRate) {
-
-        // 1. [수정] 기본가(basePrice)에만 할인을 먼저 적용
-        BigDecimal basePriceBD = BigDecimal.valueOf(basePrice);
-        BigDecimal HUNDRED = new BigDecimal("100");
-        BigDecimal rate = discountRate.divide(HUNDRED, 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal discountAmount = basePriceBD.multiply(rate);
-        BigDecimal discountedBasePrice = basePriceBD.subtract(discountAmount);
-
-        // 2. [수정] 할인된 기본가에 옵션가(adjustment)를 더함
-        BigDecimal finalPrice = discountedBasePrice.add(BigDecimal.valueOf(adjustment));
-
-        return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
-    }
-
-    // 주문 상세 조회
     public OrderDetailResponse getOrderDetail(Long orderId, Long userId) {
 
         // 1. 주문 조회 (N+1 방지를 위해 모든 연관 엔티티를 fetch join)
@@ -233,19 +224,15 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         // 2. (보안) 주문자 본인 확인
-        //TODO: 캡슐화 적용!!
-        if (!order.getUser().getId().equals(userId)) {
-            // (권한 없음 - 403 Forbidden이 더 적절할 수 있음)
-            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
-        }
+        //TODO: 캡슐화 적용!! v
+        order.validateOwner(userId);
 
         // 3. 결제 정보 조회
         // (결제가 PENDING 상태일 경우 Payment가 없을 수 있으므로 orElse(null) 처리)
         Payment payment = paymentRepository.findByOrder(order)
                 .orElse(null); // 결제 대기중인 주문은 payment가 null일 수 있음
 
-        // 4. 총 배송비 계산
-        // (OrderReadyResponse DTO 정의에 따라 Integer로 반환)
+        // 4. 총 배송비 계산 (productId 기준 중복 제거)
         Integer totalShippingPrice = order.getOrderItems().stream()
                 .map(item -> item.getSku().getProduct()) // OrderItem -> Product
                 .map(ProductEntity::getId)               // Product -> Product ID
@@ -260,7 +247,6 @@ public class OrderService {
         // 5. DTO로 변환
         return OrderDetailResponse.of(order, payment, order.getUser(), totalShippingPrice);
     }
-
 
     private String generateOrderNumber() {
         String uuid = UUID.randomUUID().toString();

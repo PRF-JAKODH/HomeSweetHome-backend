@@ -1,209 +1,95 @@
 package com.homesweet.homesweetback.domain.order.service;
 
 // --- DTO Imports ---
+import com.homesweet.homesweetback.domain.order.adapter.TossPaymentsAdapter;
 import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
 
 // --- Entity Imports ---
 import com.homesweet.homesweetback.domain.order.entity.*;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 
 // --- Repository Imports ---
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
 
 // --- Exception Imports ---
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
 import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
-import com.homesweet.homesweetback.domain.settlement.service.SettlementService;
 import jakarta.persistence.EntityNotFoundException;
 
 // --- Spring & Java Imports ---
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
+import org.springframework.stereotype.Service;
+
 import java.util.Map;
 
-import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class PaymentService {
 
     // --- (수정) 결제 처리에 필요한 Repository 및 Bean 주입 ---
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
-    private final SkuJPARepository skuJPARepository; // ★ 재고 차감용
-    private final CartRepository cartRepository;
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-
-    private final SettlementService settlementService;
-
-    @Value("${payments.toss.secretKey}")
-    private String tossSecretKey;
-
-    private static final String TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
-    private static final String TOSS_CANCEL_URL_PREFIX = "https://api.tosspayments.com/v1/payments/";
+    private final TossPaymentsAdapter tossPaymentsAdapter;
+    private final PaymentProcessor paymentProcessor;
 
     /**
      * API 2: 결제 검증 및 완료
      * (재고 차감 로직 포함)
      */
-    //@Transactional
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
-        // 1. [검증 1] Order ID (PK)로 DB에서 Order 조회
 
-        //TODO: 지금 비효율적이다.(조금 효율적으로 하면 좋을것 같다)
-//        saveDB();
-//        callTossAPI();
-        Order order = orderRepository.findByOrderNumber(dto.orderId()) // 👈 ✨ 여기를 수정!
+        // 1. Order ID (PK)로 DB에서 Order 조회
+        Order order = orderRepository.findByOrderNumber(dto.orderId())
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
         log.debug(order.toString());
         log.debug(order.getOrderStatus().toString());
         log.debug(order.getTotalAmount().toString());
         log.debug(dto.amount().toString());
-        // 2. [검증 2] (보안) 요청한 유저(userId)가 주문한 유저가 맞는지 확인
+
+        // 2. (보안) 요청한 유저(userId)가 주문한 유저가 맞는지 확인
         if (!order.getUser().getId().equals(userId)) {
             throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
         }
 
-        // 3. [검증 3] (핵심) DB의 주문 금액과 토스가 전달한 결제 금액이 일치하는지 확인
+        // 3. (핵심) DB의 주문 금액과 토스가 전달한 결제 금액이 일치하는지 확인
         if (!order.getTotalAmount().equals(dto.amount())) {
-            // (TODO: 금액 위변조 의심. 결제 취소 API를 호출해야 함)
             throw new PaymentMismatchException("결제 금액이 일치하지 않습니다.");
         }
 
-        // 4. [검증 4] (멱등성)
+        // 4. (멱등성)
         if (order.getOrderStatus() != OrderStatus.PENDING) {
             throw new PaymentMismatchException("이미 처리된 주문입니다.");
         }
 
-        //TODO: 결제가 됬는데 배송이 안와요 기븐이 안좋겟죠(개발자가 잘 처리해야합니다)
-        //TODO: 결국 케이스 마다 쪼개시다보면 그게 TC, 트랜잭션을 자연스럽게 분리하게 됩니다.
-        // 5. [★핵심★] 토스페이먼츠 결제 승인 API 호출
-        HttpHeaders headers = new HttpHeaders();
-        String encodedKey = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
-        headers.setBasicAuth(encodedKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<PaymentConfirmRequest> requestEntity = new HttpEntity<>(dto, headers);
-
+        //TODO: 결제가 됬는데 배송이 안와요 (언포)기븐이 안좋겟죠(개발자가 잘 처리해야합니다) v
+        //TODO: 결국 케이스 마다 쪼개시다보면 그게 TC, 트랜잭션을 자연스럽게 분리하게 됩니다. v
+        //5. 외부 API 호출 - 토스 페이먼츳
         Map<String, Object> tossResponse;
-        try {
-            tossResponse = restTemplate.postForObject(TOSS_CONFIRM_URL, requestEntity, Map.class);
+        try{
+            tossResponse = tossPaymentsAdapter.confirmPaymentToToss(dto);
         } catch (Exception e) {
-            order.setOrderStatus(OrderStatus.FAILED); // (가정한 메서드)
-            throw new RuntimeException("토스페이먼츠 승인 API 호출에 실패했습니다. " + e.getMessage());
+            paymentProcessor.processPaymentFailDB(order);
+            throw e;
         }
 
-        // 6. [DB 저장 1] 토스 응답 기반으로 Payment 엔티티 생성
-        String tossPaymentKey = (String) tossResponse.get("paymentKey");
-        String method = (String) tossResponse.get("method");
-        String status = (String) tossResponse.get("status");
+        paymentProcessor.processPaymentSuccessDB(order, tossResponse, userId);
 
-        if (!"DONE".equals(status)) {
-            order.setOrderStatus(OrderStatus.FAILED);
-            throw new RuntimeException("결제가 완료되지 않았습니다. 상태: " + status);
-        }
-
-        String paidAtString = (String) tossResponse.get("paidAt");
-        LocalDateTime paidAt = (paidAtString != null) ? LocalDateTime.parse(paidAtString) : null;
-
-        Payment payment;
-        try {
-            payment = Payment.builder()
-                    .order(order)
-                    .pgTransactionId(tossPaymentKey)
-                    .amount(order.getTotalAmount())
-                    .method(method)
-                    .paymentStatus(status) // "DONE"
-                    .paidAt(paidAt)
-                    .pgRawData(objectMapper.writeValueAsString(tossResponse))
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException("Payment 엔티티 생성 중 오류 발생");
-        }
-
-        paymentRepository.save(payment);
-
-        // 7. [DB 저장 2] Order 상태 변경 (PENDING -> COMPLETED)
-        order.setOrderStatus(OrderStatus.COMPLETED);
-        order.setDeliveryStatus(DeliveryStatus.DELIVERED); // 결제 즉시 배송 완료 처리
-        // 8. [DB 저장 3] (★중요★) 재고 차감 (비관적 락 사용)
-        for (OrderItem item : order.getOrderItems()) {
-            SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
-                    .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
-
-            // (가정한 메서드) SkuEntity의 재고 차감 로직 호출
-            sku.decreaseStock(item.getQuantity());
-        }
-
-        // 9. 구매 완료된 상품 장바구니에서 삭제
-        try {
-            List<Long> purchasedSkuIds = order.getOrderItems().stream()
-                    .map(orderItem -> orderItem.getSku().getId())
-                    .collect(Collectors.toList());
-
-            if (!purchasedSkuIds.isEmpty()) {
-                cartRepository.deleteByUserIdAndSkuIdIn(userId, purchasedSkuIds);
-                log.info("[Payment Success] 사용자의 장바구니에서 {}개의 SKU를 삭제했습니다. (UserId: {})", purchasedSkuIds.size(), userId);
-            }
-        } catch (Exception e) {
-            // (중요) 장바구니 삭제에 실패하더라도,
-            // 이미 결제 승인/재고 차감이 완료되었으므로 이 트랜잭션을 롤백하면 안 됩니다.
-            // 따라서 예외를 잡아서 로그만 남깁니다.
-            log.error("[Payment Success - Cart Clear Failed] 장바구니 삭제 중 오류 발생. (UserId: {}): {}", userId, e.getMessage());
-        }
-
-        // 10. 최종 응답 반환
         return new PaymentConfirmResponse(
                 order.getId(),
                 order.getOrderStatus().name()
         );
     }
 
-
-    //DB만 저장해
-    @Transactional
-    public void saveDB(String[] args) {
-
-        //db 저장
-    }
-
-
-    //HTTP ,WS 네트워크 통신만해
-    public void callTossAPI(String[] args) {
-        //xhtm api
-    }
-
-
-
-
     /**
      * API 3: 주문 취소 (환불)
      * (토스 API 호출, 재고 복구)
      */
-    @Transactional
     public void cancelOrder(Long orderId, Long userId, OrderCancelRequest dto) {
 
         // 1. 주문 조회 (모든 연관 엔티티 포함)
@@ -225,48 +111,20 @@ public class PaymentService {
                 .orElseThrow(() -> new EntityNotFoundException("결제 정보를 찾을 수 없습니다. (비정상 상태)"));
 
         // 5. (★핵심★) 토스페이먼츠 결제 취소 API 호출
-        String tossPaymentKey = payment.getPgTransactionId();
-        URI cancelUrl = URI.create(TOSS_CANCEL_URL_PREFIX + tossPaymentKey + "/cancel");
-
-        HttpHeaders headers = new HttpHeaders();
-        String encodedKey = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
-        headers.setBasicAuth(encodedKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // 토스 API로 보낼 요청 본문 (취소 사유)
-        Map<String, String> bodyMap = Collections.singletonMap("cancelReason", dto.cancelReason());
-        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(bodyMap, headers);
-
+        // 5. (외부 API 호출) [수정] 트랜잭션 "밖에서" 어댑터 호출
         Map<String, Object> tossResponse;
         try {
-            log.info("토스 결제 취소 API 호출: paymentKey={}, reason={}", tossPaymentKey, dto.cancelReason());
-            tossResponse = restTemplate.postForObject(cancelUrl, requestEntity, Map.class);
+            String tossPaymentKey = payment.getPgTransactionId();
+            tossResponse = tossPaymentsAdapter.cancelPaymentToToss(tossPaymentKey, dto.cancelReason());
+
         } catch (Exception e) {
             log.error("토스페이먼츠 취소 API 호출 실패: {}", e.getMessage());
-            // (TODO: 토스 API 통신 실패 시 어떻게 처리할지 정책 필요)
+            // (정책 필요) API 호출 실패 시 DB 롤백을 할 필요가 없으므로,
+            // DB 상태를 변경하지 않고 예외만 던집니다.
             throw new RuntimeException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
         }
 
-        // 6. 응답 상태 확인 (토스 응답에 'status' 필드가 있는지 확인 필요)
-        String status = (String) tossResponse.get("status");
-        if (!"CANCELED".equals(status)) { // (토스 응답 스펙 확인 필요)
-            log.warn("토스 결제 취소 응답 상태가 CANCELED가 아닙니다: {}", status);
-            // (이 경우에도 재고 복구 등을 해야 할지 정책 필요)
-        }
-
-        // 7. (★중요★) 재고 복구
-        for (OrderItem item : order.getOrderItems()) {
-            // (동시성 제어를 위해 락 사용)
-            SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
-                    .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
-
-            sku.increaseStock(item.getQuantity()); // (가정한 메서드)
-        }
-
-        // 8. DB 상태 업데이트
-        order.setOrderStatus(OrderStatus.FAILED); // (정책: 취소 시 '결제 실패'로 처리)
-        order.setDeliveryStatus(DeliveryStatus.CANCELLED);
-        payment.setPaymentStatus("CANCELED"); // Payment 상태도 변경
-        log.info("주문 취소 완료 (환불 및 재고 복구): orderId={}", orderId);
+        // 6. (내부 DB 처리) [신규] API 취소가 성공하면, DB 작업용 트랜잭션 메서드 호출
+        paymentProcessor.processPaymentCancelDB(order, payment, tossResponse);
     }
 }

@@ -43,6 +43,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     /**
      * 특정 상태(status)이면서, 특정 시간(cutoffTime) 이전에 생성된 모든 주문을 조회합니다.
      * (스케줄러가 PENDING 주문을 찾기 위해 사용)
+     * 재고 복구를 위해 orderItems와 sku를 fetch join 할거라능.
      */
+    @Query("SELECT o FROM Order o " +
+            "JOIN FETCH o.orderItems oi " +
+            "JOIN FETCH oi.sku s " +
+            "WHERE o.orderStatus = :orderStatus AND o.orderedAt < :cutoffTime")
     List<Order> findAllByOrderStatusAndOrderedAtBefore(OrderStatus orderStatus, LocalDateTime cutoffTime);
 }

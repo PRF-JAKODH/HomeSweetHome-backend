@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
@@ -457,5 +458,47 @@ class OrderServiceTest{
 
         // 2. '행위' 검증
         verify(orderRepository, times(1)).findByIdWithDetails(orderId);
+    }
+
+    @Test
+    @DisplayName("시나리오 8: 판매 중인 상품(ON_SALE)이 아니면 주문 생성에 실패한다.")
+    void createOrder_Fail_ProductNotOnSale() {
+
+        // --- GIVEN ---
+        Long userId = 1L;
+        Long skuId = 100L;
+
+        // DTO 생성
+        CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, 1);
+        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest));
+
+        // 가짜 엔티티 생성
+        User fakeUser = User.builder().id(userId).build();
+
+        // [핵심] 상태가 'SUSPENDED' (판매 중지)인 상품
+        ProductEntity fakeProduct = ProductEntity.builder()
+                .id(10L)
+                .status(ProductStatus.SUSPENDED) // 👈 판매 중지 상태
+                .build();
+
+        SkuEntity fakeSku = SkuEntity.builder()
+                .id(skuId)
+                .product(fakeProduct)
+                .build();
+
+        // Mock 행동 정의
+        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
+        // (주의: 비관적 락 메서드를 사용하므로 이것을 Mocking 해야 함)
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
+
+
+        // --- WHEN & THEN ---
+        // [검증] "판매 중지가 아니므로 예외가 발생해야 한다"
+        assertThatThrownBy(() -> {
+            orderService.createOrder(dto, userId);
+        })
+                // (적절한 예외 타입 사용. ProductException 또는 RuntimeException)
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("판매 중인 상품이 아닙니다"); // (메시지는 나중에 구현할 것과 일치시킴)
     }
 }
