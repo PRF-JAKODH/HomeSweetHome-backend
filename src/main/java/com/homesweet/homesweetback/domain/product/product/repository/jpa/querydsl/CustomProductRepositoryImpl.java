@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
+import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
