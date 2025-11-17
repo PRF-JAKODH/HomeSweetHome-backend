@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Prometheus - 메트릭 수집
   prometheus:
@@ -19,6 +17,7 @@ services:
       - '--web.enable-remote-write-receiver'  # k6 Remote Write 활성화
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
 
   # Grafana - 시각화 대시보드
@@ -35,6 +34,7 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
     depends_on:
       - prometheus
@@ -51,6 +51,7 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
 
   # Node Exporter - 시스템 메트릭 (CPU, 메모리, 디스크, 네트워크 등)
@@ -70,6 +71,7 @@ services:
       - /:/rootfs:ro
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
 
   # cAdvisor - 컨테이너 메트릭 (Docker 컨테이너 리소스 사용량)
@@ -86,6 +88,7 @@ services:
       - /dev/disk/:/dev/disk:ro
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
     privileged: true
     devices:
@@ -102,6 +105,7 @@ services:
       - loki-data:/loki
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
 
   # Promtail - Loki로 로그 전송 (애플리케이션 로그 수집)
@@ -114,13 +118,33 @@ services:
     command: -config.file=/etc/promtail/config.yml
     networks:
       - monitoring
+      - homesweet-network
     restart: unless-stopped
     depends_on:
       - loki
 
+  # MySQL Exporter - MySQL 메트릭 수집
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: homesweet-mysql-exporter
+    command:
+      - "--mysqld.username=user:password"
+      - "--mysqld.address=homesweet-db:3306"
+    ports:
+      - "9104:9104"
+    networks:
+      - monitoring
+      - homesweet-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
 networks:
   monitoring:
     driver: bridge
+  homesweet-network:
+    name: homesweethome-backend_homesweet-network
+    external: true  # docker-compose.dev.yml에서 생성된 네트워크 사용
 
 volumes:
   prometheus-data:

@@ -47,3 +47,12 @@ scrape_configs:
       - targets: ['cadvisor:8080']  # 컨테이너 내부에서는 8080 포트 사용
         labels:
           environment: 'dev'
+
+  # MySQL Exporter - DB 메트릭을 위해 반드시 추가 필요
+  - job_name: 'mysql'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['mysql-exporter:9104'] # MySQL Exporter 서비스 이름과 포트 (Docker Compose 기준)
+        labels:
+          instance: 'homesweet-db'
+          environment: 'dev'

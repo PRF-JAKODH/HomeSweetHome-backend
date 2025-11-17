@@ -1,0 +1,774 @@
+{
+  "root_group": {
+    "groups": [
+      {
+        "name": "게시글 CRUD",
+        "path": "::게시글 CRUD",
+        "id": "a77c822863959fb277427941b7ca0e58",
+        "groups": [
+          {
+            "checks": [
+              {
+                "name": "게시글 작성 성공",
+                "path": "::게시글 CRUD::게시글 작성::게시글 작성 성공",
+                "id": "c1bb2b1d9b5b10a030f842903f7a12e6",
+                "passes": 209,
+                "fails": 0
+              },
+              {
+                "path": "::게시글 CRUD::게시글 작성::응답에 postId 포함",
+                "id": "77aba099f1333c0b6c165a0434179d49",
+                "passes": 209,
+                "fails": 0,
+                "name": "응답에 postId 포함"
+              },
+              {
+                "fails": 0,
+                "name": "제목 일치",
+                "path": "::게시글 CRUD::게시글 작성::제목 일치",
+                "id": "2417c0ac4d3cab84fd6829094b858cdb",
+                "passes": 209
+              }
+            ],
+            "name": "게시글 작성",
+            "path": "::게시글 CRUD::게시글 작성",
+            "id": "fd40bb3aeac2fef10e263b4f4a8edecc",
+            "groups": []
+          },
+          {
+            "checks": [
+              {
+                "fails": 0,
+                "name": "게시글 조회 성공",
+                "path": "::게시글 CRUD::게시글 조회::게시글 조회 성공",
+                "id": "5abc20498461606aef8f2501f328d405",
+                "passes": 209
+              },
+              {
+                "name": "제목 존재",
+                "path": "::게시글 CRUD::게시글 조회::제목 존재",
+                "id": "2c1a6376feb96f62355a195e71e39cd4",
+                "passes": 209,
+                "fails": 0
+              }
+            ],
+            "name": "게시글 조회",
+            "path": "::게시글 CRUD::게시글 조회",
+            "id": "fc74f9308660b165cf9815bc175f44ab",
+            "groups": []
+          },
+          {
+            "id": "d82067dc3bb184aeadd191954bdb75b0",
+            "groups": [],
+            "checks": [
+                {
+                  "name": "게시글 수정 성공",
+                  "path": "::게시글 CRUD::게시글 수정::게시글 수정 성공",
+                  "id": "1eb80b8d9fecb067435a22dd9c8e311b",
+                  "passes": 209,
+                  "fails": 0
+                },
+                {
+                  "passes": 209,
+                  "fails": 0,
+                  "name": "수정된 제목 확인",
+                  "path": "::게시글 CRUD::게시글 수정::수정된 제목 확인",
+                  "id": "ca50aeccd066201734ee3d7df31893f2"
+                }
+              ],
+            "name": "게시글 수정",
+            "path": "::게시글 CRUD::게시글 수정"
+          },
+          {
+            "name": "게시글 삭제",
+            "path": "::게시글 CRUD::게시글 삭제",
+            "id": "f7e7d52b0526e5d5052822432af3a036",
+            "groups": [],
+            "checks": [
+                {
+                  "name": "게시글 삭제 성공",
+                  "path": "::게시글 CRUD::게시글 삭제::게시글 삭제 성공",
+                  "id": "041ac8a5b9ed2f7a4307281833c0284d",
+                  "passes": 209,
+                  "fails": 0
+                }
+              ]
+          }
+        ],
+        "checks": []
+      },
+      {
+        "name": "댓글 CRUD",
+        "path": "::댓글 CRUD",
+        "id": "f2642f454f6e3079959b62f310ce9b46",
+        "groups": [
+          {
+            "checks": [
+              {
+                "fails": 70,
+                "name": "댓글 작성 성공",
+                "path": "::댓글 CRUD::댓글 작성::댓글 작성 성공",
+                "id": "c34362493ac97acbe6cded5d9405ece5",
+                "passes": 139
+              },
+              {
+                "name": "응답에 commentId 포함",
+                "path": "::댓글 CRUD::댓글 작성::응답에 commentId 포함",
+                "id": "2a3677a1e29289aeaa9180f32bc09b84",
+                "passes": 139,
+                "fails": 70
+              }
+            ],
+            "name": "댓글 작성",
+            "path": "::댓글 CRUD::댓글 작성",
+            "id": "a9511a27b4f63386469974cf753690d7",
+            "groups": []
+          },
+          {
+            "name": "댓글 목록 조회",
+            "path": "::댓글 CRUD::댓글 목록 조회",
+            "id": "29bf6d42f4a333d663f64eb6a8a276d8",
+            "groups": [],
+            "checks": [
+                {
+                  "id": "8ce2a0c791330af4736df8215e239c09",
+                  "passes": 139,
+                  "fails": 0,
+                  "name": "댓글 조회 성공",
+                  "path": "::댓글 CRUD::댓글 목록 조회::댓글 조회 성공"
+                },
+                {
+                  "id": "e40bdfda545974ac26c636683bf762ea",
+                  "passes": 139,
+                  "fails": 0,
+                  "name": "댓글 배열 반환",
+                  "path": "::댓글 CRUD::댓글 목록 조회::댓글 배열 반환"
+                }
+              ]
+          },
+          {
+            "checks": [
+              {
+                "fails": 0,
+                "name": "댓글 수정 성공",
+                "path": "::댓글 CRUD::댓글 수정::댓글 수정 성공",
+                "id": "03d60660c701f06454cbc1599bd819a5",
+                "passes": 139
+              }
+            ],
+            "name": "댓글 수정",
+            "path": "::댓글 CRUD::댓글 수정",
+            "id": "de9d179357ab9e6e710aa4808a19dc2b",
+            "groups": []
+          },
+          {
+            "name": "댓글 삭제",
+            "path": "::댓글 CRUD::댓글 삭제",
+            "id": "a861960364fa1959015a5ce826f51878",
+            "groups": [],
+            "checks": [
+                {
+                  "name": "댓글 삭제 성공",
+                  "path": "::댓글 CRUD::댓글 삭제::댓글 삭제 성공",
+                  "id": "9f9fae1a376a1096c89f54d69a6641de",
+                  "passes": 139,
+                  "fails": 0
+                }
+              ]
+          }
+        ],
+        "checks": []
+      },
+      {
+        "path": "::게시글 좋아요 동시성",
+        "id": "0d376d034a9ab85bb5070f5180de0198",
+        "groups": [],
+        "checks": [
+            {
+              "name": "좋아요 성공",
+              "path": "::게시글 좋아요 동시성::좋아요 성공",
+              "id": "c92e7d50c645f266acabe0571bbabf06",
+              "passes": 1000,
+              "fails": 0
+            },
+            {
+              "name": "응답 시간 1초 이내",
+              "path": "::게시글 좋아요 동시성::응답 시간 1초 이내",
+              "id": "835189fcbee52a9543c03c6f964597c4",
+              "passes": 1000,
+              "fails": 0
+            }
+          ],
+        "name": "게시글 좋아요 동시성"
+      },
+      {
+        "name": "조회수 동시성",
+        "path": "::조회수 동시성",
+        "id": "e5c188a66373c51aee9cde051bcfe256",
+        "groups": [],
+        "checks": [
+            {
+              "name": "조회수 증가 성공",
+              "path": "::조회수 동시성::조회수 증가 성공",
+              "id": "af40b3e71501994f27955da12c3f3fec",
+              "passes": 4834,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "사용자 여정",
+        "path": "::사용자 여정",
+        "id": "4a5b23588d49eeabe63cff9ea69478e4",
+        "groups": [
+          {
+            "groups": [],
+            "checks": [
+                {
+                  "name": "목록 조회 성공",
+                  "path": "::사용자 여정::메인 페이지 방문::목록 조회 성공",
+                  "id": "f800040b628b975b2488046c7c0b2b2e",
+                  "passes": 1615,
+                  "fails": 0
+                }
+              ],
+            "name": "메인 페이지 방문",
+            "path": "::사용자 여정::메인 페이지 방문",
+            "id": "9d8afbf7b27c2d02adeb94c6659b9f01"
+          },
+          {
+            "name": "게시글 읽기",
+            "path": "::사용자 여정::게시글 읽기",
+            "id": "84be3de4ce9ca6345b3f530d0dd1e5aa",
+            "groups": [],
+            "checks": [
+                {
+                  "name": "게시글 조회 성공",
+                  "path": "::사용자 여정::게시글 읽기::게시글 조회 성공",
+                  "id": "e1cb17a83d86c2ade9a51417edf32b13",
+                  "passes": 1615,
+                  "fails": 0
+                }
+              ]
+          },
+          {
+            "name": "조회수 기록",
+            "path": "::사용자 여정::조회수 기록",
+            "id": "10cc44f716dcf7e38123a333136ba3c2",
+            "groups": [],
+            "checks": [
+                {
+                  "fails": 0,
+                  "name": "조회수 증가 성공",
+                  "path": "::사용자 여정::조회수 기록::조회수 증가 성공",
+                  "id": "9f3651908bd1b2f9896ac200ecc2995b",
+                  "passes": 1615
+                }
+              ]
+          },
+          {
+            "name": "댓글 읽기",
+            "path": "::사용자 여정::댓글 읽기",
+            "id": "6548fd29109b4d48ade39e78299b094a",
+            "groups": [],
+            "checks": [
+                {
+                  "path": "::사용자 여정::댓글 읽기::댓글 조회 성공",
+                  "id": "6b1f1ec0a8e4b632e042a60212d265b9",
+                  "passes": 1615,
+                  "fails": 0,
+                  "name": "댓글 조회 성공"
+                }
+              ]
+          },
+          {
+            "name": "좋아요 클릭",
+            "path": "::사용자 여정::좋아요 클릭",
+            "id": "815d5daac4d35bfb3b7834d4f09fb856",
+            "groups": [],
+            "checks": [
+                {
+                  "name": "좋아요 성공",
+                  "path": "::사용자 여정::좋아요 클릭::좋아요 성공",
+                  "id": "8af418c64b12a7530c74f1da29413bb4",
+                  "passes": 809,
+                  "fails": 1
+                }
+              ]
+          },
+          {
+            "groups": [],
+            "checks": [
+                {
+                  "name": "페이지네이션 성공",
+                  "path": "::사용자 여정::다음 페이지 보기::페이지네이션 성공",
+                  "id": "e34397d32bfc85a50d4bbba89c63683e",
+                  "passes": 318,
+                  "fails": 0
+                }
+              ],
+            "name": "다음 페이지 보기",
+            "path": "::사용자 여정::다음 페이지 보기",
+            "id": "93e2e844873ab181a54f9c8f0a2d32f1"
+          },
+          {
+            "checks": [
+              {
+                "passes": 468,
+                "fails": 7,
+                "name": "댓글 작성 성공",
+                "path": "::사용자 여정::댓글 작성::댓글 작성 성공",
+                "id": "04b216f0bf72b044a1c8b20d45089f62"
+              }
+            ],
+            "name": "댓글 작성",
+            "path": "::사용자 여정::댓글 작성",
+            "id": "9d28404d4a5c692e8c5fcf7a7792e159",
+            "groups": []
+          }
+        ],
+        "checks": []
+      }
+    ],
+    "checks": [
+      {
+        "id": "817aef723d4ab965565e78bd54cb33b5",
+        "passes": 36577,
+        "fails": 368,
+        "name": "성공",
+        "path": "::성공"
+      }
+    ],
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": true,
+    "isStdErrTTY": true,
+    "testRunDurationMs": 811301.69
+  },
+  "metrics": {
+    "comment_update_errors": {
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      },
+      "type": "counter",
+      "contains": "default"
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 3672.5010999999986,
+        "avg": 936.1775265371608,
+        "min": 1.763,
+        "med": 206.4075,
+        "max": 19386.184,
+        "p(90)": 2605.5106
+      }
+    },
+    "like_duration": {
+      "type": "trend",
+      "contains": "default",
+      "values": {
+        "p(95)": 289.04999999999995,
+        "avg": 189.259,
+        "min": 18,
+        "med": 170,
+        "max": 513,
+        "p(90)": 276
+      },
+      "thresholds": {
+        "p(95)<800": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.012414786631997542,
+        "min": 0,
+        "med": 0,
+        "max": 14.374,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "pagination_errors": {
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      },
+      "type": "counter",
+      "contains": "default"
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 38488,
+        "rate": 47.43981243278317
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "contains": "time",
+      "values": {
+        "med": 216.82150000000001,
+        "max": 19386.5,
+        "p(90)": 2611.8829,
+        "p(95)": 3678.2134499999993,
+        "avg": 940.9564329129569,
+        "min": 1.775
+      },
+      "type": "trend"
+    },
+    "comment_read_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0.00852707249923524,
+        "passes": 446,
+        "fails": 51858
+      },
+      "thresholds": {
+        "rate<0.05": {
+          "ok": true
+        }
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 52304,
+        "rate": 64.46923585232517
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.079511452278986,
+        "min": 0.006,
+        "med": 0.111,
+        "max": 738.878,
+        "p(90)": 20.8637,
+        "p(95)": 60.13319999999997
+      }
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 2619.0499000000004,
+        "p(95)": 3682.482149999999,
+        "avg": 945.3118379091501,
+        "min": 1.775,
+        "med": 220.22449999999998,
+        "max": 19386.5
+      },
+      "thresholds": {
+        "p(95)<1000": {
+          "ok": false
+        },
+        "p(99)<2000": {
+          "ok": false
+        }
+      }
+    },
+    "view_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<10": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0,
+        "min": 0
+      }
+    },
+    "post_read_duration": {
+      "type": "trend",
+      "contains": "default",
+      "values": {
+        "avg": 17.8133971291866,
+        "min": 4,
+        "med": 13,
+        "max": 246,
+        "p(90)": 26,
+        "p(95)": 28
+      },
+      "thresholds": {
+        "p(95)<500": {
+          "ok": true
+        }
+      }
+    },
+    "post_read_errors": {
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      },
+      "type": "counter"
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0.9905300249596242,
+        "passes": 53972,
+        "fails": 516
+      }
+    },
+    "comment_create_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 70,
+        "rate": 0.08628109723276924
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": false
+        }
+      }
+    },
+    "post_create_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      }
+    },
+    "like_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<10": {
+          "ok": true
+        }
+      }
+    },
+    "data_received": {
+      "values": {
+        "count": 19066508736,
+        "rate": 23501132.773432285
+      },
+      "type": "counter",
+      "contains": "data"
+    },
+    "post_create_duration": {
+      "values": {
+        "med": 16,
+        "max": 54,
+        "p(90)": 31.200000000000003,
+        "p(95)": 36,
+        "avg": 17.928229665071772,
+        "min": 6
+      },
+      "thresholds": {
+        "p(95)<1500": {
+          "ok": true
+        }
+      },
+      "type": "trend",
+      "contains": "default"
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 300,
+        "min": 300,
+        "max": 300
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.054799919700212786,
+        "min": 0.002,
+        "med": 0.014,
+        "max": 60.379,
+        "p(90)": 0.044,
+        "p(95)": 0.087
+      }
+    },
+    "post_delete_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      }
+    },
+    "vus": {
+      "contains": "default",
+      "values": {
+        "min": 0,
+        "max": 300,
+        "value": 1
+      },
+      "type": "gauge"
+    },
+    "post_update_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      }
+    },
+    "comment_delete_errors": {
+      "thresholds": {
+        "count<5": {
+          "ok": true
+        }
+      },
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      }
+    },
+    "api_success_rate": {
+      "values": {
+        "rate": 0.9914207671296118,
+        "passes": 51540,
+        "fails": 446
+      },
+      "thresholds": {
+        "rate>0.95": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default"
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 5183.7406169000005,
+        "p(95)": 6480.1990625,
+        "avg": 2417.6653304085903,
+        "min": 5.880541,
+        "med": 1878.7412709999999,
+        "max": 25998.440125
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 7835451,
+        "rate": 9657.875851337127
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.036008660905473326,
+        "min": 0,
+        "med": 0.004,
+        "max": 30.191,
+        "p(90)": 0.014,
+        "p(95)": 0.037
+      }
+    },
+    "group_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 1.808,
+        "med": 11.7147705,
+        "max": 5844.700042,
+        "p(90)": 1753.6680086000001,
+        "p(95)": 3709.4870814,
+        "avg": 439.46327608187676
+      }
+    }
+  }
+}

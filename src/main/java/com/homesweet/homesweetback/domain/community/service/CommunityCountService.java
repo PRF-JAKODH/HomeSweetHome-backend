@@ -37,23 +37,33 @@ public class CommunityCountService {
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
+    private final RedisCommunityCountService redisCountService;
+
     /**
-     * 게시글 조회수 증가 (동시성 제어 적용)
+     * 게시글 조회수 증가 (Redis 사용 - 초고성능)
+     * - Redis의 원자적 연산으로 데드락 없음
+     * - 주기적으로 DB에 동기화 (배치 작업)
      */
-    @Transactional
     public void increaseViewCount(Long postId) {
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
-                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-        post.increaseViewCount();
+        // 게시글 존재 여부만 확인 (조회 없이)
+        if (!postRepository.existsById(postId)) {
+            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
+        // Redis에만 증가 (초고속, 데드락 없음)
+        redisCountService.incrementViewCount(postId);
     }
 
     /**
-     * 게시글 좋아요 토글화 (동시성 제어 적용)
+     * 게시글 좋아요 토글 (벌크 업데이트 - 데드락 방지)
+     * - Entity 조회 없이 직접 UPDATE 쿼리 실행
+     * - 좋아요 레코드만 DB에서 관리
      */
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
+        // 게시글 존재 확인
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
 
@@ -61,16 +71,19 @@ public class CommunityCountService {
                 postLikeRepository.findByPostAndUser(post, user);
 
         if (existingLike.isPresent()) {
+            // 좋아요 취소
             postLikeRepository.delete(existingLike.get());
-            post.decreaseLikeCount();
+            // 벌크 업데이트 (데드락 없음)
+            postRepository.updateLikeCount(postId, -1);
         } else {
+            // 좋아요 추가
             CommunityPostLikeEntity newLike = CommunityPostLikeEntity.builder()
                     .post(post)
                     .user(user)
                     .build();
             postLikeRepository.save(newLike);
-            post.increaseLikeCount();
-
+            // 벌크 업데이트 (데드락 없음)
+            postRepository.updateLikeCount(postId, 1);
         }
     }
 

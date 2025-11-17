@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "community_posts")
 @EntityListeners(AuditingEntityListener.class)
+@org.hibernate.annotations.DynamicUpdate  // 변경된 필드만 UPDATE (데드락 방지)
 @Getter
 @Builder
 @NoArgsConstructor
@@ -32,6 +33,9 @@ public class CommunityPostEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
     private Long postId;
+
+    @Version  // 낙관적 락 (동시 수정 감지)
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
