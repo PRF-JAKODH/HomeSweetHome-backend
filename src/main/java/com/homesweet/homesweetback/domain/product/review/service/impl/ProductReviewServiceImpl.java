@@ -121,23 +121,6 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Map<Long, ProductReviewStatistics> getReviewStatisticsByProductIds(List<Long> productIds) {
-        if (productIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        List<ProductReviewStatistics> statistics =
-                productReviewRepository.findStatisticsByProductIds(productIds);
-
-        return statistics.stream()
-                .collect(Collectors.toMap(
-                        ProductReviewStatistics::productId,
-                        Function.identity()
-                ));
-    }
-
-    @Override
     @Transactional
     public ProductReviewResponse updateReview(Long reviewId, Long userId, ProductReviewUpdateRequest request) {
         ProductReview productReview = productReviewRepository.findById(reviewId)
