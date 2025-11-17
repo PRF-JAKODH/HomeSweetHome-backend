@@ -1,7 +1,9 @@
 package com.homesweet.homesweetback.domain.product.category.controller.response;
 
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
@@ -11,15 +13,18 @@ import java.time.LocalDateTime;
  * @author junnukim1007gmail.com
  * @date 25. 10. 21.
  */
+
+@Getter
 @Builder
-public record CategoryResponse(
-        Long id,
-        String name,
-        Long parentId,
-        Integer depth,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
-) {
+@AllArgsConstructor
+public class CategoryResponse {
+
+    private Long id;
+    private String name;
+    private Long parentId;
+    private Integer depth;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static CategoryResponse from(ProductCategory domain) {
         return CategoryResponse.builder()

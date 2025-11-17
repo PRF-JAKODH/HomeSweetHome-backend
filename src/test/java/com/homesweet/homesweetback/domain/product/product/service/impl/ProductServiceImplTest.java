@@ -5,7 +5,6 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.data.CategoryMockData;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
@@ -20,6 +19,8 @@ import com.homesweet.homesweetback.domain.product.product.domain.exception.Produ
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
+import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,10 +34,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.homesweet.homesweetback.domain.product.data.CategoryMockData.*;
 import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
+import static com.homesweet.homesweetback.domain.product.data.ProductReviewMockData.createReviewStatisticsResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,6 +68,8 @@ class ProductServiceImplTest {
     private ProductValidator productValidator;
     @Mock
     private SkuRepository skuRepository;
+    @Mock
+    private ProductReviewService productReviewService;
 
 
     @Nested
@@ -303,14 +308,16 @@ class ProductServiceImplTest {
                 String keyword = null;
                 ProductSortType sortType = ProductSortType.LATEST;
 
-                List<ProductPreviewResponse> mockProducts = List.of(
-                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000),
-                        createProductPreviewResponse(2L, "테이블", "홈스윗", 20000),
-                        createProductPreviewResponse(3L, "소파", "홈스윗", 30000)
+                List<Product> mockProducts = List.of(
+                        createMockProduct(1L, 1L,"의자"),
+                        createMockProduct(2L, 1L,"테이블"),
+                        createMockProduct(3L, 1L,"소파")
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
                         .willReturn(mockProducts);
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
 
                 // when
                 ScrollResponse<ProductPreviewResponse> response =
@@ -329,13 +336,16 @@ class ProductServiceImplTest {
                 Long cursorId = null;
                 Long categoryId = 1L;
                 int limit = 3;
-                List<ProductPreviewResponse> mockProducts = List.of(
-                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000),
-                        createProductPreviewResponse(2L, "테이블", "홈스윗", 20000)
+                List<Product> mockProducts = List.of(
+                        createMockProduct(1L, 1L,"의자"),
+                        createMockProduct(2L, 1L,"테이블")
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, null, ProductSortType.LATEST))
                         .willReturn(mockProducts);
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
+
 
                 // when
                 ScrollResponse<ProductPreviewResponse> response =
@@ -357,12 +367,15 @@ class ProductServiceImplTest {
                 String keyword = "테이블";
                 ProductSortType sortType = ProductSortType.POPULAR;
 
-                List<ProductPreviewResponse> mockProducts = List.of(
-                        createProductPreviewResponse(1L, "의자", "홈스윗", 10000)
+                List<Product> mockProducts = List.of(
+                        createMockProduct(1L, 1L, "의자")
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
                         .willReturn(mockProducts);
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
+
 
                 // when
                 ScrollResponse<ProductPreviewResponse> response =

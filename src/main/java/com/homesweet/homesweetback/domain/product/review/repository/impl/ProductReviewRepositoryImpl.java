@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.exception.Produ
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.ProductReviewJPARepository;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.ProductReviewEntity;
@@ -69,5 +70,10 @@ public class ProductReviewRepositoryImpl implements ProductReviewRepository {
     @Override
     public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
         return jpaRepository.getReviewStatistics(productId);
+    }
+
+    @Override
+    public List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds) {
+        return jpaRepository.findStatisticsByProductIds(productIds);
     }
 }

@@ -6,6 +6,10 @@ import com.homesweet.homesweetback.domain.product.review.controller.request.Prod
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 제품 리뷰 서비스 명세
@@ -20,6 +24,8 @@ public interface ProductReviewService {
     ScrollResponse<ProductReviewResponse> getProductReviews(Long productId, Long cursorId, int size);
 
     ScrollResponse<ProductReviewResponse> getUserReviews(Long userId, Long cursorId, int limit);
+
+    Map<Long, ProductReviewStatistics> getReviewStatisticsByProductIds(List<Long> productIds);
 
     ProductReviewResponse updateReview(Long reviewId, Long userId, ProductReviewUpdateRequest request);
 

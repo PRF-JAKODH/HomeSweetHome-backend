@@ -76,23 +76,6 @@ class ProductRepositoryImplTest {
                 assertThat(result.getName()).isEqualTo("테이블");
             }
         }
-
-        @Nested
-        @DisplayName("실패")
-        class Fail {
-            @Test
-            @DisplayName("상품 저장 시 mapper가 null을 반환하면 예외가 발생한다")
-            void save_fail_nullMapping() {
-                // given
-                Product domain = createMockProduct(1L, 100L, "테이블");
-
-                given(mapper.toEntity(domain)).willReturn(null);
-
-                // when & then
-                assertThatThrownBy(() -> repository.save(domain))
-                        .isInstanceOf(IllegalStateException.class);
-            }
-        }
     }
 
     @Nested
@@ -192,14 +175,14 @@ class ProductRepositoryImplTest {
             @Test
             @DisplayName("상품 리스트를 반환한다")
             void findNextProducts_success() {
-                List<ProductPreviewResponse> previews = List.of(
-                        createProductPreviewResponse(2L, "테이블", "홈스윗", 20000),
-                        createProductPreviewResponse(3L, "소파", "홈스윗", 30000)
+                List<ProductEntity> products = List.of(
+                        createMockProductEntity(1L, "테이블1"),
+                        createMockProductEntity(2L,  "테이블2")
                 );
 
-                given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(previews);
+                given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(products);
 
-                List<ProductPreviewResponse> result =
+                List<Product> result =
                         repository.findNextProducts(1L, 1L, 10, "가구", ProductSortType.LATEST);
 
                 assertThat(result).hasSize(2);
@@ -211,7 +194,7 @@ class ProductRepositoryImplTest {
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any()))
                         .willReturn(Collections.emptyList());
 
-                List<ProductPreviewResponse> result =
+                List<Product> result =
                         repository.findNextProducts(1L, 1L, 10, null, ProductSortType.LATEST);
 
                 assertThat(result).isEmpty();

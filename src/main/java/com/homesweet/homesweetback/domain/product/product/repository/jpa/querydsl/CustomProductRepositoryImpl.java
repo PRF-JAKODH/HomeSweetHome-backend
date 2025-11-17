@@ -7,7 +7,6 @@ import com.homesweet.homesweetback.domain.product.product.controller.request.sea
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
-import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
@@ -31,7 +30,6 @@ import static com.homesweet.homesweetback.domain.product.product.repository.jpa.
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionValueEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductSkuOptionEntity.*;
-import static com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity.*;
 
 /**
  * 제품 QueryDSL 레포 구현체
@@ -48,9 +46,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     private final ProductCategoryRepository categoryRepository;
 
     @Override
-    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+    public List<ProductEntity> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         QProductEntity product = productEntity;
-        QProductReviewEntity review = productReviewEntity;
 
         List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
 
@@ -64,26 +61,17 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
         return queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
+                .select(Projections.fields(ProductEntity.class,
                         product.id,
-                        product.category.id,
-                        product.seller.id,
+                        product.category,
+                        product.seller,
                         product.name,
                         product.imageUrl,
                         product.brand,
                         product.basePrice,
                         product.discountRate,
-                        product.description,
                         product.shippingPrice,
                         product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
                         product.createdAt,
                         product.updatedAt
                 ))
@@ -95,14 +83,13 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     }
 
     @Override
-    public List<ProductPreviewResponse> findProductsByOptionFilter(
+    public List<ProductEntity> findProductsByOptionFilter(
             Long cursorId,
             ProductFilterRequest request,
             int limit,
             ProductSortType sortType
     ) {
         QProductEntity product = productEntity;
-        QProductReviewEntity review = productReviewEntity;
 
         List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(request.categoryId());
 
@@ -113,7 +100,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
         BooleanExpression rangeFilterCondition = buildRangeFilterCondition(product, request);
 
-        BooleanBuilder builder = new BooleanBuilder()
+        BooleanBuilder condition = new BooleanBuilder()
                 .and(keywordCondition)
                 .and(cursorCondition)
                 .and(categoryCondition)
@@ -123,37 +110,26 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
-        List<ProductPreviewResponse> results = queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
+        return queryFactory
+                .select(Projections.fields(ProductEntity.class,
                         product.id,
-                        product.category.id,
-                        product.seller.id,
+                        product.category,
+                        product.seller,
                         product.name,
                         product.imageUrl,
                         product.brand,
                         product.basePrice,
                         product.discountRate,
-                        product.description,
                         product.shippingPrice,
                         product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
                         product.createdAt,
                         product.updatedAt
                 ))
                 .from(product)
-                .where(builder)
+                .where(condition)
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
-
-        return results;
     }
 
     @Override

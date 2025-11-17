@@ -9,6 +9,8 @@ import com.homesweet.homesweetback.domain.product.category.domain.exception.Prod
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,11 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {
+            "topLevelCategories",
+            "categoriesByParent",
+            "categoryHierarchy"
+    }, allEntries = true)
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
         validator.validateDuplicateCategoryName(request.name());
@@ -54,6 +61,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categoriesByParent", key = "#parentId")
     public List<CategoryResponse> getCategoriesByParentId(Long parentId) {
         return repository.findByParentId(parentId).stream()
                 .map(CategoryResponse::from)
@@ -62,6 +70,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "topLevelCategories")
     public List<CategoryResponse> getTopLevelCategories() {
         return repository.findTopLevelCategories().stream()
                 .map(CategoryResponse::from)
@@ -70,6 +79,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categoryHierarchy", key = "#categoryId")
     public List<CategoryResponse> getCategoryHierarchy(Long categoryId) {
         ProductCategory category = repository.findById(categoryId)
                 .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));

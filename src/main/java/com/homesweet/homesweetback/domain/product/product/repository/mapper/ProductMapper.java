@@ -165,4 +165,26 @@ public class ProductMapper {
 
         return entity;
     }
+
+    /**
+     * 상품 미리보기용 경량 변환 (연관 엔티티 없음)
+     */
+    public Product toPreviewDomain(ProductEntity entity) {
+        return Product.builder()
+                .id(entity.getId())
+                .categoryId(entity.getCategory().getId())
+                .sellerId(entity.getSeller().getId())
+                .name(entity.getName())
+                .imageUrl(entity.getImageUrl())
+                .brand(entity.getBrand())
+                .basePrice(entity.getBasePrice())
+                .discountRate(entity.getDiscountRate())
+                .shippingPrice(entity.getShippingPrice())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                // detailImages, optionGroups, skus는 null로 유지
+                .build();
+    }
+
 }
