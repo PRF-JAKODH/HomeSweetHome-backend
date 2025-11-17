@@ -7,8 +7,8 @@ export const options = {
         category_scenario: {
             executor: "shared-iterations",
             startTime: "0s",
-            vus: 10,
-            iterations: 10,
+            vus: 100,
+            iterations: 10000,
             maxDuration: "180s",
         },
     },
