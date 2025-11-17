@@ -107,56 +107,35 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     .map(String::valueOf)
                     .collect(Collectors.joining(","));
 
-            sql.append(" AND p.category_id IN (" + inClause + ") ");
-        }
-
-        // 3) 상태 조건
-        sql.append("""
-        AND p.status = 'ON_SALE'
-        """);
-
-        // 4) 커서 기반 페이징
-        if (cursorId != null) {
-            sql.append("""
-            AND p.product_id < :cursorId
-            """);
-        }
-
-        // 5) 정렬 조건
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append(" ORDER BY p.created_at DESC ");
-        } else {
-            // sortType 기준 정렬
-            switch (sortType) {
-                case PRICE_LOW -> sql.append(" ORDER BY p.base_price ASC ");
-                case PRICE_HIGH -> sql.append(" ORDER BY p.base_price DESC ");
-                case POPULAR -> sql.append("""
-                    ORDER BY (
-                        SELECT COUNT(*)
-                        FROM products_reviews r
-                        WHERE r.product_id = p.product_id
-                    ) DESC
-                """);
-                default -> sql.append(" ORDER BY p.created_at DESC ");
-            }
-        }
-
-        sql.append(" LIMIT :limit ");
-
-        Query query = em.createNativeQuery(sql.toString())
-                .setParameter("limit", limit + 1);
-
-        if (keyword != null && !keyword.isBlank()) {
-            query.setParameter("keyword", keyword);
-        }
-        if (cursorId != null) {
-            query.setParameter("cursorId", cursorId);
-        }
-
-        List<Object[]> rows = query.getResultList();
-        return rows.stream()
-                .map(this::toProductPreviewResponse)
-                .toList();
+        return queryFactory
+                .select(Projections.constructor(ProductPreviewResponse.class,
+                        product.id,
+                        product.category.id,
+                        product.seller.id,
+                        product.name,
+                        product.imageUrl,
+                        product.brand,
+                        product.basePrice,
+                        product.discountRate,
+                        product.description,
+                        product.shippingPrice,
+                        product.status,
+                        JPAExpressions
+                                .select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        JPAExpressions
+                                .select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        product.createdAt,
+                        product.updatedAt
+                ))
+                .from(product)
+                .where(condition)
+                .orderBy(orderSpecifier)
+                .limit(limit + 1)
+                .fetch();
     }
 
     @Override
