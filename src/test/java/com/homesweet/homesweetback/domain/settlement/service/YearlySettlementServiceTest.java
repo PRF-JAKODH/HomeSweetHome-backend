@@ -37,7 +37,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
@@ -50,8 +49,6 @@ class YearlySettlementServiceTest {
     private MonthlySettlementRepository monthlySettlementRepository;
     @Mock
     private SettlementValidator settlementValidator;
-    @Mock
-    private SettlementAggregator settlementAggregator;
     @Mock
     private SettlementSaver settlementSaver;
     @InjectMocks
