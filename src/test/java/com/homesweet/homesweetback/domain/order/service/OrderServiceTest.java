@@ -10,7 +10,6 @@ import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
@@ -79,16 +78,18 @@ class OrderServiceTest{
                 .basePrice(10000)
                 .discountRate(new BigDecimal("10.00"))
                 .shippingPrice(3000)
+                .status(ProductStatus.ON_SALE)
                 .build();
 
         SkuEntity fakeSku = SkuEntity.builder()
                 .id(skuId)
                 .priceAdjustment(1000)
                 .product(fakeProduct)
+                .stockQuantity(100L)
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // WHEN
@@ -103,7 +104,7 @@ class OrderServiceTest{
         //행위 검증(가짜 Repository 올바르게 호출했는지 검증)
         verify(orderRepository, times(1)).save(any(Order.class));
         verify(userRepository, times(1)).findById(userId);
-        verify(skuJPARepository, times(1)).findById(skuId);
+        verify(skuJPARepository, times(1)).findByIdWithPessimisticLock(skuId);
         verify(paymentRepository, never()).findByOrder(any(Order.class));
     }
 
@@ -132,24 +133,27 @@ class OrderServiceTest{
                 .basePrice(10000)
                 .discountRate(new BigDecimal("10.00"))
                 .shippingPrice(3000)
+                .status(ProductStatus.ON_SALE)
                 .build();
 
         SkuEntity fakeSku_S = SkuEntity.builder()
                 .id(skuId_S)
                 .priceAdjustment(0)
                 .product(fakeProduct)
+                .stockQuantity(100L)
                 .build();
 
         SkuEntity fakeSku_M = SkuEntity.builder()
                 .id(skuId_M)
                 .priceAdjustment(0)
                 .product(fakeProduct)
+                .stockQuantity(100L)
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
-        given(skuJPARepository.findById(skuId_S)).willReturn(Optional.of(fakeSku_S));
-        given(skuJPARepository.findById(skuId_M)).willReturn(Optional.of(fakeSku_M));
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId_S)).willReturn(Optional.of(fakeSku_S));
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId_M)).willReturn(Optional.of(fakeSku_M));
 
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -163,7 +167,7 @@ class OrderServiceTest{
 
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
-        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(skuJPARepository, times(2)).findByIdWithPessimisticLock(anyLong());
         verify(orderRepository, times(1)).save(any(Order.class));
     }
 
@@ -206,11 +210,13 @@ class OrderServiceTest{
                 .basePrice(10000)
                 .discountRate(new BigDecimal("10.00")) // 10% 할인
                 .shippingPrice((int)shipping_A) // 3000원
+                .status(ProductStatus.ON_SALE)
                 .build();
 
         SkuEntity fakeSku_A = SkuEntity.builder()
                 .id(skuId_A)
                 .priceAdjustment(0)
+                .stockQuantity(100L)
                 .product(fakeProduct_A) // 👈 상품 A 연결
                 .build();
 
@@ -219,11 +225,13 @@ class OrderServiceTest{
                 .basePrice(5000)
                 .discountRate(BigDecimal.ZERO) // 할인 없음
                 .shippingPrice((int)shipping_B) // 2500원
+                .status(ProductStatus.ON_SALE)
                 .build();
 
         SkuEntity fakeSku_B = SkuEntity.builder()
                 .id(skuId_B)
                 .priceAdjustment(0)
+                .stockQuantity(100L)
                 .product(fakeProduct_B) // 👈 상품 B 연결
                 .build();
 
@@ -231,8 +239,8 @@ class OrderServiceTest{
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
         // [핵심] 2개의 SKU 조회에 각각 다른 상품/SKU를 반환
-        given(skuJPARepository.findById(skuId_A)).willReturn(Optional.of(fakeSku_A));
-        given(skuJPARepository.findById(skuId_B)).willReturn(Optional.of(fakeSku_B));
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId_A)).willReturn(Optional.of(fakeSku_A));
+        given(skuJPARepository.findByIdWithPessimisticLock(skuId_B)).willReturn(Optional.of(fakeSku_B));
 
         given(orderRepository.save(any(Order.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
@@ -253,7 +261,7 @@ class OrderServiceTest{
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
         // 2. '행위' 검증
-        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(skuJPARepository, times(2)).findByIdWithPessimisticLock(anyLong());
         verify(orderRepository, times(1)).save(any(Order.class));
     }
 
@@ -279,7 +287,7 @@ class OrderServiceTest{
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
         // [핵심] skuJPARepository는 '빈 Optional'을 반환하도록 설정
-        given(skuJPARepository.findById(nonExistingSkuId)).willReturn(Optional.empty());
+        given(skuJPARepository.findByIdWithPessimisticLock(nonExistingSkuId)).willReturn(Optional.empty());
 
 
         // --- WHEN (실행) & THEN (결과) ---
@@ -337,7 +345,7 @@ class OrderServiceTest{
         // 3. (가장 중요) '행위' 검증
         // [핵심] UserService는 첫 단계에서 실패했으므로,
         //      'sku' 조회나 'order' 저장은 '절대' 호출되면 안 됨.
-        verify(skuJPARepository, never()).findById(anyLong());
+        verify(skuJPARepository, never()).findByIdWithPessimisticLock(anyLong());
         verify(orderRepository, never()).save(any(Order.class));
     }
 
