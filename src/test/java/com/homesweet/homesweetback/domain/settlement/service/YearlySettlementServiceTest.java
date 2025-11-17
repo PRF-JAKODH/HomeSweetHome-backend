@@ -331,7 +331,7 @@ class YearlySettlementServiceTest {
                     yearlySettlementService.getYearlySummary(userId, start, end, pageable)
             )
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("null이 될 수 없다.");
+                    .hasMessageContaining("Content must not be null");
         }
         @Test
         @DisplayName("Mapper 내부에서 예외 발생 → 전파")
