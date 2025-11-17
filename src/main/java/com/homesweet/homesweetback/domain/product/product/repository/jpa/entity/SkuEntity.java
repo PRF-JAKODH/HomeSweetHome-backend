@@ -9,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.hibernate.annotations.BatchSize;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +41,11 @@ public class SkuEntity {
     private ProductEntity product;
 
     @Column(name = "price_adjustment", nullable = false)
+    @Builder.Default
     private Integer priceAdjustment = 0;
 
     @Column(name = "stock_quantity", nullable = false)
+    @Builder.Default
     private Long stockQuantity = 0L;
 
     @BatchSize(size = 100)
@@ -56,11 +59,11 @@ public class SkuEntity {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Builder
-    public SkuEntity(Integer priceAdjustment, Long stockQuantity) {
-        this.priceAdjustment = priceAdjustment;
-        this.stockQuantity = stockQuantity;
-    }
+//    @Builder
+//    public SkuEntity(Integer priceAdjustment, Long stockQuantity) {
+//        this.priceAdjustment = priceAdjustment;
+//        this.stockQuantity = stockQuantity;
+//    }
 
     public void addSkuOption(ProductSkuOptionEntity skuOption) {
         this.skuOptions.add(skuOption);
@@ -82,5 +85,26 @@ public class SkuEntity {
         if (newPriceAdjustment != null) {
             this.priceAdjustment = newPriceAdjustment;
         }
+    }
+
+    public long getFinalPrice() {
+        ProductEntity product = this.getProduct();
+        if (product == null) {
+            throw new IllegalStateException("SKU(id=" + this.getId() + ")에 연결된 Product가 없습니다.");
+        }
+
+        // 1. 기본가(basePrice)에만 할인을 먼저 적용
+        BigDecimal basePriceBD = BigDecimal.valueOf(product.getBasePrice());
+        BigDecimal HUNDRED = new BigDecimal("100");
+        BigDecimal rate = product.getDiscountRate().divide(HUNDRED, 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal discountAmount = basePriceBD.multiply(rate);
+        BigDecimal discountedBasePrice = basePriceBD.subtract(discountAmount);
+
+        // 2. 할인된 기본가에 옵션가(adjustment)를 더함
+        // (priceAdjustment가 null일 경우 0으로 처리)
+        Integer adjustment = (this.getPriceAdjustment() != null) ? this.getPriceAdjustment() : 0;
+        BigDecimal finalPrice = discountedBasePrice.add(BigDecimal.valueOf(adjustment));
+
+        return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
     }
 }

@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.order.entity;
 
+import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -88,8 +89,16 @@ public class Order {
         this.orderStatus = orderStatus;
     }
 
+    // 이 주문의 소유자가 맞는지 확인한다능.
     public void setDeliveryStatus(DeliveryStatus deliveryStatus) {
         this.deliveryStatus = deliveryStatus;
+    }
+
+    public void validateOwner(Long userIdToVerify) {
+        if (!this.user.getId().equals(userIdToVerify)) {
+            // (OrderService에 있던 예외를 Order 엔티티가 직접 던지도록 함)
+            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
+        }
     }
 
     public boolean isOrderItemEmpty() {

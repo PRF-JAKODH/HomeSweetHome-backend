@@ -16,3 +16,26 @@ spring:
         static: ap-northeast-2
       s3:
         bucket: ${AWS_S3_BUCKET}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      toss-payments:
+        registerHealthIndicator: true
+        slidingWindowSize: 5           # 최근 5번 요청을 기록
+        failureRateThreshold: 50       # 그 중 50%(즉 3번) 이상 실패하면 서킷 OPEN (차단)
+        waitDurationInOpenState: 10s   # 차단 후 10초 동안은 무조건 요청 거부 (쉬는 시간)
+        permittedNumberOfCallsInHalfOpenState: 3 # 10초 뒤 '반열림' 상태에서 3번만 테스트로 찔러봄
+        automaticTransitionFromOpenToHalfOpenEnabled: true # 시간이 지나면 자동으로 반열림 상태로 전환
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, circuitbreakers # health와 circuitbreakers 정보를 공개
+  endpoint:
+    health:
+      show-details: always # 상세 정보 표시
+  health:
+    circuitbreakers:
+      enabled: true # 서킷 브레이커 상태도 health에 포함
