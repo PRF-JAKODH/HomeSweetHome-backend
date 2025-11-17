@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.chat.dto.response;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
+import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import java.time.LocalDateTime;
 
@@ -17,9 +18,11 @@ public record IndividualRoomListResponse(
 
         // 마지막 메세지 관련
         String lastMessage,
-        LocalDateTime lastMessageAt
+        LocalDateTime lastMessageAt,
+
+        Boolean isPartnerExit
 ) {
-   public static IndividualRoomListResponse toDto(ChatRoom room, User partner) {
+   public static IndividualRoomListResponse toDto(ChatRoom room, User partner, RoomMember member) {
        return new IndividualRoomListResponse(
                room.getId(),
                room.getType(),
@@ -28,7 +31,8 @@ public record IndividualRoomListResponse(
                partner.getName(),
                partner.getProfileImageUrl(),
                room.getLastMessage(),
-               room.getLastMessageAt()
+               room.getLastMessageAt(),
+               member.isExit()
        );
    }
 

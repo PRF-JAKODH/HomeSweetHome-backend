@@ -35,8 +35,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.homesweet.homesweetback.domain.chat.entity.QChatRoom.chatRoom;
-import static com.homesweet.homesweetback.domain.chat.entity.RoomMember.createMember;
 import static com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType.GROUP;
 import static com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType.INDIVIDUAL;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -54,7 +52,7 @@ import static org.mockito.Mockito.*;
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("[Service] 채팅방 서비스 단위 테스트")
-public class ChatRoomServiceImplTest {
+public class ChatRoomServiceImplUnitTest {
 
     @InjectMocks
     private ChatRoomServiceImpl service;
@@ -655,7 +653,8 @@ public class ChatRoomServiceImplTest {
                         "홍길동",
                         "url",
                         "안녕",
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        false
                 );
 
                 given(roomMemberRepository.findMyIndividualRoomList(1L))

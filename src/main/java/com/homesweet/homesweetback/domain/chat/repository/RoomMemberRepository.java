@@ -19,7 +19,6 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
      */
     Optional<RoomMember> findByRoomIdAndUserId(Long roomId, Long userId);
 
-    // 개인 채팅방 목록 - 더 간단해짐!
     @Query("""
      SELECT new com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomListResponse(
          r.id,
@@ -29,16 +28,17 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
          partner.user.name,
          COALESCE(partner.user.profileImageUrl,''),
          r.lastMessage,
-         r.lastMessageAt
+         r.lastMessageAt,
+         COALESCE(partner.isExit, false)
      )
      FROM RoomMember my
      JOIN my.room r
-     JOIN RoomMember partner 
+     JOIN RoomMember partner
        ON partner.room.id = r.id AND partner.user.id != :myUserId
      WHERE my.user.id = :myUserId
        AND r.type = 'INDIVIDUAL'
-       AND (my.isExit = false OR my.isExit IS NULL)
-     ORDER BY r.lastMessageAt DESC NULLS LAST
+      AND COALESCE(my.isExit, false) = false
+      ORDER BY r.lastMessageAt DESC NULLS LAST
  """)
     List<IndividualRoomListResponse> findMyIndividualRoomList(@Param("myUserId") Long myUserId);
 
@@ -55,7 +55,7 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
      )
      FROM RoomMember my
      JOIN my.room r
-     JOIN RoomMember m ON m.room.id = r.id 
+     JOIN RoomMember m ON m.room.id = r.id
      WHERE my.user.id = :myUserId
        AND r.type = 'GROUP'
        AND (my.isExit = false OR my.isExit IS NULL)
@@ -96,7 +96,6 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
             FROM RoomMember rm
             WHERE rm.room.id = :roomId
               AND rm.user.id != :myUserId
-              AND rm.isExit = false
         """)
     Optional<User> findPartnerUserInRoom(
             @Param("myUserId") Long myUserId,

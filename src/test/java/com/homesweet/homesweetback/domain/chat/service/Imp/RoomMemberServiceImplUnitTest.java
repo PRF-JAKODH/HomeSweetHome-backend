@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("[Service] 채팅방 멤버 서비스 단위 테스트")
-class RoomMemberServiceImplTest {
+class RoomMemberServiceImplUnitTest {
 
     @InjectMocks
     private RoomMemberServiceImpl service;
@@ -55,7 +55,7 @@ class RoomMemberServiceImplTest {
     class createIndividualRoom {
 
         @Nested
-        @DisplayName("개인 채팅방 멤버 등록")
+        @DisplayName("[단위] 개인 채팅방 멤버 등록")
         class RegisterIndividualMember {
 
             @Test

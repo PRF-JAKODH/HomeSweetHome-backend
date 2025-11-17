@@ -29,8 +29,6 @@ public class ChatPreHandler implements ChannelInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
-    private final ChatRoomRepository chatRoomRepository;
-    private final RoomMemberRepository roomMemberRepository;
 
 
     // channel mock객체로 둬서 테스트 해보자요

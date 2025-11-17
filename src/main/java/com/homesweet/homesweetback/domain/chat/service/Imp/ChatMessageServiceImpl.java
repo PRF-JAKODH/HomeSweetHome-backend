@@ -17,6 +17,7 @@ import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 
     /**
-     * 메시지 전송/저장 (기존 로직 활용)
+     * 메시지 전송/저장
      */
     @Override
     @Transactional
@@ -91,21 +92,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     * */
     @Override
     public PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size) {
-
-        log.info(" 메시지 조회 시작 - roomId: {}, lastMessageId: {}, size: {}",
-                roomId, lastMessageId, size);
-
+        Pageable pageable = PageRequest.of(0, size);
         Slice<ChatMessage> slice;
 
         if(lastMessageId == null) {
             // 최초 로드 시
-            slice = chatMessageRepository.findByRoomIdOrderBySentAtDesc(
-            roomId, PageRequest.of(0, size)
-                    );
+            slice = chatMessageRepository.findByRoom_IdOrderBySentAtDesc(
+            roomId, pageable
+            );
         } else {
             // 추가 로드 요청 시
             slice = chatMessageRepository.findOlderMessages(
-                    roomId, lastMessageId, PageRequest.of(0, size)
+                    roomId, lastMessageId, pageable
             );
         }
 
@@ -120,7 +118,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 
         // 다음 페이지 존재 여부 함께 반환
-        return PreMessageResponse.of(messageDtos, slice.hasNext());
+        return PreMessageResponse.builder()
+                .messages(messageDtos)
+                .hasMore(slice.hasNext()).build();
     }
 
     @Override

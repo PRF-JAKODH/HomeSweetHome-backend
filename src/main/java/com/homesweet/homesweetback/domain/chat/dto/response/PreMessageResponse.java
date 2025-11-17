@@ -16,7 +16,7 @@ public class PreMessageResponse {
     private List<ChatMessageDto> messages;
     private boolean hasMore;
 
-    public static PreMessageResponse of(List<ChatMessageDto> messages, boolean hasNext) {
-        return new PreMessageResponse(messages, hasNext);
+    public static PreMessageResponse of(List<ChatMessageDto> messages, boolean hasMore) {
+        return new PreMessageResponse(messages, hasMore);
     }
 }
