@@ -51,10 +51,15 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
             user-name-attribute: id
 
+
 logging:
   level:
-    com.homesweet.homesweetback: INFO
+    com.homesweet.homesweetback: DEBUG
     org.springframework.security: DEBUG
+  file:
+    path: ./logs
+    name: ./logs/homesweet.log
+
 
 # JWT 개발 환경 설정
 jwt:

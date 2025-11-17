@@ -49,6 +49,9 @@ logging:
   level:
     com.homesweet.homesweetback: DEBUG
     org.springframework.security: DEBUG
+  file:
+    path: ./logs
+    name: ./logs/homesweet.log
 
 # JWT 개발 환경 설정
 jwt:
