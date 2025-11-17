@@ -66,13 +66,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<ProductPreviewResponse> findProductsByOptionFilter(
-            Long cursorId,
-            ProductFilterRequest request,
-            int limit,
-            ProductSortType sortType
-    ) {
-        return productRepository.findProductsByOptionFilter(cursorId, request, limit, sortType);
+    public List<Product> findProductsByOptionFilter(Long cursorId, ProductFilterRequest request, int limit, ProductSortType sortType) {
+        List<ProductEntity> entities = productRepository.findProductsByOptionFilter(cursorId, request, limit, sortType);
+
+        return entities.stream()
+                .map(mapper::toPreviewDomain)
+                .toList();
     }
 
     @Override

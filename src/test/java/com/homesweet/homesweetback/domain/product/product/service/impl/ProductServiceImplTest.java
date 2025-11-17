@@ -19,6 +19,7 @@ import com.homesweet.homesweetback.domain.product.product.domain.exception.Produ
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.homesweet.homesweetback.domain.product.data.CategoryMockData.*;
@@ -314,8 +316,8 @@ class ProductServiceImplTest {
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
                         .willReturn(mockProducts);
-                given(productReviewService.getReviewStatistics(anyLong()))
-                        .willReturn(createReviewStatisticsResponse(1L));
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
 
                 // when
                 ScrollResponse<ProductPreviewResponse> response =
@@ -341,8 +343,8 @@ class ProductServiceImplTest {
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, null, ProductSortType.LATEST))
                         .willReturn(mockProducts);
-                given(productReviewService.getReviewStatistics(anyLong()))
-                        .willReturn(createReviewStatisticsResponse(1L));
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
 
 
                 // when
@@ -371,8 +373,8 @@ class ProductServiceImplTest {
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
                         .willReturn(mockProducts);
-                given(productReviewService.getReviewStatistics(anyLong()))
-                        .willReturn(createReviewStatisticsResponse(1L));
+                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
+                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
 
 
                 // when
