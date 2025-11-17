@@ -31,19 +31,31 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
     // upsert(update로 가야함)
     @Modifying
     @Transactional
+//    @Query(value = """
+//        INSERT INTO daily_settlements
+//          (user_id, settlement_date, total_sales, total_fee, total_vat, total_refund, total_settlement)
+//        VALUES
+//          (:userId, :settlementDate, :totalSales, :totalFee, :totalVat, :totalRefund, :totalSettlement)
+//        AS new
+//        ON DUPLICATE KEY UPDATE
+//            total_sales = new.total_sales,
+//            total_fee = new.total_fee,
+//            total_vat = new.total_vat,
+//            total_refund = new.total_refund,
+//            total_settlement = new.total_settlement
+//        """, nativeQuery = true)
     @Query(value = """
-        INSERT INTO daily_settlements
-          (user_id, settlement_date, total_sales, total_fee, total_vat, total_refund, total_settlement)
-        VALUES
-          (:userId, :settlementDate, :totalSales, :totalFee, :totalVat, :totalRefund, :totalSettlement)
-        AS new
-        ON DUPLICATE KEY UPDATE
-            total_sales = new.total_sales,
-            total_fee = new.total_fee,
-            total_vat = new.total_vat,
-            total_refund = new.total_refund,
-            total_settlement = new.total_settlement
-        """, nativeQuery = true)
+    INSERT INTO daily_settlements
+      (user_id, settlement_date, total_sales, total_fee, total_vat, total_refund, total_settlement)
+    VALUES
+      (:userId, :settlementDate, :totalSales, :totalFee, :totalVat, :totalRefund, :totalSettlement)
+    ON DUPLICATE KEY UPDATE
+      total_sales = VALUES(total_sales),
+      total_fee = VALUES(total_fee),
+      total_vat = VALUES(total_vat),
+      total_refund = VALUES(total_refund),
+      total_settlement = VALUES(total_settlement)
+    """, nativeQuery = true)
     int upsertDaily(
             @Param("userId") Long userId,
             @Param("settlementDate") LocalDateTime settlementDate,   // 자정(00:00:00)로 넣기

@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.settlement.scheduled;
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -46,12 +48,11 @@ public class SettlementScheduler {
 //        LocalDateTime cutoffTime = target.minusDays(1).withHour(23).withMinute(59).withSecond(59);
         LocalDateTime cutoffTime = LocalDateTime.now(KST);
         log.info("정산 생성 실행");
-        List<Order> canceledOrders = settlementRepository.findUnSettlementOrders(OrderStatus.COMPLETED, cutoffTime);
-        if (canceledOrders.isEmpty()) {
-            log.info("정산 대상 신규 주문건이 없습니다.");
-            return;
-        }
-        for (Order order : canceledOrders) {
+        List<Order> settlementCompleted = settlementRepository.findUnSettlementOrders(OrderStatus.COMPLETED, cutoffTime);
+//        if (settlementCompleted.isEmpty()) {
+//            throw new BusinessException(ErrorCode.NEW_ORDERS_NOT_FOUND);
+//        }
+        for (Order order : settlementCompleted) {
             try {
                 settlementService.createSettlement(order);
                 log.info("정산 생성 완료");
@@ -72,16 +73,7 @@ public class SettlementScheduler {
         LocalDateTime cutoffTime = LocalDateTime.now(KST);
         log.info("정산 취소 실행");
         List<Order> canceledOrders = settlementRepository.findCancelSettlement(DeliveryStatus.CANCELLED, cutoffTime);
-        log.info("조회된 취소 주문 수: {}", canceledOrders.size());
-        if (canceledOrders.isEmpty()) {
-            log.info("정산 취소 주문건이 없습니다.");
-            return;
-        }
         for (Order order : canceledOrders) {
-            if(order.getDeliveryStatus() != DeliveryStatus.CANCELLED) {
-                log.warn("배송상태가 CANCELED가 아닌 주문은 패스");
-                continue;
-            }
             try {
                 settlementService.orderCanceled(order);
                 log.info("정산 취소 완료");

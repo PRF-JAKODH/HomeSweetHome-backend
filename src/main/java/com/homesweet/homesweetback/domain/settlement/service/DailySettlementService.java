@@ -1,36 +1,42 @@
 package com.homesweet.homesweetback.domain.settlement.service;
 
-import com.homesweet.homesweetback.common.exception.BusinessException;
-import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.settlement.aggregate.SettlementAggregator;
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
+import com.homesweet.homesweetback.domain.settlement.util.SettlementStatusUpdater;
+import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
+import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
+import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class DailySettlementService {
-    private static final Logger log = LogManager.getLogger(DailySettlementService.class);
     private final DailySettlementRepository dailySettlementRepository;
     private final SettlementRepository settlementRepository;
+    private final EmptyResponse emptyResponse;
+    private final SettlementMapper settlementMapper;
+    private final SettlementValidator settlementValidator;
+    private final SettlementAggregator settlementAggregator;
+    private final SettlementStatusUpdater settlementStatusUpdater;
+    private final SettlementSaver settlementSaver;
+    private final SettlementCalculator settlementCalculator;
 
     // 일별 데이터 조회 (페이지 처리)
     @Transactional(readOnly = true)
@@ -40,110 +46,55 @@ public class DailySettlementService {
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
 
         // 1. 페이지로 정산일시 기준 정산 목록 조회(실제 리스트)
-        Page<DailySettlement> dailySettlements = dailySettlementRepository.findByDailySettlementByRange(userId, start, end, pageable);
-        log.info("daily rows size={}, start={}, endEx={}", dailySettlements.getNumberOfElements(), start, end);
-        System.out.println("daily rows size=" + dailySettlements.getNumberOfElements());
-        if (!dailySettlements.isEmpty()) {
-            DailySettlement first = dailySettlements.getContent().get(0);
-            log.info("first row => date={}, sales={}", first.getSettlementDate(), first.getTotalSales());
-        } else {
-            log.warn("EMPTY PAGE -> will return zero row");
-        }
+        Page<DailySettlement> dailySettlementPage = findDailySettlements(userId, pageable, start, end);
+
         // 2. 기간 전체의 총 주문 건수/총 정산 완료 건수/정산 완료율 계산
-        long totalCount = settlementRepository.countAllByOrderedAt(userId, start, end);  // 총 주문건수
-        long completedCount = settlementRepository.countCompletedSettlements(userId, start, end);
-        double completedRate = totalCount == 0 ? 0.0 : Math.round(((double) completedCount * 100.0 / totalCount) * 10) / 10.0;  // 정산 완료율
+        SettlementCalculator.SettlementStats stats = settlementCalculator.calculateStats(userId, startDate, endDate);
 
         // 3. 데이터가 존재하지 않으면 0 반환
-        if (dailySettlements.isEmpty()) {
-           DailySettlementResponse empty = new DailySettlementResponse(
-                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                    BigDecimal.ZERO, BigDecimal.ZERO, startDate, "CANCELED", 0.0, 0L
-            );
-            return new PageImpl<>(List.of(empty), pageable, 1);
+        if (dailySettlementPage.isEmpty()) {
+            return emptyResponse.createEmptyDaily(startDate, pageable);
         }
-        // 일별 조회의 요소
-        List<DailySettlementResponse> dailySettlement = new ArrayList<>(dailySettlements.getNumberOfElements());
 
         // 4. 페이지의 실제 리스트를 response에 매핑
-        for (DailySettlement d : dailySettlements.getContent()) { // 페이지의 실제 리스트
-            LocalDate settlementDate = d.getSettlementDate().toLocalDate(); // 정산일시
-
-            // 기본은 PENDING
-            String settlementStatus = (completedCount == totalCount) ? "COMPLETED" : "PENDING";
-            dailySettlement.add(new DailySettlementResponse(
-                    d.getTotalSales(),
-                    d.getTotalFee(),
-                    d.getTotalVat(),
-                    d.getTotalRefund(),
-                    d.getTotalSettlement(),
-                    settlementDate,
-                    settlementStatus,
-                    completedRate,
-                    totalCount
-            ));
-        }
-        return new PageImpl<>(dailySettlement, pageable, totalCount);   // 전체 페이지수
+        List<DailySettlementResponse> dailySettlementResponses = settlementMapper.toDailySettlementResponseList(
+                dailySettlementPage.getContent(),
+                d -> settlementCalculator.calculateStats(userId, d.getSettlementDate().toLocalDate(), d.getSettlementDate().toLocalDate())
+        );
+        return new PageImpl<>(dailySettlementResponses, pageable, stats.totalCount());   // 전체 페이지수
     }
-
+    public Page<DailySettlement> findDailySettlements(Long userId, Pageable pageable, LocalDateTime start, LocalDateTime end) {
+        Page<DailySettlement> dailySettlements = dailySettlementRepository.findByDailySettlementByRange(userId, start, end, pageable);
+        return dailySettlements;
+    }
     // 일별 집계
     @Transactional
     public void getSettlement(Long userId, LocalDateTime dailyStartDate, LocalDateTime dailyEndDate) {
-        LocalDate prevDate = null; // 정산 일자 기준
-        BigDecimal totalSales = BigDecimal.ZERO;
-        BigDecimal totalFee = BigDecimal.ZERO;
-        BigDecimal totalVat = BigDecimal.ZERO;
-        BigDecimal totalRefund = BigDecimal.ZERO;
-        BigDecimal totalSettlement = BigDecimal.ZERO;
-//        String settlementStatus = "PENDING";
-
         // 1. 정산일 기준 정산 목록 조회
-        List<Settlement> settlements = settlementRepository
-                .findBySettlementDateRange(userId, dailyStartDate, dailyEndDate);
+        List<Settlement> settlements = settlementRepository.findBySettlementDateRange(userId, dailyStartDate, dailyEndDate);
 
-        // 2. 정산 내역이 없으면 에러 반환
-        if (settlements == null || settlements.isEmpty()) {
-            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
-        }
+        // 2. 검증
+        settlementValidator.validateDaily(settlements);
 
-        // 3. 날짜별로 집계
-        for (Settlement s : settlements) {
-            // 정산일
-            LocalDate stDate = s.getSettlementDate().toLocalDate();
-            // 날짜가 바뀌면 upsert
-            if (prevDate != null && !stDate.equals(prevDate)) {
-                dailySettlementRepository.upsertDaily(
-                        userId, prevDate.atStartOfDay(),
-                        totalSales, totalFee, totalVat, totalRefund, totalSettlement
+        // 3. 공통 집계 처리
+        Map<LocalDate, SettlementTotals> dailyTotalsMap =
+                settlementAggregator.aggregate(
+                        settlements,
+                        s -> s.getSettlementDate().toLocalDate(),
+                        s -> new SettlementTotals(
+                                s.getSalesAmount(),
+                                s.getFee(),
+                                s.getVat(),
+                                s.getRefundAmount(),
+                                s.getSettlementAmount()
+                        )
                 );
-                totalSales = BigDecimal.ZERO;
-                totalFee = BigDecimal.ZERO;
-                totalVat = BigDecimal.ZERO;
-                totalRefund = BigDecimal.ZERO;
-                totalSettlement = BigDecimal.ZERO;
-            }
-            totalSales = s.getSalesAmount().add(totalSales);
-            totalFee = s.getFee().add(totalFee);
-            totalVat = s.getVat().add(totalVat);
-            totalRefund = s.getRefundAmount().add(totalRefund);
-            totalSettlement = s.getSettlementAmount().add(totalSettlement);
-            prevDate = stDate;
-        }
-        if (prevDate != null) {
-            dailySettlementRepository.upsertDaily(
-                    userId, prevDate.atStartOfDay(),     // 자정 고정
-                    totalSales, totalFee, totalVat, totalRefund, totalSettlement
-            );
-            // 정산 상태 변경 -> 'COMPLETED'
-            settlementRepository.markCompletedInRange(userId, dailyStartDate, dailyEndDate);
-        }
+        // 4. upsert (저장)
+        dailyTotalsMap.forEach((date, totals) -> {
+            settlementSaver.saveDaily(userId, date, totals);
+        });
+
+        // 5. 정산 상태 변경 -> 'COMPLETED'
+        settlementStatusUpdater.markDailyCompleted(userId, dailyStartDate, dailyEndDate);
     }
-
-    // 정산 상태 검증
-//    private static final Set<String> ALLOWED_STATUS = Set.of("PENDING", "COMPLETED", "CANCELED");
-//    if(settlementStatus != null && !ALLOWED_STATUS.contains(settlementStatus)){
-//        throw new BusinessException(ErrorCode.UNKNOWN_SETTLEMENT_STATUS);
-//    }
-
-
 }

@@ -32,7 +32,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
         JOIN s.product p
         WHERE o.id =:orderId
     """)
-    User findBySellerId(@Param("orderId") Long orderId);
+    Optional<User> findBySellerId(@Param("orderId") Long orderId);
 
     // 주문건별에서 전체 목록 조회
     @Query("""
@@ -57,7 +57,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
         FROM Settlement s
         WHERE s.userId = :userId
           AND s.settlementDate >= :startDate
-          AND s.settlementDate <  :endDate
+          AND s.settlementDate < :endDate
         ORDER BY s.settlementDate DESC, s.settlementId DESC
     """)
     List<Settlement> findBySettlementDateRange(
@@ -102,15 +102,15 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     long countAllByOrderedAt(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 
     // 주문 취소시 환불금액 생성 및 정산 금액 변경
-    @Modifying
-    @Query("""
-    UPDATE Settlement s
-    SET s.refundAmount = s.refundAmount + :refundAmount,
-        s.settlementAmount = (s.salesAmount + s.vat) - s.fee - (s.refundAmount + :refundAmount),
-        s.settlementStatus = 'CANCELED'
-    WHERE s.order.id =:orderId
-    """)
-    int applyRefundAmount(@Param("orderId") Long orderId, @Param("refundAmount") BigDecimal refundAmount);
+//    @Modifying
+//    @Query("""
+//    UPDATE Settlement s
+//    SET s.refundAmount = s.refundAmount + :refundAmount,
+//        s.settlementAmount = (s.salesAmount + s.vat) - s.fee - (s.refundAmount + :refundAmount),
+//        s.settlementStatus = 'CANCELED'
+//    WHERE s.order.id =:orderId
+//    """)
+//    int applyRefundAmount(@Param("orderId") Long orderId, @Param("refundAmount") BigDecimal refundAmount);
 
     Optional<Settlement>findByOrderId(@Param("orderId")Long orderId);
 
@@ -133,5 +133,4 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     AND s.settlementId IS NOT NULL
     """)
     List<Order> findCancelSettlement(@Param("deliveryStatus")DeliveryStatus deliveryStatus, @Param("cutOffTime") LocalDateTime cutoffTime);
-
 }
