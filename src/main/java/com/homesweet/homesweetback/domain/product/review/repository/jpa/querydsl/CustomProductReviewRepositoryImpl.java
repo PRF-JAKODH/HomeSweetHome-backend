@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.domain.auth.entity.QUser;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
+import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
@@ -67,7 +68,7 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
     public List<ProductReviewResponse> findNextUserReviews(Long userId, Long cursorId, int limit) {
         BooleanExpression condition = review.user.id.eq(userId);
         if (cursorId != null) {
-            condition = condition.and(review.id.lt(cursorId)); // 최신순
+            condition = condition.and(review.id.lt(cursorId));
         }
 
         return queryFactory
@@ -130,6 +131,20 @@ public class CustomProductReviewRepositoryImpl implements CustomProductReviewRep
 
         // Response 생성
         return ProductReviewStatisticsResponse.of(productId, totalCount, averageRating, ratingCounts);
+    }
+
+    @Override
+    public List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds) {
+        return queryFactory
+                .select(Projections.constructor(ProductReviewStatistics.class,
+                        review.product.id,
+                        review.count(),
+                        review.rating.avg()
+                        ))
+                .from(review)
+                .where(review.product.id.in(productIds))
+                .groupBy(review.product.id)
+                .fetch();
     }
 
     // 최신순 기준 → cursorId보다 작은 id만 조회

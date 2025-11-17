@@ -69,9 +69,9 @@ class ProductCategoryServiceImplTest {
                 CategoryResponse response = service.createCategory(request);
 
                 // then
-                assertThat(response.name()).isEqualTo("가구");
-                assertThat(response.parentId()).isNull();
-                assertThat(response.depth()).isEqualTo(0);
+                assertThat(response.getName()).isEqualTo("가구");
+                assertThat(response.getParentId()).isNull();
+                assertThat(response.getDepth()).isEqualTo(0);
             }
 
             @Test
@@ -95,9 +95,9 @@ class ProductCategoryServiceImplTest {
                 CategoryResponse response = service.createCategory(request);
 
                 // then
-                assertThat(response.name()).isEqualTo("거실가구");
-                assertThat(response.parentId()).isEqualTo(parent.id());
-                assertThat(response.depth()).isEqualTo(1);
+                assertThat(response.getName()).isEqualTo("거실가구");
+                assertThat(response.getParentId()).isEqualTo(parent.id());
+                assertThat(response.getDepth()).isEqualTo(1);
             }
 
             @Test
@@ -121,9 +121,9 @@ class ProductCategoryServiceImplTest {
                 CategoryResponse response = service.createCategory(request);
 
                 // then
-                assertThat(response.name()).isEqualTo("소파");
-                assertThat(response.depth()).isEqualTo(2);
-                assertThat(response.parentId()).isEqualTo(parent.id());
+                assertThat(response.getName()).isEqualTo("소파");
+                assertThat(response.getDepth()).isEqualTo(2);
+                assertThat(response.getParentId()).isEqualTo(parent.id());
             }
         }
 
@@ -262,13 +262,13 @@ class ProductCategoryServiceImplTest {
 
             // then
             assertThat(result).hasSize(3);
-            assertThat(result.get(0).name()).isEqualTo("가구");        // depth 0
-            assertThat(result.get(1).name()).isEqualTo("거실가구");   // depth 1
-            assertThat(result.get(2).name()).isEqualTo("소파");       // depth 2
+            assertThat(result.get(0).getName()).isEqualTo("가구");        // depth 0
+            assertThat(result.get(1).getName()).isEqualTo("거실가구");   // depth 1
+            assertThat(result.get(2).getName()).isEqualTo("소파");       // depth 2
 
             // 부모-자식 관계 검증
-            assertThat(result.get(1).parentId()).isEqualTo(result.get(0).id());
-            assertThat(result.get(2).parentId()).isEqualTo(result.get(1).id());
+            assertThat(result.get(1).getParentId()).isEqualTo(result.get(0).getId());
+            assertThat(result.get(2).getParentId()).isEqualTo(result.get(1).getId());
         }
 
         @Test
@@ -284,8 +284,8 @@ class ProductCategoryServiceImplTest {
 
             // then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).name()).isEqualTo("가전");
-            assertThat(result.get(0).parentId()).isNull();
+            assertThat(result.get(0).getName()).isEqualTo("가전");
+            assertThat(result.get(0).getParentId()).isNull();
         }
     }
 

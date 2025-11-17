@@ -3,7 +3,7 @@
     <!-- 로그 패턴 색상 적용 -->
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
 
-    <!-- log 변수 값 설정 -->
+    <!-- Spring Property 매핑 -->
     <springProperty name="LOG_TRACE_PATH" source="log.config.trace.path" />
     <springProperty name="LOG_TRACE_FILE_NAME" source="log.config.trace.filename" />
     <springProperty name="LOG_PATH" source="log.config.error.path" />
@@ -18,14 +18,14 @@
     <property name="FILE_LOG_PATTERN"
               value="[%d{yyyy-MM-dd HH:mm:ss}] %-5level [%thread] %-40.40logger{36} : %msg%n"/>
 
-    <!-- 콘솔 로그 설정 -->
+    <!-- 콘솔 로그 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
     </appender>
 
-    <!-- 파일 로그 설정 -->
+    <!-- 파일 로그 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
         <encoder>
@@ -41,7 +41,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- TraceId 전용 로그 (dev 환경용) -->
+    <!-- TraceId 전용 로그 -->
     <appender name="TRACEID_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_TRACE_PATH}/${LOG_TRACE_FILE_NAME}.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -58,22 +58,24 @@
         </rollingPolicy>
     </appender>
 
-    <!-- 개발 환경(dev): 콘솔 + 파일 모두 -->
+    <!-- dev 환경: 콘솔 + 파일 -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="STDOUT"/>
             <appender-ref ref="FILE"/>
         </root>
+
         <logger name="com.homesweet.homesweetback.common.log.MVCLoggingAspect"
                 level="INFO" additivity="false">
             <appender-ref ref="TRACEID_FILE"/>
         </logger>
     </springProfile>
 
-    <!-- 운영 환경(prod): 콘솔에만 출력 -->
+    <!-- prod 환경: 콘솔만 출력 -->
     <springProfile name="prod">
         <root level="INFO">
             <appender-ref ref="STDOUT"/>
         </root>
     </springProfile>
+
 </configuration>

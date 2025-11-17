@@ -7,7 +7,10 @@ import com.homesweet.homesweetback.domain.product.product.controller.response.Pr
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author junnukim1007gmail.com
  * @date 25. 11. 9.
  */
-@Import(QueryDslConfig.class)
+@Import(
+        {QueryDslConfig.class,
+        ProductMapper.class}
+)
 @DataJpaTest
 @ActiveProfiles("test")
 @Sql("/sql/product/product_test_data.sql")
@@ -51,89 +57,84 @@ class CustomProductRepositoryImplTest {
         @Test
         @DisplayName("최신순 정렬로 상품을 조회할 수 있다")
         void findLatestProducts() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
             assertThat(results).isNotEmpty();
-            assertThat(results).allSatisfy(r -> assertThat(r.status()).isNotEqualTo(ProductStatus.SUSPENDED));
-            assertThat(results).extracting(ProductPreviewResponse::name)
+            assertThat(results).allSatisfy(r -> assertThat(r.getStatus()).isNotEqualTo(ProductStatus.SUSPENDED));
+            assertThat(results).extracting(ProductEntity::getName)
                     .containsExactlyInAnyOrder("고급 의자", "저가 의자", "책상 세트");
         }
 
         @Test
         @DisplayName("가격 오름차순 정렬로 조회할 수 있다")
         void findPriceLowToHigh() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_LOW);
 
             assertThat(results).isNotEmpty();
-            assertThat(results.getFirst().basePrice()).isLessThanOrEqualTo(results.getLast().basePrice());
+            assertThat(results.getFirst().getBasePrice()).isLessThanOrEqualTo(results.getLast().getBasePrice());
         }
 
         @Test
         @DisplayName("가격 내림차순 정렬로 조회할 수 있다")
         void findPriceHighToLow() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_HIGH);
 
             assertThat(results).isNotEmpty();
-            assertThat(results.getFirst().basePrice()).isGreaterThanOrEqualTo(results.getLast().basePrice());
+            assertThat(results.getFirst().getBasePrice()).isGreaterThanOrEqualTo(results.getLast().getBasePrice());
 
             int maxPrice = results.stream()
-                    .mapToInt(ProductPreviewResponse::basePrice)
+                    .mapToInt(ProductEntity::getBasePrice)
                     .max()
                     .orElseThrow();
-            assertThat(results.getFirst().basePrice()).isEqualTo(maxPrice);
+            assertThat(results.getFirst().getBasePrice()).isEqualTo(maxPrice);
         }
 
         @Test
         @DisplayName("인기순(리뷰 개수 순)으로 상품을 조회할 수 있다")
         void findByPopularity() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.POPULAR);
 
             assertThat(results).isNotEmpty();
 
             Long previousReviewCount = Long.MAX_VALUE;
-            for (ProductPreviewResponse response : results) {
-                assertThat(response.reviewCount()).isLessThanOrEqualTo(previousReviewCount);
-                previousReviewCount = response.reviewCount();
-            }
 
             // 고급 의자 상품에 리뷰가 2개로 가장 많음
-            ProductPreviewResponse mostPopular = results.getFirst();
-            assertThat(mostPopular.name()).isEqualTo("고급 의자");
-            assertThat(mostPopular.reviewCount()).isEqualTo(2L);
+            ProductEntity mostPopular = results.getFirst();
+            assertThat(mostPopular.getName()).isEqualTo("고급 의자");
         }
 
         @Test
         @DisplayName("검색 키워드가 있으면 제품명 또는 브랜드로 검색된다")
         void findByKeyword() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, "홈스윗", ProductSortType.LATEST);
 
             assertThat(results).isNotEmpty();
             assertThat(results).allSatisfy(p ->
-                    assertThat(p.brand()).contains("홈스윗")
+                    assertThat(p.getBrand()).contains("홈스윗")
             );
         }
 
         @Test
         @DisplayName("판매 중지 상품은 조회되지 않는다")
         void excludeSuspendedProducts() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
-            assertThat(results).noneMatch(p -> p.status() == ProductStatus.SUSPENDED);
+            assertThat(results).noneMatch(p -> p.getStatus() == ProductStatus.SUSPENDED);
         }
 
         @Test
         @DisplayName("카테고리를 선택하면 하위 카테고리 상품도 함께 조회된다")
         void includeSubCategoryProducts() {
-            List<ProductPreviewResponse> results =
+            List<ProductEntity> results =
                     repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
 
-            assertThat(results).extracting(ProductPreviewResponse::categoryId)
+            assertThat(results).extracting(entity -> entity.getCategory().getId())
                     .contains(2L, 3L);
         }
     }

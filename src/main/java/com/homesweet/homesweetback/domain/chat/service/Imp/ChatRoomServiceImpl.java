@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.chat.service.Imp;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -38,7 +39,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final UserRepository userRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomMapper chatRoomMapper;
-    private final S3ImageUploader s3ImageUploader;
+    private final ImageUploader s3ImageUploader;
     private final RoomMemberService roomMemberService;
 
 
