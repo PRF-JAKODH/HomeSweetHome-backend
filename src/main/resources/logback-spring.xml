@@ -58,11 +58,25 @@
         </rollingPolicy>
     </appender>
 
+    <!-- Loki용 전체 애플리케이션 로그 (Promtail이 수집) -->
+    <appender name="LOKI_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/application-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
     <!-- 개발 환경(dev): 콘솔 + 파일 모두 -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="STDOUT"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="LOKI_FILE"/>
         </root>
         <logger name="com.homesweet.homesweetback.common.log.MVCLoggingAspect"
                 level="INFO" additivity="false">

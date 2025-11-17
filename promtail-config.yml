@@ -1,0 +1,44 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Spring Boot 애플리케이션 로그
+  - job_name: homesweet-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: homesweet-backend
+          app: homesweet
+          environment: local
+          __path__: /var/log/homesweet/*.log
+
+    # 로그 파싱: 날짜, 로그 레벨, 클래스명 등 추출
+    pipeline_stages:
+      # Logback 표준 포맷 파싱
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\[(?P<thread>[\w-]+)\]\s+(?P<logger>[\w\.]+)\s+:\s+(?P<message>.*)'
+
+      # 타임스탬프 파싱
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.000'
+
+      # 로그 레벨을 라벨로 추가
+      - labels:
+          level:
+          logger:
+
+      # ERROR 로그는 별도 스트림으로
+      - match:
+          selector: '{level="ERROR"}'
+          stages:
+            - labels:
+                severity: error
