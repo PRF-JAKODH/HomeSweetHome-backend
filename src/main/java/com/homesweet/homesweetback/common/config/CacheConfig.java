@@ -27,14 +27,17 @@ import java.time.Duration;
 public class CacheConfig {
 
     @Bean
-    public RedisCacheManager redisCacheManager(RedisConnectionFactory redisConnectionFactory) {
+    public RedisCacheManager redisCacheManager(
+            RedisConnectionFactory redisConnectionFactory,
+            ObjectMapper objectMapper
+    ) {
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        ObjectMapper localObjectMapper = objectMapper.copy();
+        localObjectMapper.registerModule(new JavaTimeModule());
+        localObjectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         GenericJackson2JsonRedisSerializer serializer =
-                new GenericJackson2JsonRedisSerializer(objectMapper);
+                new GenericJackson2JsonRedisSerializer(localObjectMapper);
 
         RedisCacheWriter cacheWriter =
                 RedisCacheWriter.nonLockingRedisCacheWriter(redisConnectionFactory);
