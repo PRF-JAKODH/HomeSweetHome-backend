@@ -34,7 +34,6 @@ public class ProductMockData {
                 brand,
                 price,
                 new BigDecimal("10.0"),
-                name + " 상세 설명",
                 3000,
                 ProductStatus.ON_SALE,
                 4.5,
