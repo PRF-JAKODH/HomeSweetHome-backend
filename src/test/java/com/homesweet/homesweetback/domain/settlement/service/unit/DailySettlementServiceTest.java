@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.service;
+package com.homesweet.homesweetback.domain.settlement.service.unit;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.service.DailySettlementService;
 import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.SettlementStatusUpdater;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
@@ -92,7 +93,6 @@ class DailySettlementServiceTest {
                     aggregator
             );
         }
-
         @Test
         @DisplayName("일별 데이터가 존재하면 일별 response 조회")
         void getDailySummary_Success() {

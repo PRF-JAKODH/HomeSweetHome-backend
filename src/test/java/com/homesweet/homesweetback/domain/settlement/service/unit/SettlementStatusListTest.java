@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.service;
+package com.homesweet.homesweetback.domain.settlement.service.unit;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
