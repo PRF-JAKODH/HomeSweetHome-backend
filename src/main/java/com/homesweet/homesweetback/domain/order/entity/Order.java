@@ -104,4 +104,11 @@ public class Order {
     public boolean isOrderItemEmpty() {
         return this.orderItems == null || this.orderItems.isEmpty();
     }
+
+    public  void isSameOrderUser(long userId) {
+        if (this.user.getId().equals(userId)) {
+            throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
+        }
+    }
+
 }

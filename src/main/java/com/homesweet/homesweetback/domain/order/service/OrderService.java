@@ -83,6 +83,7 @@ public class OrderService {
             // 2-2. 주문 항목 가격 계산
             //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다 v -> skuEntity에 분리함
             long discountedPrice = sku.getFinalPrice();
+            totalAmount += sku.getFinalPrice(itemDto.quantity()); //TODO: getFinalPrice 구하는 수량을 넘겨서 상품 총 가격을 받는게 맞지않을까?
 
             // 2-3. 총 주문 금액 계산 (상품 총액)
             totalAmount += (discountedPrice * itemDto.quantity());
