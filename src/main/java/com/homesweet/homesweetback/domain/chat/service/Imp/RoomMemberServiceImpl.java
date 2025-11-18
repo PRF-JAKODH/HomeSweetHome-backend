@@ -44,7 +44,7 @@ public class RoomMemberServiceImpl implements RoomMemberService {
         // 2. 멤버 받아옴
         RoomMember member = memberOptional.get();
 
-//        // 3. 퇴장 상태면 재입장 처리 (자동 재입장)
+        // 3. 퇴장 상태면 재입장 처리 (자동 재입장)
         if (member.isExit()) {
             member.join();
             log.info("재입장 처리 - roomId: {}, userId: {}", chatRoom.getId(), userId);

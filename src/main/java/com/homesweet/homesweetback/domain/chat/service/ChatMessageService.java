@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
+import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 
 public interface ChatMessageService {
 
@@ -9,7 +10,7 @@ public interface ChatMessageService {
     ChatMessageSendResponse sendMessage(Long roomId, Long senderId, String content);
 
     // 이전 메세지 조회 (채팅방 입장 or 스크롤)
-    PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size);
+    PreMessageResponse getPreMessage(Long room, Long lastMessageId, int size);
 
     boolean canSendMessage(Long userId, Long roomId);
 //

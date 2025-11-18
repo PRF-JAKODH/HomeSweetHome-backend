@@ -25,7 +25,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final AuthHandshakeInterceptor authHandshakeInterceptor;
     private final ChatPreHandler chatPreHandler;
-    private final ChannelInterceptor channelInterceptor;
 
     // 엔드포인트 등록 설정
     @Override
@@ -33,7 +32,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         config.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
-//                .setAllowedOrigins("*");
                 .addInterceptors(authHandshakeInterceptor)
                 .withSockJS();
     }
@@ -53,7 +51,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setSendBufferSizeLimit(3 * 512 * 1024);
     }
 
-    public void inboundChannel(ChannelRegistration registration) {
+    public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(chatPreHandler);
     }
 

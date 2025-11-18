@@ -18,12 +18,13 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
 
     // 최신 메세지 로드
-    Slice<ChatMessage>findByRoomIdOrderBySentAtDesc(Long roomId, Pageable pageable);
+    Slice<ChatMessage>findByRoom_IdOrderBySentAtDesc(Long roomId, Pageable pageable);
 
 
     // 추가 로드
     @Query("SELECT m FROM ChatMessage m " +
             "WHERE m.room.id = :roomId " +
+            "AND m.id < :lastMessageId " +
             "ORDER BY m.sentAt DESC")
     Slice<ChatMessage>findOlderMessages(
             @Param("roomId") Long roomId,

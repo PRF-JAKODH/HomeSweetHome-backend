@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomReques
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
+import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
@@ -95,20 +96,6 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 이전 메세지 목록 조회
-     * GET /api/v1/chat/rooms/{roomId}/messages
-     */
-    @GetMapping("/{roomId}/messages")
-    public ResponseEntity<PreMessageResponse> getPreMessageInfo(
-            @PathVariable Long roomId,
-            @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "30") int size
-    ) {
-        PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/my/individual")
     public ResponseEntity<List<IndividualRoomListResponse>> getMyIndividualRoomList(
             @AuthenticationPrincipal OAuth2UserPrincipal principal
@@ -159,5 +146,20 @@ public class RoomController {
         chatRoomService.exitRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 이전 메세지 목록 조회
+     * GET /api/v1/chat/rooms/{roomId}/messages
+     */
+    @GetMapping("/{roomId}/messages")
+    public ResponseEntity<PreMessageResponse> getPreMessageInfo(
+            @PathVariable Long roomId,
+            @RequestParam(required = false) Long lastMessageId,
+            @RequestParam(defaultValue = "30") int size
+    ) {
+        PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
+        return ResponseEntity.ok(response);
+    }
+
 
 }

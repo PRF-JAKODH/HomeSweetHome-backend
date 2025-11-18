@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.chat.service.Imp;
 
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
@@ -17,6 +19,7 @@ import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +42,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 
     /**
-     * 메시지 전송/저장 (기존 로직 활용)
+     * 메시지 전송/저장
      */
     @Override
     @Transactional
@@ -47,12 +50,12 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         // 채팅방 조회
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         // 발신자 조회
         RoomMember sender = roomMemberRepository.findByUserIdAndRoomId(senderId, roomId);
         if (sender == null || sender.isExit()) {
-            throw new IllegalStateException("채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
+            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
         }
 
         //  트랜잭션 내부에서 User 정보 미리 가져오기
@@ -72,8 +75,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         chatRoom.updateLastMessage(content, savedMessage.getSentAt());
 
-        chatRoomRepository.save(chatRoom);
-
         log.info("메시지 저장 완료 - message: {}", savedMessage);
 
         return ChatMessageSendResponse.from(
@@ -90,22 +91,20 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     * 이전 메세지 조회 (채팅방 입장 or 스크롤)
     * */
     @Override
+    @Transactional(readOnly = true)
     public PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size) {
-
-        log.info(" 메시지 조회 시작 - roomId: {}, lastMessageId: {}, size: {}",
-                roomId, lastMessageId, size);
-
+        Pageable pageable = PageRequest.of(0, size);
         Slice<ChatMessage> slice;
 
         if(lastMessageId == null) {
             // 최초 로드 시
-            slice = chatMessageRepository.findByRoomIdOrderBySentAtDesc(
-            roomId, PageRequest.of(0, size)
-                    );
+            slice = chatMessageRepository.findByRoom_IdOrderBySentAtDesc(
+            roomId, pageable
+            );
         } else {
             // 추가 로드 요청 시
             slice = chatMessageRepository.findOlderMessages(
-                    roomId, lastMessageId, PageRequest.of(0, size)
+                    roomId, lastMessageId, pageable
             );
         }
 
@@ -120,7 +119,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
 
         // 다음 페이지 존재 여부 함께 반환
-        return PreMessageResponse.of(messageDtos, slice.hasNext());
+        return PreMessageResponse.builder()
+                .messages(messageDtos)
+                .hasMore(slice.hasNext()).build();
     }
 
     @Override
