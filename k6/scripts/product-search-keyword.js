@@ -7,10 +7,10 @@ export const options = {
 };
 
 export default function () {
-    const keyword = encodeURIComponent("침대프레임");
+    const keyword = encodeURIComponent("부드러운");
 
     const response = http.get(
-        `http://localhost:8080/api/v1/products/previews?limit=12&sortType=LATEST&keyword=${keyword}`
+        `http://localhost:8080/api/v1/products/previews?size=12&keyword=${keyword}&sortType=LATEST}`
     );
 
     check(response, {
