@@ -26,73 +26,6 @@ public class MonthlySettlementRepositoryImpl implements CustomMonthlySettlementR
     @Override
     @Transactional
     public int upsertMonthly(Long userId, Short year, Byte month, SettlementTotals totals) {
-        // 1) weekly SUM 조회
-//        Tuple sums = jpaQueryFactory
-//                .select(
-//                        w.totalSales.sum().coalesce(BigDecimal.ZERO),
-//                        w.totalFee.sum().coalesce(BigDecimal.ZERO),
-//                        w.totalVat.sum().coalesce(BigDecimal.ZERO),
-//                        w.totalRefund.sum().coalesce(BigDecimal.ZERO),
-//                        w.totalSettlement.sum().coalesce(BigDecimal.ZERO)
-//                )
-//                .from(w)
-//                .where(
-//                        w.userId.eq(userId),
-//                        w.year.eq(year),
-//                        w.month.eq(month)
-//                )
-//                .fetchOne();
-//
-//        if (sums == null) {
-//            return 0;
-//        }
-//
-//        BigDecimal totalSales = sums.get(w.totalSales.sum().coalesce(BigDecimal.ZERO));
-//        BigDecimal totalFee = sums.get(w.totalFee.sum().coalesce(BigDecimal.ZERO));
-//        BigDecimal totalVat = sums.get(w.totalVat.sum().coalesce(BigDecimal.ZERO));
-//        BigDecimal totalRefund = sums.get(w.totalRefund.sum().coalesce(BigDecimal.ZERO));
-//        BigDecimal totalSettlement = sums.get(w.totalSettlement.sum().coalesce(BigDecimal.ZERO));
-//
-//        // 2) 기존 월 데이터 존재 여부 조회
-//        MonthlySettlement exists = jpaQueryFactory
-//                .selectFrom(m)
-//                .where(
-//                        m.userId.eq(userId),
-//                        m.year.eq(year),
-//                        m.month.eq(month)
-//                )
-//                .fetchOne();
-//
-//        // 3) INSERT
-//        if (exists == null) {
-//            MonthlySettlement newRow = MonthlySettlement.builder()
-//                    .userId(userId)
-//                    .year(year)
-//                    .month(month)
-//                    .totalSales(totalSales)
-//                    .totalFee(totalFee)
-//                    .totalVat(totalVat)
-//                    .totalRefund(totalRefund)
-//                    .totalSettlement(totalSettlement)
-//                    .build();
-//
-//            em.persist(newRow);
-//            return 1;
-//        }
-//
-//        // 4) UPDATE
-//        return (int) jpaQueryFactory.update(m)
-//                .set(m.totalSales, totalSales)
-//                .set(m.totalFee, totalFee)
-//                .set(m.totalVat, totalVat)
-//                .set(m.totalRefund, totalRefund)
-//                .set(m.totalSettlement, totalSettlement)
-//                .where(m.monthlyId.eq(exists.getMonthlyId()))
-//                .execute();
-//
-//        em.flush(); // db 반영
-//        em.clear(); // 캐시 초기화(캐시엔티티만 바라봄)
-
         Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(year, "year must not be null");
         Objects.requireNonNull(month, "month must not be null");
@@ -114,8 +47,6 @@ public class MonthlySettlementRepositoryImpl implements CustomMonthlySettlementR
         }
 
         // 1) weekly SUM 조회
-
-
         Tuple sums = jpaQueryFactory
                 .select(
                         w.totalSales.sum().coalesce(BigDecimal.ZERO),

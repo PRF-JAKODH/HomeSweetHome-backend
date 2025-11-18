@@ -45,8 +45,6 @@ public class SettlementIntegrationTest {
     private GradeRepository gradeRepository;
     @PersistenceContext
     EntityManager em;
-
-
     @Nested
     @DisplayName("성공 케이스")
     class Success {

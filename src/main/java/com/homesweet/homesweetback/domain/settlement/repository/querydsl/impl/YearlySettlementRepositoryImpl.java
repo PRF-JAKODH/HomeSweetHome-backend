@@ -24,6 +24,7 @@ public class YearlySettlementRepositoryImpl implements CustomYearlySettlementRep
     private final QYearlySettlement y = QYearlySettlement.yearlySettlement;
     private final EntityManager em;
 
+    @Override
     @Transactional
     public int upsertYearly(Long userId, Short year, SettlementTotals totals) {
         Long count = jpaQueryFactory

@@ -32,7 +32,6 @@ public class SettlementScheduler {
     private static final Logger log = LogManager.getLogger(SettlementScheduler.class);
     private final UserRepository userRepository;
     private final DailySettlementService dailySettlementService;
-    private final DailySettlementRepository dailySettlementRepository;
     private final WeeklySettlementService weeklySettlementService;
     private final MonthlySettlementService monthlySettlementService;
     private final YearlySettlementService yearlySettlementService;
