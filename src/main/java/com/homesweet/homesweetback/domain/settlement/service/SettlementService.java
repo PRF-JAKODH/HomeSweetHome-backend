@@ -34,20 +34,10 @@ public class SettlementService {
     private final SettlementCalculator settlementCalculator;
     private final ExtractedSeller extractedSeller;
     private final CustomSettlementRepository customSettlementRepository;
-    // 정산 생성 스케줄러
-
-
     // TODO: 결제에서 받지말고 한번에 처리하게끔 구조를 변경
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
     public void createSettlement(Order order) {
-//        ZoneId KST = ZoneId.of("Asia/Seoul");
-//        LocalDateTime cutoffTime = LocalDateTime.now(KST);
-//        List<Order> unsettledOrders = settlementRepository.findUnSettlementOrders(OrderStatus.COMPLETED, cutoffTime);
-//
-//        // 검증
-//        settlementValidator.validateUnsettledOrders(unsettledOrders);
-
         // 검증
         settlementValidator.validateOrder(order);
 

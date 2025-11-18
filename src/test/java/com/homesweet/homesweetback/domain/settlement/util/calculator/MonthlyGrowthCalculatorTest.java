@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("전월 대비 증감률 계산")
 class MonthlyGrowthCalculatorTest {
-
     @InjectMocks
     private MonthlyGrowthCalculator monthlyGrowthCalculator;
 
@@ -23,7 +22,7 @@ class MonthlyGrowthCalculatorTest {
     @DisplayName("성공 케이스")
     class Success {
         @Test
-        @DisplayName("[성공] 증가율 계산 - 정상 증가율")
+        @DisplayName("증가율 계산 - 정상 증가율")
         void growthCalculate_success_normalIncrease() {
             BigDecimal prev = BigDecimal.valueOf(100);
             BigDecimal curr = BigDecimal.valueOf(150);
@@ -33,7 +32,7 @@ class MonthlyGrowthCalculatorTest {
             assertThat(result).isEqualTo(50.0);
         }
         @Test
-        @DisplayName("[성공] 감소율 계산 - 음수 증가율 반환")
+        @DisplayName("감소율 계산 - 음수 증가율 반환")
         void growthCalculate_success_negativeGrowth() {
             BigDecimal prev = BigDecimal.valueOf(200);
             BigDecimal curr = BigDecimal.valueOf(100);
@@ -43,7 +42,7 @@ class MonthlyGrowthCalculatorTest {
             assertThat(result).isEqualTo(-50.0);
         }
         @Test
-        @DisplayName("[성공] 증가율 0% (변화 없음)")
+        @DisplayName("증가율 0% (변화 없음)")
         void growthCalculate_success_zeroGrowth() {
             BigDecimal prev = BigDecimal.valueOf(100);
             BigDecimal curr = BigDecimal.valueOf(100);
@@ -53,7 +52,7 @@ class MonthlyGrowthCalculatorTest {
             assertThat(result).isEqualTo(0.0);
         }
         @Test
-        @DisplayName("[성공] prevTotal = null → 증가율 0.0")
+        @DisplayName("prevTotal = null → 증가율 0.0")
         void growthCalculate_success_prevNull() {
             BigDecimal curr = BigDecimal.valueOf(100);
 
@@ -63,7 +62,7 @@ class MonthlyGrowthCalculatorTest {
         }
 
         @Test
-        @DisplayName("[성공] prevTotal = 0 → 증가율 0.0")
+        @DisplayName("prevTotal = 0 → 증가율 0.0")
         void growthCalculate_success_prevZero() {
             BigDecimal prev = BigDecimal.ZERO;
             BigDecimal curr = BigDecimal.valueOf(100);

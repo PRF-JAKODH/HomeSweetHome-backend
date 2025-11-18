@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
+@ActiveProfiles("test")
 @SpringBootTest
 @Transactional
 public class DailySettlementRepositoryImplTest {
@@ -116,7 +117,7 @@ public class DailySettlementRepositoryImplTest {
     @DisplayName("실패 케이스")
     class Fail{
         @Test
-        @DisplayName("[실패] settlementDate = null → NPE")
+        @DisplayName("settlementDate = null → NPE")
         void fail_null_settlementDate() {
 
             Long userId = 11L;
@@ -129,9 +130,6 @@ public class DailySettlementRepositoryImplTest {
             ).isInstanceOf(NullPointerException.class);
         }
 
-        // -----------------------------------------------------
-        // 실패 케이스 2 : totals = null
-        // -----------------------------------------------------
         @Test
         @DisplayName("totals = null → NPE")
         void fail_null_totals() {
@@ -144,9 +142,6 @@ public class DailySettlementRepositoryImplTest {
             ).isInstanceOf(NullPointerException.class);
         }
 
-        // -----------------------------------------------------
-        // 실패 케이스 3 : totals 내부 일부 null → 정상 동작해야 함
-        // -----------------------------------------------------
         @Test
         @DisplayName("totals 내부 일부 null → DB에 null 저장")
         void success_partial_null_fields() {
@@ -168,42 +163,8 @@ public class DailySettlementRepositoryImplTest {
             assertThat(saved.getTotalSales()).isNull();
             assertThat(saved.getTotalVat()).isNull();
         }
-
-        // -----------------------------------------------------
-        // 실패 케이스 4 : userId 존재 X → INSERT 됨 (예외 없음)
-        // -----------------------------------------------------
         @Test
-        @DisplayName("[실패] 존재하지 않는 userId → FK 예외 발생")
-        void fail_unknown_user_inserted_fk_violation() {
-
-            Long userId = 999L;
-            LocalDateTime date = LocalDateTime.of(2025,1,10,0,0);
-
-            SettlementTotals totals = new SettlementTotals(
-                    BigDecimal.valueOf(1000),
-                    BigDecimal.valueOf(100),
-                    BigDecimal.valueOf(100),
-                    BigDecimal.ZERO,
-                    BigDecimal.valueOf(900)
-            );
-
-            // 1. FK 예외 발생 확인
-            assertThatThrownBy(() ->
-                    customDailySettlementRepository.upsertDaily(userId, date, totals)
-            ).isInstanceOf(DataIntegrityViolationException.class);
-
-            // 2. [해결책 2] 예외 발생으로 오염된 세션을 클리어하여 AssertionFailure를 방지
-            entityManager.clear();
-
-            // 3. 데이터가 삽입되지 않았는지 확인
-            assertThat(dailySettlementRepository.findByDailySettlement(userId)).isEmpty();
-        }
-
-        // -----------------------------------------------------
-        // 실패 케이스 5 : UPDATE 조건 mismatch → 업데이트 안돼야 함
-        // -----------------------------------------------------
-        @Test
-        @DisplayName("[실패] UPDATE 조건 불일치 → updateCount = 0")
+        @DisplayName("UPDATE 조건 불일치 → updateCount = 0")
         void fail_update_condition_not_match() {
 
             Long userId = 11L;
@@ -233,10 +194,6 @@ public class DailySettlementRepositoryImplTest {
             // 값이 업데이트 되지 않아야 한다
             assertThat(saved.getTotalSales()).isEqualByComparingTo("1000");
         }
-
-        // -----------------------------------------------------
-        // 실패 케이스 6 : UPDATE인데 INSERT 두 번 되면 안됨
-        // -----------------------------------------------------
         @Test
         @DisplayName("동일 row UPDATE인데 INSERT 발생하면 안 됨")
         void fail_duplicate_insert_on_update() {

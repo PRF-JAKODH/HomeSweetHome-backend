@@ -7,7 +7,6 @@ import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -81,5 +79,4 @@ public class ExtractedSellerTest {
                     .hasMessage(ErrorCode.ORDER_ITEMS_EMPTY.getMessage());
         }
     }
-
 }

@@ -65,7 +65,7 @@ class YearlyDateRangeCalculatorTest {
     }
     @Nested
     @DisplayName("실패 케이스")
-    class Failure{
+    class Fail{
         @Test
         @DisplayName("startDate 가 null이면 NPE 발생")
         void calculate_fail_startDate_null() {
