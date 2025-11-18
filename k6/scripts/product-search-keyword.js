@@ -2,16 +2,8 @@ import http from "k6/http";
 import { check } from "k6";
 
 export const options = {
-    batchPerHost: 10,
-    scenarios: {
-        category_scenario: {
-            executor: "shared-iterations",
-            startTime: "0s",
-            vus: 10,
-            iterations: 5000,
-            maxDuration: "180s",
-        },
-    },
+    vus: 1000,
+    duration: "120s"
 };
 
 export default function () {
