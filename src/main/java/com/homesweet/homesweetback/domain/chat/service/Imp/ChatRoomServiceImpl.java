@@ -252,8 +252,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
 
-
-
     /**
      * 채팅방 퇴장 (사용자 입장)
      */
