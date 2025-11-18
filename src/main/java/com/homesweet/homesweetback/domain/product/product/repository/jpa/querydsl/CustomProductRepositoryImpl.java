@@ -471,7 +471,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 판매 중지 상품은 조회되면 안 된다
     private BooleanExpression buildStatusCondition(QProductEntity product) {
-        return product.status.eq(ProductStatus.ON_SALE);
+        return product.status.ne(ProductStatus.SUSPENDED);
     }
 
     // 검색 조건 (제품명 or 브랜드)
@@ -507,27 +507,5 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     .desc();
             default -> product.createdAt.desc();
         };
-    }
-
-    private ProductPreviewResponse toProductPreviewResponse(Object[] row) {
-        return new ProductPreviewResponse(
-                ((Number) row[0]).longValue(),
-                ((Number) row[1]).longValue(),
-                ((Number) row[2]).longValue(),
-                (String) row[3],
-                (String) row[4],
-                (String) row[5],
-                ((Number) row[6]).intValue(),
-                row[7] != null
-                        ? new BigDecimal(row[7].toString())
-                        : BigDecimal.ZERO,
-                ((Number) row[8]).intValue(),
-                ProductStatus.valueOf((String) row[9]),
-                row[10] != null ? ((Number) row[10]).doubleValue() : 0.0,
-                row[11] != null ? ((Number) row[11]).longValue() : 0L,
-
-                row[12] != null ? ((Timestamp) row[12]).toLocalDateTime() : null,
-                row[13] != null ? ((Timestamp) row[13]).toLocalDateTime() : null
-        );
     }
 }

@@ -2,15 +2,15 @@ import http from "k6/http";
 import { check } from "k6";
 
 export const options = {
-    vus: 100,
+    vus: 1000,
     duration: "120s"
 };
 
 export default function () {
-    const keyword = encodeURIComponent("선반");
+    const keyword = encodeURIComponent("침대프레임");
 
     const response = http.get(
-        `http://localhost:8080/api/v1/products/previews?size=12&keyword=${keyword}&sortType=LATEST`
+        `http://localhost:8080/api/v1/products/previews?limit=12&sortType=LATEST&keyword=${keyword}`
     );
 
     check(response, {
