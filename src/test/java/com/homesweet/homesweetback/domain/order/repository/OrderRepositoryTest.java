@@ -9,8 +9,6 @@ import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
-import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.impl.ProductCategoryRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
@@ -20,7 +18,6 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.Product
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
-import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 
 

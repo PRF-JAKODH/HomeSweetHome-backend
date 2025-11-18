@@ -44,10 +44,15 @@ public class TossPaymentsAdapter {
      */
     @CircuitBreaker(name = "toss-payments", fallbackMethod = "fallbackConfirmPayment") // 서킷 브레이커 적용
     public Map<String, Object> confirmPaymentToToss(PaymentConfirmRequest dto) {
+//        TODO: 부하테스트 할 때 목킹서버를 따로 만들지 않는 경우, 스레드에 시간초를
+//        Thread.sleep(2000);
+//        return null;
 
         HttpHeaders headers = createAuthHeaders(); // 1. 헤더 생성 (공통 로직 분리)
         HttpEntity<PaymentConfirmRequest> requestEntity = new HttpEntity<>(dto, headers);
 
+        //TODO: HTTP 호출 부분을 따로 클래스나 유틸로 뺴는게 좋다!
+        //TODO: 만약 1번했는데 실패 하면 어떻게할것인지?(재처리)
         try {
             // 2. API 호출
             Map<String, Object> tossResponse = restTemplate.postForObject(

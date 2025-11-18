@@ -52,7 +52,9 @@ public class PaymentService {
         log.debug(order.getTotalAmount().toString());
         log.debug(dto.amount().toString());
 
+        //TODO: 현재 아키텍쳐 잘 짜셧는데, 도메인에 핏한 기능들이 결제쪽에서 처리하는게 맞을까?
         // 2. (보안) 요청한 유저(userId)가 주문한 유저가 맞는지 확인
+//        order.isSameOrderUser(userId);
         if (!order.getUser().getId().equals(userId)) {
             throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
         }
@@ -74,6 +76,7 @@ public class PaymentService {
         try{
             tossResponse = tossPaymentsAdapter.confirmPaymentToToss(dto);
         } catch (Exception e) {
+            //TODO: 환불 재고롤백은 잇으나, 예외에 대한 재고롤백이 없네요
             paymentProcessor.processPaymentFailDB(order);
             throw e;
         }
