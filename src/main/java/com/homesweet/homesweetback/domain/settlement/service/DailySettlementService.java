@@ -89,6 +89,7 @@ public class DailySettlementService {
                                 s.getSettlementAmount()
                         )
                 );
+
         // 4. upsert (저장)
         dailyTotalsMap.forEach((date, totals) -> {
             settlementSaver.saveDaily(userId, date, totals);

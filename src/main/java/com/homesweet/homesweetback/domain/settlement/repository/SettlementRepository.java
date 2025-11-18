@@ -7,7 +7,6 @@ import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 
-import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,7 +16,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -100,17 +98,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
         AND o.orderedAt >= :startDate AND o.orderedAt < :endDate
     """)
     long countAllByOrderedAt(Long userId, LocalDateTime startDate, LocalDateTime endDate);
-
-    // 주문 취소시 환불금액 생성 및 정산 금액 변경
-//    @Modifying
-//    @Query("""
-//    UPDATE Settlement s
-//    SET s.refundAmount = s.refundAmount + :refundAmount,
-//        s.settlementAmount = (s.salesAmount + s.vat) - s.fee - (s.refundAmount + :refundAmount),
-//        s.settlementStatus = 'CANCELED'
-//    WHERE s.order.id =:orderId
-//    """)
-//    int applyRefundAmount(@Param("orderId") Long orderId, @Param("refundAmount") BigDecimal refundAmount);
 
     Optional<Settlement>findByOrderId(@Param("orderId")Long orderId);
 

@@ -23,21 +23,15 @@ public class WeeklySettlement {
 
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "year_value")
     private Short year;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "month_value")
     private Byte month;
 
     private LocalDate weekStartDate;
 
     private LocalDate weekEndDate;
-
-//    @Column(name = "daily_sales", precision = 15, scale = 2)
-//    private BigDecimal dailySales;
-//
-//    @Column(name = "weekly_sales", precision = 15, scale = 2)
-//    private BigDecimal weeklySales;
 
     @Column(name = "total_sales", precision = 15, scale = 2)
     private BigDecimal totalSales;
