@@ -1,8 +1,5 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
-import com.homesweet.homesweetback.domain.auth.entity.QUser;
-import com.homesweet.homesweetback.domain.grade.entity.QGrade;
-import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
@@ -431,7 +428,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 판매 중지 상품은 조회되면 안 된다
     private BooleanExpression buildStatusCondition(QProductEntity product) {
-        return product.status.ne(ProductStatus.SUSPENDED);
+        return product.status.eq(ProductStatus.ON_SALE);
     }
 
     // 검색 조건 (제품명 or 브랜드)
