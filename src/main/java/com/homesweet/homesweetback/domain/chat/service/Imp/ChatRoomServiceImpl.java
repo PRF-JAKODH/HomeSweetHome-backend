@@ -42,7 +42,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final ImageUploader s3ImageUploader;
     private final RoomMemberService roomMemberService;
 
-
     /**
      * 개인 채팅방 생성
      */
@@ -258,30 +257,26 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     @Transactional
     @Override
     public void exitRoom(Long userId, Long roomId) {
-
         log.info("exitRoom called: userId={}, roomId={}", userId, roomId);
 
-        Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(roomId, userId);
+        // 1. 방 존재 여부 먼저 확인
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        if (memberOptional.isEmpty()) {
-            log.warn("이미 방에서 나간 사용자입니다. userId={}, roomId={}", userId, roomId);
-            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
-        }
+        // 2. 멤버 확인
+        RoomMember member = roomMemberRepository.findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> {
+                    log.warn("이미 방에서 나간 사용자입니다. userId={}, roomId={}", userId, roomId);
+                    return new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
+                });
 
-        RoomMember member = memberOptional.get();
+        // 3. 퇴장 처리
         member.exit();
 
-        Optional<ChatRoom> roomOptional = chatRoomRepository.findById(roomId);
-        if (roomOptional.isEmpty()) {
-            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
-        }
-
-        ChatRoom room = roomOptional.get();
-
-        if (room.getType().equals(ChatRoomType.GROUP)) {
+        // 4. 그룹 채팅방인 경우 빈 방 확인
+        if (room.getType() == ChatRoomType.GROUP) {
             checkAndDeleteEmptyGroupRoom(room, roomId);
         }
-
     }
 
     /**

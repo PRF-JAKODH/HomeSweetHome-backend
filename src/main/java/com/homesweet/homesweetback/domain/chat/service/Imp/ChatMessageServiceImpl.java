@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.chat.service.Imp;
 
 
+import com.homesweet.homesweetback.common.exception.BusinessException;
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
@@ -48,12 +50,12 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         // 채팅방 조회
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         // 발신자 조회
         RoomMember sender = roomMemberRepository.findByUserIdAndRoomId(senderId, roomId);
         if (sender == null || sender.isExit()) {
-            throw new IllegalStateException("채팅방 멤버가 아니거나 이미 퇴장한 사용자입니다.");
+            throw new BusinessException(ErrorCode.ROOM_MEMBER_NOT_FOUND);
         }
 
         //  트랜잭션 내부에서 User 정보 미리 가져오기
@@ -73,8 +75,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         chatRoom.updateLastMessage(content, savedMessage.getSentAt());
 
-        chatRoomRepository.save(chatRoom);
-
         log.info("메시지 저장 완료 - message: {}", savedMessage);
 
         return ChatMessageSendResponse.from(
@@ -91,6 +91,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     * 이전 메세지 조회 (채팅방 입장 or 스크롤)
     * */
     @Override
+    @Transactional(readOnly = true)
     public PreMessageResponse getPreMessage(Long roomId, Long lastMessageId, int size) {
         Pageable pageable = PageRequest.of(0, size);
         Slice<ChatMessage> slice;

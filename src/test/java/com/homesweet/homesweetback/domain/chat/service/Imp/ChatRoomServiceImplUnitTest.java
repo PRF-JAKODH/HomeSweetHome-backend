@@ -81,6 +81,20 @@ public class ChatRoomServiceImplUnitTest {
     @Mock
     private RoomMember roomMember;
 
+    private Long userId;
+    private Long roomId;
+    private RoomMember mockMember;
+    private ChatRoom mockRoom;
+
+    @BeforeEach
+    void setUp() {
+        userId = 1L;
+        roomId = 100L;
+
+        mockMember = mock(RoomMember.class);
+        mockRoom = mock(ChatRoom.class);
+    }
+
     @Nested
     @DisplayName("개인 채팅방 생성 테스트")
     class createOrGetIndividualRoom {
@@ -830,12 +844,125 @@ public class ChatRoomServiceImplUnitTest {
                 verify(chatMessageRepository, times(1)).findTopByRoomOrderBySentAtDesc(room);
                 verify(chatRoomMapper, times(1)).toGroupRoomListDto(room, null, 2L);
             }
-
         }
-
-
     }
 
+    @Nested
+    @DisplayName("채팅방 퇴장 테스트")
+    class exitRoom {
+
+            @Test
+            @DisplayName("[성공] 1. 정상적으로 개인 채팅방 퇴장")
+            void exitRoom_individual_success() {
+                // Given
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(mockRoom));
+                given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                        .willReturn(Optional.of(mockMember));
+                given(mockRoom.getType()).willReturn(ChatRoomType.INDIVIDUAL);
+
+                // When
+                service.exitRoom(userId, roomId);
+
+                // Then
+                verify(roomMemberRepository).findByRoomIdAndUserId(roomId, userId);
+                verify(mockMember).exit(); // exit() 호출 확인
+                verify(chatRoomRepository).findById(roomId);
+                verify(mockRoom).getType();
+
+                // 그룹 채팅방이 아니므로 활성 멤버 조회 안 함
+                verify(roomMemberRepository, never()).findByRoom_IdAndIsExitFalse(anyLong());
+            }
+
+            @Test
+            @DisplayName("[성공] 2. 그룹 채팅방 퇴장 - 활성 멤버가 남아있는 경우")
+            void exitRoom_group_withActiveMembers() {
+                // Given
+                RoomMember otherMember = mock(RoomMember.class);
+                List<RoomMember> activeMembers = List.of(otherMember);
+
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(mockRoom));
+                given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                        .willReturn(Optional.of(mockMember));
+                given(mockRoom.getType()).willReturn(ChatRoomType.GROUP);
+                given(roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId))
+                        .willReturn(activeMembers);
+
+                // When
+                service.exitRoom(userId, roomId);
+
+                // Then
+                verify(mockMember).exit();
+                verify(roomMemberRepository).findByRoom_IdAndIsExitFalse(roomId);
+                verify(mockRoom, never()).softDelete(); // 활성 멤버가 있으므로 삭제 안 함
+            }
+
+            @Test
+            @DisplayName("[성공] 3. 그룹 채팅방 퇴장 - 마지막 멤버 퇴장 시 방 삭제")
+            void exitRoom_group_lastMemberExit_roomDeleted() {
+                // Given
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(mockRoom));
+                given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                        .willReturn(Optional.of(mockMember));
+                given(mockRoom.getType()).willReturn(ChatRoomType.GROUP);
+                given(roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId))
+                        .willReturn(Collections.emptyList()); // 활성 멤버 없음
+
+                // When
+                service.exitRoom(userId, roomId);
+
+                // Then
+                verify(mockMember).exit();
+                verify(roomMemberRepository).findByRoom_IdAndIsExitFalse(roomId);
+                verify(mockRoom).softDelete(); // 활성 멤버가 없으므로 방 삭제
+            }
+
+            @Test
+            @DisplayName("[성공] 4. 존재하지 않는 채팅방 - 예외 발생")
+            void exitRoom_roomNotFound_throwException() {
+                // Given
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.empty());
+
+                // When & Then
+                assertThatThrownBy(() -> service.exitRoom(userId, roomId))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_NOT_FOUND);
+
+                // 방이 없으므로 멤버 조회도 안 함
+                verify(roomMemberRepository, never()).findByRoomIdAndUserId(anyLong(), anyLong());
+                verify(mockMember, never()).exit();
+            }
+
+            @Test
+            @DisplayName("5. 채팅방 멤버가 아님 - 예외 발생")
+            void exitRoom_memberNotFound_throwException() {
+                // Given
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(mockRoom));
+                given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                        .willReturn(Optional.empty());
+
+                // When & Then
+                assertThatThrownBy(() -> service.exitRoom(userId, roomId))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_MEMBER_NOT_FOUND);
+
+                verify(mockMember, never()).exit();
+            }
+
+            @Test
+            @DisplayName("6. 이미 퇴장한 사용자 - 예외 발생")
+            void exitRoom_alreadyExited_throwException() {
+                // Given
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(mockRoom));
+                given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                        .willReturn(Optional.empty()); // 이미 퇴장하여 조회 안 됨
+
+                // When & Then
+                assertThatThrownBy(() -> service.exitRoom(userId, roomId))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_MEMBER_NOT_FOUND);
+            }
+
+    }
 
 }
 
