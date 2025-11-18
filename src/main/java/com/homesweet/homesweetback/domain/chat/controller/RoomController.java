@@ -147,4 +147,19 @@ public class RoomController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 이전 메세지 목록 조회
+     * GET /api/v1/chat/rooms/{roomId}/messages
+     */
+    @GetMapping("/{roomId}/messages")
+    public ResponseEntity<PreMessageResponse> getPreMessageInfo(
+            @PathVariable Long roomId,
+            @RequestParam(required = false) Long lastMessageId,
+            @RequestParam(defaultValue = "30") int size
+    ) {
+        PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
+        return ResponseEntity.ok(response);
+    }
+
+
 }

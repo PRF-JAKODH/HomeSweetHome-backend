@@ -49,21 +49,6 @@ public class ChatController {
         messagingTemplate.convertAndSend(destination, savedMessage);
     }
 
-
-    /**
-     * 이전 메세지 목록 조회
-     * GET /api/v1/chat/rooms/{roomId}/messages
-     */
-    @GetMapping("/{roomId}/messages")
-    public ResponseEntity<PreMessageResponse> getPreMessageInfo(
-            @PathVariable Long roomId,
-            @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "30") int size
-    ) {
-        PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
-        return ResponseEntity.ok(response);
-    }
-
     /**
      * 채팅방 메시지 읽음 처리
      */
