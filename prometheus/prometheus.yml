@@ -18,4 +18,4 @@ scrape_configs:
   - job_name: 'spring-actuator'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['homesweet-backend:8080']
+      - targets: ['localhot:8080']
