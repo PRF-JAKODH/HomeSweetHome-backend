@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
-import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
@@ -53,58 +52,23 @@ import static com.homesweet.homesweetback.domain.product.review.repository.jpa.e
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
-    private final ProductCategoryRepository categoryRepository;
+    private final CacheCategory cacheCategory;
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("""
-        SELECT
-            p.product_id,
-            p.category_id,
-            p.user_id AS seller_id,
-            p.name,
-            p.image_url,
-            p.brand,
-            p.base_price,
-            p.discount_rate,
-            p.shipping_price,
-            p.status,
+        QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
 
-            (
-                SELECT COALESCE(AVG(r.rating), 0)
-                FROM products_reviews r
-                WHERE r.product_id = p.product_id
-            ) AS average_rating,
+        List<Long> allSubCategoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
 
-            (
-                SELECT COALESCE(COUNT(r2.review_id), 0)
-                FROM products_reviews r2
-                WHERE r2.product_id = p.product_id
-            ) AS review_count,
+        BooleanExpression condition = Expressions.allOf(
+                buildKeywordCondition(product, keyword),
+                buildCursorCondition(product, cursorId, sortType),
+                buildCategoryCondition(product, allSubCategoryIds),
+                buildStatusCondition(product)
+        );
 
-            p.created_at,
-            p.updated_at
-
-        FROM products p
-        WHERE 1 = 1
-        """);
-
-        // 1) 키워드(fulltext) 조건
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append("""
-                AND MATCH(p.name, p.brand, p.description)
-                    AGAINST(:keyword IN BOOLEAN MODE)
-            """);
-        }
-
-        // 2) 카테고리(서브카테고리 포함) 조건
-        List<Long> categoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
-
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            String inClause = categoryIds.stream()
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(","));
+        OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
         return queryFactory
                 .select(Projections.constructor(ProductPreviewResponse.class,
@@ -116,7 +80,6 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         product.brand,
                         product.basePrice,
                         product.discountRate,
-                        product.description,
                         product.shippingPrice,
                         product.status,
                         JPAExpressions
@@ -471,7 +434,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 판매 중지 상품은 조회되면 안 된다
     private BooleanExpression buildStatusCondition(QProductEntity product) {
-        return product.status.ne(ProductStatus.SUSPENDED);
+        return product.status.eq(ProductStatus.ON_SALE);
     }
 
     // 검색 조건 (제품명 or 브랜드)
@@ -480,8 +443,16 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             return null;
         }
 
-        return product.name.containsIgnoreCase(keyword)
-                .or(product.brand.containsIgnoreCase(keyword));
+        NumberTemplate<Double> score = Expressions.numberTemplate(
+                Double.class,
+                "MATCH({0}, {1}, {2}) AGAINST ({3} IN BOOLEAN MODE)",
+                product.name,
+                product.brand,
+                product.description,
+                keyword
+        );
+
+        return score.gt(0);
     }
 
     // 커서 조건 (정렬 방향)
@@ -507,5 +478,27 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     .desc();
             default -> product.createdAt.desc();
         };
+    }
+
+    private ProductPreviewResponse toProductPreviewResponse(Object[] row) {
+        return new ProductPreviewResponse(
+                ((Number) row[0]).longValue(),
+                ((Number) row[1]).longValue(),
+                ((Number) row[2]).longValue(),
+                (String) row[3],
+                (String) row[4],
+                (String) row[5],
+                ((Number) row[6]).intValue(),
+                row[7] != null
+                        ? new BigDecimal(row[7].toString())
+                        : BigDecimal.ZERO,
+                ((Number) row[8]).intValue(),
+                ProductStatus.valueOf((String) row[9]),
+                row[10] != null ? ((Number) row[10]).doubleValue() : 0.0,
+                row[11] != null ? ((Number) row[11]).longValue() : 0L,
+
+                row[12] != null ? ((Timestamp) row[12]).toLocalDateTime() : null,
+                row[13] != null ? ((Timestamp) row[13]).toLocalDateTime() : null
+        );
     }
 }
