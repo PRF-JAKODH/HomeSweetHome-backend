@@ -5,8 +5,8 @@ import { Counter } from "k6/metrics";
 export const errors = new Counter("errors");
 
 export const options = {
-    vus: 10000,
-    duration: "120s"
+    vus: 500,
+    duration: "300s"
 };
 
 export default function () {
