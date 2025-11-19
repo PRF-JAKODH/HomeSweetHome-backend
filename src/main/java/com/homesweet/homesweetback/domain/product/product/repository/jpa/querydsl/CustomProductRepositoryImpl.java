@@ -53,51 +53,103 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
     private final CacheCategory cacheCategory;
+    private final EntityManager em;
 
     @Override
     public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
-        QProductEntity product = productEntity;
-        QProductReviewEntity review = productReviewEntity;
+        StringBuilder sql = new StringBuilder();
+        sql.append("""
+        SELECT
+            p.product_id,
+            p.category_id,
+            p.user_id AS seller_id,
+            p.name,
+            p.image_url,
+            p.brand,
+            p.base_price,
+            p.discount_rate,
+            p.shipping_price,
+            p.status,
 
-        List<Long> allSubCategoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
+            (
+                SELECT COALESCE(AVG(r.rating), 0)
+                FROM products_reviews r
+                WHERE r.product_id = p.product_id
+            ) AS average_rating,
 
-        BooleanExpression condition = Expressions.allOf(
-                buildKeywordCondition(product, keyword),
-                buildCursorCondition(product, cursorId, sortType),
-                buildCategoryCondition(product, allSubCategoryIds),
-                buildStatusCondition(product)
-        );
+            (
+                SELECT COALESCE(COUNT(r2.review_id), 0)
+                FROM products_reviews r2
+                WHERE r2.product_id = p.product_id
+            ) AS review_count,
 
-        OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
+            p.created_at,
+            p.updated_at
 
-        return queryFactory
-                .select(Projections.constructor(ProductPreviewResponse.class,
-                        product.id,
-                        product.category.id,
-                        product.seller.id,
-                        product.name,
-                        product.imageUrl,
-                        product.brand,
-                        product.basePrice,
-                        product.discountRate,
-                        product.shippingPrice,
-                        product.status,
-                        JPAExpressions
-                                .select(review.rating.avg().coalesce(0.0))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        JPAExpressions
-                                .select(review.count().coalesce(0L))
-                                .from(review)
-                                .where(review.product.id.eq(product.id)),
-                        product.createdAt,
-                        product.updatedAt
-                ))
-                .from(product)
-                .where(condition)
-                .orderBy(orderSpecifier)
-                .limit(limit + 1)
-                .fetch();
+        FROM products p
+        WHERE 1 = 1
+        """);
+
+        // 1) 키워드(fulltext) 조건
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append("""
+                AND MATCH(p.name, p.brand, p.description)
+                    AGAINST(:keyword IN BOOLEAN MODE)
+            """);
+        }
+
+        // 2) 카테고리(서브카테고리 포함) 조건
+        List<Long> categoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            String inClause = categoryIds.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+
+            sql.append(" AND p.category_id IN (" + inClause + ") ");
+        }
+
+        // 3) 상태 조건
+        sql.append("""
+        AND p.status = 'ON_SALE'
+        """);
+
+        // 4) 커서 기반 페이징
+        if (cursorId != null) {
+            sql.append("""
+            AND p.product_id < :cursorId
+            """);
+        }
+
+        // 5) 정렬 조건
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" ORDER BY p.created_at DESC ");
+        } else {
+            // sortType 기준 정렬
+            switch (sortType) {
+                case PRICE_LOW -> sql.append(" ORDER BY p.base_price ASC ");
+                case PRICE_HIGH -> sql.append(" ORDER BY p.base_price DESC ");
+                case POPULAR -> sql.append(" ORDER BY p.created_at DESC "); // 추후 score 기반으로 변경 가능
+                default -> sql.append(" ORDER BY p.created_at DESC ");
+            }
+        }
+
+        sql.append(" LIMIT :limit ");
+
+        Query query = em.createNativeQuery(sql.toString())
+                .setParameter("limit", limit + 1);
+
+        if (keyword != null && !keyword.isBlank()) {
+            query.setParameter("keyword", keyword);
+        }
+        if (cursorId != null) {
+            query.setParameter("cursorId", cursorId);
+        }
+
+        List<Object[]> rows = query.getResultList();
+        return rows.stream()
+                .map(this::toProductPreviewResponse)
+                .toList();
     }
 
     @Override
