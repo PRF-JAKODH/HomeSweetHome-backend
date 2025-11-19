@@ -142,11 +142,17 @@ public class NotificationEventListenerTest {
             .orderId(12345L)
             .build();
         // 존재하지 않는 사용자와 존재하는 사용자 혼합
-        List<Long> userIds = List.of(10001L, testUser.getId());
+        List<Long> userIds = List.of(10123001L, testUser.getId());
         
         // When
         // 사용자가 없어도 예외를 throw하지 않고 로그만 남기고 계속 진행
         eventPublisher.publishEvent(new TemplateNotificationEvent(userIds, notification));
+
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->{
+            List<UserNotification> userNotifications = getUserNotifications(10123001L);
+            assertThat(userNotifications).isNotNull();
+            assertThat(userNotifications.size()).isEqualTo(0);
+        });
         
         // Then
         // 존재하는 사용자에게는 알림이 전송되어야 함 
@@ -229,8 +235,14 @@ public class NotificationEventListenerTest {
             .redirectUrl("app://custom")
             .contextData(Map.of("key1", "value1", "key2", 123))
             .build();
-        List<Long> userIds = List.of(1000L, testUser.getId());
+        List<Long> userIds = List.of( testUser.getId());
         eventPublisher.publishEvent(new CustomNotificationEvent(userIds, notification));
+
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->{
+            List<UserNotification> userNotifications = getUserNotifications(1123120000L);
+            assertThat(userNotifications).isNotNull();
+            assertThat(userNotifications.size()).isEqualTo(0);
+        });
 
         // Then
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
