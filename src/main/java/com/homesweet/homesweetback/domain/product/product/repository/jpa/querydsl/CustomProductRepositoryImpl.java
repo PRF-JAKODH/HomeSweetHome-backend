@@ -140,7 +140,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .setParameter("limit", limit + 1);
 
         if (keyword != null && !keyword.isBlank()) {
-            query.setParameter("keyword", keyword);
+            query.setParameter("keyword", keyword + "*");
         }
         if (cursorId != null) {
             query.setParameter("cursorId", cursorId);
