@@ -7,7 +7,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
@@ -24,10 +26,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -446,6 +452,365 @@ class ChatMessageServiceUnitTest {
             assertThat(json).containsPattern("\"isRead\":\\s*(true|false)");     // Boolean
 
             System.out.println("전체 필드 직렬화 검증 완료");
+        }
+    }
+
+    @Nested
+    @DisplayName("이전 메세지 조회 테스트")
+    class GetPreMessageTest {
+
+        @Test
+        @DisplayName("[성공] 최초 로드 시 메시지를 조회한다")
+        void getPreMessage_InitialLoad_Success() {
+            // given
+            int size = 20;
+            Pageable pageable = PageRequest.of(0, size);
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            // 실제 Entity 사용 (기존 setUp의 sender, room 활용)
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(3L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 3")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build(),
+                    ChatMessage.builder()
+                            .id(2L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 2")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime.minusMinutes(1))
+                            .build(),
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 1")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime.minusMinutes(2))
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, pageable, true);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getMessages()).hasSize(3);
+            assertThat(response.isHasMore()).isTrue();
+
+            // 메시지 순서 검증 (최신 순)
+            assertThat(response.getMessages().get(0).content()).isEqualTo("테스트 메시지 3");
+            assertThat(response.getMessages().get(1).content()).isEqualTo("테스트 메시지 2");
+            assertThat(response.getMessages().get(2).content()).isEqualTo("테스트 메시지 1");
+
+            // 사용자 정보 검증
+            assertThat(response.getMessages().get(0).senderName()).isEqualTo("맹구씨");
+            assertThat(response.getMessages().get(0).profileImageUrl())
+                    .isEqualTo("https://test.com/profile.jpg");
+
+            // 채팅방 ID 검증
+            assertThat(response.getMessages().get(0).roomId()).isEqualTo(roomId);
+
+            verify(chatMessageRepository, times(1))
+                    .findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class));
+            verify(chatMessageRepository, never())
+                    .findOlderMessages(anyLong(), anyLong(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("[성공] 추가 로드 시 이전 메시지를 조회한다")
+        void getPreMessage_AdditionalLoad_Success() {
+            // given
+            Long lastMessageId = 3L;
+            int size = 20;
+            Pageable pageable = PageRequest.of(0, size);
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(2L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 2")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build(),
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 1")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime.minusMinutes(1))
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, pageable, false);
+
+            when(chatMessageRepository.findOlderMessages(eq(roomId), eq(lastMessageId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getMessages()).hasSize(2);
+            assertThat(response.isHasMore()).isFalse();
+            assertThat(response.getMessages().get(0).content()).isEqualTo("테스트 메시지 2");
+            assertThat(response.getMessages().get(1).content()).isEqualTo("테스트 메시지 1");
+
+            verify(chatMessageRepository, times(1))
+                    .findOlderMessages(eq(roomId), eq(lastMessageId), any(Pageable.class));
+            verify(chatMessageRepository, never())
+                    .findByRoom_IdOrderBySentAtDesc(anyLong(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("[성공] 메시지가 없는 경우 빈 리스트를 반환한다")
+        void getPreMessage_NoMessages_ReturnsEmptyList() {
+            // given
+            int size = 20;
+            Pageable pageable = PageRequest.of(0, size);
+            Slice<ChatMessage> emptySlice = new SliceImpl<>(Collections.emptyList(), pageable, false);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(emptySlice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getMessages()).isEmpty();
+            assertThat(response.isHasMore()).isFalse();
+        }
+
+        @Test
+        @DisplayName("[성공] 다음 페이지가 없는 경우 hasMore가 false이다")
+        void getPreMessage_NoMorePages_HasMoreIsFalse() {
+            // given
+            int size = 20;
+            Pageable pageable = PageRequest.of(0, size);
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("마지막 메시지")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, pageable, false);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            assertThat(response.isHasMore()).isFalse();
+        }
+
+        @Test
+        @DisplayName("[성공] 요청한 size만큼만 메시지를 조회한다")
+        void getPreMessage_RespectsPageSize() {
+            // given
+            int size = 2;
+            Pageable pageable = PageRequest.of(0, size);
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(2L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 2")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build(),
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 1")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime.minusMinutes(1))
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, pageable, true);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            assertThat(response.getMessages()).hasSize(2);
+            assertThat(response.isHasMore()).isTrue();
+        }
+
+        @Test
+        @DisplayName("[검증] lastMessageId가 null일 때 초기 로드 메서드를 호출한다")
+        void getPreMessage_WhenLastMessageIdIsNull_CallsInitialLoadMethod() {
+            // given
+            int size = 10;
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, PageRequest.of(0, size), false);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            verify(chatMessageRepository, times(1))
+                    .findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class));
+            verify(chatMessageRepository, never())
+                    .findOlderMessages(anyLong(), anyLong(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("[검증] lastMessageId가 있을 때 추가 로드 메서드를 호출한다")
+        void getPreMessage_WhenLastMessageIdExists_CallsAdditionalLoadMethod() {
+            // given
+            Long lastMessageId = 10L;
+            int size = 10;
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, PageRequest.of(0, size), false);
+
+            when(chatMessageRepository.findOlderMessages(eq(roomId), eq(lastMessageId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            chatMessageService.getPreMessage(roomId, lastMessageId, size);
+
+            // then
+            verify(chatMessageRepository, times(1))
+                    .findOlderMessages(eq(roomId), eq(lastMessageId), any(Pageable.class));
+            verify(chatMessageRepository, never())
+                    .findByRoom_IdOrderBySentAtDesc(anyLong(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("[검증] DTO 변환 시 사용자 정보가 정확히 매핑된다")
+        void getPreMessage_UserInfoMappedCorrectly() {
+            // given
+            int size = 10;
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(1L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 1")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime)
+                            .build(),
+                    ChatMessage.builder()
+                            .id(2L)
+                            .room(room)
+                            .sender(sender)
+                            .content("테스트 메시지 2")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(baseTime.minusMinutes(1))
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, PageRequest.of(0, size), false);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            response.getMessages().forEach(message -> {
+                assertThat(message.senderName()).isEqualTo("맹구씨");
+                assertThat(message.profileImageUrl())
+                        .isEqualTo("https://test.com/profile.jpg");
+            });
+        }
+
+        @Test
+        @DisplayName("[검증] DTO 변환 시 모든 필드가 정확히 매핑된다")
+        void getPreMessage_AllFieldsMappedCorrectly() {
+            // given
+            int size = 10;
+            LocalDateTime sentAt = LocalDateTime.of(2024, 11, 19, 15, 30);
+
+            List<ChatMessage> messages = Arrays.asList(
+                    ChatMessage.builder()
+                            .id(100L)
+                            .room(room)
+                            .sender(sender)
+                            .content("전체 필드 테스트")
+                            .messageType(MessageType.TEXT)
+                            .sentAt(sentAt)
+                            .build()
+            );
+
+            Slice<ChatMessage> slice = new SliceImpl<>(messages, PageRequest.of(0, size), false);
+
+            when(chatMessageRepository.findByRoom_IdOrderBySentAtDesc(eq(roomId), any(Pageable.class)))
+                    .thenReturn(slice);
+
+            // when
+            PreMessageResponse response = chatMessageService.getPreMessage(roomId, null, size);
+
+            // then
+            ChatMessageDto dto = response.getMessages().get(0);
+            assertThat(dto.messageId()).isEqualTo(100L);
+            assertThat(dto.roomId()).isEqualTo(roomId);
+            assertThat(dto.senderId()).isEqualTo(sender.getId());
+            assertThat(dto.content()).isEqualTo("전체 필드 테스트");
+            assertThat(dto.sentAt()).isEqualTo(sentAt);
+            assertThat(dto.senderName()).isEqualTo("맹구씨");
+            assertThat(dto.profileImageUrl()).isEqualTo("https://test.com/profile.jpg");
         }
     }
 }
