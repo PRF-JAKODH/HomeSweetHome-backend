@@ -236,8 +236,7 @@ class PaymentServiceTest {
 
         // 4. 'Mock' Repository 행동 정의 (Stubbing)
 
-        // "orderRepository.findByIdWithDetails(1L)가 호출되면, fakeOrder를 반환해라"
-        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
 
         // "paymentRepository.findByOrder(fakeOrder)가 호출되면, fakePayment를 반환해라"
         given(paymentRepository.findByOrder(fakeOrder)).willReturn(Optional.of(fakePayment));
@@ -258,8 +257,8 @@ class PaymentServiceTest {
         // --- THEN (결과) ---
         // '행위(Behavior)' 검증
 
-        // "orderRepository.findByIdWithDetails가 '정확히 1번' 호출되었는가?"
-        verify(orderRepository, times(1)).findByIdWithDetails(orderId);
+        // "orderRepository.getByIdWithDetailsOrThrow가 '정확히 1번' 호출되었는가?"
+        verify(orderRepository, times(1)).getByIdWithDetailsOrThrow(orderId);
 
         // "paymentRepository.findByOrder가 '정확히 1번' 호출되었는가?"
         verify(paymentRepository, times(1)).findByOrder(fakeOrder);
@@ -297,10 +296,7 @@ class PaymentServiceTest {
 
         // "orderRepository.findByIdWithDetails(1L)가 호출되면,
         //  '100번 유저'가 주인인 fakeOrder를 정상 반환해라."
-        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
-
-        // (이 테스트는 paymentRepository, tossPaymentsAdapter 등이 호출되기 "전"에
-        //  실패해야 하므로, 다른 GIVEN 대본은 필요 없습니다.)
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
 
 
         // --- WHEN (실행) & THEN (결과) ---
@@ -314,7 +310,7 @@ class PaymentServiceTest {
         }).isInstanceOf(PaymentMismatchException.class)
 
                 // [THEN 2] (선택) '예외 메시지' 검증
-                .hasMessageContaining("주문 정보에 접근할 권한이 없습니다");
+                .hasMessageContaining("주문자 정보가 일치하지 않습니다.");
 
 
         // [THEN 3] (가장 중요) '행위' 검증
@@ -351,7 +347,8 @@ class PaymentServiceTest {
 
         // "orderRepository.findByIdWithDetails(1L)가 호출되면,
         //  '이미 취소된' fakeOrder를 정상 반환해라."
-        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
 
         // (이 테스트는 paymentRepository, tossPaymentsAdapter 등이 호출되기 "전"에
         //  실패해야 하므로, 다른 GIVEN 대본은 필요 없습니다.)
@@ -407,7 +404,9 @@ class PaymentServiceTest {
         // 4. 'Mock' Repository 행동 정의 (Stubbing)
 
         // (정상) 주문 및 결제 정보 조회 성공
-        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
+
         given(paymentRepository.findByOrder(fakeOrder)).willReturn(Optional.of(fakePayment));
 
         // [핵심] "tossPaymentsAdapter.cancelPaymentToToss가 호출되면,
