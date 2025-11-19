@@ -39,6 +39,15 @@ public class CommunityController {
     private final CommunityCommentService CommunityCommentService;
     private final CommunityCountService CommunityCountService;
 
+    // 테스트용: authentication이 null이면 더미 userId 반환
+    private Long getUserId(Authentication authentication) {
+        if (authentication == null) {
+            return 1L; // 테스트용 더미 userId
+        }
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        return principal.getUserId();
+    }
+
     /**
      * 게시글 작성 API
      *
@@ -49,16 +58,13 @@ public class CommunityController {
             @RequestPart("request") @Valid CommunityPostRequest request,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityPostResponse response = CommunityPostService.createPost(images, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * 게시글 단건 조회 API (인증 불필요)
+     * 게시글 단건 조회 API
      */
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityPostResponse> getPost(@PathVariable Long postId) {
@@ -75,10 +81,7 @@ public class CommunityController {
             @RequestBody @Valid CommunityPostRequest request,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityPostResponse response = CommunityPostService.updatePost(postId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -91,10 +94,7 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityPostService.deletePost(postId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -108,16 +108,13 @@ public class CommunityController {
             @RequestBody @Valid CommunityCommentRequest request,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
-     * 해당 게시글 모든 댓글 조회 (인증 불필요)
+     * 해당 게시글 모든 댓글 조회
      */
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<CommunityCommentResponse>> getComments (
@@ -136,10 +133,7 @@ public class CommunityController {
             @RequestBody @Valid CommunityCommentRequest request,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -153,16 +147,13 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityCommentService.deleteComment(commentId, postId, userId);
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * 게시글 조회수 증가 (인증 불필요)
+     * 게시글 조회수 증가
      */
     @PostMapping("/posts/{postId}/views")
     public ResponseEntity<Void> increaseViewCount(@PathVariable Long postId) {
@@ -178,10 +169,7 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityCountService.togglePostLike(postId, userId);
         return ResponseEntity.ok().build();
     }
@@ -194,10 +182,7 @@ public class CommunityController {
             @PathVariable Long postId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         boolean isLiked = CommunityCountService.isPostLiked(postId, userId);
         return ResponseEntity.ok(isLiked);
     }
@@ -211,10 +196,7 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         CommunityCountService.toggleCommentLike(commentId, userId);
         return ResponseEntity.ok().build();
     }
@@ -228,18 +210,13 @@ public class CommunityController {
             @PathVariable Long commentId,
             Authentication authentication
     ) {
-        // 로컬 테스트용: authentication이 null이면 더미 userId 사용
-        Long userId = (authentication != null)
-                ? ((OAuth2UserPrincipal) authentication.getPrincipal()).getUserId()
-                : 1L;
+        Long userId = getUserId(authentication);
         boolean isLiked = CommunityCountService.isCommentLiked(commentId, userId);
         return ResponseEntity.ok(isLiked);
     }
 
 
-    /**
-     * 게시글 목록 조회 (페이지네이션, 인증 불필요)
-     */
+    // 페이지네이션
     @GetMapping("/posts")
     public ResponseEntity<Page<CommunityPostResponse>> getPosts(
             @RequestParam(defaultValue = "0") int page,

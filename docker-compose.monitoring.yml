@@ -100,9 +100,10 @@ services:
     container_name: homesweet-loki
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - loki-data:/loki
+      - ./loki-config.yml:/etc/loki/loki-config.yaml
     networks:
       - monitoring
       - homesweet-network

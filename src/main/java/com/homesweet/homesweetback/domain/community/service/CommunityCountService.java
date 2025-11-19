@@ -3,7 +3,7 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.exception.CommunityException;
+import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityCommentLikeEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
@@ -37,33 +37,23 @@ public class CommunityCountService {
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
-    private final RedisCommunityCountService redisCountService;
-
     /**
-     * 게시글 조회수 증가 (Redis 사용 - 초고성능)
-     * - Redis의 원자적 연산으로 데드락 없음
-     * - 주기적으로 DB에 동기화 (배치 작업)
+     * 게시글 조회수 증가 (동시성 제어 적용)
      */
+    @Transactional
     public void increaseViewCount(Long postId) {
-        // 게시글 존재 여부만 확인 (조회 없이)
-        if (!postRepository.existsById(postId)) {
-            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-        }
-        // Redis에만 증가 (초고속, 데드락 없음)
-        redisCountService.incrementViewCount(postId);
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+        post.increaseViewCount();
     }
 
     /**
-     * 게시글 좋아요 토글 (벌크 업데이트 - 데드락 방지)
-     * - Entity 조회 없이 직접 UPDATE 쿼리 실행
-     * - 좋아요 레코드만 DB에서 관리
+     * 게시글 좋아요 토글화 (동시성 제어 적용)
      */
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
-        // 게시글 존재 확인
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
 
@@ -71,19 +61,24 @@ public class CommunityCountService {
                 postLikeRepository.findByPostAndUser(post, user);
 
         if (existingLike.isPresent()) {
-            // 좋아요 취소
             postLikeRepository.delete(existingLike.get());
-            // 벌크 업데이트 (데드락 없음)
-            postRepository.updateLikeCount(postId, -1);
+            post.decreaseLikeCount();
         } else {
-            // 좋아요 추가
             CommunityPostLikeEntity newLike = CommunityPostLikeEntity.builder()
                     .post(post)
                     .user(user)
                     .build();
             postLikeRepository.save(newLike);
-            // 벌크 업데이트 (데드락 없음)
-            postRepository.updateLikeCount(postId, 1);
+            post.increaseLikeCount();
+
+            // 알림 전송
+            notificationSendService.sendTemplateNotificationToSingleUser(
+                    post.getAuthor().getId(),
+                    CommunityNotification.NewLike.builder()
+                            .userName(user.getName())
+                            .postId(post.getPostId())
+                            .postTitle(post.getTitle())
+                            .build());
         }
     }
 
@@ -120,7 +115,15 @@ public class CommunityCountService {
             comment.increaseLikeCount();
         }
 
-
+        // 알림 전송
+        notificationSendService.sendTemplateNotificationToSingleUser(
+                comment.getAuthor().getId(),
+                CommunityNotification.NewCommentLike.builder()
+                        .userName(user.getName())
+                        .postId(comment.getPost().getPostId())
+                        .postTitle(comment.getPost().getTitle())
+                        .commentId(comment.getCommentId())
+                        .build());
     }  
 
     /**
