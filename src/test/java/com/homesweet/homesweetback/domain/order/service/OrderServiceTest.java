@@ -390,8 +390,8 @@ class OrderServiceTest{
             // 1. '예외 타입' 검증
         }).isInstanceOf(PaymentMismatchException.class)
 
-                // 2. (선택) '예외 메시지' 검증
-                .hasMessageContaining("주문 정보에 접근할 권한이 없습니다");
+                // 2. '예외 메시지' 검증
+                .hasMessageContaining("주문자 정보가 일치하지 않습니다.");
 
     }
 

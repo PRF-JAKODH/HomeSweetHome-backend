@@ -86,7 +86,6 @@ public class PaymentService {
 
         // 1. 주문 조회 (모든 연관 엔티티 포함)
         Order order = orderRepository.getByIdWithDetailsOrThrow(orderId);
-
         // 2. 주문자 확인
         order.validateOwner(userId);
 
