@@ -56,13 +56,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
     private final EntityManager em;
 
     @Override
-    public List<ProductPreviewResponse> findNextProducts(
-            Long cursorId,
-            Long categoryId,
-            int limit,
-            String keyword,
-            ProductSortType sortType
-    ) {
+    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
         StringBuilder sql = new StringBuilder();
         sql.append("""
         SELECT
@@ -99,8 +93,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         // 1) 키워드(fulltext) 조건
         if (keyword != null && !keyword.isBlank()) {
             sql.append("""
-            AND MATCH(p.name, p.brand, p.description)
-                AGAINST(:keyword IN BOOLEAN MODE)
+                AND MATCH(p.name, p.brand, p.description)
+                    AGAINST(:keyword IN BOOLEAN MODE)
             """);
         }
 
