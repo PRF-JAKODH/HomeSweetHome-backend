@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.order.adapter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.homesweet.homesweetback.common.util.PaymentApiClient;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +9,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component; // @Service 대신 @Component 사용 (외부 시스템 어댑터)
-import org.springframework.web.client.RestTemplate;
-
+import com.homesweet.homesweetback.common.exception.TossApiFailedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker; // 서킷 브레이커
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException; // 서킷 브레이커
 
@@ -26,8 +25,7 @@ import java.util.Map;
 public class TossPaymentsAdapter {
 
     // --- PaymentService에서 가져온 의존성 ---
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper; // 에러 파싱 등 필요시 사용
+    private final PaymentApiClient paymentApiClient;
 
     @Value("${payments.toss.secretKey}")
     private String tossSecretKey;
@@ -51,14 +49,14 @@ public class TossPaymentsAdapter {
         HttpHeaders headers = createAuthHeaders(); // 1. 헤더 생성 (공통 로직 분리)
         HttpEntity<PaymentConfirmRequest> requestEntity = new HttpEntity<>(dto, headers);
 
-        //TODO: HTTP 호출 부분을 따로 클래스나 유틸로 뺴는게 좋다!
-        //TODO: 만약 1번했는데 실패 하면 어떻게할것인지?(재처리)
+        //TODO: HTTP 호출 부분을 따로 클래스나 유틸로 뺴는게 좋다! v
+        //TODO: 만약 API 호출 1번했는데 실패 하면 어떻게할것인지?(재처리) v
         try {
-            // 2. API 호출
-            Map<String, Object> tossResponse = restTemplate.postForObject(
+            // [수정] RestTemplate 직접 호출 -> paymentApiClient 호출
+            // (여기서 실패하면 PaymentApiClient 내부에서 알아서 3번까지 재시도함)
+            Map<String, Object> tossResponse = paymentApiClient.sendPostRequest(
                     TOSS_CONFIRM_URL,
-                    requestEntity,
-                    Map.class
+                    requestEntity
             );
 
             // 3. 응답 상태 검증 (PaymentService 6단계 로직 일부)
@@ -73,7 +71,7 @@ public class TossPaymentsAdapter {
         } catch (Exception e) {
             log.error("토스페이먼츠 승인 API 호출 실패. OrderId: {}. Error: {}", dto.orderId(), e.getMessage());
             // (TODO: 토스 API 실패 시, 사용자 정의 예외(TossApiFailedException)를 던지도록 고도화)
-            throw new RuntimeException("토스페이먼츠 승인 API 호출에 실패했습니다. " + e.getMessage());
+            throw new TossApiFailedException("토스페이먼츠 승인 API 호출에 실패했습니다. " + e.getMessage());
         }
     }
 
@@ -108,11 +106,9 @@ public class TossPaymentsAdapter {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(bodyMap, headers);
 
         try {
-            log.info("토스 결제 취소 API 호출: paymentKey={}, reason={}", paymentKey, cancelReason);
-            Map<String, Object> tossResponse = restTemplate.postForObject(
-                    cancelUrl,
-                    requestEntity,
-                    Map.class
+            Map<String, Object> tossResponse = paymentApiClient.sendPostRequest(
+                cancelUrl.toString(), // (URI -> String 변환 필요)
+                requestEntity
             );
 
             // 3. 응답 상태 검증 (PaymentService cancelOrder 6단계 로직)
@@ -126,7 +122,7 @@ public class TossPaymentsAdapter {
 
         } catch (Exception e) {
             log.error("토스페이먼츠 취소 API 호출 실패: {}", e.getMessage());
-            throw new RuntimeException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
+            throw new TossApiFailedException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
         }
     }
 

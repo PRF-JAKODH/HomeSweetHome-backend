@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@AllArgsConstructor
+@Builder(toBuilder = true)
 public class ProductEntity {
 
     @Id
@@ -54,15 +57,18 @@ public class ProductEntity {
     private String brand;
 
     @Column(name = "base_price", nullable = false)
+    @Builder.Default
     private Integer basePrice = 0;
 
     @Column(name = "discount_rate", nullable = false, precision = 5, scale = 2)
+    @Builder.Default
     private BigDecimal discountRate = BigDecimal.ZERO;
 
     @Column(length = 255)
     private String description;
 
     @Column(name = "shipping_price", nullable = false)
+    @Builder.Default
     private Integer shippingPrice = 0;
 
     @Enumerated(EnumType.STRING)
@@ -70,12 +76,15 @@ public class ProductEntity {
     private ProductStatus status;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ProductDetailImageEntity> detailImages = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ProductOptionGroupEntity> optionGroups = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<SkuEntity> skus = new ArrayList<>();
 
     @CreatedDate
@@ -84,7 +93,7 @@ public class ProductEntity {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Builder
+//    @Builder
     public ProductEntity(Long id,ProductCategoryEntity category, User seller, String name, String imageUrl, String brand, Integer basePrice, BigDecimal discountRate, String description, Integer shippingPrice, ProductStatus status) {
         this.id = id;
         this.category = category;

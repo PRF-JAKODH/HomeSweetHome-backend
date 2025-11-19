@@ -155,4 +155,6 @@ class PaymentProcessorTest {
         // 3. Payment 상태 변경 확인
         assertThat(fakePayment.getPaymentStatus()).isEqualTo("CANCELED");
     }
+
+
 }

@@ -94,21 +94,38 @@ public class Order {
         this.deliveryStatus = deliveryStatus;
     }
 
-    public void validateOwner(Long userIdToVerify) {
-        if (!this.user.getId().equals(userIdToVerify)) {
+    // 주문자 검증
+    public void validateOwner(Long userId) {
+        if (!this.user.getId().equals(userId)) {
             // (OrderService에 있던 예외를 Order 엔티티가 직접 던지도록 함)
-            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
+            throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
+        }
+    }
+
+    // 금액 검증
+    public void validatePaymentAmount(Long amount) {
+        if (!this.totalAmount.equals(amount)) {
+            throw new PaymentMismatchException("결제 금액이 일치하지 않습니다.");
+        }
+    }
+
+    // 상태 검증 (결제 가능 상태인지)
+    public void validatePaymentStatus() {
+        if (this.orderStatus != OrderStatus.PENDING) {
+            throw new PaymentMismatchException("이미 처리된 주문입니다.");
+        }
+    }
+
+    // 취소 가능 상태 검증
+    public void validateCancelStatus() {
+        if (this.deliveryStatus == DeliveryStatus.CANCELLED) {
+            // (기존 PaymentService에서 던지던 예외와 동일하게 처리)
+            throw new RuntimeException("이미 취소된 주문입니다.");
         }
     }
 
     public boolean isOrderItemEmpty() {
         return this.orderItems == null || this.orderItems.isEmpty();
-    }
-
-    public  void isSameOrderUser(long userId) {
-        if (this.user.getId().equals(userId)) {
-            throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
-        }
     }
 
 }

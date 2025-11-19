@@ -2,6 +2,7 @@
 package com.homesweet.homesweetback.domain.order.repository;
 //package: 이 코드가 속한 폴더 경로를 지정하는 키워드
 
+import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
 import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
@@ -22,9 +23,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH o.orderItems oi " + // 주문 항목이 없는 경우도 있으므로 LEFT JOIN
             "LEFT JOIN FETCH oi.sku s " +
             "LEFT JOIN FETCH s.product p " +
-            "WHERE o.user = :user " +
+            "WHERE o.user.id = :userId " +
             "ORDER BY o.orderedAt DESC")
-    List<Order> findAllByUserWithDetails(@Param("user") User user);
+    List<Order> findAllByUserWithDetails(@Param("userId") Long userId);
 
     // 주문 상세 정보 조회 용
     @Query("SELECT o FROM Order o " +
@@ -50,4 +51,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH oi.sku s " +
             "WHERE o.orderStatus = :orderStatus AND o.orderedAt < :cutoffTime")
     List<Order> findAllByOrderStatusAndOrderedAtBefore(OrderStatus orderStatus, LocalDateTime cutoffTime);
+
+    /**
+     * ID로 주문을 조회하고, 없으면 예외를 던지는 편의 메서드
+     */
+    default Order getByIdWithDetailsOrThrow(Long orderId) {
+        return findByIdWithDetails(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
+    }
+
+    // Number로도 했나?
+    default Order getByOrderNumberOrThrow(String orderNumber) {
+        return findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderNumber));
+    }
 }

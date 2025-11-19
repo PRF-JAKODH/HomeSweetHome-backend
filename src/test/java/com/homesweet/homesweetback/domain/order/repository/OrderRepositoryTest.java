@@ -164,7 +164,7 @@ class OrderRepositoryTest {
 
         // --- WHEN (진짜 DB에서 조회) ---
         // (이 시점에서 1차 캐시는 비어있다고 가정, @DataJpaTest가 관리)
-        List<Order> foundOrders = orderRepository.findAllByUserWithDetails(savedUser);
+        List<Order> foundOrders = orderRepository.findAllByUserWithDetails(savedUser.getId());
 
         // --- THEN (결과 검증) ---
         // 1. 주문이 1건 조회되었는지?

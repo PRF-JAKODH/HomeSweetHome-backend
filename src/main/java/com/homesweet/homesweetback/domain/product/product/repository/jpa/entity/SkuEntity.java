@@ -109,4 +109,16 @@ public class SkuEntity {
 
         return finalPrice.setScale(0, java.math.RoundingMode.FLOOR).longValue();
     }
+
+    /**
+     * 주문 수량에 따른 총 가격을 계산합니다.
+     * (단가 * 수량)
+     */
+    public long calculateTotalPrice(long quantity) {
+        // 1. 단가 계산 (기존 로직 재사용)
+        long unitPrice = this.getFinalPrice();
+
+        // 2. 총액 계산
+        return unitPrice * quantity;
+    }
 }
