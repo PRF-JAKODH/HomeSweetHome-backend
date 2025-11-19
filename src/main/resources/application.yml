@@ -39,3 +39,16 @@ management:
   health:
     circuitbreakers:
       enabled: true # 서킷 브레이커 상태도 health에 포함
+
+retry:
+  instances:
+    toss-payments-retry: # 재시도 설정 이름
+      maxRetryAttempts: 3        # 최대 3번까지 시도 (최초 1회 + 재시도 2회)
+      waitDuration: 500ms        # 재시도 사이의 간격 (0.5초)
+      retryExceptions:           # 재시도할 예외 타입 (모든 에러를 다 재시도하진 않음)
+        - java.io.IOException    # 네트워크 연결 오류
+        - org.springframework.web.client.ResourceAccessException # 타임아웃 등
+        - java.net.ConnectException
+      # (옵션) 400 Bad Request 같은 건 재시도해도 소용없으니 제외
+      ignoreExceptions:
+        - org.springframework.web.client.HttpClientErrorException

@@ -39,7 +39,28 @@ public class PaymentProcessor {
      */
     @Transactional
     public void processPaymentFailDB(Order order) {
+        // 1. 재고 복구 (이미 차감된 재고를 다시 늘림)
+        for (OrderItem item : order.getOrderItems()) {
+            try {
+                // 동시성 제어를 위해 락을 걸고 조회
+                SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
+                        .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
+
+                // 재고 증가
+                sku.increaseStock(item.getQuantity());
+
+            } catch (Exception e) {
+                // 재고 복구 실패 시 로그 남김 (트랜잭션 롤백 방지)
+                log.error("[Payment Fail - Stock Restore Failed] 결제 실패 처리 중 재고 복구 오류. (OrderId: {}): {}",
+                        order.getId(), e.getMessage());
+            }
+        }
+
+        // 2. Order 상태 변경 (FAILED)
         order.setOrderStatus(OrderStatus.FAILED);
+
+        // 3. 변경 사항 저장
+        orderRepository.save(order);
     }
 
     /**

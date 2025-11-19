@@ -20,6 +20,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 
 // --- Exception Imports ---
 import jakarta.persistence.EntityNotFoundException;
@@ -29,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final SkuJPARepository skuJPARepository;
     private final PaymentRepository paymentRepository;
+    private final ProductJPARepository productJPARepository;
 
 
     /**
@@ -72,7 +73,8 @@ public class OrderService {
             SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(itemDto.skuId())
                     .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + itemDto.skuId()));
 
-            ProductEntity product = sku.getProduct();
+            ProductEntity product = productJPARepository.findByIdWithPessimisticLock(sku.getProduct().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
 
             // 상품 판매 상태 검증
             if (product.getStatus() != ProductStatus.ON_SALE) {
@@ -81,12 +83,13 @@ public class OrderService {
             }
 
             // 2-2. 주문 항목 가격 계산
-            //TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다 v -> skuEntity에 분리함
+            // TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다 v -> skuEntity에 분리함 v
             long discountedPrice = sku.getFinalPrice();
-//            totalAmount += sku.getFinalPrice(itemDto.quantity()); //TODO: getFinalPrice 구하는 수량을 넘겨서 상품 총 가격을 받는게 맞지않을까?
+
+            // TODO: getFinalPrice 구하는 수량을 넘겨서 상품 총 가격을 받는게 맞지않을까? v
 
             // 2-3. 총 주문 금액 계산 (상품 총액)
-            totalAmount += (discountedPrice * itemDto.quantity());
+            totalAmount += sku.calculateTotalPrice(itemDto.quantity());
 
             // 2-4. ★★★ 재고 선점(차감) ★★★
             // (decreaseStock 메서드가 재고 부족 시 예외를 던진다고 가정)
@@ -168,11 +171,10 @@ public class OrderService {
 
     public List<MyOrderItemResponse> getMyOrders(Long userId) {
         // 1. 사용자(User) 조회
-        //TODO: userRepo를 참조해서 order에서 검증하는게 맞나?
-        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        //TODO: userRepo를 참조해서 order에서 검증하는게 맞나? v
 
         // 2. 주문 목록 조회 (N+1 방지용 쿼리 사용)
-        List<Order> orders = orderRepository.findAllByUserWithDetails(user);
+        List<Order> orders = orderRepository.findAllByUserWithDetails(userId);
 
         // 3. MyOrderItemResponse DTO 리스트로 변환
         return orders.stream().map(order -> {

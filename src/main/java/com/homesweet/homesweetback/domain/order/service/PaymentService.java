@@ -52,22 +52,11 @@ public class PaymentService {
         log.debug(order.getTotalAmount().toString());
         log.debug(dto.amount().toString());
 
-        //TODO: 현재 아키텍쳐 잘 짜셧는데, 도메인에 핏한 기능들이 결제쪽에서 처리하는게 맞을까?
-        // 2. (보안) 요청한 유저(userId)가 주문한 유저가 맞는지 확인
-//        order.isSameOrderUser(userId);
-        if (!order.getUser().getId().equals(userId)) {
-            throw new PaymentMismatchException("주문자 정보가 일치하지 않습니다.");
-        }
 
-        // 3. (핵심) DB의 주문 금액과 토스가 전달한 결제 금액이 일치하는지 확인
-        if (!order.getTotalAmount().equals(dto.amount())) {
-            throw new PaymentMismatchException("결제 금액이 일치하지 않습니다.");
-        }
-
-        // 4. (멱등성)
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new PaymentMismatchException("이미 처리된 주문입니다.");
-        }
+        //TODO: 현재 아키텍쳐 잘 짜셧는데, 도메인에 핏한 기능들이 결제쪽에서 처리하는게 맞을까? v
+        order.validateOwner(userId);
+        order.validatePaymentAmount(dto.amount());
+        order.validatePaymentStatus();
 
         //TODO: 결제가 됬는데 배송이 안와요 (언포)기븐이 안좋겟죠(개발자가 잘 처리해야합니다) v
         //TODO: 결국 케이스 마다 쪼개시다보면 그게 TC, 트랜잭션을 자연스럽게 분리하게 됩니다. v
@@ -76,7 +65,7 @@ public class PaymentService {
         try{
             tossResponse = tossPaymentsAdapter.confirmPaymentToToss(dto);
         } catch (Exception e) {
-            //TODO: 환불 재고롤백은 잇으나, 예외에 대한 재고롤백이 없네요
+            //TODO: 환불 재고 롤백은 있으나, 예외에 대한 재고 롤백이 없네요 v
             paymentProcessor.processPaymentFailDB(order);
             throw e;
         }
@@ -96,18 +85,13 @@ public class PaymentService {
     public void cancelOrder(Long orderId, Long userId, OrderCancelRequest dto) {
 
         // 1. 주문 조회 (모든 연관 엔티티 포함)
-        Order order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderId));
+        Order order = orderRepository.getByIdWithDetailsOrThrow(orderId);
 
-        // 2. (보안) 주문자 본인 확인
-        if (!order.getUser().getId().equals(userId)) {
-            throw new PaymentMismatchException("주문 정보에 접근할 권한이 없습니다.");
-        }
+        // 2. 주문자 확인
+        order.validateOwner(userId);
 
-        // 3. (상태 검증) 이미 취소된 주문인지 확인
-        if (order.getDeliveryStatus() == DeliveryStatus.CANCELLED) {
-            throw new RuntimeException("이미 취소된 주문입니다."); // (커스텀 예외 권장)
-        }
+        // 3. 이미 취소된 주문인지 확인
+        order.validateCancelStatus();
 
         // 4. 결제 정보 조회
         Payment payment = paymentRepository.findByOrder(order)
@@ -130,4 +114,5 @@ public class PaymentService {
         // 6. (내부 DB 처리) [신규] API 취소가 성공하면, DB 작업용 트랜잭션 메서드 호출
         paymentProcessor.processPaymentCancelDB(order, payment, tossResponse);
     }
+
 }

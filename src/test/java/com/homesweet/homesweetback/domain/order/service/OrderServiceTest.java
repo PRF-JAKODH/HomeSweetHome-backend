@@ -12,6 +12,7 @@ import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.order.entity.Order;
@@ -50,6 +51,9 @@ class OrderServiceTest{
 
     @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private ProductJPARepository productJPARepository;
 
     @InjectMocks
     private OrderService orderService;
@@ -90,6 +94,7 @@ class OrderServiceTest{
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
         given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
+        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // WHEN
@@ -151,10 +156,9 @@ class OrderServiceTest{
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-
         given(skuJPARepository.findByIdWithPessimisticLock(skuId_S)).willReturn(Optional.of(fakeSku_S));
         given(skuJPARepository.findByIdWithPessimisticLock(skuId_M)).willReturn(Optional.of(fakeSku_M));
-
+        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // WHEN
@@ -241,7 +245,8 @@ class OrderServiceTest{
         // [핵심] 2개의 SKU 조회에 각각 다른 상품/SKU를 반환
         given(skuJPARepository.findByIdWithPessimisticLock(skuId_A)).willReturn(Optional.of(fakeSku_A));
         given(skuJPARepository.findByIdWithPessimisticLock(skuId_B)).willReturn(Optional.of(fakeSku_B));
-
+        given(productJPARepository.findByIdWithPessimisticLock(productId_A)).willReturn(Optional.of(fakeProduct_A));
+        given(productJPARepository.findByIdWithPessimisticLock(productId_B)).willReturn(Optional.of(fakeProduct_B));
         given(orderRepository.save(any(Order.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -498,6 +503,7 @@ class OrderServiceTest{
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
         // (주의: 비관적 락 메서드를 사용하므로 이것을 Mocking 해야 함)
         given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
+        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
 
 
         // --- WHEN & THEN ---
