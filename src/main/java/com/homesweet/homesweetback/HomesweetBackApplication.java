@@ -6,7 +6,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;   // Schedule
 
 @SpringBootApplication
 @EnableScheduling
-@EnableAsync
 public class HomesweetBackApplication {
     public static void main(String[] args) {
         SpringApplication.run(HomesweetBackApplication.class, args);
