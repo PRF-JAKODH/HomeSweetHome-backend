@@ -42,10 +42,14 @@ public class SettlementMapper {
         );
     }
 
-    // 일별 리스트 매핑
-    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, Function<DailySettlement, SettlementCalculator.SettlementStats> stats) {
-//        List<DailySettlementResponse> dailySettlementResponseList = new ArrayList<>(dailySettlement.size());
-        return dailySettlement.stream().map(d -> toDailySettlementResponse(d, stats.apply(d))).toList();
+    // 일별 리스트 매핑 stream을 사용하지 않는게 더 좋음!
+    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, SettlementCalculator.SettlementStats stats) {
+        int size = dailySettlement.size();
+        List<DailySettlementResponse> responses = new ArrayList<>(size);
+        for(DailySettlement d : dailySettlement) {
+            responses.add(toDailySettlementResponse(d, stats));
+        }
+        return responses;
     }
 
     // 주별 매핑

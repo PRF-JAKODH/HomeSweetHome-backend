@@ -13,7 +13,7 @@ import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementR
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.service.WeeklySettlementService;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;

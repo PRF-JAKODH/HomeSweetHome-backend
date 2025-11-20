@@ -12,7 +12,7 @@ import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.service.DailySettlementService;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.SettlementStatusUpdater;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;

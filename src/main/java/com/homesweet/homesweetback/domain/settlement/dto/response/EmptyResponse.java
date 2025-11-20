@@ -1,9 +1,5 @@
-package com.homesweet.homesweetback.domain.settlement.util;
+package com.homesweet.homesweetback.domain.settlement.dto.response;
 
-import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.MonthlySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -13,7 +9,6 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Collections;
 import java.util.List;
 
 

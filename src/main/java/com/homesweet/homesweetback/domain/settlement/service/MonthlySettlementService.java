@@ -8,9 +8,8 @@ import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.MonthlyDateRangeCalculator;
-import com.homesweet.homesweetback.domain.settlement.util.calculator.MonthlyGrowthCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
