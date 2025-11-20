@@ -129,7 +129,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             switch (sortType) {
                 case PRICE_LOW -> sql.append(" ORDER BY p.base_price ASC ");
                 case PRICE_HIGH -> sql.append(" ORDER BY p.base_price DESC ");
-                case POPULAR -> sql.append(" ORDER BY p.created_at DESC "); // 추후 score 기반으로 변경 가능
+                case POPULAR -> sql.append(" ORDER BY p.created_at DESC ");
                 default -> sql.append(" ORDER BY p.created_at DESC ");
             }
         }
