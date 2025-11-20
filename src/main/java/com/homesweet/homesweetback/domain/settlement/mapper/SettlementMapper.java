@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -54,20 +55,26 @@ public class SettlementMapper {
 
     // 주별 매핑
     public List<WeeklySettlementResponse> toWeeklySettlementResponse(List<WeeklySettlement> ws, SettlementCalculator.SettlementStats stats, byte week) {
-        return ws.stream().map(w -> new WeeklySettlementResponse(
-                w.getYear(),
-                w.getMonth(),
-                week,
-                w.getWeekStartDate(),
-                w.getWeekEndDate(),
-                w.getTotalSales(),
-                w.getTotalFee(),
-                w.getTotalVat(),
-                w.getTotalRefund(),
-                w.getTotalSettlement(),
-                stats.completedRate(),
-                stats.totalCount()
-        )).toList();
+
+        return ws.stream().map(w -> {
+            // 주차 계산 (월 기준)
+            byte realWeek = (byte) WeekFields.ISO.weekOfMonth()
+                    .getFrom(w.getWeekStartDate());
+            return new WeeklySettlementResponse(
+                    w.getYear(),
+                    w.getMonth(),
+                    realWeek,
+                    w.getWeekStartDate(),
+                    w.getWeekEndDate(),
+                    w.getTotalSales(),
+                    w.getTotalFee(),
+                    w.getTotalVat(),
+                    w.getTotalRefund(),
+                    w.getTotalSettlement(),
+                    stats.completedRate(),
+                    stats.totalCount()
+            );
+        }).toList();
     }
 
     private final MonthlyGrowthCalculator monthlyGrowthCalculator;
