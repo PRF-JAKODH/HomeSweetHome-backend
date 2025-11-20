@@ -129,7 +129,13 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             switch (sortType) {
                 case PRICE_LOW -> sql.append(" ORDER BY p.base_price ASC ");
                 case PRICE_HIGH -> sql.append(" ORDER BY p.base_price DESC ");
-                case POPULAR -> sql.append(" ORDER BY p.created_at DESC ");
+                case POPULAR -> sql.append("""
+                    ORDER BY (
+                        SELECT COUNT(*)
+                        FROM products_reviews r
+                        WHERE r.product_id = p.product_id
+                    ) DESC
+                """);
                 default -> sql.append(" ORDER BY p.created_at DESC ");
             }
         }
@@ -140,7 +146,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                 .setParameter("limit", limit + 1);
 
         if (keyword != null && !keyword.isBlank()) {
-            query.setParameter("keyword", keyword + "*");
+            query.setParameter("keyword", keyword);
         }
         if (cursorId != null) {
             query.setParameter("cursorId", cursorId);
@@ -495,16 +501,8 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
             return null;
         }
 
-        NumberTemplate<Double> score = Expressions.numberTemplate(
-                Double.class,
-                "MATCH({0}, {1}, {2}) AGAINST ({3} IN BOOLEAN MODE)",
-                product.name,
-                product.brand,
-                product.description,
-                keyword
-        );
-
-        return score.gt(0);
+        return product.name.containsIgnoreCase(keyword)
+                .or(product.brand.containsIgnoreCase(keyword));
     }
 
     // 커서 조건 (정렬 방향)
