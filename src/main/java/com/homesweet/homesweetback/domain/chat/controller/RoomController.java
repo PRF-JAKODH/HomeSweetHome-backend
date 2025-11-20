@@ -1,20 +1,15 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
-import com.homesweet.homesweetback.common.exception.BusinessException;
-import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
-import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-import static com.homesweet.homesweetback.domain.chat.entity.QChatRoom.chatRoom;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
@@ -85,6 +79,8 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
+    // TODO : 그룹 채팅방 조회(GET), 새 멤버 등록(POST), 멤버 목록 업데이트(PUT) 분리
+    // 세가지 로직이 다 합쳐져 있어 멱등성 보장이 안됨.
     @GetMapping("/group/{roomId}")
     public ResponseEntity<GroupChatDetailResponse> getGroupRoomInfo(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
@@ -95,6 +91,8 @@ public class RoomController {
 
         return ResponseEntity.ok(response);
     }
+
+
 
     @GetMapping("/my/individual")
     public ResponseEntity<List<IndividualRoomListResponse>> getMyIndividualRoomList(
@@ -160,6 +158,7 @@ public class RoomController {
         PreMessageResponse response = chatMessageService.getPreMessage(roomId, lastMessageId, size);
         return ResponseEntity.ok(response);
     }
+
 
 
 }

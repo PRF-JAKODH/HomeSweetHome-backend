@@ -162,7 +162,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         }
 
         // 1. 멤버 확인 및 자동 등록/입장 처리 (ensureRoomMembership 재사용)
-        roomMemberService.registerGroupMember(chatRoom, userId);
+//        roomMemberService.registerGroupMember(chatRoom, userId);
 
         // 2. 퇴장하지 않은 모든 활성 멤버 조회
         List<RoomMember> activeMembers = roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId);

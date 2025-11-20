@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.chat.service;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
+import com.homesweet.homesweetback.domain.chat.event.MemberRegisteredEvent;
 
 public interface ChatMessageService {
 
@@ -13,7 +14,9 @@ public interface ChatMessageService {
     PreMessageResponse getPreMessage(Long room, Long lastMessageId, int size);
 
     boolean canSendMessage(Long userId, Long roomId);
-//
+
+    void handleMemberRegisteredEvent(MemberRegisteredEvent event);
+
     // 채팅방 메시지 읽음 처리
 //    void markAsRead(Long roomId, Long userId, Long lastReadMessageId);
 

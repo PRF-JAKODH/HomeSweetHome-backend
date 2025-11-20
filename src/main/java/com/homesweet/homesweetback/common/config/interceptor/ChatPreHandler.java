@@ -10,6 +10,7 @@ import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -27,8 +28,8 @@ import java.util.List;
 public class ChatPreHandler implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final ChatRoomService chatRoomService;
-    private final ChatMessageService chatMessageService;
+    private final ObjectProvider<ChatRoomService> chatRoomServiceProvider;
+    private final ObjectProvider<ChatMessageService> chatMessageServiceProvider;
 
 
     // channel mock객체로 둬서 테스트 해보자요
@@ -113,6 +114,9 @@ public class ChatPreHandler implements ChannelInterceptor {
      * SUBSCRIBE 단계 처리 (구독 권한 검증)
      */
     private void handleSubscribe(StompHeaderAccessor accessor) {
+        // 실제 빈
+        ChatRoomService chatRoomService = chatRoomServiceProvider.getObject();
+
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
         Long roomId = extractRoomId(accessor.getDestination());
 
@@ -132,6 +136,9 @@ public class ChatPreHandler implements ChannelInterceptor {
      * SEND 단계 처리 (메시지 전송 권한 검증)
      */
     private void handleSend(StompHeaderAccessor accessor) {
+
+        ChatMessageService chatMessageService = chatMessageServiceProvider.getObject();
+
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
         Long roomId = extractRoomId(accessor.getDestination());
 
