@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.service;
+package com.homesweet.homesweetback.domain.settlement.service.unit;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.querydsl.CustomSettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.service.SettlementService;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import org.junit.jupiter.api.DisplayName;

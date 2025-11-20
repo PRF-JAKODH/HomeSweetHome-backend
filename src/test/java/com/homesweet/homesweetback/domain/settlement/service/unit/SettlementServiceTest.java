@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.service;
+package com.homesweet.homesweetback.domain.settlement.service.unit;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
@@ -14,6 +14,7 @@ import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.service.SettlementService;
 import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
 import com.homesweet.homesweetback.domain.settlement.util.ValidateAndDateRange;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;

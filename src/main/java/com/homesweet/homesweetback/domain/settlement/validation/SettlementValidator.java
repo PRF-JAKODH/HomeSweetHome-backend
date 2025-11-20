@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 // 정산 생성 검증 클래스
-
 @Component
 @RequiredArgsConstructor
 public class SettlementValidator {
@@ -131,9 +130,7 @@ public class SettlementValidator {
         validateNotEmpty(settlements);
     }
     // 월별
-    public void validateMonthly(List<WeeklySettlement> settlements) {
-        validateNotEmpty(settlements);
-    }
+    public void validateMonthly(List<WeeklySettlement> settlements) {validateNotEmpty(settlements);}
     // 연별
     public void validateYearly(List<MonthlySettlement> settlements) {
         validateNotEmpty(settlements);

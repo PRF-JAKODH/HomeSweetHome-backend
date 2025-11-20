@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.settlement.repository.querydsl;
 
 import com.homesweet.homesweetback.domain.settlement.entity.QSettlement;
+import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.CustomSettlementRepositoryImpl;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.jpa.impl.JPAUpdateClause;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CustomSettlementRepositoryImplTest {
-
     @Mock
     JPAQueryFactory jpaQueryFactory;
 
@@ -47,7 +47,6 @@ class CustomSettlementRepositoryImplTest {
                 1L,
                 BigDecimal.valueOf(10000)
         );
-
         // then
         assertThat(result).isEqualTo(1);
 
@@ -59,7 +58,6 @@ class CustomSettlementRepositoryImplTest {
     @Test
     void applyRefundAmount_fail_exceptionThrown() {
         QSettlement q = QSettlement.settlement;
-
         when(jpaQueryFactory.update(q)).thenReturn(jpaUpdateClause);
         when(jpaUpdateClause.execute()).thenThrow(new RuntimeException("DB error"));
 

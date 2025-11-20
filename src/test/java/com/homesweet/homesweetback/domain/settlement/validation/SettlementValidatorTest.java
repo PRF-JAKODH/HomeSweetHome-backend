@@ -49,7 +49,6 @@ public class SettlementValidatorTest {
     @Nested
     @DisplayName("성공 케이스")
     class Success {
-
         // 주문 검증
         @Test
         @DisplayName("정산을 하기 위한 주문에 대한 검증")

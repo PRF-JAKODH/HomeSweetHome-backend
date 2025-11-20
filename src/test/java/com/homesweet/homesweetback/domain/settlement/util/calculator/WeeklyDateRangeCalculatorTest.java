@@ -51,7 +51,6 @@ class WeeklyDateRangeCalculatorTest {
             assertThat(WeeklyDateRangeCalculator.monday(LocalDate.of(2025, 11, 13)))
                     .isEqualTo(LocalDate.of(2025, 11, 10));
         }
-
         @Test
         @DisplayName("sunday()는 일요일을 반환한다")
         void sunday_success() {

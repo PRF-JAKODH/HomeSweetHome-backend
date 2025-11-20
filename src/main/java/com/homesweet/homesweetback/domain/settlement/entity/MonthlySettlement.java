@@ -22,10 +22,10 @@ public class MonthlySettlement {
 
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "year_value")
     private Short year;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "month_value")
     private Byte month;
 
     @Column(name = "total_sales", precision = 15, scale = 2)

@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.service;
+package com.homesweet.homesweetback.domain.settlement.service.unit;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
@@ -12,6 +12,7 @@ import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.service.WeeklySettlementService;
 import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;

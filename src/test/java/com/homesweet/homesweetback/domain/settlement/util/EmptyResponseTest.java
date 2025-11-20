@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +23,9 @@ import java.time.YearMonth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-//@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class)
 @DisplayName("EmptyDailyResponse 테스트")
 class EmptyResponseTest {
-//    @InjectMocks
-//    DailySettlementService dailySettlementService;
-
 //    @InjectMocks
     private EmptyResponse emptyResponse;
 
@@ -126,7 +125,7 @@ class EmptyResponseTest {
         assertThat(page.getTotalElements()).isEqualTo(1);
     }
     @Test
-    @DisplayName("[성공] 빈 연별 응답 생성 성공")
+    @DisplayName("빈 연별 응답 생성 성공")
     void createEmptyYearly_success() {
         YearMonth ym = YearMonth.of(2025, 1);
         Pageable pageable = PageRequest.of(0, 10);
@@ -153,9 +152,6 @@ class EmptyResponseTest {
         // totalCount = 0
         assertThat(res.totalCount()).isEqualTo(0L);
     }
-
-
-
     @Nested
     @DisplayName("실패 케이스")
     class Fail{
@@ -167,7 +163,7 @@ class EmptyResponseTest {
         }
 
         @Test
-        @DisplayName("[실패] WeeklyDateRange가 null이면 NullPointerException")
+        @DisplayName("WeeklyDateRange가 null이면 NullPointerException")
         void createEmptyWeekly_fail_null_range() {
             Pageable pageable = PageRequest.of(0, 10);
             assertThatThrownBy(() ->
@@ -175,7 +171,7 @@ class EmptyResponseTest {
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] Pageable이 null이면 IllegalArgumentException 발생")
+        @DisplayName("Pageable이 null이면 IllegalArgumentException 발생")
         void createEmptyWeekly_fail_null_pageable() {
             WeeklyDateRangeCalculator.WeeklyDateRange range =
                     new WeeklyDateRangeCalculator.WeeklyDateRange(
@@ -189,7 +185,7 @@ class EmptyResponseTest {
                     .hasMessageContaining("Pageable must not be null");
         }
         @Test
-        @DisplayName("[실패] 빈 월별 응답은 content가 비어있으면 안 된다")
+        @DisplayName("빈 월별 응답은 content가 비어있으면 안 된다")
         void createEmptyMonthly_fail_content_empty() {
             YearMonth ym = YearMonth.of(2025, 3);
             Pageable pageable = PageRequest.of(0, 10);
@@ -202,7 +198,7 @@ class EmptyResponseTest {
                     .isNotEmpty();
         }
         @Test
-        @DisplayName("[실패] 빈 월별 응답의 totalElements는 반드시 1이어야 한다")
+        @DisplayName("빈 월별 응답의 totalElements는 반드시 1이어야 한다")
         void createEmptyMonthly_fail_wrong_totalElements() {
             YearMonth ym = YearMonth.of(2025, 3);
             Pageable pageable = PageRequest.of(0, 10);
@@ -215,7 +211,7 @@ class EmptyResponseTest {
                     .isEqualTo(1);
         }
         @Test
-        @DisplayName("[실패] 빈 월별 응답 placeholder의 모든 금액은 ZERO여야 한다")
+        @DisplayName("빈 월별 응답 placeholder의 모든 금액은 ZERO여야 한다")
         void createEmptyMonthly_fail_placeholder_values_not_zero() {
             YearMonth ym = YearMonth.of(2025, 3);
             Pageable pageable = PageRequest.of(0, 10);
@@ -232,7 +228,7 @@ class EmptyResponseTest {
             assertThat(res.totalSettlement()).isZero();
         }
         @Test
-        @DisplayName("[실패] 빈 월별 응답 placeholder의 연도/월은 입력값과 동일해야 한다")
+        @DisplayName("빈 월별 응답 placeholder의 연도/월은 입력값과 동일해야 한다")
         void createEmptyMonthly_fail_wrong_year_month() {
             YearMonth ym = YearMonth.of(2025, 3);
             Pageable pageable = PageRequest.of(0, 10);
@@ -246,7 +242,7 @@ class EmptyResponseTest {
             assertThat(res.month()).isEqualTo((byte) ym.getMonthValue());
         }
         @Test
-        @DisplayName("[실패] YearMonth 가 null이면 NPE 발생")
+        @DisplayName("YearMonth 가 null이면 NPE 발생")
         void createEmptyYearly_fail_nullYearMonth() {
             Pageable pageable = PageRequest.of(0, 10);
 
@@ -255,7 +251,7 @@ class EmptyResponseTest {
             ).isInstanceOf(NullPointerException.class);
         }
         @Test
-        @DisplayName("[실패] pageable 이 null이면 IllegalArgumentException 발생")
+        @DisplayName("pageable 이 null이면 IllegalArgumentException 발생")
         void createEmptyYearly_fail_nullPageable() {
             YearMonth ym = YearMonth.of(2025, 1);
 
@@ -266,7 +262,7 @@ class EmptyResponseTest {
                     .hasMessageContaining("Pageable must not be null");
         }
         @Test
-        @DisplayName("[실패] placeholder 크기가 1개가 아니면 실패")
+        @DisplayName("placeholder 크기가 1개가 아니면 실패")
         void createEmptyYearly_fail_wrongContentSize() {
             YearMonth ym = YearMonth.of(2025, 1);
             Pageable pageable = PageRequest.of(0, 10);
@@ -278,6 +274,5 @@ class EmptyResponseTest {
                     .as("Empty yearly content size must be 1")
                     .hasSize(1);   // 실패 목적: size가 1이 아니면 실패
         }
-
     }
 }

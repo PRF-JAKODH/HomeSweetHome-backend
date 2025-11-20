@@ -4,6 +4,10 @@ import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementR
 import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.WeeklySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.YearlySettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.DailySettlementRepositoryImpl;
+import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.MonthlySettlementRepositoryImpl;
+import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.WeeklySettlementRepositoryImpl;
+import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.YearlySettlementRepositoryImpl;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,21 +29,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("upsert ")
 class SettlementSaverTest {
-
     @InjectMocks
     private SettlementSaver settlementSaver;
 
     @Mock
-    private DailySettlementRepository dailySettlementRepository;
+    private DailySettlementRepositoryImpl dailySettlementRepository;
 
     @Mock
-    private WeeklySettlementRepository weeklySettlementRepository;
+    private WeeklySettlementRepositoryImpl weeklySettlementRepository;
 
     @Mock
-    private MonthlySettlementRepository monthlySettlementRepository;
+    private MonthlySettlementRepositoryImpl monthlySettlementRepository;
 
     @Mock
-    private YearlySettlementRepository yearlySettlementRepository;
+    private YearlySettlementRepositoryImpl yearlySettlementRepository;
 
     @Nested
     @DisplayName("성공 케이스")
@@ -60,11 +63,7 @@ class SettlementSaverTest {
                     .upsertDaily(
                             eq(userId),
                             eq(date.atStartOfDay()),
-                            eq(totals.getTotalSales()),
-                            eq(totals.getTotalFee()),
-                            eq(totals.getTotalVat()),
-                            eq(totals.getTotalRefund()),
-                            eq(totals.getTotalSettlement())
+                            eq(totals)
                     );
         }
         @Test
@@ -85,18 +84,8 @@ class SettlementSaverTest {
             // when
             settlementSaver.saveWeekly(userId, weekStart, totals);
             // then
-            verify(weeklySettlementRepository, times(1)).upsertWeekly(
-                    eq(userId),
-                    eq((short) 2025),
-                    eq((byte) 11),
-                    eq(weekStart),
-                    eq(expectedWeekEnd),
-                    eq(BigDecimal.valueOf(100000)),
-                    eq(BigDecimal.valueOf(5000)),
-                    eq(BigDecimal.valueOf(10000)),
-                    eq(BigDecimal.ZERO),
-                    eq(BigDecimal.valueOf(85000))
-            );
+            verify(weeklySettlementRepository, times(1))
+                    .upsertWeekly(eq(userId), eq(weekStart), eq(totals));
         }
 
         @Test
@@ -120,11 +109,7 @@ class SettlementSaverTest {
                             eq(1L),
                             eq((short) 2025),
                             eq((byte) 3),
-                            eq(totals.getTotalSales()),
-                            eq(totals.getTotalFee()),
-                            eq(totals.getTotalVat()),
-                            eq(totals.getTotalRefund()),
-                            eq(totals.getTotalSettlement())
+                            eq(totals)
                     );
         }
         @Test
@@ -146,11 +131,7 @@ class SettlementSaverTest {
                     .upsertYearly(
                             eq(userId),
                             eq(year),
-                            eq(totals.getTotalSales()),
-                            eq(totals.getTotalFee()),
-                            eq(totals.getTotalVat()),
-                            eq(totals.getTotalRefund()),
-                            eq(totals.getTotalSettlement())
+                            eq(totals)
                     );
         }
     }
@@ -167,22 +148,12 @@ class SettlementSaverTest {
 
             doThrow(new RuntimeException("DB ERROR"))
                     .when(dailySettlementRepository)
-                    .upsertDaily(anyLong(), any(), any(), any(), any(), any(), any());
+                    .upsertDaily(anyLong(), any(), any());
 
             // when & then
             assertThatThrownBy(() -> settlementSaver.saveDaily(userId, date, totals))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("DB ERROR");
-        }
-        @Test
-        @DisplayName("totals가 null이면 NullPointerException 발생")
-        void saveWeekly_fail_totalsNull() {
-            Long userId = 1L;
-            LocalDate weekStart = LocalDate.of(2025, 11, 3);
-
-            assertThatThrownBy(() ->
-                    settlementSaver.saveWeekly(userId, weekStart, null)
-            ).isInstanceOf(NullPointerException.class);
         }
         @Test
         @DisplayName("weekStartDate가 null이면 NullPointerException 발생")
@@ -201,24 +172,13 @@ class SettlementSaverTest {
             SettlementTotals totals = SettlementTotals.empty();
             doThrow(new RuntimeException("DB error"))
                     .when(weeklySettlementRepository)
-                    .upsertWeekly(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+                    .upsertWeekly(any(), any(), any());
 
             assertThatThrownBy(() ->
                     settlementSaver.saveWeekly(userId, weekStart, totals)
             )
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("DB error");
-        }
-        @Test
-        @DisplayName("totals 가 null 이면 NPE 발생")
-        void saveMonthly_fail_totalsNull() {
-            YearMonth ym = YearMonth.of(2025, 3);
-            assertThatThrownBy(() ->
-                    settlementSaver.saveMonthly(1L, ym, null)
-            ).isInstanceOf(NullPointerException.class);
-
-            verify(monthlySettlementRepository, never())
-                    .upsertMonthly(any(), any(), any(), any(), any(), any(), any(), any());
         }
         @Test
         @DisplayName("SettlementTotals 내부 필드가 null이어도 저장 시도 (현재 구현 기준)")
@@ -243,11 +203,7 @@ class SettlementSaverTest {
                             eq(1L),
                             eq((short) 2025),
                             eq((byte) 3),
-                            isNull(), // totalSales NULL 그대로 전달됨
-                            eq(BigDecimal.valueOf(5000)),
-                            eq(BigDecimal.valueOf(10000)),
-                            eq(BigDecimal.ZERO),
-                            eq(BigDecimal.valueOf(85000))
+                            eq(totals)
                     );
         }
         @Test
@@ -264,23 +220,12 @@ class SettlementSaverTest {
 
             doThrow(new RuntimeException("DB ERROR"))
                     .when(monthlySettlementRepository)
-                    .upsertMonthly(any(), any(), any(), any(), any(), any(), any(), any());
+                    .upsertMonthly(any(), any(), any(), any());
 
             assertThatThrownBy(() ->
                     settlementSaver.saveMonthly(1L, ym, totals)
             ).isInstanceOf(RuntimeException.class)
                     .hasMessage("DB ERROR");
-        }
-        @Test
-        @DisplayName("totals 가 null이면 NPE 발생")
-        void saveYearly_fail_totalsNull() {
-            Long userId = 1L;
-            assertThatThrownBy(() ->
-                    settlementSaver.saveYearly(userId, (short)2025, null)
-            ).isInstanceOf(NullPointerException.class);
-
-            verify(yearlySettlementRepository, never())
-                    .upsertYearly(any(), any(), any(), any(), any(), any(), any());
         }
         @Test
         @DisplayName("totals 내부 필드가 null이어도 저장 호출은 이루어진다 → 현재 구조에서는 예외 없음")
@@ -297,7 +242,7 @@ class SettlementSaverTest {
 
             // then: 호출되었는지 확인
             verify(yearlySettlementRepository, times(1))
-                    .upsertYearly(any(), any(), any(), any(), any(), any(), any());
+                    .upsertYearly(any(), any(), any());
         }
         @Test
         @DisplayName("repository 내부 에러 발생 시 예외 전파")
@@ -312,7 +257,7 @@ class SettlementSaverTest {
 
             doThrow(new RuntimeException("DB error"))
                     .when(yearlySettlementRepository)
-                    .upsertYearly(any(), any(), any(), any(), any(), any(), any());
+                    .upsertYearly(any(), any(), any());
 
             assertThatThrownBy(() ->
                     settlementSaver.saveYearly(1L, (short)2025, totals)

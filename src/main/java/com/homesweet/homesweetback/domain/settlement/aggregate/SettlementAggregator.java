@@ -14,9 +14,7 @@ import java.util.function.Function;
 @Component
 @RequiredArgsConstructor
 public class SettlementAggregator {
-
     private final SettlementCalculator settlementCalculator;
-
     public <T, K> Map<K, SettlementTotals> aggregate(
             List<T> items,
             Function<T, K> keyExtractor,

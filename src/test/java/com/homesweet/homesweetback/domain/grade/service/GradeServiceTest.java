@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("등급 테스트")
+@DisplayName("등급 단위 테스트")
 class GradeServiceTest {
 
     @InjectMocks

@@ -36,5 +36,4 @@ public class MonthlyDateRangeCalculatorTest {
         assertThat(range.toYear()).isEqualTo((short) 2025);
         assertThat(range.toMonth()).isEqualTo((byte) 3);
     }
-
 }

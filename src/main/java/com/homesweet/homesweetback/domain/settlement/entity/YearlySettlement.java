@@ -22,7 +22,7 @@ public class YearlySettlement {
 
     private Long userId; // 어떤 사용자의 정산인지만 확인하는 것이기 때문에 객체를 참조할 필요 X
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "year_value")
     private Short year;
 
     @Column(name = "total_sales", precision = 15, scale = 2)
