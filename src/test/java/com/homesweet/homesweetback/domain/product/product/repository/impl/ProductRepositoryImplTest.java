@@ -175,14 +175,14 @@ class ProductRepositoryImplTest {
             @Test
             @DisplayName("상품 리스트를 반환한다")
             void findNextProducts_success() {
-                List<ProductEntity> products = List.of(
-                        createMockProductEntity(1L, "테이블1"),
-                        createMockProductEntity(2L,  "테이블2")
+                List<ProductPreviewResponse> products = List.of(
+                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
+                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000)
                 );
 
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(products);
 
-                List<Product> result =
+                List<ProductPreviewResponse> result =
                         repository.findNextProducts(1L, 1L, 10, "가구", ProductSortType.LATEST);
 
                 assertThat(result).hasSize(2);
@@ -194,7 +194,7 @@ class ProductRepositoryImplTest {
                 given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any()))
                         .willReturn(Collections.emptyList());
 
-                List<Product> result =
+                List<ProductPreviewResponse> result =
                         repository.findNextProducts(1L, 1L, 10, null, ProductSortType.LATEST);
 
                 assertThat(result).isEmpty();

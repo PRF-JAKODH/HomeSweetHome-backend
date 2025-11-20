@@ -3,11 +3,13 @@ package com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl;
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,6 +39,9 @@ class CustomCartRepositoryImplTest {
 
     @MockitoBean
     private ProductCategoryRepository productCategoryRepository;
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     @Test
     @DisplayName("첫 페이지 장바구니 항목 조회 (cursor 없음)")

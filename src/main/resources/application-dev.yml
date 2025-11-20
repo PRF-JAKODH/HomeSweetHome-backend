@@ -7,10 +7,11 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:mysql://localhost:3306/homesweet
+    url: jdbc:mysql://localhost:3307/small_db
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: user
-    password: password
+    username: root
+    password: root
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -20,7 +21,6 @@ spring:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
-        default_batch_fetch_size: 30
   security:
     oauth2:
       client:

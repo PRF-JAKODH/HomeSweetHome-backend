@@ -2,6 +2,10 @@ package com.homesweet.homesweetback.domain.auth.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
+import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl.CustomProductRepository;
+import com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl.CustomProductRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.category.repository.impl.ProductCategoryRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -28,6 +33,8 @@ import com.homesweet.homesweetback.domain.product.category.repository.mapper.Pro
 class RefreshTokenRepositoryTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+    @MockitoBean
+    private CacheCategory cacheCategory;
     
     private static final String TEST_EMAIL = "test@test.com";
     private static final String TEST_REFRESH_TOKEN = "test-refresh-token-12345";
