@@ -7,20 +7,26 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.chat.dto.ChatMessageDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.GroupChatDetailResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
+import com.homesweet.homesweetback.domain.chat.event.MemberRegisteredEvent;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
+import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +44,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
-    private final UserRepository userRepository;
-
+    private final SimpMessagingTemplate messagingTemplate;
+    private final RoomMemberService roomMemberService;
 
     /**
      * 메시지 전송/저장
@@ -131,4 +137,30 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return true;
     }
 
+    @EventListener
+    @Async
+    public void handleMemberRegisteredEvent(MemberRegisteredEvent event) {
+
+        Long roomId = event.getRoomId();
+
+        // 1. 최신 활성 멤버 목록 조회 (DB Read)
+        List<GroupChatDetailResponse.MemberInfo> latestMembers =
+                roomMemberService.refreshGroupMembers(roomId);
+
+        // 2. 웹소켓 토픽 설정 및 푸시 (Publish)
+        String destination = "/sub/chat/rooms/" + roomId + "/members";
+
+        messagingTemplate.convertAndSend(destination, latestMembers);
+
+        log.info(" 웹소켓 멤버 목록 업데이트 푸시 완료 | Room ID: {}", roomId);
+    }
+
+
+
 }
+
+
+
+
+
+
