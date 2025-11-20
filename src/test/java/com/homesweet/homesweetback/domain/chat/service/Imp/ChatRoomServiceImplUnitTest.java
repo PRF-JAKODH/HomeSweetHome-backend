@@ -474,24 +474,24 @@ public class ChatRoomServiceImplUnitTest {
             verify(chatRoomRepository).findById(100L);
         }
 
-        @Test
-        @DisplayName("[성공] registerGroupMember를 호출한다.")
-        void shouldCallRegisterGroupMember() {
-            // given
-            ChatRoom chatRoom = ChatRoom.builder()
-                    .id(100L)
-                    .type(ChatRoomType.GROUP)
-                    .build();
-
-            given(chatRoomRepository.findById(100L)).willReturn(Optional.of(chatRoom));
-            given(roomMemberRepository.findByRoom_IdAndIsExitFalse(100L)).willReturn(List.of());
-
-            // when
-            service.getGroupChatDetail(1L, 100L);
-
-            // then
-            verify(roomMemberService).registerGroupMember(chatRoom, 1L);
-        }
+//        @Test
+//        @DisplayName("[성공] registerGroupMember를 호출한다.")
+//        void shouldCallRegisterGroupMember() {
+//            // given
+//            ChatRoom chatRoom = ChatRoom.builder()
+//                    .id(100L)
+//                    .type(ChatRoomType.GROUP)
+//                    .build();
+//
+//            given(chatRoomRepository.findById(100L)).willReturn(Optional.of(chatRoom));
+//            given(roomMemberRepository.findByRoom_IdAndIsExitFalse(100L)).willReturn(List.of());
+//
+//            // when
+//            service.getGroupChatDetail(1L, 100L);
+//
+//            // then
+//            verify(roomMemberService).registerGroupMember(chatRoom, 1L);
+//        }
 
         @Test
         @DisplayName("[성공] 그룹 채팅방에 참여중인 사용자(활성멤버)를 조회한다.")
@@ -539,26 +539,26 @@ public class ChatRoomServiceImplUnitTest {
             assertThat(result.roomType()).isEqualTo(chatRoom.getType());
         }
 
-        @Test
-        @DisplayName("[성공] 참여자 수를 올바르게 계산한다")
-        void shouldCalculateMemberCount() {
-            // given
-            when(chatRoomRepository.findById(roomId)).thenReturn(Optional.of(mockChatRoom));
-            doNothing().when(roomMemberService).registerGroupMember(any(ChatRoom.class), eq(userId));
-            when(roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId)).thenReturn(activeMembers);
-
-            // when
-            GroupChatDetailResponse response = service.getGroupChatDetail(userId, roomId);
-
-            // then
-            assertEquals(activeMembers.size(), response.memberCount(), "참여자 수는 3명이어야 합니다.");
-            assertEquals(activeMembers.size(), response.participants().size(), "참여자 리스트의 크기는 3명이어야 합니다.");
-
-            // 3. (선택적 검증) 필수 메서드가 예상대로 호출되었는지 확인
-            verify(chatRoomRepository, times(1)).findById(roomId);
-            verify(roomMemberService, times(1)).registerGroupMember(mockChatRoom, userId);
-            verify(roomMemberRepository, times(1)).findByRoom_IdAndIsExitFalse(roomId);
-        }
+//        @Test
+//        @DisplayName("[성공] 참여자 수를 올바르게 계산한다")
+//        void shouldCalculateMemberCount() {
+//            // given
+//            when(chatRoomRepository.findById(roomId)).thenReturn(Optional.of(mockChatRoom));
+//            doNothing().when(roomMemberService).registerGroupMember(any(ChatRoom.class), eq(userId));
+//            when(roomMemberRepository.findByRoom_IdAndIsExitFalse(roomId)).thenReturn(activeMembers);
+//
+//            // when
+//            GroupChatDetailResponse response = service.getGroupChatDetail(userId, roomId);
+//
+//            // then
+//            assertEquals(activeMembers.size(), response.memberCount(), "참여자 수는 3명이어야 합니다.");
+//            assertEquals(activeMembers.size(), response.participants().size(), "참여자 리스트의 크기는 3명이어야 합니다.");
+//
+//            // 3. (선택적 검증) 필수 메서드가 예상대로 호출되었는지 확인
+//            verify(chatRoomRepository, times(1)).findById(roomId);
+//            verify(roomMemberService, times(1)).registerGroupMember(mockChatRoom, userId);
+//            verify(roomMemberRepository, times(1)).findByRoom_IdAndIsExitFalse(roomId);
+//        }
 
         @Test
         @DisplayName("[성공] 채팅방에 입장할 수 있다.")

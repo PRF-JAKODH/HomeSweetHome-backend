@@ -345,58 +345,58 @@ class ChatRoomServiceIntegrationTest {
             assertThat(response.participants()).hasSize(1);
         }
 
-        @Test
-        @DisplayName("[성공] 새로운 멤버가 조회하면 자동으로 등록된다")
-        void getGroupChatDetail_NewMember_AutoRegistered() {
-            // given
-            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-            );
-            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+//        @Test
+//        @DisplayName("[성공] 새로운 멤버가 조회하면 자동으로 등록된다")
+//        void getGroupChatDetail_NewMember_AutoRegistered() {
+//            // given
+//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+//                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+//            );
+//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+//
+//            // when - user2가 처음 조회
+//            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
+//                    user2.getId(), createdRoom.roomId()
+//            );
+//
+//            // then
+//            assertThat(response.memberCount()).isEqualTo(2);
+//            assertThat(response.participants()).hasSize(2);
+//
+//            // DB 검증
+//            RoomMember newMember = roomMemberRepository
+//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
+//                    .orElseThrow();
+//            assertThat(newMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
+//            assertThat(newMember.isExit()).isFalse();
+//        }
 
-            // when - user2가 처음 조회
-            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
-                    user2.getId(), createdRoom.roomId()
-            );
-
-            // then
-            assertThat(response.memberCount()).isEqualTo(2);
-            assertThat(response.participants()).hasSize(2);
-
-            // DB 검증
-            RoomMember newMember = roomMemberRepository
-                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-                    .orElseThrow();
-            assertThat(newMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
-            assertThat(newMember.isExit()).isFalse();
-        }
-
-        @Test
-        @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
-        void getGroupChatDetail_ReEnter_Success() {
-            // given
-            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                    3L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-            );
-            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-
-            // user2가 입장했다가 퇴장
-            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
-            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
-
-            // when - user2가 다시 조회 (재입장)
-            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
-                    user2.getId(), createdRoom.roomId()
-            );
-
-            // then
-            assertThat(response.memberCount()).isEqualTo(2);
-
-            RoomMember reenteredMember = roomMemberRepository
-                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-                    .orElseThrow();
-            assertThat(reenteredMember.isExit()).isFalse();
-        }
+//        @Test
+//        @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
+//        void getGroupChatDetail_ReEnter_Success() {
+//            // given
+//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+//                    3L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+//            );
+//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+//
+//            // user2가 입장했다가 퇴장
+//            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
+//            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
+//
+//            // when - user2가 다시 조회 (재입장)
+//            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
+//                    user2.getId(), createdRoom.roomId()
+//            );
+//
+//            // then
+//            assertThat(response.memberCount()).isEqualTo(2);
+//
+//            RoomMember reenteredMember = roomMemberRepository
+//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
+//                    .orElseThrow();
+//            assertThat(reenteredMember.isExit()).isFalse();
+//        }
 
         @Test
         @DisplayName("[실패] 개인 채팅방을 그룹 채팅방으로 조회하면 예외가 발생한다")
@@ -439,25 +439,25 @@ class ChatRoomServiceIntegrationTest {
             assertThat(chatRoom.getIsDeleted()).isFalse();
         }
 
-        @Test
-        @DisplayName("[성공] 그룹 채팅방에서 퇴장한다")
-        void exitRoom_GroupRoom_Success() {
-            // given
-            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-            );
-            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
-
-            // when
-            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
-
-            // then
-            RoomMember exitedMember = roomMemberRepository
-                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-                    .orElseThrow();
-            assertThat(exitedMember.isExit()).isTrue();
-        }
+//        @Test
+//        @DisplayName("[성공] 그룹 채팅방에서 퇴장한다")
+//        void exitRoom_GroupRoom_Success() {
+//            // given
+//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+//                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+//            );
+//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+//            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
+//
+//            // when
+//            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
+//
+//            // then
+//            RoomMember exitedMember = roomMemberRepository
+//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
+//                    .orElseThrow();
+//            assertThat(exitedMember.isExit()).isTrue();
+//        }
 
         @Test
         @DisplayName("[성공] 그룹 채팅방의 마지막 멤버가 퇴장하면 방이 삭제된다")

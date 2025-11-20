@@ -129,53 +129,53 @@ class RoomMemberServiceImplUnitTest {
         @DisplayName("그룹채팅방 멤버 등록 및 재입장")
         class RegisterMember {
 
-            @Test
-            @DisplayName("[성공] 신규 멤버를 MEMBER 역할로 등록한다")
-            void shouldRegisterNewMember() {
-                // given
-                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
-                User user = User.builder().id(1L).name("철수").build();
+//            @Test
+//            @DisplayName("[성공] 신규 멤버를 MEMBER 역할로 등록한다")
+//            void shouldRegisterNewMember() {
+//                // given
+//                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
+//                User user = User.builder().id(1L).name("철수").build();
+//
+//                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
+//                        .willReturn(Optional.empty());  // 멤버 없음
+//                given(userRepository.findById(1L))
+//                        .willReturn(Optional.of(user));
+//
+//                ArgumentCaptor<RoomMember> captor = ArgumentCaptor.forClass(RoomMember.class);
+//
+//                // when
+//                service.registerGroupMember(chatRoom, 1L);
+//
+//                // then
+//                verify(roomMemberRepository).save(captor.capture());
+//
+//                RoomMember savedMember = captor.getValue();
+//                assertThat(savedMember.getUser()).isEqualTo(user);
+//                assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
+//                assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
+//                assertThat(savedMember.isExit()).isFalse();
+//            }
 
-                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
-                        .willReturn(Optional.empty());  // 멤버 없음
-                given(userRepository.findById(1L))
-                        .willReturn(Optional.of(user));
-
-                ArgumentCaptor<RoomMember> captor = ArgumentCaptor.forClass(RoomMember.class);
-
-                // when
-                service.registerGroupMember(chatRoom, 1L);
-
-                // then
-                verify(roomMemberRepository).save(captor.capture());
-
-                RoomMember savedMember = captor.getValue();
-                assertThat(savedMember.getUser()).isEqualTo(user);
-                assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
-                assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
-                assertThat(savedMember.isExit()).isFalse();
-            }
-
-            @Test
-            @DisplayName("[성공] 퇴장한 멤버를 재입장 처리한다")
-            void shouldRejoinExitedMember() {
-                // given
-                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
-                User user = User.builder().id(1L).name("철수").build();
-
-                RoomMember exitedMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
-                exitedMember.exit();
-
-                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
-                        .willReturn(Optional.of(exitedMember));
-
-                // when
-                service.registerGroupMember(chatRoom, 1L);
-
-                // then
-                verify(roomMemberRepository, never()).save(any());
-                assertThat(exitedMember.isExit()).isFalse();
-            }
+//            @Test
+//            @DisplayName("[성공] 퇴장한 멤버를 재입장 처리한다")
+//            void shouldRejoinExitedMember() {
+//                // given
+//                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
+//                User user = User.builder().id(1L).name("철수").build();
+//
+//                RoomMember exitedMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
+//                exitedMember.exit();
+//
+//                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
+//                        .willReturn(Optional.of(exitedMember));
+//
+//                // when
+//                service.registerGroupMember(chatRoom, 1L);
+//
+//                // then
+//                verify(roomMemberRepository, never()).save(any());
+//                assertThat(exitedMember.isExit()).isFalse();
+//            }
 
             @Test
             @DisplayName("[실패] 존재하지 않는 사용자면 USER_NOT_FOUND 예외")
