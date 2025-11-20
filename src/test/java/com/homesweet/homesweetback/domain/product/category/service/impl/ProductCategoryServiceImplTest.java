@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.ProductCategor
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ class ProductCategoryServiceImplTest {
 
     @Mock
     private ProductCategoryRepository repository;
+
+    @Mock
+    private CacheCategory cacheCategory;
 
     @Nested
     @DisplayName("카테고리 생성")

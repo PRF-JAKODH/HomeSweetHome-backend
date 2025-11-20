@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.product.category.repository.impl.ProductCategoryRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -33,6 +35,8 @@ import com.homesweet.homesweetback.domain.product.category.repository.mapper.Pro
 class UserRepositoryTest {
     @Autowired
     private UserRepository userRepository;
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     @Test
     @DisplayName("UserRole.USER 권한을 가진 사용자 조회 테스트_성공")

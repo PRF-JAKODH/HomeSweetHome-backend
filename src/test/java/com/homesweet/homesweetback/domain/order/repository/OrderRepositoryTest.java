@@ -13,6 +13,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.impl.Produ
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -57,6 +59,9 @@ class OrderRepositoryTest {
 
     @Autowired
     private ProductCategoryJPARepository productCategoryJPARepository;
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     private User savedUser; // 여러 테스트에서 공통으로 사용할 저장된 유저
     private SkuEntity savedSku;
