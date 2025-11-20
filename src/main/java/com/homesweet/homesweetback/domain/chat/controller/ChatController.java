@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -34,19 +35,21 @@ public class ChatController {
             @Payload ChatSendRequest request) {
 
         Long senderId = request.senderId();
+        Long roomId = request.roomId();
 
         if (senderId == null) {
             throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
         }
 
         ChatMessageSendResponse savedMessage = chatMessageService.sendMessage(
-                request.roomId(),
+                roomId,
                 senderId,
                 request.content()
         );
         //  방 전체 구독자에게 메시지 전송
-        String destination = "/sub/rooms/" + request.roomId();
+        String destination = "/sub/rooms/" + roomId;
         messagingTemplate.convertAndSend(destination, savedMessage);
+
     }
 
     /**

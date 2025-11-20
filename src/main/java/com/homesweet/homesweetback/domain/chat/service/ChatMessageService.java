@@ -15,7 +15,7 @@ public interface ChatMessageService {
 
     boolean canSendMessage(Long userId, Long roomId);
 
-    void handleMemberRegisteredEvent(MemberRegisteredEvent event);
+//    void handleMemberRegisteredEvent(MemberRegisteredEvent event);
 
     // 채팅방 메시지 읽음 처리
 //    void markAsRead(Long roomId, Long userId, Long lastReadMessageId);
