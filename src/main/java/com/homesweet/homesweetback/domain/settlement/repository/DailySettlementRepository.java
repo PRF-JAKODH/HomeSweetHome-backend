@@ -32,6 +32,11 @@ public interface DailySettlementRepository extends JpaRepository<DailySettlement
       AND d.settlementDate >= :startDate
       AND d.settlementDate < :endDate
     ORDER BY d.settlementDate DESC
+    """, countQuery = """
+    SELECT COUNT(d) FROM DailySettlement d
+        WHERE d.userId = :userId
+        AND d.settlementDate >= :startDate
+        AND d.settlementDate < :endDate
     """)
     Page<DailySettlement> findByDailySettlementByRange(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 }

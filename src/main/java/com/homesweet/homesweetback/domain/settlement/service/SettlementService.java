@@ -29,24 +29,22 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SettlementService {
     private final SettlementRepository settlementRepository;
-    private final GradeService gradeService;
     private final SettlementValidator settlementValidator;
     private final SettlementCalculator settlementCalculator;
     private final ExtractedSeller extractedSeller;
     private final CustomSettlementRepository customSettlementRepository;
-    // TODO: 결제에서 받지말고 한번에 처리하게끔 구조를 변경
     // 주문 확정(결제 완료)시 정산 생성
     @Transactional
     public void createSettlement(Order order) {
-        // 검증
+        // 1. 주문 검증
         settlementValidator.validateOrder(order);
 
-        // 판매자 정보 가져오기
+        // 2. 판매자 정보 가져오기
         User seller = extractedSeller.extractSeller(order);
-        // 검증
+
+        // 3. 판매자 검증
         settlementValidator.validateSeller(seller);
 
-        //TODO: 계산 로직만 메서드를 분리한다면 순수하게 테스트 가능
         // 4. 정산 금액 계산(메소드 분리)
         SettlementCalculator.Result result = settlementCalculator.getResult(order, seller);
 
@@ -62,7 +60,6 @@ public class SettlementService {
                 .settlementStatus("PENDING")
                 .userId(seller.getId())
                 .build();
-
         settlementRepository.save(settlement);
     }
 
