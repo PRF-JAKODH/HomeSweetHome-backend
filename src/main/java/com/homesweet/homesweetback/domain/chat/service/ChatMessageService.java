@@ -2,8 +2,6 @@ package com.homesweet.homesweetback.domain.chat.service;
 
 import com.homesweet.homesweetback.domain.chat.dto.response.ChatMessageSendResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.PreMessageResponse;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
-import com.homesweet.homesweetback.domain.chat.event.MemberRegisteredEvent;
 
 public interface ChatMessageService {
 
