@@ -8,7 +8,6 @@ import com.homesweet.homesweetback.domain.chat.dto.response.GroupChatDetailRespo
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
-import com.homesweet.homesweetback.domain.chat.event.MemberRegisteredEvent;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
@@ -41,7 +40,7 @@ public class RoomMemberServiceImpl implements RoomMemberService {
 
         Optional<RoomMember> memberOptional = roomMemberRepository.findByRoomIdAndUserId(chatRoom.getId(), userId);
 
-        boolean shouldPushUpdate = false;
+//        boolean shouldPushUpdate = false;
 
         if (memberOptional.isEmpty()) {
             // 2. 멤버가 없으면 신규 생성
@@ -51,22 +50,22 @@ public class RoomMemberServiceImpl implements RoomMemberService {
             RoomMember newMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
             roomMemberRepository.save(newMember);
 
-            shouldPushUpdate = true; // 신규 생성되었으므로 푸시 필요
+//            shouldPushUpdate = true; // 신규 생성되었으므로 푸시 필요
 
         } else {
             // 3. 퇴장 상태면 재입장 처리
             RoomMember member = memberOptional.get();
             if (member.isExit()) {
                 member.join();
-                shouldPushUpdate = true; // 재입장했으므로 푸시 필요
+//                shouldPushUpdate = true; // 재입장했으므로 푸시 필요
             }
             // (활성 상태면 아무 작업도 하지 않음)
         }
-        if (shouldPushUpdate) {
-            // chatRoom.getId()는 Long 타입이므로, 이를 웹소켓 서비스에 전달
-            eventPublisher.publishEvent(new MemberRegisteredEvent(chatRoom.getId()));
-            log.info("멤버 등록/재입장 완료. 웹소켓 멤버 목록 갱신 푸시!");
-        }
+//        if (shouldPushUpdate) {
+//            // chatRoom.getId()는 Long 타입이므로, 이를 웹소켓 서비스에 전달
+//            eventPublisher.publishEvent(new MemberRegisteredEvent(chatRoom.getId()));
+//            log.info("멤버 등록/재입장 완료. 웹소켓 멤버 목록 갱신 푸시!");
+//        }
 
     }
 

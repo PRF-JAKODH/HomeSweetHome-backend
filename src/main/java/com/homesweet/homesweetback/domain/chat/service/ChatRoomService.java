@@ -25,7 +25,7 @@ public interface ChatRoomService {
 
     List<GroupRoomListResponse> findMyGroupRooms(Long userId);
 
-    boolean isUserInRoom(Long userId, Long roomId);
+    boolean isUserInRoom(Long roomId, Long userId);
 
     List<GroupRoomListResponse> getAllGroupRooms();
 

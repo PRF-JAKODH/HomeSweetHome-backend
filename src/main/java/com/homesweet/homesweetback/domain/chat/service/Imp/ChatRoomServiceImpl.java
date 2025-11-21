@@ -246,8 +246,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     }
 
     @Override
-    public boolean isUserInRoom(Long userId, Long roomId) {
-        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(userId, roomId);
+    public boolean isUserInRoom(Long roomId,Long userId) {
+        return roomMemberRepository.existsByRoom_IdAndUser_IdAndIsExitFalse(roomId,userId);
     }
 
 

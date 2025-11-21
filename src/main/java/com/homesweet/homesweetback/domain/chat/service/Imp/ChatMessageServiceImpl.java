@@ -13,7 +13,6 @@ import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
-import com.homesweet.homesweetback.domain.chat.event.MemberRegisteredEvent;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
@@ -137,23 +136,23 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         return true;
     }
 
-    @EventListener
-    @Async
-    public void handleMemberRegisteredEvent(MemberRegisteredEvent event) {
-
-        Long roomId = event.getRoomId();
-
-        // 1. 최신 활성 멤버 목록 조회 (DB Read)
-        List<GroupChatDetailResponse.MemberInfo> latestMembers =
-                roomMemberService.refreshGroupMembers(roomId);
-
-        // 2. 웹소켓 토픽 설정 및 푸시 (Publish)
-        String destination = "/sub/chat/rooms/" + roomId + "/members";
-
-        messagingTemplate.convertAndSend(destination, latestMembers);
-
-        log.info(" 웹소켓 멤버 목록 업데이트 푸시 완료 | Room ID: {}", roomId);
-    }
+//    @EventListener
+//    @Async
+//    public void handleMemberRegisteredEvent(MemberRegisteredEvent event) {
+//
+//        Long roomId = event.getRoomId();
+//
+//        // 1. 최신 활성 멤버 목록 조회 (DB Read)
+//        List<GroupChatDetailResponse.MemberInfo> latestMembers =
+//                roomMemberService.refreshGroupMembers(roomId);
+//
+//        // 2. 웹소켓 토픽 설정 및 푸시 (Publish)
+//        String destination = "/sub/chat/rooms/" + roomId + "/members";
+//
+//        messagingTemplate.convertAndSend(destination, latestMembers);
+//
+//        log.info(" 웹소켓 멤버 목록 업데이트 푸시 완료 | Room ID: {}", roomId);
+//    }
 
 
 

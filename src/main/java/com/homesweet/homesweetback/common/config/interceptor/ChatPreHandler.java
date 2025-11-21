@@ -71,7 +71,6 @@ public class ChatPreHandler implements ChannelInterceptor {
             log.error(" WebSocket Interceptor Error: {}", e.getMessage());
             throw e;
         }
-
         return message;
     }
 
@@ -120,11 +119,11 @@ public class ChatPreHandler implements ChannelInterceptor {
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
         Long roomId = extractRoomId(accessor.getDestination());
 
-        if (userId == null || roomId == null) {
+        if (userId == null) {
             throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
         }
 
-        boolean isMember = chatRoomService.isUserInRoom(userId, roomId);
+        boolean isMember = chatRoomService.isUserInRoom(roomId, userId);
         if (!isMember) {
             throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
         }
@@ -140,18 +139,18 @@ public class ChatPreHandler implements ChannelInterceptor {
         ChatMessageService chatMessageService = chatMessageServiceProvider.getObject();
 
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
-        Long roomId = extractRoomId(accessor.getDestination());
+//        Long roomId = extractRoomId(accessor.getDestination());
 
-        if (userId == null || roomId == null) {
+        if (userId == null) {
             throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
         }
 
-        boolean canSend = chatMessageService.canSendMessage(userId, roomId);
-        if (!canSend) {
-            throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
-        }
+//        boolean canSend = chatMessageService.canSendMessage(userId, roomId);
+//        if (!canSend) {
+//            throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
+//        }
 
-        log.info("SEND 권한 확인 완료 | userId={} | roomId={}", userId, roomId);
+        log.info("SEND 권한 확인 완료 | userId={}", userId);
     }
 
     /**
