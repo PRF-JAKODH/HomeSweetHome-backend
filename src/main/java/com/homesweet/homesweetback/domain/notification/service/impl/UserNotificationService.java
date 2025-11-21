@@ -2,11 +2,12 @@ package com.homesweet.homesweetback.domain.notification.service.impl;
 
 import java.util.Map;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.auth.service.UserService;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
 import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationCategory;
@@ -17,7 +18,7 @@ import com.homesweet.homesweetback.domain.notification.repository.NotificationCa
 import com.homesweet.homesweetback.domain.notification.repository.NotificationTemplateRepository;
 import com.homesweet.homesweetback.domain.notification.repository.UserNotificationRepository;
 
-
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,10 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class UserNotificationService {
 
-    private final UserNotificationRepository userNotificationRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final NotificationCategoryRepository notificationCategoryRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
+    private final UserNotificationRepository userNotificationRepository;
 
     /**
      * 사용자 알림 생성 및 저장
@@ -51,7 +52,7 @@ public class UserNotificationService {
         NotificationTemplate template, 
         Map<String, Object> contextData) {
         UserNotification userNotification = UserNotification.builder()
-            .user(userRepository.getReferenceById(userId))
+            .user(userService.getUserById(userId))
             .template(template)
             .contextData(contextData)
             .isRead(false)
@@ -91,6 +92,11 @@ public class UserNotificationService {
      * @return 조회된 알림 템플릿
      */
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "notificationTemplateCache",
+            key = "#eventType",
+            cacheManager = "localCacheManager"
+    )
     public NotificationTemplate getNotificationTemplate(NotificationTemplateType eventType) {
         return notificationTemplateRepository
                 .findByTemplateType(eventType)

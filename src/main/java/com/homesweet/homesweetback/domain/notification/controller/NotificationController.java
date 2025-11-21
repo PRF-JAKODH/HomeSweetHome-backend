@@ -43,7 +43,7 @@ public class NotificationController {
             .userName("test")
             .orderId(12345L)
             .build();
-        notificationSendService.sendTemplateNotificationToSingleUser(12L, notification);
+        notificationSendService.sendTemplateNotificationToSingleUser(3L, notification);
     }
 
     @GetMapping(value = "/subscribe", produces = "text/event-stream")

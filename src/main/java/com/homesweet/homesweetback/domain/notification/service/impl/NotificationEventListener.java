@@ -13,6 +13,7 @@ import com.homesweet.homesweetback.domain.notification.service.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -50,7 +51,6 @@ public class NotificationEventListener {
         TemplateNotification notification = event.notification();
         
         // 1. 템플릿 조회 (DB에서 조회)
-        // 템플릿이 없으면 전체 이벤트 처리를 중단해야 함
         NotificationTemplate template = userNotificationService.getNotificationTemplate(notification.getEventType());
 
         log.info("템플릿 조회 완료: template={}", template);
@@ -64,7 +64,6 @@ public class NotificationEventListener {
                 
                 // 4. 알림 DTO 생성
                 PushNotificationDTO pushNotificationDTO = buildPushNotificationDTO(notification.toMap(), template, userNotification.getId());
-                log.info("알림 전송 완료: userId={}, eventType={}, notificationId={}", userId, notification.getEventType(), userNotification.getId());
 
                 // 5. 푸시 전송
                 sseService.sendNotification(userId, pushNotificationDTO.toJson());

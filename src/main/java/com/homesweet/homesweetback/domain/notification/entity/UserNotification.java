@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.notification.entity;
 
-import com.homesweet.homesweetback.common.BaseEntity;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
@@ -12,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -27,7 +28,9 @@ import java.util.Map;
 @Table(name = "user_notification")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserNotification extends BaseEntity {
+@EntityListeners(AuditingEntityListener.class)
+@DynamicUpdate
+public class UserNotification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +46,7 @@ public class UserNotification extends BaseEntity {
     private NotificationTemplate template;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "context_data", nullable = false, columnDefinition = "JSON")
+    @Column(name = "context_data", nullable = false, columnDefinition = "JSON", updatable = false)
     private Map<String, Object> contextData;
 
     @Column(name = "is_read", nullable = false)
@@ -54,7 +57,7 @@ public class UserNotification extends BaseEntity {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now(); // 기본값 설정
+    private LocalDateTime createdAt; // JPA Auditing이 자동으로 설정
 
     @Builder
     public UserNotification(User user, 
@@ -63,7 +66,7 @@ public class UserNotification extends BaseEntity {
                             Boolean isRead, 
                             Boolean isDeleted) {
         // 필수 필드 검증
-        if (user == null) {
+        if (user.getId() == null) {
             throw new NotificationException(ErrorCode.NOTIFICATION_USER_ID_IS_NULL);
         }
         if (contextData == null) {
