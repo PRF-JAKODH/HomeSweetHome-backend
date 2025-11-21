@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.chat.dto.response;
 
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import lombok.Builder;
 
@@ -16,10 +15,4 @@ public record GroupChatDetailResponse(
         ChatRoomType roomType
 
 ) {
-    @Builder
-    public record MemberInfo(
-            Long userId,
-            String userName,
-            String profileUrl
-    ) {}
 }

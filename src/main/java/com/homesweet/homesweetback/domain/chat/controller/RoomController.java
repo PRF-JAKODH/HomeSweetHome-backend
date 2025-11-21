@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
+import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class RoomController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final RoomMemberService roomMemberService;
 
     /**
      * 1:1 채팅방 생성 또는 재사용
@@ -91,6 +93,20 @@ public class RoomController {
 
         return ResponseEntity.ok(response);
     }
+
+    // 신규 멤버 등록
+    @PostMapping("/group/{roomId}")
+    public ResponseEntity<MemberInfo> createGroupRoom(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long roomId) {
+
+        Long userId = principal.getUserId();
+        MemberInfo response = roomMemberService.registerGroupMember(roomId, userId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+
 
 
 
