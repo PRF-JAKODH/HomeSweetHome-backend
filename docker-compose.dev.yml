@@ -53,7 +53,7 @@ services:
     restart: always
     command:
       - "--mysqld.username=exporter:root"
-      - "--mysqld.address=small_db:3307"
+      - "--mysqld.address=homesweet-db:3306"
     ports:
       - "9104:9104"
     networks:
