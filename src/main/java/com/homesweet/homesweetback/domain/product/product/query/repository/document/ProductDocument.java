@@ -1,8 +1,9 @@
 package com.homesweet.homesweetback.domain.product.product.query.repository.document;
 
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
  * @author junnukim1007gmail.com
  * @date 25. 11. 24.
  */
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
