@@ -6,7 +6,7 @@ import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARepository;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.mapper.CartMapper;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

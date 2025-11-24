@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.grade.repository.GradeRepository;
 import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelpIntegrationData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;

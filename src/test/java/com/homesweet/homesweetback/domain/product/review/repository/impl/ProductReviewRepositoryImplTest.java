@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;

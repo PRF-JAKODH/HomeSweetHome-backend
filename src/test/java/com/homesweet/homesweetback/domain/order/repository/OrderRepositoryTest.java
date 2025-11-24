@@ -14,11 +14,11 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.Produc
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.ProductJPARepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.SkuJPARepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

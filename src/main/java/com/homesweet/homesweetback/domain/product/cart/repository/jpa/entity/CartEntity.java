@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
