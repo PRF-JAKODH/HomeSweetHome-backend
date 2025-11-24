@@ -71,9 +71,4 @@ public class ProductReviewRepositoryImpl implements ProductReviewRepository {
     public ProductReviewStatisticsResponse getReviewStatistics(Long productId) {
         return jpaRepository.getReviewStatistics(productId);
     }
-
-    @Override
-    public List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds) {
-        return jpaRepository.findStatisticsByProductIds(productIds);
-    }
 }

@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.category.domain.ProductCategor
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.ProductCategoryService;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,6 +31,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     private final ProductValidator validator;
     private final ProductCategoryRepository repository;
+    private final CacheCategory cacheCategory;
 
     @Override
     @Transactional
@@ -55,6 +57,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         ProductCategory category = ProductCategory.createCategory(request.name(), request.parentId(), depth);
 
         ProductCategory domain = repository.save(category);
+
+        cacheCategory.evictAllCategoryCaches();
 
         return CategoryResponse.from(domain);
     }

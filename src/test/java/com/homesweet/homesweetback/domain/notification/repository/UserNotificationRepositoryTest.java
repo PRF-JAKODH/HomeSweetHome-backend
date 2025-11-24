@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,7 @@ import com.homesweet.homesweetback.domain.notification.entity.NotificationTempla
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
 import com.homesweet.homesweetback.domain.product.category.repository.impl.ProductCategoryRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @ActiveProfiles("test")
 @DataJpaTest // Transaction 포함 되어 있음
@@ -51,6 +53,9 @@ public class UserNotificationRepositoryTest {
 
     @Autowired
     private NotificationCategoryRepository notificationCategoryRepository;
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     // BeforeEach에서 설정한 데이터를 테스트에서 재사용
     private User testUser;

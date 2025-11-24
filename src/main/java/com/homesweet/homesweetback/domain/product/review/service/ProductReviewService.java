@@ -25,8 +25,6 @@ public interface ProductReviewService {
 
     ScrollResponse<ProductReviewResponse> getUserReviews(Long userId, Long cursorId, int limit);
 
-    Map<Long, ProductReviewStatistics> getReviewStatisticsByProductIds(List<Long> productIds);
-
     ProductReviewResponse updateReview(Long reviewId, Long userId, ProductReviewUpdateRequest request);
 
     ProductReviewStatisticsResponse getReviewStatistics(Long productId);

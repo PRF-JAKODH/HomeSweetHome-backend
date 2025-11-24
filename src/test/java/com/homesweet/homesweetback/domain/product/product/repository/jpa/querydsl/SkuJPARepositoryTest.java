@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.impl.Produ
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -38,6 +40,9 @@ class SkuJPARepositoryTest {
 
     @Autowired
     private SkuJPARepository skuJPARepository; // 👈 테스트 대상
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     // --- GIVEN (setUp)에 필요한 의존성 ---
     @Autowired

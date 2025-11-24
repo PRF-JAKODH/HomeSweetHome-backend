@@ -29,6 +29,4 @@ public interface ProductReviewRepository {
     ProductReview update(ProductReview domain);
 
     ProductReviewStatisticsResponse getReviewStatistics(Long productId);
-
-    List<ProductReviewStatistics> findStatisticsByProductIds(List<Long> productIds);
 }

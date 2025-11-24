@@ -5,20 +5,15 @@ import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.service.ProductSearchService;
 import com.homesweet.homesweetback.domain.product.product.service.RecentSearchService;
 import com.homesweet.homesweetback.domain.product.product.service.RecentViewService;
-import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
-import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 상품 검색 서비스 구현체
@@ -34,17 +29,14 @@ public class ProductSearchServiceImpl implements ProductSearchService {
     private final ProductRepository productRepository;
     private final RecentSearchService recentSearchService;
     private final RecentViewService recentViewService;
-    private final ProductReviewService productReviewService;
 
     @Override
     @Transactional(readOnly = true)
     public ScrollResponse<ProductPreviewResponse> search(Long cursorId, Long categoryId, Long userId, int limit, String keyword, ProductSortType sortType) {
 
-        if (keyword != null) {
-            recentSearchService.save(userId, keyword);
-        }
+        recentSearchService.save(userId, keyword);
 
-        List<Product> products =
+        List<ProductPreviewResponse> products =
                 productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
 
         boolean hasNext = products.size() > limit;
@@ -53,24 +45,10 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         }
 
         Long nextCursorId = hasNext
-                ? products.get(products.size() - 1).getId()
+                ? products.get(products.size() - 1).id()
                 : null;
 
-        List<Long> productIds = products.stream()
-                .map(Product::getId)
-                .toList();
-
-        Map<Long, ProductReviewStatistics> statsMap =
-                productReviewService.getReviewStatisticsByProductIds(productIds);
-
-        List<ProductPreviewResponse> previews = products.stream()
-                .map(product -> {
-                    ProductReviewStatistics stats = statsMap.getOrDefault(product.getId(), ProductReviewStatistics.empty());
-                    return ProductPreviewResponse.of(product, stats);
-                })
-                .toList();
-
-        return ScrollResponse.of(previews, nextCursorId, hasNext);
+        return ScrollResponse.of(products, nextCursorId, hasNext);
     }
 
     @Override

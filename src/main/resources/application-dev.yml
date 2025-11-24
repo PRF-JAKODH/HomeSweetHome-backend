@@ -11,6 +11,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: user
     password: password
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -20,7 +21,6 @@ spring:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
-        default_batch_fetch_size: 30
   security:
     oauth2:
       client:

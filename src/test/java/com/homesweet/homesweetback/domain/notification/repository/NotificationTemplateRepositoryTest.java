@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.notification.repository;
 
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import com.homesweet.homesweetback.domain.notification.domain.NotificationTempla
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
 import com.homesweet.homesweetback.domain.product.category.repository.impl.ProductCategoryRepositoryImpl;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,9 @@ public class NotificationTemplateRepositoryTest {
     
     @Autowired
     private NotificationTemplateRepository notificationTemplateRepository;
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     @Test
     @DisplayName("알림 템플릿 타입 조회")

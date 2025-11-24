@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.queryds
 
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
@@ -39,6 +40,9 @@ class CustomProductReviewRepositoryImplTest {
 
     @MockitoBean
     private ProductCategoryRepository categoryRepository;
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     @Nested
     @DisplayName("상품 리뷰 조회")

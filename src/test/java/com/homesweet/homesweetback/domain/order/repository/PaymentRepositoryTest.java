@@ -12,6 +12,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.impl.Produ
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime; // 👈 2. [추가] LocalDateTime import
@@ -58,6 +60,9 @@ class PaymentRepositoryTest {
     private SkuJPARepository skuJPARepository;
 
     private Order savedOrder; // 👈 테스트에서 사용할 Order
+
+    @MockitoBean
+    private CacheCategory cacheCategory;
 
     @BeforeEach
     void setUp() {

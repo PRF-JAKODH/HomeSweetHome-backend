@@ -308,16 +308,14 @@ class ProductServiceImplTest {
                 String keyword = null;
                 ProductSortType sortType = ProductSortType.LATEST;
 
-                List<Product> mockProducts = List.of(
-                        createMockProduct(1L, 1L,"의자"),
-                        createMockProduct(2L, 1L,"테이블"),
-                        createMockProduct(3L, 1L,"소파")
+                List<ProductPreviewResponse> products = List.of(
+                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
+                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000),
+                        createProductPreviewResponse(3L, "테이블3", "한샘", 150000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
-                        .willReturn(mockProducts);
-                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
-                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
+                        .willReturn(products);
 
                 // when
                 ScrollResponse<ProductPreviewResponse> response =
@@ -336,15 +334,13 @@ class ProductServiceImplTest {
                 Long cursorId = null;
                 Long categoryId = 1L;
                 int limit = 3;
-                List<Product> mockProducts = List.of(
-                        createMockProduct(1L, 1L,"의자"),
-                        createMockProduct(2L, 1L,"테이블")
+                List<ProductPreviewResponse> products = List.of(
+                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
+                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, null, ProductSortType.LATEST))
-                        .willReturn(mockProducts);
-                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
-                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
+                        .willReturn(products);
 
 
                 // when
@@ -367,14 +363,12 @@ class ProductServiceImplTest {
                 String keyword = "테이블";
                 ProductSortType sortType = ProductSortType.POPULAR;
 
-                List<Product> mockProducts = List.of(
-                        createMockProduct(1L, 1L, "의자")
+                List<ProductPreviewResponse> products = List.of(
+                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000)
                 );
 
                 given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
-                        .willReturn(mockProducts);
-                when(productReviewService.getReviewStatisticsByProductIds(anyList()))
-                        .thenReturn(Map.of(1L, new ProductReviewStatistics(1L,5L, 4.2)));
+                        .willReturn(products);
 
 
                 // when

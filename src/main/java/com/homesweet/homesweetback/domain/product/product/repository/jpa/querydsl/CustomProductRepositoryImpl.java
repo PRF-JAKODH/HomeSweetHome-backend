@@ -1,12 +1,13 @@
 package com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl;
 
-import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity;
+import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
+import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
@@ -14,22 +15,30 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionValueEntity.*;
 import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductSkuOptionEntity.*;
+import static com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity.productReviewEntity;
 
 /**
  * 제품 QueryDSL 레포 구현체
@@ -43,55 +52,123 @@ import static com.homesweet.homesweetback.domain.product.product.repository.jpa.
 public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     private final JPAQueryFactory queryFactory;
-    private final ProductCategoryRepository categoryRepository;
+    private final CacheCategory cacheCategory;
+    private final EntityManager em;
 
     @Override
-    public List<ProductEntity> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
-        QProductEntity product = productEntity;
+    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("""
+        SELECT
+            p.product_id,
+            p.category_id,
+            p.user_id AS seller_id,
+            p.name,
+            p.image_url,
+            p.brand,
+            p.base_price,
+            p.discount_rate,
+            p.shipping_price,
+            p.status,
 
-        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(categoryId);
+            (
+                SELECT COALESCE(AVG(r.rating), 0)
+                FROM products_reviews r
+                WHERE r.product_id = p.product_id
+            ) AS average_rating,
 
-        BooleanExpression condition = Expressions.allOf(
-                buildKeywordCondition(product, keyword),
-                buildCursorCondition(product, cursorId, sortType),
-                buildCategoryCondition(product, allSubCategoryIds),
-                buildStatusCondition(product)
-        );
+            (
+                SELECT COALESCE(COUNT(r2.review_id), 0)
+                FROM products_reviews r2
+                WHERE r2.product_id = p.product_id
+            ) AS review_count,
 
-        OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
+            p.created_at,
+            p.updated_at
 
-        return queryFactory
-                .select(Projections.fields(ProductEntity.class,
-                        product.id,
-                        product.category,
-                        product.seller,
-                        product.name,
-                        product.imageUrl,
-                        product.brand,
-                        product.basePrice,
-                        product.discountRate,
-                        product.shippingPrice,
-                        product.status,
-                        product.createdAt,
-                        product.updatedAt
-                ))
-                .from(product)
-                .where(condition)
-                .orderBy(orderSpecifier)
-                .limit(limit + 1)
-                .fetch();
+        FROM products p
+        WHERE 1 = 1
+        """);
+
+        // 1) 키워드(fulltext) 조건
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append("""
+                AND MATCH(p.name, p.brand, p.description)
+                    AGAINST(:keyword IN BOOLEAN MODE)
+            """);
+        }
+
+        // 2) 카테고리(서브카테고리 포함) 조건
+        List<Long> categoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            String inClause = categoryIds.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+
+            sql.append(" AND p.category_id IN (" + inClause + ") ");
+        }
+
+        // 3) 상태 조건
+        sql.append("""
+        AND p.status = 'ON_SALE'
+        """);
+
+        // 4) 커서 기반 페이징
+        if (cursorId != null) {
+            sql.append("""
+            AND p.product_id < :cursorId
+            """);
+        }
+
+        // 5) 정렬 조건
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append(" ORDER BY p.created_at DESC ");
+        } else {
+            // sortType 기준 정렬
+            switch (sortType) {
+                case PRICE_LOW -> sql.append(" ORDER BY p.base_price ASC ");
+                case PRICE_HIGH -> sql.append(" ORDER BY p.base_price DESC ");
+                case POPULAR -> sql.append("""
+                    ORDER BY (
+                        SELECT COUNT(*)
+                        FROM products_reviews r
+                        WHERE r.product_id = p.product_id
+                    ) DESC
+                """);
+                default -> sql.append(" ORDER BY p.created_at DESC ");
+            }
+        }
+
+        sql.append(" LIMIT :limit ");
+
+        Query query = em.createNativeQuery(sql.toString())
+                .setParameter("limit", limit + 1);
+
+        if (keyword != null && !keyword.isBlank()) {
+            query.setParameter("keyword", keyword);
+        }
+        if (cursorId != null) {
+            query.setParameter("cursorId", cursorId);
+        }
+
+        List<Object[]> rows = query.getResultList();
+        return rows.stream()
+                .map(this::toProductPreviewResponse)
+                .toList();
     }
 
     @Override
-    public List<ProductEntity> findProductsByOptionFilter(
+    public List<ProductPreviewResponse> findProductsByOptionFilter(
             Long cursorId,
             ProductFilterRequest request,
             int limit,
             ProductSortType sortType
     ) {
         QProductEntity product = productEntity;
+        QProductReviewEntity review = productReviewEntity;
 
-        List<Long> allSubCategoryIds = categoryRepository.findAllSubCategoryIds(request.categoryId());
+        List<Long> allSubCategoryIds = cacheCategory.getAllSubCategoryIds(request.categoryId());
 
         BooleanExpression keywordCondition = buildKeywordCondition(product, request.keyword());
         BooleanExpression cursorCondition = buildCursorCondition(product, cursorId, sortType);
@@ -100,7 +177,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
         BooleanExpression optionCondition = buildOptionFilterCondition(product, request);
         BooleanExpression rangeFilterCondition = buildRangeFilterCondition(product, request);
 
-        BooleanBuilder condition = new BooleanBuilder()
+        BooleanBuilder builder = new BooleanBuilder()
                 .and(keywordCondition)
                 .and(cursorCondition)
                 .and(categoryCondition)
@@ -110,11 +187,11 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(product, sortType);
 
-        return queryFactory
-                .select(Projections.fields(ProductEntity.class,
+        List<ProductPreviewResponse> results = queryFactory
+                .select(Projections.constructor(ProductPreviewResponse.class,
                         product.id,
-                        product.category,
-                        product.seller,
+                        product.category.id,
+                        product.seller.id,
                         product.name,
                         product.imageUrl,
                         product.brand,
@@ -122,14 +199,24 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                         product.discountRate,
                         product.shippingPrice,
                         product.status,
+                        JPAExpressions
+                                .select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
+                        JPAExpressions
+                                .select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.product.id.eq(product.id)),
                         product.createdAt,
                         product.updatedAt
                 ))
                 .from(product)
-                .where(condition)
+                .where(builder)
                 .orderBy(orderSpecifier)
                 .limit(limit + 1)
                 .fetch();
+
+        return results;
     }
 
     @Override
@@ -211,7 +298,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
         QProductEntity product = QProductEntity.productEntity;
         QSkuEntity sku = QSkuEntity.skuEntity;
-        QProductCategoryEntity category = QProductCategoryEntity.productCategoryEntity;
+        QProductCategoryEntity category = productCategoryEntity;
         QProductCategoryEntity parent = new QProductCategoryEntity("parent");
         QProductCategoryEntity grandParent = new QProductCategoryEntity("grandParent");
 
@@ -405,7 +492,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
 
     // 판매 중지 상품은 조회되면 안 된다
     private BooleanExpression buildStatusCondition(QProductEntity product) {
-        return product.status.ne(ProductStatus.SUSPENDED);
+        return product.status.eq(ProductStatus.ON_SALE);
     }
 
     // 검색 조건 (제품명 or 브랜드)
@@ -441,5 +528,27 @@ public class CustomProductRepositoryImpl implements CustomProductRepository{
                     .desc();
             default -> product.createdAt.desc();
         };
+    }
+
+    private ProductPreviewResponse toProductPreviewResponse(Object[] row) {
+        return new ProductPreviewResponse(
+                ((Number) row[0]).longValue(),
+                ((Number) row[1]).longValue(),
+                ((Number) row[2]).longValue(),
+                (String) row[3],
+                (String) row[4],
+                (String) row[5],
+                ((Number) row[6]).intValue(),
+                row[7] != null
+                        ? new BigDecimal(row[7].toString())
+                        : BigDecimal.ZERO,
+                ((Number) row[8]).intValue(),
+                ProductStatus.valueOf((String) row[9]),
+                row[10] != null ? ((Number) row[10]).doubleValue() : 0.0,
+                row[11] != null ? ((Number) row[11]).longValue() : 0L,
+
+                row[12] != null ? ((Timestamp) row[12]).toLocalDateTime() : null,
+                row[13] != null ? ((Timestamp) row[13]).toLocalDateTime() : null
+        );
     }
 }
