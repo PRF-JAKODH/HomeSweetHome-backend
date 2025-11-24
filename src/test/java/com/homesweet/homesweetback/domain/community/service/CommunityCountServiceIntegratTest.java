@@ -183,7 +183,8 @@ class CommunityCountServiceIntegratTest {
     void togglePostLike_Remove_Success() {
         // given
         countService.togglePostLike(testPost.getPostId(), anotherUser.getId());
-        int likeCountAfterAdd = testPost.getLikeCount();
+        CommunityPostEntity postAfterAdd = postRepository.findById(testPost.getPostId()).orElseThrow();
+        int likeCountAfterAdd = postAfterAdd.getLikeCount();
 
         // when - 다시 토글하여 좋아요 취소
         countService.togglePostLike(testPost.getPostId(), anotherUser.getId());
@@ -312,7 +313,8 @@ class CommunityCountServiceIntegratTest {
     void toggleCommentLike_Remove_Success() {
         // given
         countService.toggleCommentLike(testComment.getCommentId(), anotherUser.getId());
-        int likeCountAfterAdd = testComment.getLikeCount();
+        CommunityCommentEntity commentAfterAdd = commentRepository.findById(testComment.getCommentId()).orElseThrow();
+        int likeCountAfterAdd = commentAfterAdd.getLikeCount();
 
         // when - 다시 토글하여 좋아요 취소
         countService.toggleCommentLike(testComment.getCommentId(), anotherUser.getId());
