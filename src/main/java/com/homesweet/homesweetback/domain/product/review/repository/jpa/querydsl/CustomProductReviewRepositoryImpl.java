@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.auth.entity.QUser;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductEntity;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;

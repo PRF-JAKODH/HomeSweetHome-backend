@@ -15,8 +15,6 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.req
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.command.domain.*;
-import com.homesweet.homesweetback.domain.product.product.controller.response.*;
-import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.command.repository.SkuRepository;
