@@ -66,7 +66,7 @@ public class UserNotification {
                             Boolean isRead, 
                             Boolean isDeleted) {
         // 필수 필드 검증
-        if (user.getId() == null) {
+        if (user == null || user.getId() == null) {
             throw new NotificationException(ErrorCode.NOTIFICATION_USER_ID_IS_NULL);
         }
         if (contextData == null) {
