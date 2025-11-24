@@ -466,25 +466,14 @@ class CommunityServiceTest {
     void increaseViewCount() {
         // given
         Long postId = 1L;
-        User fakeUser = User.builder().id(1L).name("User").build();
-        CommunityPostEntity fakePost = CommunityPostEntity.builder()
-                .postId(postId)
-                .author(fakeUser)
-                .title("Test Title")
-                .content("Test Content")
-                .category("Test Category")
-                .viewCount(0)
-                .build();
 
-        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
+        when(postRepository.incrementViewCount(postId)).thenReturn(1);
 
         // when
         communityCountService.increaseViewCount(postId);
 
         // then
-        assertThat(fakePost.getViewCount()).isEqualTo(1);
-
-        verify(postRepository).findByPostIdAndIsDeletedFalseWithPessimisticLock(postId);
+        verify(postRepository).incrementViewCount(postId);
     }
 
     @DisplayName("게시글 좋아요 추가 테스트")
@@ -504,16 +493,16 @@ class CommunityServiceTest {
                 .likeCount(0)
                 .build();
 
-        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
+        when(postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId)).thenReturn(false);
+        when(postRepository.updateLikeCount(postId, 1)).thenReturn(1);
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
-        when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.empty());
+        when(postRepository.findByPostIdAndIsDeletedFalse(postId)).thenReturn(Optional.of(fakePost));
 
         // when
         communityCountService.togglePostLike(postId, userId);
 
         // then
-        assertThat(fakePost.getLikeCount()).isEqualTo(1);
-
+        verify(postRepository).updateLikeCount(postId, 1);
         verify(postLikeRepository).save(any(CommunityPostLikeEntity.class));
     }
 
@@ -524,32 +513,16 @@ class CommunityServiceTest {
         Long postId = 1L;
         Long userId = 1L;
 
-        User fakeUser = User.builder().id(userId).name("User").build();
-        CommunityPostEntity fakePost = CommunityPostEntity.builder()
-                .postId(postId)
-                .author(fakeUser)
-                .title("Test Title")
-                .content("Test Content")
-                .category("Test Category")
-                .likeCount(1)
-                .build();
-
-        CommunityPostLikeEntity existingLike = CommunityPostLikeEntity.builder()
-                .post(fakePost)
-                .user(fakeUser)
-                .build();
-
-        when(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(postId)).thenReturn(Optional.of(fakePost));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
-        when(postLikeRepository.findByPostAndUser(fakePost, fakeUser)).thenReturn(Optional.of(existingLike));
+        when(postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId)).thenReturn(true);
+        when(postRepository.updateLikeCount(postId, -1)).thenReturn(1);
+        when(postLikeRepository.deleteByPostIdAndUserId(postId, userId)).thenReturn(1);
 
         // when
         communityCountService.togglePostLike(postId, userId);
 
         // then
-        assertThat(fakePost.getLikeCount()).isEqualTo(0);
-
-        verify(postLikeRepository).delete(existingLike);
+        verify(postRepository).updateLikeCount(postId, -1);
+        verify(postLikeRepository).deleteByPostIdAndUserId(postId, userId);
     }
 
     @DisplayName("게시글 좋아요 확인 테스트")
@@ -591,17 +564,17 @@ class CommunityServiceTest {
                 .likeCount(0)
                 .build();
 
-        when(commentRepository.findByIdWithPessimisticLock(commentId)).thenReturn(Optional.of(fakeComment));
+        when(commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId)).thenReturn(false);
+        when(commentRepository.updateLikeCount(commentId, 1)).thenReturn(1);
         when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
-        when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser)).thenReturn(Optional.empty());
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(fakeComment));
         willDoNothing().given(notificationSendService).sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
 
         // when
         communityCountService.toggleCommentLike(commentId, userId);
 
         // then
-        assertThat(fakeComment.getLikeCount()).isEqualTo(1);
-
+        verify(commentRepository).updateLikeCount(commentId, 1);
         verify(commentLikeRepository).save(any(CommunityCommentLikeEntity.class));
     }
 
@@ -612,37 +585,16 @@ class CommunityServiceTest {
         Long commentId = 1L;
         Long userId = 1L;
 
-        User fakeUser = User.builder().id(userId).name("User").build();
-        CommunityPostEntity fakePost = CommunityPostEntity.builder()
-                .postId(1L)
-                .author(fakeUser)
-                .title("Test Title")
-                .build();
-        CommunityCommentEntity fakeComment = CommunityCommentEntity.builder()
-                .commentId(commentId)
-                .post(fakePost)
-                .author(fakeUser)
-                .content("Test Comment")
-                .likeCount(1)
-                .build();
+        when(commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId)).thenReturn(true);
+        when(commentRepository.updateLikeCount(commentId, -1)).thenReturn(1);
+        when(commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId)).thenReturn(1);
 
-        CommunityCommentLikeEntity existingLike = CommunityCommentLikeEntity.builder()
-                .comment(fakeComment)
-                .user(fakeUser)
-                .build();
-
-        when(commentRepository.findByIdWithPessimisticLock(commentId)).thenReturn(Optional.of(fakeComment));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(fakeUser));
-        when(commentLikeRepository.findByCommentAndUser(fakeComment, fakeUser))
-                .thenReturn(Optional.of(existingLike));
-        willDoNothing().given(notificationSendService).sendTemplateNotificationToSingleUser(anyLong(), any(TemplateNotification.class));
         // when
         communityCountService.toggleCommentLike(commentId, userId);
 
         // then
-        assertThat(fakeComment.getLikeCount()).isEqualTo(0);
-
-        verify(commentLikeRepository).delete(existingLike);
+        verify(commentRepository).updateLikeCount(commentId, -1);
+        verify(commentLikeRepository).deleteByCommentIdAndUserId(commentId, userId);
     }
 
     @DisplayName("댓글 좋아요 확인 테스트")
@@ -761,12 +713,13 @@ class CommunityServiceTest {
     void countUpNonExistPostLike() {
         // Given
         Long nonExistPostId = 999L;
-
         Long authorId = 100L;
 
         // 가짜 객체 설정
-        given(postRepository.findByPostIdAndIsDeletedFalseWithPessimisticLock(nonExistPostId))
-                .willReturn(Optional.empty());
+        given(postLikeRepository.existsByPost_PostIdAndUser_Id(nonExistPostId, authorId))
+                .willReturn(false);
+        given(postRepository.updateLikeCount(nonExistPostId, 1))
+                .willReturn(0); // 업데이트된 행이 0 = 게시글 없음
 
         // when, then
         assertThatThrownBy(() ->
@@ -934,8 +887,10 @@ class CommunityServiceTest {
         Long nonExistCommentId = 999L;
         Long userId = 1L;
 
-        given(commentRepository.findByIdWithPessimisticLock(nonExistCommentId))
-                .willReturn(Optional.empty());
+        given(commentLikeRepository.existsByComment_CommentIdAndUser_Id(nonExistCommentId, userId))
+                .willReturn(false);
+        given(commentRepository.updateLikeCount(nonExistCommentId, 1))
+                .willReturn(0); // 업데이트된 행이 0 = 댓글 없음
 
         // when, then
         assertThatThrownBy(() ->
