@@ -93,7 +93,5 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
             @Param("myUserId") Long myUserId,
             @Param("roomId") Long roomId
     );
-
-    Long room(ChatRoom room);
 }
 
