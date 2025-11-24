@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.command.service;
+package com.homesweet.homesweetback.domain.product.recent.service;
 
 import java.util.List;
 

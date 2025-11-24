@@ -1,6 +1,6 @@
-package com.homesweet.homesweetback.domain.product.product.command.service.impl;
+package com.homesweet.homesweetback.domain.product.recent.service.impl;
 
-import com.homesweet.homesweetback.domain.product.product.command.service.RecentSearchService;
+import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
