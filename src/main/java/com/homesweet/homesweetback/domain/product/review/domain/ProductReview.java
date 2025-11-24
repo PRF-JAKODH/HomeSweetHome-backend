@@ -1,8 +1,6 @@
 package com.homesweet.homesweetback.domain.product.review.domain;
 
-import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import lombok.Builder;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 

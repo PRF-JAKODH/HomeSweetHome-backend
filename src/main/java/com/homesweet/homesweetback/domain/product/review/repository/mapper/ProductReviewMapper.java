@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.review.repository.mapper;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.ProductReviewEntity;
 import org.springframework.stereotype.Component;

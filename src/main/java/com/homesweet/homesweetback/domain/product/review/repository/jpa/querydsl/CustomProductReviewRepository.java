@@ -2,7 +2,6 @@ package com.homesweet.homesweetback.domain.product.review.repository.jpa.queryds
 
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 
 import java.util.List;
 

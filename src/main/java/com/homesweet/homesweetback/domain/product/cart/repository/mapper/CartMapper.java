@@ -3,8 +3,7 @@ package com.homesweet.homesweetback.domain.product.cart.repository.mapper;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
-import lombok.extern.slf4j.Slf4j;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import org.springframework.stereotype.Component;
 
 /**

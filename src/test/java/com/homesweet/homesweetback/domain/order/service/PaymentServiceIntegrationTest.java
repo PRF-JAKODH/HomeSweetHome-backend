@@ -15,11 +15,11 @@ import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.ProductJPARepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.SkuJPARepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.ProductJPARepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.SkuJPARepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
-import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
+import com.homesweet.homesweetback.domain.product.product.command.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

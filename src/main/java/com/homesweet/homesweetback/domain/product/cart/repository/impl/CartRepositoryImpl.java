@@ -7,7 +7,7 @@ import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARepository;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.mapper.CartMapper;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

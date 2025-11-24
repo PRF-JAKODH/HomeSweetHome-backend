@@ -3,7 +3,6 @@ package com.homesweet.homesweetback.domain.product.review.repository;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 
 import java.util.List;
 import java.util.Optional;
