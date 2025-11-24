@@ -4,14 +4,12 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.*;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
-import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
@@ -38,10 +36,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.QProductCategoryEntity.*;
-import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity.*;
-import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionGroupEntity.*;
-import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductOptionValueEntity.*;
-import static com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductSkuOptionEntity.*;
+import static com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductEntity.productEntity;
+import static com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductOptionGroupEntity.productOptionGroupEntity;
+import static com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductOptionValueEntity.productOptionValueEntity;
+import static com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductSkuOptionEntity.productSkuOptionEntity;
 import static com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity.productReviewEntity;
 
 /**

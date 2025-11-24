@@ -5,7 +5,6 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.command.domain.*;
 import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.*;
-import com.homesweet.homesweetback.domain.product.product.domain.*;
 import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import org.springframework.stereotype.Component;
 
