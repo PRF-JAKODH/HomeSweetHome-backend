@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
-import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
+import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
