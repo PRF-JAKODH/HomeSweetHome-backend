@@ -3,7 +3,6 @@ package com.homesweet.homesweetback.domain.product.product.command.repository.im
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
