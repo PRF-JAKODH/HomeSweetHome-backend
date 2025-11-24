@@ -20,7 +20,6 @@ public interface CommunityPostLikeRepository extends JpaRepository<CommunityPost
     Optional<CommunityPostLikeEntity> findByPostAndUser(CommunityPostEntity post, User user);
     boolean existsByPost_PostIdAndUser_Id(Long postId, Long userId);
 
-    // jpql로 s-lock거치지 않고 바로 x-lock 획득
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM CommunityPostLikeEntity pl WHERE pl.post.postId = :postId AND pl.user.id = :userId")
     int deleteByPostIdAndUserId(@Param("postId") Long postId, @Param("userId") Long userId);
