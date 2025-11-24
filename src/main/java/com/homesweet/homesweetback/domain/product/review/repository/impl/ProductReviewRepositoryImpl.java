@@ -1,11 +1,10 @@
 package com.homesweet.homesweetback.domain.product.review.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.ProductReviewJPARepository;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.ProductReviewEntity;

@@ -2,8 +2,9 @@ package com.homesweet.homesweetback.domain.product.product.repository.util;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductImages;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

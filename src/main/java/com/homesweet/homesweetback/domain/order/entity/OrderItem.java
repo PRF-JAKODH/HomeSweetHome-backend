@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.order.entity;
 
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.NoArgsConstructor;
