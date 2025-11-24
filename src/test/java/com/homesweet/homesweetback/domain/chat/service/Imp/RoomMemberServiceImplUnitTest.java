@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomMemberResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
@@ -129,75 +130,136 @@ class RoomMemberServiceImplUnitTest {
         @DisplayName("그룹채팅방 멤버 등록 및 재입장")
         class RegisterMember {
 
-//            @Test
-//            @DisplayName("[성공] 신규 멤버를 MEMBER 역할로 등록한다")
-//            void shouldRegisterNewMember() {
-//                // given
-//                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
-//                User user = User.builder().id(1L).name("철수").build();
-//
-//                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
-//                        .willReturn(Optional.empty());  // 멤버 없음
-//                given(userRepository.findById(1L))
-//                        .willReturn(Optional.of(user));
-//
-//                ArgumentCaptor<RoomMember> captor = ArgumentCaptor.forClass(RoomMember.class);
-//
-//                // when
-//                service.registerGroupMember(chatRoom, 1L);
-//
-//                // then
-//                verify(roomMemberRepository).save(captor.capture());
-//
-//                RoomMember savedMember = captor.getValue();
-//                assertThat(savedMember.getUser()).isEqualTo(user);
-//                assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
-//                assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
-//                assertThat(savedMember.isExit()).isFalse();
-//            }
-
-//            @Test
-//            @DisplayName("[성공] 퇴장한 멤버를 재입장 처리한다")
-//            void shouldRejoinExitedMember() {
-//                // given
-//                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
-//                User user = User.builder().id(1L).name("철수").build();
-//
-//                RoomMember exitedMember = RoomMember.createMember(chatRoom, user, ChatUserRole.MEMBER);
-//                exitedMember.exit();
-//
-//                given(roomMemberRepository.findByRoomIdAndUserId(100L, 1L))
-//                        .willReturn(Optional.of(exitedMember));
-//
-//                // when
-//                service.registerGroupMember(chatRoom, 1L);
-//
-//                // then
-//                verify(roomMemberRepository, never()).save(any());
-//                assertThat(exitedMember.isExit()).isFalse();
-//            }
-
             @Test
-            @DisplayName("[실패] 존재하지 않는 사용자면 USER_NOT_FOUND 예외")
-            void shouldThrowWhenUserNotFound() {
+            @DisplayName("[성공] 신규 멤버를 MEMBER 역할로 등록한다. ")
+            void shouldRegisterNewMember() {
                 // given
-                ChatRoom chatRoom = ChatRoom.builder().id(100L).build();
+                Long roomId = 100L;
+                Long userId = 1L;
+                ChatUserRole role = ChatUserRole.MEMBER;
 
-                given(roomMemberRepository.findByRoomIdAndUserId(100L, 999L))
-                        .willReturn(Optional.empty());
-                given(userRepository.findById(999L))
-                        .willReturn(Optional.empty());
+                ChatRoom chatRoom = ChatRoom.builder().id(roomId).build();
+                User user = User.builder().id(userId).name("철수").profileImageUrl("https://s3.amazonaws.com/test.jpg").build();
+
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(chatRoom));
+                given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+                ArgumentCaptor<RoomMember> captor = ArgumentCaptor.forClass(RoomMember.class);
+
+                // when
+                RoomMemberResponse response = service.registerNewMember(roomId, userId, role);
+
+                // then
+                verify(roomMemberRepository).save(captor.capture());
+
+                RoomMember savedMember = captor.getValue();
+                assertThat(savedMember.getUser()).isEqualTo(user);
+                assertThat(savedMember.getRoom()).isEqualTo(chatRoom);
+                assertThat(savedMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
+                assertThat(savedMember.isExit()).isFalse();
+
+                assertThat(response.userId()).isEqualTo(userId);
+                assertThat(response.userName()).isEqualTo(user.getName());
+                assertThat(response.profileUrl()).isEqualTo(user.getProfileImageUrl());
+            }
+            @Test
+            @DisplayName("[실패] 존재하지 않는 방이면 ROOM_NOT_FOUND 발생")
+            void registerNewMember_ShouldThrowWhenRoomNotFound() {
+                // given
+                Long roomId = 100L;
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> service.registerGroupMember(chatRoom, 999L))
+                assertThatThrownBy(() -> service.registerNewMember(roomId, 1L, ChatUserRole.MEMBER))
                         .isInstanceOf(BusinessException.class)
-                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+                        .hasMessageContaining(ErrorCode.ROOM_NOT_FOUND.getMessage());
+            }
 
-                verify(roomMemberRepository, never()).save(any());
+            @Test
+            @DisplayName("[실패] 존재하지 않는 유저면 USER_NOT_FOUND 발생")
+            void registerNewMember_ShouldThrowWhenUserNotFound() {
+                // given
+                Long roomId = 100L;
+                ChatRoom chatRoom = ChatRoom.builder().id(roomId).build();
+
+                given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(chatRoom));
+                given(userRepository.findById(1L)).willReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> service.registerNewMember(roomId, 1L, ChatUserRole.MEMBER))
+                        .isInstanceOf(BusinessException.class)
+                        .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
             }
         }
 
 
 
+        @Test
+        @DisplayName("[성공] exit 상태인 멤버가 재입장 처리된다")
+        void rejoinMember_Success_WhenMemberIsExit() {
+            // given
+            Long roomId = 100L;
+            Long userId = 1L;
+
+            RoomMember member = RoomMember.createMember(
+                    ChatRoom.builder().id(roomId).build(),
+                    User.builder().id(userId).name("맹구").profileImageUrl("https://s3.amazonaws.com/test.jpg").build(),
+                    ChatUserRole.MEMBER
+            );
+            member.exit(); // isExit = true
+
+            given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                    .willReturn(Optional.of(member));
+
+            // when
+            RoomMemberResponse response = service.rejoinMember(roomId, userId);
+
+            // then
+            assertThat(member.isExit()).isFalse();
+            assertThat(response.userId()).isEqualTo(userId);
+            assertThat(response.userName()).isEqualTo(member.getUser().getName());
+            assertThat(response.profileUrl()).isEqualTo(member.getUser().getProfileImageUrl());
+
+        }
+
+        @Test
+        @DisplayName("[실패] 멤버를 찾을 수 없으면 ROOM_MEMBER_NOT_FOUND 예외 발생")
+        void rejoinMember_Fail_WhenMemberNotFound() {
+            // given
+            Long roomId = 100L;
+            Long userId = 1L;
+
+            given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> service.rejoinMember(roomId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining(ErrorCode.ROOM_MEMBER_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        @DisplayName("[실패] 멤버가 이미 active 상태면 MEMBER_ALREADY_ACTIVE 예외 발생")
+        void rejoinMember_Fail_WhenAlreadyActive() {
+            // given
+            Long roomId = 100L;
+            Long userId = 1L;
+
+            RoomMember member = RoomMember.createMember(
+                    ChatRoom.builder().id(roomId).build(),
+                    User.builder().id(userId).build(),
+                    ChatUserRole.MEMBER
+            );
+            // 기본 상태: exit=false (이미 active)
+
+            given(roomMemberRepository.findByRoomIdAndUserId(roomId, userId))
+                    .willReturn(Optional.of(member));
+
+            // when & then
+            assertThatThrownBy(() -> service.rejoinMember(roomId, userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining(ErrorCode.MEMBER_ALREADY_ACTIVE.getMessage());
+        }
     }
+
 }

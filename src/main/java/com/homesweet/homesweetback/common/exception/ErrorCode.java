@@ -83,6 +83,8 @@ public enum ErrorCode {
     ROOM_MEMBER_NOT_FOUND(HttpStatus.BAD_REQUEST,  "채팅방 멤버를 찾을 수 없습니다."),
     ALREADY_JOINED_ROOM(HttpStatus.BAD_REQUEST, "이미 입장한 채팅방입니다."),
     NOT_JOINED_ROOM(HttpStatus.BAD_REQUEST, "입장하지 않은 채팅방입니다."),
+    MEMBER_ALREADY_ACTIVE(HttpStatus.BAD_REQUEST, "이미 입장 처리된 멤버입니다. "),
+
 
     // Token
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 또는 만료된 토큰입니다. 다시 로그인해주세요."),

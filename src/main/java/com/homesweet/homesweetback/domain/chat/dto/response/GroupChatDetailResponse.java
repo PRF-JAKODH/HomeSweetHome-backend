@@ -11,8 +11,9 @@ public record GroupChatDetailResponse(
         String roomName,
         String roomThumbnailUrl,
         Integer memberCount,
-        List<MemberInfo> participants,
+        List<RoomMemberResponse> participants,
         ChatRoomType roomType
 
 ) {
+
 }

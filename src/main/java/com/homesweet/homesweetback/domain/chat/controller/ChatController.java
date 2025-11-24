@@ -47,7 +47,7 @@ public class ChatController {
                 request.content()
         );
         //  방 전체 구독자에게 메시지 전송
-        String destination = "/sub/rooms/" + roomId;
+        String destination = "/sub/chat/rooms/" + roomId;
         messagingTemplate.convertAndSend(destination, savedMessage);
 
     }
