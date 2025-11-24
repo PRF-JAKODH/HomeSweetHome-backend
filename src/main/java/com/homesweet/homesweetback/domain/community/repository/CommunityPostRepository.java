@@ -1,9 +1,8 @@
 package com.homesweet.homesweetback.domain.community.repository;
 
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,11 +23,16 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     // 특정 게시글 조회
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
-    // 비관적 락을 사용한 게시글 조회 (동시성 제어용)
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM CommunityPostEntity p WHERE p.postId = :postId AND p.isDeleted = false")
-    Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalseWithPessimisticLock(@Param("postId") Long postId);
-
     // 페이지네이션 쿼리 메서드
     Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
+
+    // jpql로 s-lock거치지 않고 바로 x-lock 획득
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CommunityPostEntity p SET p.viewCount = p.viewCount + 1 WHERE p.postId = :postId AND p.isDeleted = false")
+    int incrementViewCount(@Param("postId") Long postId);
+
+    // jpql로 s-lock거치지 않고 바로 x-lock 획득
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CommunityPostEntity p SET p.likeCount = p.likeCount + :delta WHERE p.postId = :postId AND p.isDeleted = false")
+    int updateLikeCount(@Param("postId") Long postId, @Param("delta") int delta);
 }
