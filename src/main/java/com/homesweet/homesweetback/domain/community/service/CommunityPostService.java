@@ -7,8 +7,10 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostRequest;
 import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
+import com.homesweet.homesweetback.domain.community.entity.CommunityPostCount;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
+import com.homesweet.homesweetback.domain.community.repository.CommunityPostCountRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ import java.util.List;
 public class CommunityPostService {
 
     private final CommunityPostRepository postRepository;
+    private final CommunityPostCountRepository postCountRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
     private final CommunityImageUploader imageUploader;
@@ -53,6 +56,9 @@ public class CommunityPostService {
                         .category(request.category())
                         .build()
         );
+
+        // 카운트 테이블 초기화 (게시글과 1:1 관계)
+        postCountRepository.save(CommunityPostCount.createFor(savedPost.getPostId()));
 
         // 이미지 업로드 및 저장
         List<String> imageUrls = new ArrayList<>();

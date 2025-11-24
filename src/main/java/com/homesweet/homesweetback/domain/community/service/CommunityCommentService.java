@@ -9,10 +9,13 @@ import com.homesweet.homesweetback.domain.community.exception.CommunityException
 import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
+import com.homesweet.homesweetback.domain.community.repository.CommunityPostCountRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,7 @@ import java.util.List;
 public class CommunityCommentService {
     private final CommunityCommentRepository commentRepository;
     private final CommunityPostRepository postRepository;
+    private final CommunityPostCountRepository postCountRepository;
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
 
@@ -56,18 +60,30 @@ public class CommunityCommentService {
 
         CommunityCommentEntity savedComment = commentRepository.save(comment);
 
-        // 게시글의 댓글 수 증가
-        post.increaseCommentCount();
+        // 알림 데이터 미리 저장 (트랜잭션 커밋 후 사용)
+        Long postAuthorId = post.getAuthor().getId();
+        String authorName = author.getName();
+        Long notifPostId = post.getPostId();
+        String postTitle = post.getTitle();
 
-        // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(
-                post.getAuthor().getId(),
-                CommunityNotification.NewComment.builder()
-                        .userName(author.getName())
-                        .postId(post.getPostId())
-                        .postTitle(post.getTitle())
-                        .build());
+        // 게시글의 댓글 수 증가 (카운트 테이블에 직접 UPDATE - S-LOCK 방지)
+        postCountRepository.incrementCommentCount(postId);
 
+        // 트랜잭션 커밋 후 알림 전송 (락 해제 후 실행 → 락 보유 시간 최소화)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationSendService.sendTemplateNotificationToSingleUser(
+                            postAuthorId,
+                            CommunityNotification.NewComment.builder()
+                                    .userName(authorName)
+                                    .postId(notifPostId)
+                                    .postTitle(postTitle)
+                                    .build());
+                }
+            });
+        }
 
         return CommunityCommentResponse.from(savedComment);
     }
@@ -117,10 +133,8 @@ public class CommunityCommentService {
             throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
         }
 
-        // 게시글 조회 및 댓글 수 감소
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-        post.decreaseCommentCount();
+        // 게시글의 댓글 수 감소 (카운트 테이블에 직접 UPDATE - S-LOCK 방지)
+        postCountRepository.decrementCommentCount(postId);
 
         // 댓글 소프트 삭제
         comment.deleteComment();
