@@ -6,7 +6,6 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.res
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
 import jakarta.annotation.Nullable;
