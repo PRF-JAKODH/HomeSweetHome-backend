@@ -19,7 +19,6 @@ public interface CommunityCommentLikeRepository extends JpaRepository<CommunityC
     Optional<CommunityCommentLikeEntity> findByCommentAndUser(CommunityCommentEntity comment, User user);
     boolean existsByComment_CommentIdAndUser_Id(Long commentId, Long userId);
 
-    // jpql로 s-lock거치지 않고 바로 x-lock 획득
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM CommunityCommentLikeEntity cl WHERE cl.comment.commentId = :commentId AND cl.user.id = :userId")
     int deleteByCommentIdAndUserId(@Param("commentId") Long commentId, @Param("userId") Long userId);

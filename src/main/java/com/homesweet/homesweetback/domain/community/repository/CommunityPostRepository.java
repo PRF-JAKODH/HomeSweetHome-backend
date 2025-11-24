@@ -26,12 +26,10 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     // 페이지네이션 쿼리 메서드
     Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 
-    // jpql로 s-lock거치지 않고 바로 x-lock 획득
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CommunityPostEntity p SET p.viewCount = p.viewCount + 1 WHERE p.postId = :postId AND p.isDeleted = false")
     int incrementViewCount(@Param("postId") Long postId);
 
-    // jpql로 s-lock거치지 않고 바로 x-lock 획득
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CommunityPostEntity p SET p.likeCount = p.likeCount + :delta WHERE p.postId = :postId AND p.isDeleted = false")
     int updateLikeCount(@Param("postId") Long postId, @Param("delta") int delta);

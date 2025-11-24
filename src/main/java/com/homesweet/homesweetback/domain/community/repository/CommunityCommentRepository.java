@@ -19,7 +19,6 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
     // 특정 게시글의 댓글 조회
     List<CommunityCommentEntity> findByPost_PostIdAndIsDeletedFalse(Long postId);
 
-    // jpql로 s-lock거치지 않고 바로 x-lock 획득
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CommunityCommentEntity c SET c.likeCount = c.likeCount + :delta WHERE c.commentId = :commentId")
     int updateLikeCount(@Param("commentId") Long commentId, @Param("delta") int delta);
