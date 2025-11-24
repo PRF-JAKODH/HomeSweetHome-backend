@@ -1,7 +1,7 @@
-package com.homesweet.homesweetback.domain.product.product.command.controller;
+package com.homesweet.homesweetback.domain.product.recent.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.product.command.service.RecentSearchService;
+import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

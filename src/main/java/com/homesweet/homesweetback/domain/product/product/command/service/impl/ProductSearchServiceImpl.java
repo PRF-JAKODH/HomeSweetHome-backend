@@ -7,8 +7,8 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.res
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductSearchService;
-import com.homesweet.homesweetback.domain.product.product.command.service.RecentSearchService;
-import com.homesweet.homesweetback.domain.product.product.command.service.RecentViewService;
+import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
+import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
