@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.query.controller;
 
+import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
@@ -24,7 +25,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/products/search")
+@RequestMapping("/api/v1/products")
 public class ProductQueryController {
 
     private final ProductQueryService productQueryService;
@@ -33,7 +34,7 @@ public class ProductQueryController {
      * 상품 검색 (무한 스크롤)
      *
      */
-    @GetMapping
+    @GetMapping("/search")
     public ResponseEntity<SearchScrollResponse<ProductPreviewResponse>> searchProducts(
             @RequestParam(required = false) String nextCursor,
             @RequestParam(required = false) Long categoryId,
@@ -56,9 +57,28 @@ public class ProductQueryController {
     /**
      * 검색어 자동 완성 API
      */
-    @GetMapping("/autocomplete")
+    @GetMapping("/search/autocomplete")
     public ResponseEntity<List<String>> autocomplete(@NotNull @RequestParam String keyword) {
         List<String> result = productQueryService.autocomplete(keyword);
         return ResponseEntity.ok(result);
+    }
+
+    // [모두] 제품 프리뷰 조회 (스토어 > 제품 조회)
+    @GetMapping("/previews")
+    public ResponseEntity<SearchScrollResponse<ProductPreviewResponse>> getProductPreviews(
+            @RequestParam(required = false) String nextCursor,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false, name = "optionFilters") List<String> optionFilters
+    ) {
+
+        SearchScrollResponse<ProductPreviewResponse> response =
+                productQueryService.getProductPreview(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
+
+        return ResponseEntity.ok(response);
     }
 }
