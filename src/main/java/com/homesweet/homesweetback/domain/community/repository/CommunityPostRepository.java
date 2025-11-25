@@ -33,4 +33,8 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CommunityPostEntity p SET p.likeCount = p.likeCount + :delta WHERE p.postId = :postId AND p.isDeleted = false")
     int updateLikeCount(@Param("postId") Long postId, @Param("delta") int delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CommunityPostEntity p SET p.commentCount = p.commentCount + :delta WHERE p.postId = :postId AND p.isDeleted = false")
+    int updateCommentCount(@Param("postId") Long postId, @Param("delta") int delta);
 }
