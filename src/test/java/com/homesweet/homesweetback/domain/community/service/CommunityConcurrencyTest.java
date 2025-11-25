@@ -168,7 +168,7 @@ class CommunityConcurrencyTest {
 //        ExecutorService executorService = Executors.newFixedThreadPool(10);
 //        CountDownLatch latch = new CountDownLatch(threadCount * toggleCount);
 //
-//        // when -   n명이 n번씩 토글
+//        // when - n명이 n번씩 토글
 //        for (int i = 0; i < threadCount; i++) {
 //            final int userIndex = i;
 //            for (int j = 0; j < toggleCount; j++) {
@@ -187,7 +187,7 @@ class CommunityConcurrencyTest {
 //        latch.await();
 //        executorService.shutdown();
 //
-//        // then
+//        // then - 10명이 각각 10번씩 토글하면 모두 0으로 돌아옴
 //        CommunityPostEntity result = postRepository.findById(testPost.getPostId()).orElseThrow();
 //
 //        assertThat(result.getLikeCount()).isZero();
@@ -256,7 +256,7 @@ class CommunityConcurrencyTest {
 //        latch.await();
 //        executorService.shutdown();
 //
-//        // then
+//        // then - 10명이 각각 10번씩 토글하면 모두 0으로 돌아옴
 //        CommunityCommentEntity result = commentRepository.findById(testComment.getCommentId()).orElseThrow();
 //
 //        assertThat(result.getLikeCount()).isZero();

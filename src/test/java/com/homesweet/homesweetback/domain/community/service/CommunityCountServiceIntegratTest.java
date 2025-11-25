@@ -257,18 +257,6 @@ class CommunityCountServiceIntegratTest {
     }
 
     @Test
-    @DisplayName("게시글 좋아요 실패 - 존재하지 않는 사용자")
-    void togglePostLike_Fail_UserNotFound() {
-        // given
-        Long invalidUserId = 99999L;
-
-        // when & then
-        assertThatThrownBy(() -> countService.togglePostLike(testPost.getPostId(), invalidUserId))
-                .isInstanceOf(CommunityException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
-    }
-
-    @Test
     @DisplayName("게시글 좋아요 상태 확인 - 좋아요 안한 상태")
     void isPostLiked_NotLiked() {
         // when
@@ -355,18 +343,6 @@ class CommunityCountServiceIntegratTest {
         assertThatThrownBy(() -> countService.toggleCommentLike(invalidCommentId, testUser.getId()))
                 .isInstanceOf(CommunityException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("댓글 좋아요 실패 - 존재하지 않는 사용자")
-    void toggleCommentLike_Fail_UserNotFound() {
-        // given
-        Long invalidUserId = 99999L;
-
-        // when & then
-        assertThatThrownBy(() -> countService.toggleCommentLike(testComment.getCommentId(), invalidUserId))
-                .isInstanceOf(CommunityException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
