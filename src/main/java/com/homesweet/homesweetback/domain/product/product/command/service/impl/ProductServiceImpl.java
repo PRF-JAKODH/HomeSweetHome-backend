@@ -85,58 +85,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ScrollResponse<ProductPreviewResponse> getProductPreview(
-            Long cursorId,
-            Long categoryId,
-            int limit,
-            String keyword,
-            ProductSortType sortType
-    ) {
-        List<ProductPreviewResponse> products =
-                productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType);
-
-        boolean hasNext = products.size() > limit;
-        if (hasNext) {
-            products = products.subList(0, limit);
-        }
-
-        Long nextCursorId = hasNext
-                ? products.get(products.size() - 1).id()
-                : null;
-
-        return ScrollResponse.of(products, nextCursorId, hasNext);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ScrollResponse<ProductPreviewResponse> filterProductsByOptions(
-            Long cursorId,
-            ProductFilterRequest request,
-            int limit,
-            ProductSortType sortType
-    ) {
-        List<ProductPreviewResponse> products =
-                productRepository.findProductsByOptionFilter(
-                        cursorId,
-                        request,
-                        limit + 1,
-                        sortType
-                );
-
-        boolean hasNext = products.size() > limit;
-        if (hasNext) {
-            products = products.subList(0, limit);
-        }
-
-        Long nextCursorId = hasNext
-                ? products.get(products.size() - 1).id()
-                : null;
-
-        return ScrollResponse.of(products, nextCursorId, hasNext);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Long productId) {
 
         productValidator.validateExistsProduct(productId);

@@ -54,36 +54,6 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // [모두] 제품 프리뷰 조회 (스토어 > 제품 조회)
-    @GetMapping("/previews")
-    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> getProductPreviews(
-            @RequestParam(required = false) Long cursorId,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType
-    ) {
-
-        ScrollResponse<ProductPreviewResponse> response =
-                service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2. 옵션 필터링 검색 (POST) - 새로 추가
-    @PostMapping("/previews/filter")
-    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> filterProductsByOptions(
-            @RequestParam(required = false) Long cursorId,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
-            @Valid @RequestBody ProductFilterRequest request
-    ) {
-        ScrollResponse<ProductPreviewResponse> response =
-                service.filterProductsByOptions(cursorId, request, limit, sortType);
-
-        return ResponseEntity.ok(response);
-    }
-
     // [모두] 제품 상세 페이지 조회
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProductDetail(@PathVariable Long productId) {

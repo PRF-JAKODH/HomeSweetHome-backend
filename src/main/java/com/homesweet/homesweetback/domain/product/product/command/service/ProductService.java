@@ -9,7 +9,6 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.req
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.*;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -23,10 +22,6 @@ import java.util.List;
 public interface ProductService {
 
     ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages);
-
-    ScrollResponse<ProductPreviewResponse> getProductPreview(Long cursorId, Long categoryId, int size, String keyword, ProductSortType sortType);
-
-    ScrollResponse<ProductPreviewResponse> filterProductsByOptions(Long cursorId, ProductFilterRequest request, int size, ProductSortType sortType);
 
     ProductDetailResponse getProductDetail(Long productId);
 
