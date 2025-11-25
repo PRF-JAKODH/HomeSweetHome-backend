@@ -10,10 +10,10 @@ import java.util.List;
  */
 public record ScrollResponse<T>(
         List<T> contents,
-        Long nextCursor,
+        Long nextCursorId,
         boolean hasNext
 ) {
-    public static <T> ScrollResponse<T> of(List<T> contents, Long nextCursor, boolean hasNext) {
-        return new ScrollResponse<>(contents, nextCursor, hasNext);
+    public static <T> ScrollResponse<T> of(List<T> contents, Long nextCursorId, boolean hasNext) {
+        return new ScrollResponse<>(contents, nextCursorId, hasNext);
     }
 }

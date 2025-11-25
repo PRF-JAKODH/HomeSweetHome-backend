@@ -1,15 +1,12 @@
 package com.homesweet.homesweetback.domain.product.product.command.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
@@ -20,7 +17,6 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Pro
 import com.homesweet.homesweetback.domain.product.product.command.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
