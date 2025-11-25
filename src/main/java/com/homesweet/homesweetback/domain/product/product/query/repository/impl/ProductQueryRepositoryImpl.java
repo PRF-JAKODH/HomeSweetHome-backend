@@ -13,12 +13,10 @@ import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCa
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.query.repository.ProductQueryRepository;
 import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
-import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.HighlightQuery;
 import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
@@ -49,46 +47,60 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
     @Override
     public List<String> autocomplete(String keyword) {
 
-        HighlightParameters highlightParameters = HighlightParameters.builder()
+        NativeQuery query = NativeQuery.builder()
+                .withQuery(buildAutocompleteQuery(keyword))
+                .withHighlightQuery(buildHighlightQuery())
+                .withPageable(PageRequest.of(0, 10))
+                .build();
+
+        SearchHits<ProductDocument> searchHits =
+                operations.search(query, ProductDocument.class);
+
+        return extractAutocompleteResults(searchHits);
+    }
+
+    /**
+     * 검색어 자동 완성용 쿼리
+     */
+    // 검색어 자동 완성 쿼리
+    private Query buildAutocompleteQuery(String keyword) {
+        return MultiMatchQuery.of(m -> m
+                .query(keyword)
+                .type(TextQueryType.BoolPrefix)
+                .fields("name.autocomplete", "name.autocomplete._2gram", "name.autocomplete._3gram")
+        )._toQuery();
+    }
+
+    // 하이라이트 처리
+    private HighlightQuery buildHighlightQuery() {
+        HighlightParameters params = HighlightParameters.builder()
                 .withPreTags("<b>")
                 .withPostTags("</b>")
                 .build();
 
         Highlight highlight = new Highlight(
-                highlightParameters,
+                params,
                 List.of(new HighlightField("nameAutocomplete"))
         );
 
-        HighlightQuery highlightQuery = new HighlightQuery(highlight, ProductDocument.class);
+        return new HighlightQuery(highlight, ProductDocument.class);
+    }
 
-        Query multiMatchQuery = MultiMatchQuery.of(m -> m
-                .query(keyword)
-                .type(TextQueryType.BoolPrefix)
-                .fields("name.autocomplete", "name.autocomplete._2gram", "name.autocomplete._3gram")
-        )._toQuery();
-
-        NativeQuery nativeQuery = NativeQuery.builder()
-                .withQuery(multiMatchQuery)
-                .withHighlightQuery(highlightQuery)
-                .withPageable(PageRequest.of(0, 10))
-                .build();
-
-        SearchHits<ProductDocument> searchHits =
-                operations.search(nativeQuery, ProductDocument.class);
-
+    // Elastic 검색 실행 쿼리
+    private List<String> extractAutocompleteResults(SearchHits<ProductDocument> searchHits) {
         return searchHits.getSearchHits().stream()
                 .map(hit -> {
-                    // highlight 결과가 있으면 highlight 사용
                     List<String> highlights = hit.getHighlightField("nameAutocomplete");
-
-                    if (highlights != null && !highlights.isEmpty()) {
-                        return highlights.get(0);  // 하이라이트 버전 반환
+                    if (!highlights.isEmpty()) {
+                        return highlights.getFirst();
                     }
-
                     return hit.getContent().getName();
                 })
                 .toList();
     }
+    /**
+     * 끝!
+     */
 
     /**
      * 상품 조회 및 검색
@@ -105,114 +117,19 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
     @Override
     public SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, List<String> optionFilters) {
 
-        // 1. 키워드 쿼리
-        Query keywordQuery = (keyword == null || keyword.isBlank())
-                ? Query.of(q -> q.matchAll(m -> m))
-                : MultiMatchQuery.of(m -> m
-                .query(keyword)
-                .fields(List.of("name^3", "category_name^2", "name.ngram", "name.autocomplete", "description"))
-                .fuzziness("AUTO")
-                .prefixLength(1)
-        )._toQuery();
+        Query keywordQuery = buildKeywordQuery(keyword);
 
-        // 2. 필터들
-        List<Query> filters = new ArrayList<>();
-        filters.add(TermQuery.of(t -> t.field("status").value("ON_SALE"))._toQuery());
+        List<Query> filters = buildFilterQueries(categoryId, minPrice, maxPrice);
 
-        if (categoryId != null) {
-            List<Long> categoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
-            filters.add(TermsQuery.of(t -> t
-                    .field("category_id")
-                    .terms(TermsQueryField.of(tf -> tf.value(categoryIds.stream().map(FieldValue::of).toList())))
-            )._toQuery());
-        }
+        List<Query> optionShouldQueries = buildOptionShouldQueries(optionFilters);
 
-        if (minPrice != null || maxPrice != null) {
+        List<Query> shouldQueries = buildShouldQueries(keywordQuery, optionShouldQueries, keyword);
 
-            NumberRangeQuery.Builder priceBuilder = new NumberRangeQuery.Builder()
-                    .field("sale_price");
+        Query boolQuery = buildBoolQuery(filters, shouldQueries);
 
-            if (minPrice != null) {
-                priceBuilder.gte(minPrice);
-            }
-            if (maxPrice != null) {
-                priceBuilder.lte(maxPrice);
-            }
+        List<SortOptions> sorts = buildSortOptions(sortType);
 
-            filters.add(
-                    priceBuilder.build()
-                            ._toRangeQuery()
-                            ._toQuery()
-            );
-        }
-
-        if (optionFilters != null && !optionFilters.isEmpty()) {
-
-            List<Query> optionMustQueries = new ArrayList<>();
-
-            for (String opt : optionFilters) {
-                String[] parts = opt.split(":");
-                if (parts.length != 2) continue;
-
-                String group = parts[0];
-                String value = parts[1];
-
-                Query groupValueQuery = NestedQuery.of(n -> n
-                        .path("option_groups")
-                        .query(
-                                BoolQuery.of(b -> b
-                                        .must(List.of(
-                                                TermQuery.of(t -> t.field("option_groups.group_name").value(group))._toQuery(),
-                                                TermQuery.of(t -> t.field("option_groups.values").value(value))._toQuery()
-                                        ))
-                                )._toQuery()
-                        )
-                )._toQuery();
-
-                optionMustQueries.add(groupValueQuery);
-            }
-
-            if (!optionMustQueries.isEmpty()) {
-                filters.add(
-                        BoolQuery.of(b -> b.must(optionMustQueries))._toQuery()
-                );
-            }
-        }
-
-        List<Query> shouldQueries = new ArrayList<>();
-
-        shouldQueries.add(keywordQuery);
-
-        // 옵션 value 이름이 제목에 들어가면 조회되게
-        if (optionFilters != null) {
-            for (String opt : optionFilters) {
-                String[] parts = opt.split(":");
-                if (parts.length == 2) {
-                    String optValue = parts[1];
-
-                    shouldQueries.add(
-                            MatchQuery.of(m -> m
-                                    .field("name")
-                                    .query(optValue)
-                                    .fuzziness("AUTO")
-                            )._toQuery()
-                    );
-                }
-            }
-        }
-
-        Query boolQuery = BoolQuery.of(b -> b
-                .must(keywordQuery)
-                .filter(filters)
-        )._toQuery();
-
-        ProductSortType effectiveSortType = (keyword != null && !keyword.isBlank())
-                ? ProductSortType.RECOMMENDED
-                : sortType;
-
-        List<SortOptions> sorts = buildSortOptions(effectiveSortType, keyword);
-
-        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, effectiveSortType);
+        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, sortType);
 
         int fetchSize = limit + 1;
 
@@ -224,15 +141,114 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
                 .build();
 
         return operations.search(query, ProductDocument.class);
+
     }
 
-    private List<SortOptions> buildSortOptions(ProductSortType sortType, String keyword) {
-        List<SortOptions> sorts = new ArrayList<>();
-
-        // 검색이면 무조건 RECOMMENDED로 강제!
-        if (keyword != null && !keyword.isBlank()) {
-            sortType = ProductSortType.RECOMMENDED;
+    /**
+     * 다중 쿼리 (상품 조회 및 검색에서 사용)
+     */
+    // 키워드 검색 쿼리
+    private Query buildKeywordQuery(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return MatchAllQuery.of(m -> m)._toQuery();
         }
+
+        return MultiMatchQuery.of(m -> m
+                .query(keyword)
+                .fields(List.of("name^3","category_name^2","name.ngram","name.autocomplete","description"))
+                .fuzziness("AUTO")
+                .prefixLength(1)
+        )._toQuery();
+    }
+
+    // 필터 쿼리 (가격, 카테고리)
+    private List<Query> buildFilterQueries(Long categoryId, Double minPrice, Double maxPrice) {
+        List<Query> filters = new ArrayList<>();
+        filters.add(TermQuery.of(t -> t.field("status").value("ON_SALE"))._toQuery());
+
+        if (categoryId != null) {
+            List<Long> categoryIds = cacheCategory.getAllSubCategoryIds(categoryId);
+
+            filters.add(
+                    TermsQuery.of(t -> t
+                            .field("category_id")
+                            .terms(tf -> tf.value(categoryIds.stream().map(FieldValue::of).toList()))
+                    )._toQuery()
+            );
+        }
+
+        if (minPrice != null || maxPrice != null) {
+            NumberRangeQuery.Builder pb = new NumberRangeQuery.Builder().field("sale_price");
+            if (minPrice != null) pb.gte(minPrice);
+            if (maxPrice != null) pb.lte(maxPrice);
+            filters.add(pb.build()._toRangeQuery()._toQuery());
+        }
+
+        return filters;
+    }
+
+    // 옵션 필터링 쿼리
+    private List<Query> buildOptionShouldQueries(List<String> optionFilters) {
+
+        List<Query> shouldQueries = new ArrayList<>();
+        if (optionFilters == null) return shouldQueries;
+
+        for (String opt : optionFilters) {
+            String[] parts = opt.split(":");
+            if (parts.length != 2) continue;
+
+            String group = parts[0];
+            String value = parts[1];
+
+            // Nested 옵션 일치
+            Query nestedQuery = NestedQuery.of(n -> n
+                    .path("option_groups")
+                    .query(
+                            BoolQuery.of(b -> b.must(List.of(
+                                    TermQuery.of(t -> t.field("option_groups.group_name").value(group))._toQuery(),
+                                    TermQuery.of(t -> t.field("option_groups.values").value(value))._toQuery()
+                            )))
+                    )
+            )._toQuery();
+
+            shouldQueries.add(nestedQuery);
+
+            // 옵션 값이 이름(name)에 포함
+            shouldQueries.add(
+                    MatchQuery.of(m -> m
+                            .field("name")
+                            .query(value)
+                            .fuzziness("AUTO")
+                    )._toQuery()
+            );
+        }
+
+        return shouldQueries;
+    }
+
+    private List<Query> buildShouldQueries(Query keywordQuery, List<Query> optionQueries, String keyword) {
+        List<Query> shouldQueries = new ArrayList<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            shouldQueries.add(keywordQuery);
+        }
+
+        shouldQueries.addAll(optionQueries);
+
+        return shouldQueries;
+    }
+
+    private Query buildBoolQuery(List<Query> filters, List<Query> shouldQueries) {
+        return BoolQuery.of(b -> b
+                .filter(filters)
+                .should(shouldQueries)
+                .minimumShouldMatch(shouldQueries.isEmpty() ? "0" : "1")
+        )._toQuery();
+    }
+
+    // 정렬 기준 조건
+    private List<SortOptions> buildSortOptions(ProductSortType sortType) {
+        List<SortOptions> sorts = new ArrayList<>();
 
         switch (sortType) {
             case RECOMMENDED -> {
@@ -247,9 +263,11 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
             }
         }
 
-        // tie-breaker 항상 동일 (RECOMMENDED 포함!)
         sorts.add(SortOptions.of(s -> s.field(f -> f.field("product_id").order(SortOrder.Asc))));
 
         return sorts;
     }
+    /**
+     *  끝!
+     */
 }
