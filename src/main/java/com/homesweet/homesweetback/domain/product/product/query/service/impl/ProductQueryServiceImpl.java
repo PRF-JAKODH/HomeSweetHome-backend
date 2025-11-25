@@ -1,8 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.query.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homesweet.homesweetback.common.util.CursorUtil;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
@@ -16,16 +14,13 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 import java.awt.*;
-import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.List;
 
 /**
  * 상품 검색 서비스 구현체
  *
  * @author junnukim1007gmail.com
- * @date 25. 11. 24.
  */
 @Service
 @RequiredArgsConstructor
@@ -59,7 +54,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
         boolean hasNext = docs.size() > limit;
         List<ProductDocument> result = hasNext ? docs.subList(0, limit) : docs;
-        ProductDocument lastDoc = hasNext ? result.get(result.size() - 1) : null;
+        ProductDocument lastDoc = hasNext ? result.getLast() : null;
 
         Float lastScore = hasNext
                 ? hits.getSearchHits().get(limit - 1).getScore()
@@ -67,7 +62,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
         List<Object> sortValues = lastDoc != null ? switch (sortType) {
             case RECOMMENDED -> List.of(
-                    lastScore != null ? lastScore : 0.0,
+                    lastScore,
                     lastDoc.getProductId()
             );
             case LATEST -> List.of(
