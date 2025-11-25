@@ -1,11 +1,8 @@
 package com.homesweet.homesweetback.domain.product.product.command.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
@@ -15,8 +12,6 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.jpa
 import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductDetailImageEntity;
 import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.command.repository.mapper.ProductMapper;
-import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -60,21 +55,6 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public boolean existsBySellerIdAndName(Long sellerId, String name) {
         return productRepository.existsBySellerIdAndName(sellerId, name);
-    }
-
-    @Override
-    public List<ProductPreviewResponse> findNextProducts(Long cursorId, Long categoryId, int limit, @Nullable String keyword, @NotNull ProductSortType sortType) {
-        return productRepository.findNextProducts(cursorId, categoryId, limit, keyword, sortType);
-    }
-
-    @Override
-    public List<ProductPreviewResponse> findProductsByOptionFilter(
-            Long cursorId,
-            ProductFilterRequest request,
-            int limit,
-            ProductSortType sortType
-    ) {
-        return productRepository.findProductsByOptionFilter(cursorId, request, limit, sortType);
     }
 
     @Override

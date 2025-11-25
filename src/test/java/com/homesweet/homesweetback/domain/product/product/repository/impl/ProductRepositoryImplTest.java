@@ -1,10 +1,8 @@
 package com.homesweet.homesweetback.domain.product.product.repository.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
@@ -166,39 +164,6 @@ class ProductRepositoryImplTest {
                 boolean result = repository.existsBySellerIdAndName(100L, "의자");
 
                 assertThat(result).isFalse();
-            }
-        }
-
-        @Nested
-        @DisplayName("무한 스크롤 상품 조회")
-        class FindNextProducts {
-
-            @Test
-            @DisplayName("상품 리스트를 반환한다")
-            void findNextProducts_success() {
-                List<ProductPreviewResponse> products = List.of(
-                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
-                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000)
-                );
-
-                given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any())).willReturn(products);
-
-                List<ProductPreviewResponse> result =
-                        repository.findNextProducts(1L, 1L, 10, "가구", ProductSortType.LATEST);
-
-                assertThat(result).hasSize(2);
-            }
-
-            @Test
-            @DisplayName("상품이 없으면 빈 리스트 반환")
-            void findNextProducts_empty() {
-                given(jpaRepository.findNextProducts(any(), any(), anyInt(), any(), any()))
-                        .willReturn(Collections.emptyList());
-
-                List<ProductPreviewResponse> result =
-                        repository.findNextProducts(1L, 1L, 10, null, ProductSortType.LATEST);
-
-                assertThat(result).isEmpty();
             }
         }
 
