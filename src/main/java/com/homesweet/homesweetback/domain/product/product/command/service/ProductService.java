@@ -1,10 +1,7 @@
 package com.homesweet.homesweetback.domain.product.product.command.service;
 
-import com.homesweet.homesweetback.common.util.ScrollResponse;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;

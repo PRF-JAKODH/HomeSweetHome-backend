@@ -3,16 +3,14 @@ package com.homesweet.homesweetback.domain.product.product.query.controller;
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -77,6 +75,18 @@ public class ProductQueryController {
 
         SearchScrollResponse<ProductPreviewResponse> response =
                 productQueryService.getProductPreview(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search/{productId}")
+    public ResponseEntity<ProductDetailResponse> getProductDetail(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long productId) {
+
+        Long userId = principal.getUserId();
+
+        ProductDetailResponse response = productQueryService.getProductDetail(userId, productId);
 
         return ResponseEntity.ok(response);
     }

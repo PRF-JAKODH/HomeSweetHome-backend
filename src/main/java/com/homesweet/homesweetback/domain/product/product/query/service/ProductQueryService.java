@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.query.service;
 
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 
 import java.util.List;
@@ -19,4 +20,6 @@ public interface ProductQueryService {
     SearchScrollResponse<ProductPreviewResponse> searchProducts(String nextCursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, Long userId, List<String> optionFilters);
 
     SearchScrollResponse<ProductPreviewResponse> getProductPreview(String nextCursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, List<String> optionFilters);
+
+    ProductDetailResponse getProductDetail(Long userId, Long productId);
 }

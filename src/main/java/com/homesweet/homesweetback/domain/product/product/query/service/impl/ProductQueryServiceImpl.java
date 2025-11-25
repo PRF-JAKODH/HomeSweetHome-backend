@@ -2,12 +2,16 @@ package com.homesweet.homesweetback.domain.product.product.query.service.impl;
 
 import com.homesweet.homesweetback.common.util.CursorUtil;
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
+import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
 import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.query.repository.ProductQueryRepository;
 import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
 import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
+import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -31,6 +35,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     private final ProductQueryRepository productQueryRepository;
     private final RecentSearchService recentSearchService;
     private final CursorUtil cursorUtil;
+    private final ProductValidator productValidator;
+    private final ProductRepository productRepository;
+    private final RecentViewService recentViewService;
 
 
     @Override
@@ -56,6 +63,23 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
 
         return executeSearch(cursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDetailResponse getProductDetail(Long userId, Long productId) {
+
+        productValidator.validateExistsProduct(productId);
+
+        // DB 상세 조회
+        ProductDetailResponse detail = productRepository.findProductDetailById(productId);
+
+        // productId 저장
+        recentViewService.saveView(userId, productId);
+
+        recentViewService.cacheDetail(productId, detail);
+
+        return detail;
     }
 
     private SearchScrollResponse<ProductPreviewResponse> executeSearch(
