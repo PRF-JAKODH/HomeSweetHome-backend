@@ -21,6 +21,8 @@ spring:
         format_sql: true
         highlight_sql: true
         use_sql_comments: true
+  elasticsearch:
+    uris: http://localhost:9200
   security:
     oauth2:
       client:
