@@ -2,6 +2,8 @@ package com.homesweet.homesweetback.domain.product.product.query.repository.docu
 
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
+import java.util.Optional;
+
 /**
  * 상품 Elastic 레포
  *
@@ -9,4 +11,5 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
  * @date 25. 11. 24.
  */
 public interface ProductDocumentRepository extends ElasticsearchRepository<ProductDocument, Long> {
+
 }

@@ -5,10 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.Setting;
+import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.LocalDateTime;
 
@@ -78,9 +75,9 @@ public class ProductDocument {
     @Field(type = FieldType.Long, name = "review_count")
     private Long reviewCount;
 
-    @Field(type = FieldType.Date, name = "created_at")
+    @Field(type = FieldType.Date, name = "created_at", format = DateFormat.date_time)
     private LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date, name = "updated_at")
+    @Field(type = FieldType.Date, name = "updated_at", format = DateFormat.date_time)
     private LocalDateTime updatedAt;
 }

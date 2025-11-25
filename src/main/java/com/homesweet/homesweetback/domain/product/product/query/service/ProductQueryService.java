@@ -1,8 +1,9 @@
 package com.homesweet.homesweetback.domain.product.product.query.service;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 
 import java.util.List;
 
@@ -16,5 +17,5 @@ public interface ProductQueryService {
 
     List<String> autocomplete(String keyword);
 
-    ScrollResponse<ProductPreviewResponse> searchProducts(Long cursorId, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, Long userId);
+    SearchScrollResponse<ProductPreviewResponse> searchProducts(String nextCursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, Long userId);
 }
