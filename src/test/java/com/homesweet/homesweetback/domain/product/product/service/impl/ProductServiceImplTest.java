@@ -22,6 +22,7 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Pro
 import com.homesweet.homesweetback.domain.product.product.command.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.impl.ProductServiceImpl;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
