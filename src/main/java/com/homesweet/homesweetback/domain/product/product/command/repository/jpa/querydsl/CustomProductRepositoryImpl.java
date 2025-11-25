@@ -512,7 +512,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
         if (cursorId == null) return null;
 
         return switch (sortType) {
-            case PRICE_LOW, LATEST, POPULAR -> product.id.lt(cursorId);
+            case PRICE_LOW, LATEST, POPULAR, RECOMMENDED -> product.id.lt(cursorId);
             case PRICE_HIGH -> product.id.gt(cursorId);
         };
     }

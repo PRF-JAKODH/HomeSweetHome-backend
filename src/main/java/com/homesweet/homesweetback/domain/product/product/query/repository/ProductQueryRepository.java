@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.product.query.repository;
 
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
+import org.springframework.data.elasticsearch.core.SearchHits;
 
 import java.util.List;
 
@@ -15,6 +16,5 @@ public interface ProductQueryRepository {
 
     List<String> autocomplete(String keyword);
 
-    List<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice);
-
+    SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice);
 }

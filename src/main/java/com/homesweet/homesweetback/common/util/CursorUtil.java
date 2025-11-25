@@ -51,11 +51,20 @@ public class CursorUtil {
 
         try {
             byte[] bytes = Base64.getDecoder().decode(cursor);
-            List<?> list = MAPPER.readValue(bytes, List.class);
+            List<?> rawList = MAPPER.readValue(bytes, List.class);
 
             return switch (sortType) {
-                case POPULAR -> list.size() >= 3 ? List.of(list.get(0), list.get(1), list.get(2)) : null;
-                default      -> list.size() >= 2 ? List.of(list.get(0), list.get(1)) : null;
+                case RECOMMENDED -> rawList.size() >= 2
+                        ? List.of(rawList.get(0), rawList.get(1))  // _score + product_id
+                        : null;
+                case POPULAR -> rawList.size() >= 4
+                        ? List.of(rawList.get(0), rawList.get(1), rawList.get(2), rawList.get(3))
+                        : null;
+                case LATEST, PRICE_LOW, PRICE_HIGH -> rawList.size() >= 2
+                        ? List.of(rawList.get(0), rawList.get(1)) : null;
+                default -> rawList.size() >= 3
+                        ? List.of(rawList.get(0), rawList.get(1), rawList.get(2))
+                        : null;
             };
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid cursor", e);
