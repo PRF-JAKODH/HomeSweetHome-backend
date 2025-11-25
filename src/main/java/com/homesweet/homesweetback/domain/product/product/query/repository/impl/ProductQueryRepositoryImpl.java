@@ -106,14 +106,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
      * @return
      */
     @Override
-    public List<ProductDocument> search(
-            String nextCursor,
-            Long categoryId,
-            int limit,
-            String keyword,
-            ProductSortType sortType,
-            Double minPrice,
-            Double maxPrice) {
+    public SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice) {
 
         // 1. 키워드 쿼리
         Query keywordQuery = (keyword == null || keyword.isBlank())
@@ -152,9 +145,13 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
                 .filter(filters)
         )._toQuery();
 
-        List<SortOptions> sorts = buildSortOptions(sortType);
+        ProductSortType effectiveSortType = (keyword != null && !keyword.isBlank())
+                ? ProductSortType.RECOMMENDED
+                : sortType;
 
-        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, sortType);
+        List<SortOptions> sorts = buildSortOptions(effectiveSortType, keyword);
+
+        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, effectiveSortType);
 
         int fetchSize = limit + 1;
 
@@ -165,35 +162,33 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
                 .withSearchAfter(searchAfter)
                 .build();
 
-        SearchHits<ProductDocument> hits = operations.search(query, ProductDocument.class);
-
-        return hits.getSearchHits().stream()
-                .map(SearchHit::getContent)
-                .toList();
+        return operations.search(query, ProductDocument.class);
     }
 
-    private List<SortOptions> buildSortOptions(ProductSortType sortType) {
+    private List<SortOptions> buildSortOptions(ProductSortType sortType, String keyword) {
         List<SortOptions> sorts = new ArrayList<>();
 
+        // 검색이면 무조건 RECOMMENDED로 강제!
+        if (keyword != null && !keyword.isBlank()) {
+            sortType = ProductSortType.RECOMMENDED;
+        }
+
         switch (sortType) {
-            case LATEST -> sorts.add(SortOptions.of(s -> s
-                    .field(f -> f.field("created_at").order(SortOrder.Desc).missing("_last"))));
-
-            case PRICE_LOW -> sorts.add(SortOptions.of(s -> s
-                    .field(f -> f.field("base_price").order(SortOrder.Asc).missing("_last"))));
-
-            case PRICE_HIGH -> sorts.add(SortOptions.of(s -> s
-                    .field(f -> f.field("base_price").order(SortOrder.Desc).missing("_last"))));
-
+            case RECOMMENDED -> {
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("_score").order(SortOrder.Desc))));
+            }
+            case LATEST -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("created_at").order(SortOrder.Desc).missing("_last"))));
+            case PRICE_LOW -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("base_price").order(SortOrder.Asc).missing("_last"))));
+            case PRICE_HIGH -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("base_price").order(SortOrder.Desc).missing("_last"))));
             case POPULAR -> {
-                sorts.add(SortOptions.of(s -> s.field(f -> f
-                        .field("average_rating").order(SortOrder.Desc).missing("_last"))));
-                sorts.add(SortOptions.of(s -> s.field(f -> f
-                        .field("review_count").order(SortOrder.Desc).missing("_last"))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("average_rating").order(SortOrder.Desc).missing("0.0"))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("review_count").order(SortOrder.Desc).missing("0"))));
             }
         }
 
+        // tie-breaker 항상 동일 (RECOMMENDED 포함!)
         sorts.add(SortOptions.of(s -> s.field(f -> f.field("product_id").order(SortOrder.Asc))));
+
         return sorts;
     }
 }
