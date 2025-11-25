@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 상품 Elastic 매핑
@@ -83,4 +84,19 @@ public class ProductDocument {
 
     @Field(type = FieldType.Date, name = "updated_at", format = DateFormat.date_time)
     private LocalDateTime updatedAt;
+
+    @Field(type = FieldType.Nested, name = "option_groups")
+    private List<OptionGroup> optionGroups;
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OptionGroup {
+        @Field(type = FieldType.Keyword, name = "group_name")
+        private String groupName;
+
+        @Field(type = FieldType.Keyword, name = "values")
+        private List<String> values;
+    }
 }

@@ -16,5 +16,5 @@ public interface ProductQueryRepository {
 
     List<String> autocomplete(String keyword);
 
-    SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice);
+    SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, List<String> optionFilters);
 }

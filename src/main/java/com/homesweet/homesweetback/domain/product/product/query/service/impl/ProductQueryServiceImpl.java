@@ -44,7 +44,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
     public SearchScrollResponse<ProductPreviewResponse> searchProducts(
             String cursor, Long categoryId, String keyword, ProductSortType sortType,
-            Double minPrice, Double maxPrice, int limit, Long userId) {
+            Double minPrice, Double maxPrice, int limit, Long userId, List<String> optionFilters) {
 
         if (userId != null && keyword != null && !keyword.isBlank()) {
             recentSearchService.save(userId, keyword);
@@ -55,7 +55,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 : sortType;
 
         SearchHits<ProductDocument> hits = productQueryRepository.search(
-                cursor, categoryId, limit, keyword, effectiveSortType, minPrice, maxPrice);
+                cursor, categoryId, limit, keyword, effectiveSortType, minPrice, maxPrice, optionFilters);
 
         List<ProductDocument> docs = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
