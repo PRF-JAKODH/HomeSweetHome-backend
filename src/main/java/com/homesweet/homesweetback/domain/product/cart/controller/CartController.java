@@ -98,9 +98,8 @@ public class CartController {
 
         Long userId = principal.getUserId();
 
-        // CartService의 새 메서드 호출
         service.updateCartItemQuantity(userId, cartId, request.quantity());
 
-        return ResponseEntity.ok().build(); // 성공 (200 OK)
+        return ResponseEntity.ok().build();
     }
 }
