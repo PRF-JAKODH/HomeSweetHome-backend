@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.command.controller.response;
+package com.homesweet.homesweetback.domain.product.product.query.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;

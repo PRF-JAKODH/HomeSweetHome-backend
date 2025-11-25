@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.req
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.*;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

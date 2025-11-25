@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.req
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

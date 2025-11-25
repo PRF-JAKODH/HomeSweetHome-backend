@@ -1,9 +1,10 @@
 package com.homesweet.homesweetback.domain.product.product.query.controller;
 
 import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +35,8 @@ public class ProductQueryController {
      *
      */
     @GetMapping
-    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> searchProducts(
-            @RequestParam(required = false) Long cursorId,
+    public ResponseEntity<SearchScrollResponse<ProductPreviewResponse>> searchProducts(
+            @RequestParam(required = false) String nextCursor,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
@@ -47,7 +48,7 @@ public class ProductQueryController {
 
         Long userId = principal.getUserId();
 
-        ScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(cursorId, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId);
+        SearchScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId);
 
         return ResponseEntity.ok(result);
     }
