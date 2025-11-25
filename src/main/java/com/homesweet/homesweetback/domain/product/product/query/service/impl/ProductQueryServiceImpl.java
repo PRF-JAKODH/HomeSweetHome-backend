@@ -50,12 +50,8 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             recentSearchService.save(userId, keyword);
         }
 
-        ProductSortType effectiveSortType = (keyword != null && !keyword.isBlank())
-                ? ProductSortType.RECOMMENDED
-                : sortType;
-
         SearchHits<ProductDocument> hits = productQueryRepository.search(
-                cursor, categoryId, limit, keyword, effectiveSortType, minPrice, maxPrice, optionFilters);
+                cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
 
         List<ProductDocument> docs = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
@@ -69,7 +65,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 ? hits.getSearchHits().get(limit - 1).getScore()
                 : null;
 
-        List<Object> sortValues = lastDoc != null ? switch (effectiveSortType) {
+        List<Object> sortValues = lastDoc != null ? switch (sortType) {
             case RECOMMENDED -> List.of(
                     lastScore != null ? lastScore : 0.0,
                     lastDoc.getProductId()
