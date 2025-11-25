@@ -18,7 +18,7 @@ const API_BASE = `${BASE_URL}/api/v1/community`;
 
 // Test data configuration
 const MIN_POST_ID = 1;
-const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 1000;
+const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 500;  // 게시글 수 현실적으로 조정
 
 // ==================== Test Scenarios ====================
 export const options = {
@@ -32,15 +32,17 @@ export const options = {
             tags: { test_type: 'smoke' },
         },
 
-        // Load Test: 평균 부하 테스트 (점진적 증가)
+        // Load Test: 평균 부하 테스트 (DAU 30만 기준)
         load_test: {
             executor: 'ramping-vus',
             startTime: '1m',
             stages: [
-                { duration: '2m', target: 10 },   // Ramp-up
-                { duration: '5m', target: 10 },   // Steady state
-                { duration: '2m', target: 20 },   // Step up
-                { duration: '5m', target: 20 },   // Steady state
+                { duration: '3m', target: 50 },   // Ramp-up to normal
+                { duration: '5m', target: 50 },   // Normal traffic
+                { duration: '2m', target: 100 },  // Peak time
+                { duration: '5m', target: 100 },  // Sustained peak
+                { duration: '2m', target: 150 },  // High peak
+                { duration: '3m', target: 150 },  // High peak sustained
                 { duration: '2m', target: 0 },    // Ramp-down
             ],
             exec: 'normalUserFlow',
@@ -50,24 +52,26 @@ export const options = {
         // Stress Test: 동시성 제어 검증 (같은 리소스에 집중)
         stress_test: {
             executor: 'ramping-vus',
-            startTime: '5m',
+            startTime: '23m',
             stages: [
-                { duration: '1m', target: 50 },
-                { duration: '3m', target: 50 },
-                { duration: '1m', target: 0 },
+                { duration: '2m', target: 100 },  // Quick ramp-up
+                { duration: '5m', target: 100 },  // Sustained stress
+                { duration: '2m', target: 200 },  // High stress
+                { duration: '3m', target: 200 },  // Peak stress
+                { duration: '1m', target: 0 },    // Ramp-down
             ],
             exec: 'concurrentAccessTest',
             tags: { test_type: 'stress' },
         },
 
-        // Spike Test: 급격한 트래픽 증가
+        // Spike Test: 급격한 트래픽 증가 (이벤트/이슈 발생 시)
         spike_test: {
             executor: 'ramping-vus',
-            startTime: '10m',
+            startTime: '36m',
             stages: [
-                { duration: '10s', target: 100 },  // Sudden spike
-                { duration: '1m', target: 100 },   // Hold
-                { duration: '10s', target: 0 },    // Sudden drop
+                { duration: '30s', target: 300 },  // Sudden spike (viral content)
+                { duration: '2m', target: 300 },   // Hold spike
+                { duration: '30s', target: 0 },    // Sudden drop
             ],
             exec: 'spikeUserFlow',
             tags: { test_type: 'spike' },
@@ -280,14 +284,8 @@ export function normalUserFlow() {
 
             sleep(randomIntBetween(2, 5));
 
-            // 20% chance to create comment
-            if (Math.random() < 0.2) {
-                createComment(postId);
-                sleep(randomIntBetween(1, 3));
-            }
-
-            // 10% chance to like post
-            if (Math.random() < 0.1) {
+            // 40% chance to like post (현실적: 좋아요는 많이 누름)
+            if (Math.random() < 0.4) {
                 res = http.post(`${API_BASE}/posts/${postId}/likes`, null, {
                     headers: getHeaders(),
                     tags: { name: 'like_post' },
@@ -295,17 +293,23 @@ export function normalUserFlow() {
                 checkResponse(res, { tag: 'LikePost' });
                 sleep(1);
             }
+
+            // 8% chance to create comment (현실적: 댓글은 적게 작성)
+            if (Math.random() < 0.08) {
+                createComment(postId);
+                sleep(randomIntBetween(1, 3));
+            }
         }
 
-        // 5% chance to create post
-        if (Math.random() < 0.05) {
+        // 3% chance to create post (현실적: 게시글 작성은 더 적음)
+        if (Math.random() < 0.03) {
             createPost();
             sleep(randomIntBetween(2, 4));
         }
     });
 }
 
-// Concurrent Access Test: 동시성 제어 검증
+// Concurrent Access Test: 동시성 제어 검증 (좋아요 토글 집중)
 export function concurrentAccessTest() {
     group('Concurrent Access - Same Resource', () => {
         // Target hot posts (1-10) to trigger concurrency control
@@ -313,30 +317,30 @@ export function concurrentAccessTest() {
 
         const action = Math.random();
 
-        if (action < 0.5) {
-            // Like toggle
+        if (action < 0.7) {
+            // Like toggle (70% - 가장 빈번한 동시성 이슈)
             const res = http.post(`${API_BASE}/posts/${hotPostId}/likes`, null, {
                 headers: getHeaders(),
                 tags: { name: 'concurrent_like' },
             });
             checkResponse(res, { tag: 'ConcurrentLike' });
-        } else if (action < 0.8) {
-            // View count
+        } else if (action < 0.9) {
+            // View count (20%)
             const res = http.post(`${API_BASE}/posts/${hotPostId}/views`, null, {
                 headers: getHeaders(),
                 tags: { name: 'concurrent_view' },
             });
             checkResponse(res, { tag: 'ConcurrentView' });
         } else {
-            // Comment
+            // Comment (10%)
             createComment(hotPostId);
         }
 
-        sleep(randomIntBetween(1, 3));
+        sleep(randomIntBetween(1, 2));  // 더 빠른 연속 요청
     });
 }
 
-// Spike User Flow: 급격한 트래픽 증가 시 사용자 행동
+// Spike User Flow: 급격한 트래픽 증가 시 사용자 행동 (바이럴 컨텐츠)
 export function spikeUserFlow() {
     group('Spike Traffic', () => {
         // Simplified flow for spike scenario
@@ -349,14 +353,14 @@ export function spikeUserFlow() {
         });
         checkResponse(res, { tag: 'SpikeRead', allowNotFound: true });
 
-        // Quick interaction (only if post exists)
-        if (res.status === 200 && Math.random() < 0.3) {
+        // Quick interaction (only if post exists) - 바이럴 시 좋아요 폭증
+        if (res.status === 200 && Math.random() < 0.6) {
             http.post(`${API_BASE}/posts/${postId}/likes`, null, {
                 headers: getHeaders(),
                 tags: { name: 'spike_like' },
             });
         }
 
-        sleep(randomIntBetween(1, 2));
+        sleep(randomIntBetween(0.5, 1.5));  // 빠른 연속 액션
     });
 }
