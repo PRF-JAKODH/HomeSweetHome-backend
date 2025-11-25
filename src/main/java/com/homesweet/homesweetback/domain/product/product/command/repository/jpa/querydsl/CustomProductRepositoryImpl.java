@@ -7,7 +7,7 @@ import com.homesweet.homesweetback.domain.product.product.command.controller.req
 import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.*;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;

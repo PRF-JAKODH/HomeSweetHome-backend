@@ -4,7 +4,7 @@ import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,24 +23,6 @@ import org.springframework.web.bind.annotation.*;
 public class SearchController {
 
     private final ProductSearchService searchService;
-
-    @GetMapping("/authenticated")
-    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> search(
-            @RequestParam(required = false) Long cursorId,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "LATEST", required = false) ProductSortType sortType,
-            @AuthenticationPrincipal OAuth2UserPrincipal principal
-    ) {
-
-        Long userId = principal.getUserId();
-
-        ScrollResponse<ProductPreviewResponse> response =
-                searchService.search(cursorId, categoryId, userId, limit, keyword, sortType);
-
-        return ResponseEntity.ok(response);
-    }
 
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProductDetail(
