@@ -26,10 +26,7 @@ import org.springframework.data.elasticsearch.core.query.highlight.HighlightFiel
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 import org.springframework.stereotype.Repository;
 
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -131,14 +128,24 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
         }
 
         if (minPrice != null || maxPrice != null) {
-            Query priceFilter = NumberRangeQuery.of(r -> r
-                    .field("base_price")
-                    .gte(minPrice)
-                    .lte(maxPrice)
-            )._toRangeQuery()._toQuery();
 
-            filters.add(priceFilter);
+            NumberRangeQuery.Builder priceBuilder = new NumberRangeQuery.Builder()
+                    .field("sale_price");
+
+            if (minPrice != null) {
+                priceBuilder.gte(minPrice);
+            }
+            if (maxPrice != null) {
+                priceBuilder.lte(maxPrice);
+            }
+
+            filters.add(
+                    priceBuilder.build()
+                            ._toRangeQuery()
+                            ._toQuery()
+            );
         }
+
 
         Query boolQuery = BoolQuery.of(b -> b
                 .must(keywordQuery)
@@ -178,8 +185,8 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
                 sorts.add(SortOptions.of(s -> s.field(f -> f.field("_score").order(SortOrder.Desc))));
             }
             case LATEST -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("created_at").order(SortOrder.Desc).missing("_last"))));
-            case PRICE_LOW -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("base_price").order(SortOrder.Asc).missing("_last"))));
-            case PRICE_HIGH -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("base_price").order(SortOrder.Desc).missing("_last"))));
+            case PRICE_LOW -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("sale_price").order(SortOrder.Asc).missing("_last"))));
+            case PRICE_HIGH -> sorts.add(SortOptions.of(s -> s.field(f -> f.field("sale_price").order(SortOrder.Desc).missing("_last"))));
             case POPULAR -> {
                 sorts.add(SortOptions.of(s -> s.field(f -> f.field("average_rating").order(SortOrder.Desc).missing("0.0"))));
                 sorts.add(SortOptions.of(s -> s.field(f -> f.field("review_count").order(SortOrder.Desc).missing("0"))));

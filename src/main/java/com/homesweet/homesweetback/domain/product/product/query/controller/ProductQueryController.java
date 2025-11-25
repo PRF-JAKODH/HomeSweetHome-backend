@@ -61,6 +61,4 @@ public class ProductQueryController {
         List<String> result = productQueryService.autocomplete(keyword);
         return ResponseEntity.ok(result);
     }
-
-
 }
