@@ -3,11 +3,9 @@ package com.homesweet.homesweetback.domain.community.service;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
-import com.homesweet.homesweetback.domain.community.entity.CommunityCommentLikeEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.community.entity.CommunityPostLikeEntity;
+import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
@@ -52,55 +50,46 @@ public class CommunityCountService {
      */
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
-        // 1. 좋아요 존재 여부 확인 (락 없이 읽기만)
+        // 1. 좋아요 존재 여부 확인
         boolean exists = postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId);
 
-        try {
-            if (exists) {
-                // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
-                int updated = postRepository.updateLikeCount(postId, -1);
-                if (updated == 0) {
-                    throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-                }
-                int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, userId);
-                if (deleted == 0) {
-                    // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
-                    postRepository.updateLikeCount(postId, 1);
-                }
-            } else {
-                // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
-                int updated = postRepository.updateLikeCount(postId, 1);
-                if (updated == 0) {
-                    throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-                }
-
-                // 엔티티 조회 및 좋아요 생성
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-                CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-                        .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-
-                CommunityPostLikeEntity newLike = CommunityPostLikeEntity.builder()
-                        .post(post)
-                        .user(user)
-                        .build();
-                postLikeRepository.save(newLike);
-
-                // 알림 전송
-                notificationSendService.sendTemplateNotificationToSingleUser(
-                        post.getAuthor().getId(),
-                        CommunityNotification.NewLike.builder()
-                                .userName(user.getName())
-                                .postId(post.getPostId())
-                                .postTitle(post.getTitle())
-                                .build());
+        if (exists) {
+            // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
+            int updated = postRepository.updateLikeCount(postId, -1);
+            if (updated == 0) {
+                throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
             }
-        } catch (DataIntegrityViolationException e) {
-            // Unique Constraint 위반 → 동시 요청으로 이미 추가/삭제됨
-            // 카운트 보정 (원복)
-            int delta = exists ? 1 : -1;
-            postRepository.updateLikeCount(postId, delta);
-            // 사용자에게는 성공으로 응답 (중복 요청이므로)
+            int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, userId);
+            if (deleted == 0) {
+                // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
+                postRepository.updateLikeCount(postId, 1);
+            }
+        } else {
+            // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
+            int updated = postRepository.updateLikeCount(postId, 1);
+            if (updated == 0) {
+                throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+            }
+
+            // 네이티브 INSERT IGNORE (중복 시 에러 없이 0 반환)
+            int inserted = postLikeRepository.insertPostLike(postId, userId);
+            if (inserted == 0) {
+                // 이미 다른 트랜잭션이 추가함 → 카운트 원복
+                postRepository.updateLikeCount(postId, -1);
+            }
+
+            // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
+            // User user = userRepository.findById(userId)
+            //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+            // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+            //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+            // notificationSendService.sendTemplateNotificationToSingleUser(
+            //         post.getAuthor().getId(),
+            //         CommunityNotification.NewLike.builder()
+            //                 .userName(user.getName())
+            //                 .postId(post.getPostId())
+            //                 .postTitle(post.getTitle())
+            //                 .build());
         }
     }
 
@@ -119,53 +108,44 @@ public class CommunityCountService {
         // 1. 좋아요 존재 여부 확인 (락 없이 읽기만)
         boolean exists = commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId);
 
-        try {
-            if (exists) {
-                // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
-                int updated = commentRepository.updateLikeCount(commentId, -1);
-                if (updated == 0) {
-                    throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
-                }
-                int deleted = commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId);
-                if (deleted == 0) {
-                    // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
-                    commentRepository.updateLikeCount(commentId, 1);
-                }
-            } else {
-                // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
-                int updated = commentRepository.updateLikeCount(commentId, 1);
-                if (updated == 0) {
-                    throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
-                }
-
-                // 엔티티 조회 및 좋아요 생성
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-                CommunityCommentEntity comment = commentRepository.findById(commentId)
-                        .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
-
-                CommunityCommentLikeEntity newLike = CommunityCommentLikeEntity.builder()
-                        .comment(comment)
-                        .user(user)
-                        .build();
-                commentLikeRepository.save(newLike);
-
-                // 알림 전송
-                notificationSendService.sendTemplateNotificationToSingleUser(
-                        comment.getAuthor().getId(),
-                        CommunityNotification.NewCommentLike.builder()
-                                .userName(user.getName())
-                                .postId(comment.getPost().getPostId())
-                                .postTitle(comment.getPost().getTitle())
-                                .commentId(comment.getCommentId())
-                                .build());
+        if (exists) {
+            // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
+            int updated = commentRepository.updateLikeCount(commentId, -1);
+            if (updated == 0) {
+                throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
             }
-        } catch (DataIntegrityViolationException e) {
-            // Unique Constraint 위반 → 동시 요청으로 이미 추가/삭제됨
-            // 카운트 보정 (원복)
-            int delta = exists ? 1 : -1;
-            commentRepository.updateLikeCount(commentId, delta);
-            // 사용자에게는 성공으로 응답 (중복 요청이므로)
+            int deleted = commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId);
+            if (deleted == 0) {
+                // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
+                commentRepository.updateLikeCount(commentId, 1);
+            }
+        } else {
+            // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
+            int updated = commentRepository.updateLikeCount(commentId, 1);
+            if (updated == 0) {
+                throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
+            }
+
+            // 네이티브 INSERT IGNORE (중복 시 에러 없이 0 반환)
+            int inserted = commentLikeRepository.insertCommentLike(commentId, userId);
+            if (inserted == 0) {
+                // 이미 다른 트랜잭션이 추가함 → 카운트 원복
+                commentRepository.updateLikeCount(commentId, -1);
+            }
+
+            // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
+            // User user = userRepository.findById(userId)
+            //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+            // CommunityCommentEntity comment = commentRepository.findById(commentId)
+            //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
+            // notificationSendService.sendTemplateNotificationToSingleUser(
+            //         comment.getAuthor().getId(),
+            //         CommunityNotification.NewCommentLike.builder()
+            //                 .userName(user.getName())
+            //                 .postId(comment.getPost().getPostId())
+            //                 .postTitle(comment.getPost().getTitle())
+            //                 .commentId(comment.getCommentId())
+            //                 .build());
         }
     }  
 

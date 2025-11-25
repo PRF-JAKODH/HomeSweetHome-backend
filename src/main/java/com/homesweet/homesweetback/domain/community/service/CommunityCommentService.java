@@ -36,17 +36,22 @@ public class CommunityCommentService {
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
 
-        // 게시글 존재 여부 확인
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+        // 1. 먼저 카운트 증가 (X lock 획득) - 데드락 방지를 위해 가장 먼저!
+        int updated = postRepository.updateCommentCount(postId, 1);
+        if (updated == 0) {
+            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
 
-        // 대댓글인 경우 부모 댓글 존재 여부 확인
+        // 2. 대댓글인 경우 부모 댓글 존재 여부 확인
         if (request.parentCommentId() != null) {
             commentRepository.findById(request.parentCommentId())
                     .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
         }
 
-        // 댓글 엔티티 생성 및 연결
+        // 3. 게시글 프록시 참조 (FK 설정용)
+        CommunityPostEntity post = postRepository.getReferenceById(postId);
+
+        // 4. 댓글 엔티티 생성 및 연결
         CommunityCommentEntity comment = CommunityCommentEntity.builder()
                 .post(post)
                 .author(author)
@@ -54,19 +59,17 @@ public class CommunityCommentService {
                 .parentCommentId((request.parentCommentId()))
                 .build();
 
+        // 5. 댓글 저장 (FK constraint 검증으로 S lock 발생하지만, 이미 X lock 획득 완료)
         CommunityCommentEntity savedComment = commentRepository.save(comment);
 
-        // 게시글의 댓글 수 증가
-        post.increaseCommentCount();
-
-        // 알림 전송
-        notificationSendService.sendTemplateNotificationToSingleUser(
-                post.getAuthor().getId(),
-                CommunityNotification.NewComment.builder()
-                        .userName(author.getName())
-                        .postId(post.getPostId())
-                        .postTitle(post.getTitle())
-                        .build());
+        // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
+        // notificationSendService.sendTemplateNotificationToSingleUser(
+        //         post.getAuthor().getId(),
+        //         CommunityNotification.NewComment.builder()
+        //                 .userName(author.getName())
+        //                 .postId(post.getPostId())
+        //                 .postTitle(post.getTitle())
+        //                 .build());
 
 
         return CommunityCommentResponse.from(savedComment);
@@ -117,12 +120,13 @@ public class CommunityCommentService {
             throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_FORBIDDEN);
         }
 
-        // 게시글 조회 및 댓글 수 감소
-        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-        post.decreaseCommentCount();
-
         // 댓글 소프트 삭제
         comment.deleteComment();
+
+        // 게시글의 댓글 수 감소 (JPQL로 직접 업데이트)
+        int updated = postRepository.updateCommentCount(postId, -1);
+        if (updated == 0) {
+            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        }
     }
 }
