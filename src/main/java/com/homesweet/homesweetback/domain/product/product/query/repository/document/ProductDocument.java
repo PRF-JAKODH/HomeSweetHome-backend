@@ -72,6 +72,12 @@ public class ProductDocument {
     @Field(type = FieldType.Text, name = "category_name.text", analyzer = "product_search_analyzer")
     private String categoryNameText;
 
+    @Field(type = FieldType.Float, name = "average_rating")
+    private Double averageRating;
+
+    @Field(type = FieldType.Long, name = "review_count")
+    private Long reviewCount;
+
     @Field(type = FieldType.Date, name = "created_at")
     private LocalDateTime createdAt;
 
