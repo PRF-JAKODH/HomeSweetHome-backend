@@ -313,7 +313,8 @@ class CommunityCommentServiceIntegratTest {
         // given
         CommunityCommentEntity comment = createTestComment("삭제할 댓글", testPost, testUser, null);
         Long commentId = comment.getCommentId();
-        int initialCommentCount = testPost.getCommentCount();
+        // JPQL 업데이트 후 최신 값을 읽기 위해 DB에서 다시 조회
+        int initialCommentCount = postRepository.findById(testPost.getPostId()).orElseThrow().getCommentCount();
 
         // when
         commentService.deleteComment(commentId, testPost.getPostId(), testUser.getId());
@@ -394,9 +395,8 @@ class CommunityCommentServiceIntegratTest {
 
         CommunityCommentEntity savedComment = commentRepository.save(comment);
 
-        // 댓글 수 증가
-        post.increaseCommentCount();
-        postRepository.save(post);
+        // 댓글 수 증가 - 프로덕션 코드와 동일하게 JPQL 사용
+        postRepository.updateCommentCount(post.getPostId(), 1);
 
         return savedComment;
     }

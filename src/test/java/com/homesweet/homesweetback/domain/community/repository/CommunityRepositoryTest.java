@@ -456,11 +456,10 @@ class CommunityRepositoryTest {
         postLikeRepository.save(postLike);
 
         // when: 좋아요 삭제
-        Optional<CommunityPostLikeEntity> foundLike = postLikeRepository.findByPostAndUser(savedPost, savedUser);
-        assertThat(foundLike).isPresent();
-        postLikeRepository.delete(foundLike.get());
+        int deleted = postLikeRepository.deleteByPostIdAndUserId(savedPost.getPostId(), savedUser.getId());
 
         // then: 삭제 검증
+        assertThat(deleted).isEqualTo(1);
         boolean exists = postLikeRepository.existsByPost_PostIdAndUser_Id(savedPost.getPostId(), savedUser.getId());
         assertThat(exists).isFalse();
     }
