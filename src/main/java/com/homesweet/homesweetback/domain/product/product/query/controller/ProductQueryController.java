@@ -43,12 +43,13 @@ public class ProductQueryController {
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false, name = "optionFilters") List<String> optionFilters,
             @AuthenticationPrincipal OAuth2UserPrincipal principal
     ) {
 
         Long userId = principal.getUserId();
 
-        SearchScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId);
+        SearchScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId, optionFilters);
 
         return ResponseEntity.ok(result);
     }
