@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.domain.product.product.query.repository;
 
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
+
 import java.util.List;
 
 /**
@@ -11,4 +14,7 @@ import java.util.List;
 public interface ProductQueryRepository {
 
     List<String> autocomplete(String keyword);
+
+    List<ProductDocument> search(Long cursorId, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice);
+
 }

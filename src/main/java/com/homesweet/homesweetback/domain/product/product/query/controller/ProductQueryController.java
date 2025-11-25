@@ -1,9 +1,14 @@
 package com.homesweet.homesweetback.domain.product.product.query.controller;
 
+import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +30,29 @@ public class ProductQueryController {
     private final ProductQueryService productQueryService;
 
     /**
+     * 상품 검색 (무한 스크롤)
+     *
+     */
+    @GetMapping
+    public ResponseEntity<ScrollResponse<ProductPreviewResponse>> searchProducts(
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(defaultValue = "20") int limit,
+            @AuthenticationPrincipal OAuth2UserPrincipal principal
+    ) {
+
+        Long userId = principal.getUserId();
+
+        ScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(cursorId, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * 검색어 자동 완성 API
      */
     @GetMapping("/autocomplete")
@@ -32,4 +60,6 @@ public class ProductQueryController {
         List<String> result = productQueryService.autocomplete(keyword);
         return ResponseEntity.ok(result);
     }
+
+
 }
