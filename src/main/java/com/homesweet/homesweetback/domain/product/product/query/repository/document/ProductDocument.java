@@ -51,6 +51,9 @@ public class ProductDocument {
     @Field(type = FieldType.Float, name = "discount_rate")
     private Float discountRate;
 
+    @Field(type = FieldType.Integer, name = "sale_price")
+    private Integer salePrice;
+
     @Field(type = FieldType.Integer, name = "shipping_price")
     private Integer shippingPrice;
 
