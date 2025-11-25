@@ -18,4 +18,6 @@ public interface ProductQueryService {
     List<String> autocomplete(String keyword);
 
     SearchScrollResponse<ProductPreviewResponse> searchProducts(String nextCursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, Long userId, List<String> optionFilters);
+
+    SearchScrollResponse<ProductPreviewResponse> getProductPreview(String nextCursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, List<String> optionFilters);
 }
