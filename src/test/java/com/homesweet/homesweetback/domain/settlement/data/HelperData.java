@@ -240,7 +240,4 @@ public class HelperData {
                 .totalSettlement(BigDecimal.valueOf(1350000))
                 .build();
     }
-
-
-
 }

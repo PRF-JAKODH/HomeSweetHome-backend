@@ -101,13 +101,19 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     Optional<Settlement>findByOrderId(@Param("orderId")Long orderId);
 
+    // 사용자별 목록 조회
+    @Query("SELECT DISTINCT s.userId FROM Settlement s")
+    List<Long> findDistinctUserIds();
+
+
+    // Batch
     // 신규 정산건 찾기
     @Query("""
     SELECT o FROM Order o
     LEFT JOIN Settlement s ON o.id = s.order.id
     WHERE o.orderStatus =:orderStatus
     AND o.orderedAt <= :cutOffTime
-    AND s.settlementId IS NULL
+    AND NOT EXISTS (SELECT 1 FROM Settlement s WHERE s.order.id = o.id)
     """)
     List<Order> findUnSettlementOrders(@Param("orderStatus") OrderStatus orderStatus, @Param("cutOffTime") LocalDateTime cutoffTime);
 

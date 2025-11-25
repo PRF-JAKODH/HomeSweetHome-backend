@@ -38,11 +38,15 @@ spring:
       timeout: ${REDIS_TIMEOUT:2000ms}
   cache:
     type: redis
+  batch:
+    jdbc:
+      initialize-schema: never
 
 logging:
   level:
     com.homesweet.homesweetback: INFO
     org.springframework.security: WARN
+    org.springframework.batch: INFO
 
 # 프로덕션 환경 애플리케이션 설정
 app:

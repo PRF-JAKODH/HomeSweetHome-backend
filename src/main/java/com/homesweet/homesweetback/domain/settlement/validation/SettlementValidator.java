@@ -137,7 +137,7 @@ public class SettlementValidator {
     }
 
     // 1. 주문 건별 정산 내역이 존재하는지
-    private <T> void validateNotEmpty(List<T> settlements) {
+    public <T> void validateNotEmpty(List<T> settlements) {
         if (settlements == null || settlements.isEmpty()) {
             throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
         }

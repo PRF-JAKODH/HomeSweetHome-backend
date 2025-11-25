@@ -17,17 +17,16 @@ public class GradeService {
     private final GradeRepository gradeRepository;
     // 등급에 따른 수수료 계산
     public BigDecimal calculateFeeforUser(BigDecimal salesAmount, User user){
-        // 판매자가 아니라면 0
+        // 1. 판매자가 아니라면 0
         if(user.getRole() != UserRole.SELLER){
             return BigDecimal.ZERO;
         }
-        if (user.getGrade() != null && user.getGrade().getFeeRate() != null) {
-            return salesAmount
-                    .multiply(user.getGrade().getFeeRate())
-                    .setScale(2, RoundingMode.HALF_UP);
+        // 2. grade / feeRate가 null이라면 0
+        if (user.getGrade() == null && user.getGrade().getFeeRate() == null) {
+            return BigDecimal.ZERO;
         }
 
-        // 등급별 수수료율
+        // 3. 등급별 수수료율 계산
         BigDecimal feeRate = user.getGrade().getFeeRate();
         return salesAmount.multiply(feeRate).setScale(2, RoundingMode.HALF_UP);
     }
