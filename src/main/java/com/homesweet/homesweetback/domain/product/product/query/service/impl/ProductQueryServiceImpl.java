@@ -11,6 +11,8 @@ import com.homesweet.homesweetback.domain.product.product.query.repository.docum
 import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 
 import java.awt.*;
@@ -40,24 +42,38 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    public SearchScrollResponse<ProductPreviewResponse> searchProducts(String cursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, Long userId) {
-        if (userId != null && keyword != null && !keyword.isBlank()) {
-            recentSearchService.save(userId, keyword);
-        }
+    public SearchScrollResponse<ProductPreviewResponse> searchProducts(
+            String cursor, Long categoryId, String keyword, ProductSortType sortType,
+            Double minPrice, Double maxPrice, int limit, Long userId) {
 
         if (userId != null && keyword != null && !keyword.isBlank()) {
             recentSearchService.save(userId, keyword);
         }
 
-        List<ProductDocument> docs = productQueryRepository.search(
-                cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice);
+        ProductSortType effectiveSortType = (keyword != null && !keyword.isBlank())
+                ? ProductSortType.RECOMMENDED
+                : sortType;
+
+        SearchHits<ProductDocument> hits = productQueryRepository.search(
+                cursor, categoryId, limit, keyword, effectiveSortType, minPrice, maxPrice);
+
+        List<ProductDocument> docs = hits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .toList();
 
         boolean hasNext = docs.size() > limit;
         List<ProductDocument> result = hasNext ? docs.subList(0, limit) : docs;
-
         ProductDocument lastDoc = hasNext ? result.get(result.size() - 1) : null;
 
-        List<Object> sortValues = lastDoc != null ? switch (sortType) {
+        Float lastScore = hasNext
+                ? hits.getSearchHits().get(limit - 1).getScore()
+                : null;
+
+        List<Object> sortValues = lastDoc != null ? switch (effectiveSortType) {
+            case RECOMMENDED -> List.of(
+                    lastScore != null ? lastScore : 0.0,
+                    lastDoc.getProductId()
+            );
             case LATEST -> List.of(
                     lastDoc.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                     lastDoc.getProductId()
