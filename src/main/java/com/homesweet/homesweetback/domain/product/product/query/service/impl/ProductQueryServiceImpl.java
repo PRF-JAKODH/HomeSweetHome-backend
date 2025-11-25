@@ -47,48 +47,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             recentSearchService.save(userId, keyword);
         }
 
-        SearchHits<ProductDocument> hits = productQueryRepository.search(
-                cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
-
-        List<ProductDocument> docs = hits.getSearchHits().stream()
-                .map(SearchHit::getContent)
-                .toList();
-
-        boolean hasNext = docs.size() > limit;
-        List<ProductDocument> result = hasNext ? docs.subList(0, limit) : docs;
-        ProductDocument lastDoc = hasNext ? result.getLast() : null;
-
-        Float lastScore = hasNext
-                ? hits.getSearchHits().get(limit - 1).getScore()
-                : null;
-
-        List<Object> sortValues = lastDoc != null ? switch (sortType) {
-            case RECOMMENDED -> List.of(
-                    lastScore,
-                    lastDoc.getProductId()
-            );
-            case LATEST -> List.of(
-                    lastDoc.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                    lastDoc.getProductId()
-            );
-            case PRICE_LOW, PRICE_HIGH -> List.of(
-                    lastDoc.getBasePrice(),
-                    lastDoc.getProductId()
-            );
-            case POPULAR -> List.of(
-                    lastDoc.getAverageRating() != null ? lastDoc.getAverageRating() : 0.0,
-                    lastDoc.getReviewCount() != null ? lastDoc.getReviewCount() : 0,
-                    lastDoc.getProductId()
-            );
-        } : null;
-
-        String nextCursor = cursorUtil.encodeSortValues(sortValues);
-
-        List<ProductPreviewResponse> responses = result.stream()
-                .map(ProductPreviewResponse::fromDocument)
-                .toList();
-
-        return SearchScrollResponse.of(responses, nextCursor, hasNext);
+        return executeSearch(cursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
     }
 
     @Override
@@ -96,6 +55,23 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         SearchHits<ProductDocument> hits = productQueryRepository.search(
                 cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
 
+        return executeSearch(cursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
+    }
+
+    private SearchScrollResponse<ProductPreviewResponse> executeSearch(
+            String cursor,
+            Long categoryId,
+            String keyword,
+            ProductSortType sortType,
+            Double minPrice,
+            Double maxPrice,
+            int limit,
+            List<String> optionFilters
+    ) {
+
+        SearchHits<ProductDocument> hits = productQueryRepository.search(
+                cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
+
         List<ProductDocument> docs = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
                 .toList();
@@ -104,23 +80,15 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         List<ProductDocument> result = hasNext ? docs.subList(0, limit) : docs;
         ProductDocument lastDoc = hasNext ? result.getLast() : null;
 
-        Float lastScore = hasNext
-                ? hits.getSearchHits().get(limit - 1).getScore()
-                : null;
+        Float lastScore = hasNext ? hits.getSearchHits().get(limit - 1).getScore() : null;
 
+        // 공통 cursor 생성 로직도 그대로 유지
         List<Object> sortValues = lastDoc != null ? switch (sortType) {
-            case RECOMMENDED -> List.of(
-                    lastScore,
-                    lastDoc.getProductId()
-            );
-            case LATEST -> List.of(
-                    lastDoc.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                    lastDoc.getProductId()
-            );
-            case PRICE_LOW, PRICE_HIGH -> List.of(
-                    lastDoc.getBasePrice(),
-                    lastDoc.getProductId()
-            );
+            case RECOMMENDED -> List.of(lastScore, lastDoc.getProductId());
+            case LATEST -> List.of(lastDoc.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    lastDoc.getProductId());
+            case PRICE_LOW, PRICE_HIGH ->
+                    List.of(lastDoc.getBasePrice(), lastDoc.getProductId());
             case POPULAR -> List.of(
                     lastDoc.getAverageRating() != null ? lastDoc.getAverageRating() : 0.0,
                     lastDoc.getReviewCount() != null ? lastDoc.getReviewCount() : 0,
