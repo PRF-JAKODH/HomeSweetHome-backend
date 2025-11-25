@@ -103,7 +103,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
      * @return
      */
     @Override
-    public SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice) {
+    public SearchHits<ProductDocument> search(String nextCursor, Long categoryId, int limit, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, List<String> optionFilters) {
 
         // 1. 키워드 쿼리
         Query keywordQuery = (keyword == null || keyword.isBlank())
@@ -146,6 +146,60 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
             );
         }
 
+        if (optionFilters != null && !optionFilters.isEmpty()) {
+
+            List<Query> optionMustQueries = new ArrayList<>();
+
+            for (String opt : optionFilters) {
+                String[] parts = opt.split(":");
+                if (parts.length != 2) continue;
+
+                String group = parts[0];
+                String value = parts[1];
+
+                Query groupValueQuery = NestedQuery.of(n -> n
+                        .path("option_groups")
+                        .query(
+                                BoolQuery.of(b -> b
+                                        .must(List.of(
+                                                TermQuery.of(t -> t.field("option_groups.group_name").value(group))._toQuery(),
+                                                TermQuery.of(t -> t.field("option_groups.values").value(value))._toQuery()
+                                        ))
+                                )._toQuery()
+                        )
+                )._toQuery();
+
+                optionMustQueries.add(groupValueQuery);
+            }
+
+            if (!optionMustQueries.isEmpty()) {
+                filters.add(
+                        BoolQuery.of(b -> b.must(optionMustQueries))._toQuery()
+                );
+            }
+        }
+
+        List<Query> shouldQueries = new ArrayList<>();
+
+        shouldQueries.add(keywordQuery);
+
+        // 옵션 value 이름이 제목에 들어가면 조회되게
+        if (optionFilters != null) {
+            for (String opt : optionFilters) {
+                String[] parts = opt.split(":");
+                if (parts.length == 2) {
+                    String optValue = parts[1];
+
+                    shouldQueries.add(
+                            MatchQuery.of(m -> m
+                                    .field("name")
+                                    .query(optValue)
+                                    .fuzziness("AUTO")
+                            )._toQuery()
+                    );
+                }
+            }
+        }
 
         Query boolQuery = BoolQuery.of(b -> b
                 .must(keywordQuery)
