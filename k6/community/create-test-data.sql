@@ -1,84 +1,309 @@
--- 테스트 데이터 생성 SQL
---
--- 실행 방법:
--- docker exec -i homesweet-db mysql -u user -ppassword homesweet < k6-tests/create-test-data.sql
---
--- 또는:
--- mysql -h localhost -P 3306 -u user -ppassword homesweet < k6-tests/create-test-data.sql
+-- ====================================================================
+-- Community Performance Test Data Generator
+-- ====================================================================
+-- Execution:
+--   docker exec -i homesweet-db mysql -u user -ppassword homesweet < k6/community/create-test-data.sql
+-- or:
+--   mysql -h localhost -P 3306 -u user -ppassword homesweet < k6/community/create-test-data.sql
+-- ====================================================================
 
--- 1. 테스트용 사용자 생성 (OAuth2 사용자가 없을 경우)
-INSERT IGNORE INTO users (user_id, email, name, profile_img_url, provider, role)
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+-- Disable foreign key checks for faster insertion
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Set common timestamp
+SET @now = NOW();
+
+-- ====================================================================
+-- 1. Create Test User
+-- ====================================================================
+INSERT IGNORE INTO users (user_id, email, name, profile_img_url, provider, role, created_at)
 VALUES
-  (9999, 'test.user@k6.com', 'K6 Test User', 'https://example.com/avatar.jpg', 'GOOGLE', 'USER');
+    (9999, 'test.user@k6.com', 'K6 Test User', 'https://example.com/avatar.jpg', 'GOOGLE', 'USER', @now);
 
--- 2. 커뮤니티 게시글 생성 (10개)
-INSERT IGNORE INTO community_posts (post_id, user_id, title, content, category)
-VALUES
-  (1, 9999, '부하 테스트용 게시글 1', '이것은 k6 부하 테스트를 위한 샘플 게시글입니다.', 'GENERAL'),
-  (2, 9999, '부하 테스트용 게시글 2', 'N+1 문제 확인을 위한 게시글입니다.', 'QUESTION'),
-  (3, 9999, '부하 테스트용 게시글 3', '조회수 동시성 테스트용 게시글입니다.', 'INFO'),
-  (4, 9999, '부하 테스트용 게시글 4', '스파이크 테스트 데이터입니다.', 'GENERAL'),
-  (5, 9999, '부하 테스트용 게시글 5', '스트레스 테스트 데이터입니다.', 'QUESTION'),
-  (6, 9999, '부하 테스트용 게시글 6', '성능 모니터링 테스트용입니다.', 'INFO'),
-  (7, 9999, '부하 테스트용 게시글 7', 'Prometheus 메트릭 수집 테스트입니다.', 'GENERAL'),
-  (8, 9999, '부하 테스트용 게시글 8', 'Jaeger 트레이싱 테스트입니다.', 'QUESTION'),
-  (9, 9999, '부하 테스트용 게시글 9', 'Grafana 대시보드 확인용입니다.', 'INFO'),
-  (10, 9999, '부하 테스트용 게시글 10', '종합 부하 테스트용 게시글입니다.', 'GENERAL');
+-- ====================================================================
+-- 2. Create Posts (1000 posts)
+-- ====================================================================
 
--- 3. 커뮤니티 이미지 (각 게시글마다 2개씩)
-INSERT IGNORE INTO community_images (image_id, post_id, image_url, image_order)
-VALUES
-  (1, 1, 'https://example.com/image1-1.jpg', 1),
-  (2, 1, 'https://example.com/image1-2.jpg', 2),
-  (3, 2, 'https://example.com/image2-1.jpg', 1),
-  (4, 2, 'https://example.com/image2-2.jpg', 2),
-  (5, 3, 'https://example.com/image3-1.jpg', 1),
-  (6, 3, 'https://example.com/image3-2.jpg', 2),
-  (7, 4, 'https://example.com/image4-1.jpg', 1),
-  (8, 4, 'https://example.com/image4-2.jpg', 2),
-  (9, 5, 'https://example.com/image5-1.jpg', 1),
-  (10, 5, 'https://example.com/image5-2.jpg', 2);
+DELIMITER $$
 
--- 4. 댓글 생성 (각 게시글마다 3개씩)
-INSERT IGNORE INTO community_comments (comment_id, post_id, user_id, content, parent_comment_id)
-VALUES
-  (1, 1, 9999, '첫 번째 댓글입니다.', NULL),
-  (2, 1, 9999, '두 번째 댓글입니다.', NULL),
-  (3, 1, 9999, '대댓글입니다.', 1),
-  (4, 2, 9999, '좋은 정보네요!', NULL),
-  (5, 2, 9999, '감사합니다.', NULL),
-  (6, 2, 9999, '도움이 되었습니다.', NULL),
-  (7, 3, 9999, '동시성 테스트 댓글', NULL),
-  (8, 3, 9999, 'Lock 테스트', NULL),
-  (9, 3, 9999, '비관적 락 확인', NULL);
+DROP PROCEDURE IF EXISTS generate_posts$$
+CREATE PROCEDURE generate_posts()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE category_val VARCHAR(50);
+    DECLARE title_val VARCHAR(200);
+    DECLARE content_val VARCHAR(1000);
 
--- 5. 데이터 확인
+    WHILE i <= 1000 DO
+        -- Random category selection
+        SET category_val = ELT(1 + FLOOR(RAND() * 5), 'Question', 'Info', 'Review', 'Discussion', 'Notice');
+
+        -- Generate title and content
+        SET title_val = CONCAT('Performance Test Post ', i);
+        SET content_val = CONCAT(
+            'This is a test post for load testing. Post number: ', i, '. ',
+            'Testing N+1 query issues, concurrency control, and database performance. ',
+            'Category: ', category_val
+        );
+
+        INSERT IGNORE INTO community_posts
+            (post_id, user_id, title, content, category, view_count, like_count, comment_count, is_modified, created_at, is_deleted)
+        VALUES
+            (i, 9999, title_val, content_val, category_val, 0, 0, 0, FALSE, DATE_SUB(@now, INTERVAL FLOOR(RAND() * 30) DAY), FALSE);
+
+        SET i = i + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_posts();
+DROP PROCEDURE IF EXISTS generate_posts;
+
+-- ====================================================================
+-- 3. Create Comments (3000-5000 comments, average 3-5 per post)
+-- ====================================================================
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS generate_comments$$
+CREATE PROCEDURE generate_comments()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE comment_id_counter INT DEFAULT 1;
+    DECLARE num_comments INT;
+    DECLARE j INT;
+    DECLARE content_val VARCHAR(500);
+    DECLARE parent_id INT;
+
+    WHILE i <= 1000 DO
+        -- Random number of comments per post (0-10, weighted towards 3-5)
+        SET num_comments = FLOOR(RAND() * 11);
+
+        -- Only create comments for 80% of posts
+        IF RAND() < 0.8 THEN
+            SET j = 1;
+            WHILE j <= num_comments DO
+                SET content_val = CONCAT('Test comment ', comment_id_counter, ' for post ', i);
+
+                -- 10% chance to be a reply (parent_comment_id not NULL)
+                SET parent_id = NULL;
+                IF j > 1 AND RAND() < 0.1 THEN
+                    SET parent_id = comment_id_counter - FLOOR(RAND() * (j - 1)) - 1;
+                END IF;
+
+                INSERT IGNORE INTO community_comments
+                    (comment_id, post_id, user_id, content, parent_comment_id, like_count, is_modified, created_at, is_deleted)
+                VALUES
+                    (comment_id_counter, i, 9999, content_val, parent_id, 0, FALSE, DATE_SUB(@now, INTERVAL FLOOR(RAND() * 30) DAY), FALSE);
+
+                SET comment_id_counter = comment_id_counter + 1;
+                SET j = j + 1;
+            END WHILE;
+
+            -- Update post comment count
+            UPDATE community_posts
+            SET comment_count = num_comments
+            WHERE post_id = i;
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_comments();
+DROP PROCEDURE IF EXISTS generate_comments;
+
+-- ====================================================================
+-- 4. Create Images (30% of posts have 1-3 images)
+-- ====================================================================
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS generate_images$$
+CREATE PROCEDURE generate_images()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE image_id_counter INT DEFAULT 1;
+    DECLARE num_images INT;
+    DECLARE j INT;
+    DECLARE image_url_val VARCHAR(500);
+
+    WHILE i <= 1000 DO
+        -- 30% of posts have images
+        IF RAND() < 0.3 THEN
+            SET num_images = 1 + FLOOR(RAND() * 3); -- 1-3 images
+            SET j = 1;
+
+            WHILE j <= num_images DO
+                SET image_url_val = CONCAT('https://picsum.photos/800/600?random=', image_id_counter);
+
+                INSERT IGNORE INTO community_images
+                    (image_id, post_id, image_url, image_order, created_at)
+                VALUES
+                    (image_id_counter, i, image_url_val, j, DATE_SUB(@now, INTERVAL FLOOR(RAND() * 30) DAY));
+
+                SET image_id_counter = image_id_counter + 1;
+                SET j = j + 1;
+            END WHILE;
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_images();
+DROP PROCEDURE IF EXISTS generate_images;
+
+-- ====================================================================
+-- 5. Create Post Likes (random distribution)
+-- ====================================================================
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS generate_post_likes$$
+CREATE PROCEDURE generate_post_likes()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+
+    WHILE i <= 1000 DO
+        -- 20% of posts get a like from test user
+        IF RAND() < 0.2 THEN
+            INSERT IGNORE INTO community_post_likes
+                (post_id, user_id, created_at)
+            VALUES
+                (i, 9999, DATE_SUB(@now, INTERVAL FLOOR(RAND() * 30) DAY));
+
+            UPDATE community_posts
+            SET like_count = like_count + 1
+            WHERE post_id = i;
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_post_likes();
+DROP PROCEDURE IF EXISTS generate_post_likes;
+
+-- ====================================================================
+-- 6. Create Comment Likes (random distribution)
+-- ====================================================================
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS generate_comment_likes$$
+CREATE PROCEDURE generate_comment_likes()
+BEGIN
+    DECLARE max_comment_id INT;
+    DECLARE i INT DEFAULT 1;
+
+    SELECT IFNULL(MAX(comment_id), 0) INTO max_comment_id FROM community_comments;
+
+    WHILE i <= max_comment_id DO
+        -- 15% of comments get a like from test user
+        IF RAND() < 0.15 THEN
+            INSERT IGNORE INTO community_comment_likes
+                (comment_id, user_id, created_at)
+            VALUES
+                (i, 9999, DATE_SUB(@now, INTERVAL FLOOR(RAND() * 30) DAY));
+
+            UPDATE community_comments
+            SET like_count = like_count + 1
+            WHERE comment_id = i;
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+END$$
+
+DELIMITER ;
+
+CALL generate_comment_likes();
+DROP PROCEDURE IF EXISTS generate_comment_likes;
+
+-- ====================================================================
+-- 7. Create Hot Posts (for concurrency testing)
+-- ====================================================================
+
+-- Make posts 1-10 popular (high view counts and likes)
+UPDATE community_posts
+SET
+    view_count = 500 + FLOOR(RAND() * 500),
+    like_count = like_count + 50 + FLOOR(RAND() * 100)
+WHERE post_id BETWEEN 1 AND 10;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ====================================================================
+-- 8. Verification Queries
+-- ====================================================================
+
+SELECT 'Test Data Generation Complete' AS status;
+SELECT '' AS separator;
+
+SELECT 'Users' AS table_name, COUNT(*) AS count FROM users WHERE user_id = 9999
+UNION ALL
+SELECT 'Posts', COUNT(*) FROM community_posts WHERE is_deleted = FALSE
+UNION ALL
+SELECT 'Comments', COUNT(*) FROM community_comments WHERE is_deleted = FALSE
+UNION ALL
+SELECT 'Images', COUNT(*) FROM community_images
+UNION ALL
+SELECT 'Post Likes', COUNT(*) FROM community_post_likes
+UNION ALL
+SELECT 'Comment Likes', COUNT(*) FROM community_comment_likes;
+
+SELECT '' AS separator;
+SELECT 'Top 10 Posts by Views' AS info;
+
 SELECT
-  '✅ 게시글 생성 완료' as status,
-  COUNT(*) as count
+    post_id,
+    title,
+    category,
+    view_count,
+    like_count,
+    comment_count,
+    DATE_FORMAT(created_at, '%Y-%m-%d') as created_date
 FROM community_posts
-WHERE is_deleted = 0;
+WHERE is_deleted = FALSE
+ORDER BY view_count DESC
+LIMIT 10;
+
+SELECT '' AS separator;
+SELECT 'Sample Comments' AS info;
 
 SELECT
-  '✅ 이미지 생성 완료' as status,
-  COUNT(*) as count
-FROM community_images;
-
-SELECT
-  '✅ 댓글 생성 완료' as status,
-  COUNT(*) as count
+    comment_id,
+    post_id,
+    LEFT(content, 50) as content_preview,
+    parent_comment_id,
+    like_count,
+    DATE_FORMAT(created_at, '%Y-%m-%d') as created_date
 FROM community_comments
-WHERE is_deleted = 0;
+WHERE is_deleted = FALSE
+ORDER BY comment_id
+LIMIT 10;
 
--- 6. 샘플 데이터 조회
+SELECT '' AS separator;
+SELECT 'Posts with Images' AS info;
+
 SELECT
-  post_id,
-  title,
-  category,
-  view_count,
-  like_count,
-  comment_count
-FROM community_posts
-WHERE is_deleted = 0
-ORDER BY post_id
+    p.post_id,
+    p.title,
+    COUNT(i.image_id) as image_count
+FROM community_posts p
+JOIN community_images i ON p.post_id = i.post_id
+GROUP BY p.post_id, p.title
+ORDER BY image_count DESC
 LIMIT 10;
