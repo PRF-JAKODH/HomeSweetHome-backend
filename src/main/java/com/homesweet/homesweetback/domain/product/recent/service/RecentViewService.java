@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.recent.service;
 
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.recent.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

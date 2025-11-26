@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.search.product.repository;
 
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import org.springframework.data.elasticsearch.core.SearchHits;
 
