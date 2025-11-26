@@ -3,7 +3,7 @@ package com.homesweet.homesweetback.domain.product.data;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;

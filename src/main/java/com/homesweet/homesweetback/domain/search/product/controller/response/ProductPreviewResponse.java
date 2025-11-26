@@ -1,8 +1,8 @@
-package com.homesweet.homesweetback.domain.product.product.query.controller.response;
+package com.homesweet.homesweetback.domain.search.product.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
+import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import lombok.Builder;
 
