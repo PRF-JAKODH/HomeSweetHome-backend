@@ -1,4 +1,6 @@
-package com.homesweet.homesweetback.domain.product.product.command.controller.response;
+package com.homesweet.homesweetback.domain.product.recent.controller.response;
+
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 
 import java.math.BigDecimal;
 

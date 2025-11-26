@@ -6,7 +6,7 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import com.homesweet.homesweetback.common.util.CursorUtil;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.search.product.repository.ProductSearchRepository;
 import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import lombok.RequiredArgsConstructor;
@@ -95,7 +95,7 @@ public class ProductSearchRepositoryImpl implements ProductSearchRepository {
                 .toList();
     }
     /**
-     * 끝!
+     * 검색어 자동완성 끝!
      */
 
     /**

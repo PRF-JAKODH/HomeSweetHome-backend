@@ -1,5 +1,9 @@
 package com.homesweet.homesweetback.domain.search.chat.repository;
 
+import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;
+import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
+import org.springframework.data.elasticsearch.core.SearchHits;
+
 import java.util.List;
 
 /**
@@ -12,4 +16,5 @@ public interface ChatRoomSearchRepository {
 
     List<String> autocomplete(String keyword);
 
+    SearchHits<ChatRoomDocument> search(String keyword, String nextCursor, int limit, ChatRoomSortType sortType);
 }

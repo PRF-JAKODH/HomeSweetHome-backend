@@ -30,8 +30,17 @@ public class ChatRoomDocument {
     @Field(type = FieldType.Keyword, name = "chatroom_id")
     private Long chatRoomId;
 
-    @Field(type = FieldType.Text, analyzer = "chat_name_analyzer", searchAnalyzer = "chat_name_analyzer", name = "chatroom_name")
+    @Field(type = FieldType.Text, name = "chatroom_name", analyzer = "chat_name_analyzer", searchAnalyzer = "chat_name_analyzer")
     private String chatRoomName;
+
+    @Field(type = FieldType.Text, name = "chatroom_name.ngram", analyzer = "chat_ngram_analyzer", searchAnalyzer = "chat_name_analyzer")
+    private String chatRoomNameNgram;
+
+    @Field(type = FieldType.Text, name = "chatroom_name.autocomplete", analyzer = "chat_autocomplete_analyzer", searchAnalyzer = "standard")
+    private String chatRoomNameAutocomplete;
+
+    @Field(type = FieldType.Keyword, name = "chatroom_name.keyword")
+    private String chatRoomNameKeyword;
 
     @Field(type = FieldType.Keyword, name = "thumbnail_url")
     private String thumbnailUrl;
