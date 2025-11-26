@@ -2,6 +2,10 @@ package com.homesweet.homesweetback.domain.chat.event;
 
 import java.time.LocalDateTime;
 
+/**
+ * Spring 내부 이벤트 (백엔드 내부용)
+ * ApplicationEventPublisher로 발행 → ChatRoomEventListener에서 수신
+ */
 public record ChatRoomDataUpdateEvent(
         Long roomId,
         UpdateType updateType,

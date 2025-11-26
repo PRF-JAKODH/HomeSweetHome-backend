@@ -6,7 +6,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomCreateResponse;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
@@ -118,7 +118,7 @@ public class ChatRoomServiceImplUnitTest {
                     .willReturn(Optional.of(existingRoom));
 
             // when
-            RoomDto result = service.createOrGetIndividualRoom(1L, 2L);
+            IndividualRoomCreateResponse result = service.createOrGetIndividualRoom(1L, 2L);
 
             // then
             assertThat(result.roomId()).isEqualTo(100L);
@@ -150,7 +150,7 @@ public class ChatRoomServiceImplUnitTest {
                     });
 
             // when
-            RoomDto result = service.createOrGetIndividualRoom(meId, targetId);
+            IndividualRoomCreateResponse result = service.createOrGetIndividualRoom(meId, targetId);
 
             // then
             assertThat(result.roomId()).isEqualTo(100L);
