@@ -76,7 +76,7 @@ public class CommunityPostSearchRepositoryImpl implements CommunityPostRepositor
 
         Highlight highlight = new Highlight(
                 params,
-                List.of(new HighlightField("title.autocomplete"))
+                List.of(new HighlightField("titleAutocomplete"))
         );
 
         return new HighlightQuery(highlight, CommunityPostDocument.class);
@@ -91,7 +91,7 @@ public class CommunityPostSearchRepositoryImpl implements CommunityPostRepositor
 
         hits.forEach(hit -> {
 
-            String highlighted = hit.getHighlightField("title.autocomplete")
+            String highlighted = hit.getHighlightField("titleAutocomplete")
                     .stream()
                     .findFirst()
                     .orElse(hit.getContent().getTitle()); // fallback
