@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.common.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.type.TypeReference;

@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.command.controller.request;
+package com.homesweet.homesweetback.domain.search.product.controller.request;
 
 /**
  * 제품 조회 정렬 타입

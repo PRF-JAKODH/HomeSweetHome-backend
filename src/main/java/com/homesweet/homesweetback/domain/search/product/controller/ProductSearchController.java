@@ -2,7 +2,7 @@ package com.homesweet.homesweetback.domain.search.product.controller;
 
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
+import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.search.product.service.ProductSearchService;
@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
-public class ProductQueryController {
+public class ProductSearchController {
 
     private final ProductSearchService productSearchService;
 

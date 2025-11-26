@@ -2,7 +2,7 @@ package com.homesweet.homesweetback.domain.product.recent.service.impl;
 
 import com.homesweet.homesweetback.common.util.JsonUtil;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.internal.util.JsonUtils;

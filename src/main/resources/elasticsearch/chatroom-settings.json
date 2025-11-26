@@ -13,17 +13,24 @@
         "filter": [
           "lowercase"
         ]
+      },
+      "chat_autocomplete_analyzer": {
+        "tokenizer": "autocomplete_tokenizer",
+        "filter": ["lowercase"]
       }
     },
     "tokenizer": {
       "edge_ngram_tokenizer": {
         "type": "edge_ngram",
-        "min_gram": "1",
-        "max_gram": "30",
-        "token_chars": [
-          "letter",
-          "digit"
-        ]
+        "min_gram": 1,
+        "max_gram": 30,
+        "token_chars": ["letter", "digit"]
+      },
+      "autocomplete_tokenizer": {
+        "type": "edge_ngram",
+        "min_gram": 1,
+        "max_gram": 50,
+        "token_chars": ["letter", "digit"]
       }
     }
   }

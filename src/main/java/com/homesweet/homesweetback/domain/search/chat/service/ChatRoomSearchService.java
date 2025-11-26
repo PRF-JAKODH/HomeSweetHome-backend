@@ -1,5 +1,9 @@
 package com.homesweet.homesweetback.domain.search.chat.service;
 
+import com.homesweet.homesweetback.common.util.SearchScrollResponse;
+import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSearchResponse;
+import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;
+
 import java.util.List;
 
 /**
@@ -11,5 +15,7 @@ import java.util.List;
 public interface ChatRoomSearchService {
 
     List<String> autocomplete(String keyword);
+
+    SearchScrollResponse<ChatRoomSearchResponse> search(Long userId, String cursor, String keyword, int limit, ChatRoomSortType sortType);
 
 }
