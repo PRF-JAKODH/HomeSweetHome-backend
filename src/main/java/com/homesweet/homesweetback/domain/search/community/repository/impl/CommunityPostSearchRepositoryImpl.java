@@ -1,8 +1,11 @@
 package com.homesweet.homesweetback.domain.search.community.repository.impl;
 
-import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import com.homesweet.homesweetback.common.util.scroll.CommunityCursorStrategy;
+import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
+import com.homesweet.homesweetback.domain.search.community.controller.response.CommunitySortType;
 import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +28,7 @@ import java.util.List;
 public class CommunityPostSearchRepositoryImpl implements CommunityPostRepository {
 
     private final ElasticsearchOperations operations;
+    private final CursorUtil cursorUtil;
 
     /**
      * 자동완성
@@ -96,5 +100,88 @@ public class CommunityPostSearchRepositoryImpl implements CommunityPostRepositor
         });
 
         return result;
+    }
+
+    @Override
+    public SearchHits<CommunityPostDocument> search(String keyword, String nextCursor, int limit, CommunitySortType sortType) {
+
+        Query keywordQuery = buildKeywordQuery(keyword);
+        Query finalQuery = buildBoolQuery(keywordQuery);
+        List<SortOptions> sorts = buildSortOptions(keyword, sortType);
+
+        List<Object> searchAfter = cursorUtil.decode(nextCursor, new CommunityCursorStrategy(sortType));
+        int fetchSize = limit + 1;
+
+        NativeQuery query = NativeQuery.builder()
+                .withQuery(finalQuery)
+                .withSort(sorts)
+                .withSearchAfter(searchAfter)
+                .withPageable(PageRequest.of(0, fetchSize))
+                .build();
+
+        return operations.search(query, CommunityPostDocument.class);
+    }
+
+    // 검색어 있을 시: 제목 + 내용 MultiMatch
+    private Query buildKeywordQuery(String keyword) {
+
+        if (keyword == null || keyword.isBlank()) {
+            return MatchAllQuery.of(m -> m)._toQuery();
+        }
+
+        return MultiMatchQuery.of(m -> m
+                .query(keyword)
+                .fields(List.of(
+                        "title^3",
+                        "title.ngram^1",
+                        "title.autocomplete^2",
+                        "content^1"
+                ))
+                .fuzziness("AUTO")
+                .prefixLength(1)
+        )._toQuery();
+    }
+
+    // 삭제되지 않은 글만
+    private Query buildBoolQuery(Query keywordQuery) {
+
+        return BoolQuery.of(b -> b
+                .must(keywordQuery)
+                .filter(TermQuery.of(t -> t.field("is_deleted").value(false))._toQuery())
+        )._toQuery();
+    }
+
+    // 정렬 조건
+    private List<SortOptions> buildSortOptions(String keyword, CommunitySortType sortType) {
+
+        List<SortOptions> sorts = new ArrayList<>();
+
+        switch (sortType) {
+
+            case RECOMMENDED -> {
+                if (keyword != null && !keyword.isBlank()) {
+                    sorts.add(SortOptions.of(s -> s.field(f -> f.field("_score").order(SortOrder.Desc))));
+                }
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("created_at").order(SortOrder.Desc))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("post_id").order(SortOrder.Asc))));
+            }
+
+            case LATEST -> {
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("created_at").order(SortOrder.Desc))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("post_id").order(SortOrder.Asc))));
+            }
+
+            case VIEW_COUNT -> {
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("view_count").order(SortOrder.Desc))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("post_id").order(SortOrder.Asc))));
+            }
+
+            case LIKE_COUNT -> {
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("like_count").order(SortOrder.Desc))));
+                sorts.add(SortOptions.of(s -> s.field(f -> f.field("post_id").order(SortOrder.Asc))));
+            }
+        }
+
+        return sorts;
     }
 }
