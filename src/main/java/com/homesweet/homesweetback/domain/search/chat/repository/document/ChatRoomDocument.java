@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.search.chat.repository.document;
 
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,9 +29,6 @@ public class ChatRoomDocument {
     @Id
     @Field(type = FieldType.Keyword, name = "chatroom_id")
     private Long chatRoomId;
-
-    @Field(type = FieldType.Keyword, name = "chatroom_type")
-    private String chatRoomType;
 
     @Field(type = FieldType.Text, analyzer = "chat_name_analyzer", searchAnalyzer = "chat_name_analyzer", name = "chatroom_name")
     private String chatRoomName;
