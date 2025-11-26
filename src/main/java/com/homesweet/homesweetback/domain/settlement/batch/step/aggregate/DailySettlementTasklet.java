@@ -78,7 +78,7 @@ public class DailySettlementTasklet implements Tasklet {
                 settlementSaver.saveDaily(userId, date, totals);
                 log.info("[일별 집계] userId={} 날짜={} 총 정산금액={}", userId, date, totals.getTotalSettlement());
             });
-            // 6. 정산 상태 변경 -> 'COMPLETED'
+            // 7. 정산 상태 변경 -> 'COMPLETED'
             settlementStatusUpdater.markDailyCompleted(userId, start, end);
             log.info("[일별 집계] userId={} {} 정산 {}건 완료",  userId, start, settlements.size());
         }

@@ -160,44 +160,4 @@ public class WeeklySettlementRepositoryImplTest {
             ).isInstanceOf(NullPointerException.class);
         }
     }
-
-//    @Test
-//    @DisplayName("[실패] repository 내부 UPDATE 예외 발생 → 그대로 전파")
-//    void upsertWeekly_fail_update_exception() {
-//        Long userId = 10L;
-//        LocalDate start = LocalDate.of(2025, 1, 6);
-//
-//        // INSERT 하나 넣어둔다
-//        weeklySettlementRepository.save(
-//                WeeklySettlement.builder()
-//                        .userId(userId)
-//                        .year((short) 2025)
-//                        .month((byte) 1)
-//                        .weekStartDate(start)
-//                        .weekEndDate(start.plusDays(6))
-//                        .totalSales(BigDecimal.valueOf(5000))
-//                        .totalFee(BigDecimal.valueOf(500))
-//                        .totalVat(BigDecimal.valueOf(500))
-//                        .totalRefund(BigDecimal.ZERO)
-//                        .totalSettlement(BigDecimal.valueOf(4000))
-//                        .build()
-//        );
-//
-//        // totals 내부 특정 필드 null → 정상 (현재 구조)
-//        SettlementTotals totals = new SettlementTotals(
-//                null,
-//                BigDecimal.valueOf(5000),
-//                BigDecimal.ZERO,
-//                BigDecimal.ONE,
-//                BigDecimal.valueOf(2000)
-//        );
-//
-//        // 강제로 예외 발생시키기 위해 존재 row의 userId를 null로 변경 → JPA 오류 유도
-//        WeeklySettlement saved = weeklySettlementRepository.findAll().get(0);
-//        saved.setUserId(null);
-//
-//        assertThatThrownBy(() ->
-//                weeklyImpl.upsertWeekly(userId, start, totals)
-//        ).isInstanceOf(Exception.class);
-//    }
 }

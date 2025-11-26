@@ -111,8 +111,6 @@ class DailySettlementServiceTest {
             // 동작
             given(dailySettlementRepository.findByDailySettlementByRange(eq(userId), any(LocalDateTime.class), any(LocalDateTime.class), any(Pageable.class))).willReturn(page);
             given(settlementCalculator.calculateStats(anyLong(), any(LocalDate.class), any(LocalDate.class))).willReturn(stats);
-//        given(dailySettlementMapper.toDailySettlementResponse(any(DailySettlement.class), any())).willReturn(dailySettlementResponse);
-//        given(emptyDailyResponse.createEmptyDaily(any(), any())).willReturn(Page.empty());
             given(settlementMapper.toDailySettlementResponseList(anyList(), any()))
                     .willReturn(List.of(dailySettlementResponse));
 

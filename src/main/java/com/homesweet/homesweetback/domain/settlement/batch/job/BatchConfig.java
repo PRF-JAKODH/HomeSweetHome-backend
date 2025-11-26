@@ -24,12 +24,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
-@EnableBatchProcessing
 @RequiredArgsConstructor
 public class BatchConfig {
-    // 생성
-    private final SettlementCreateProcessor settlementCreateProcessor;
-    private final SettlementCreateWriter settlementCreateWriter;
     // 취소
     private final SettlementCancelProcessor settlementCancelProcessor;
     private final SettlementCancelWriter settlementCancelWriter;
@@ -70,7 +66,7 @@ public class BatchConfig {
      */
     // step1 -> 신규 주문건 정산 생성
     @Bean
-    public Step settlementCreateStep(JobRepository jobRepository, PlatformTransactionManager transactionManager,SettlementCreateReader settlementCreateReader) {
+    public Step settlementCreateStep(JobRepository jobRepository, PlatformTransactionManager transactionManager,SettlementCreateReader settlementCreateReader, SettlementCreateProcessor settlementCreateProcessor, SettlementCreateWriter settlementCreateWriter) {
         return new StepBuilder("settlementCreateStep", jobRepository)
                 .<Order, Settlement>chunk(1000, transactionManager)
                 .reader(settlementCreateReader)

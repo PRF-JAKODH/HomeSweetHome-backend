@@ -29,7 +29,7 @@ public class SettlementCreateWriter implements ItemWriter<Settlement> {
     public void write(Chunk<? extends Settlement> chunk){
         // 1. writer가 chunk 단위로 호출, settlements는 1000개 묶음으로 전달됨
         List<? extends Settlement> settlements = chunk.getItems();
-        log.info("chunk단위로 호출: {}", settlements);
+        log.info("chunk 단위로 호출: {}", settlements);
         // 2. 저장할 값이 있는지 검증
         settlementValidator.validateNotEmpty(settlements);
 

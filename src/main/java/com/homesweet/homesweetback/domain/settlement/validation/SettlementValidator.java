@@ -12,6 +12,7 @@ import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.entity.WeeklySettlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,12 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SettlementValidator {
     private final SettlementRepository settlementRepository;
-//    public void validateUnsettledOrders(List<Order> unsettledOrders) {
-//        // 신규 주문건
-//        if (unsettledOrders.isEmpty()) {
-//            throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
-//        }
-//    }
     // 정산 가능한 주문인지 확인
     public void validateOrder(Order order) {
         validateExist(order);
@@ -88,7 +83,7 @@ public class SettlementValidator {
 
     // 1. 판매자가 있는지 확인
     private void validateSellerExist(User seller) {
-        if (seller == null) {
+        if (seller == null || seller.getId() == null) {
             throw new BusinessException(ErrorCode.SELLER_NOT_FOUND);
         }
     }
@@ -125,12 +120,17 @@ public class SettlementValidator {
     public void validateDaily(List<Settlement> settlements) {
         validateNotEmpty(settlements);
     }
+
     // 주별
     public void validateWeekly(List<DailySettlement> settlements) {
         validateNotEmpty(settlements);
     }
+
     // 월별
-    public void validateMonthly(List<WeeklySettlement> settlements) {validateNotEmpty(settlements);}
+    public void validateMonthly(List<WeeklySettlement> settlements) {
+        validateNotEmpty(settlements);
+    }
+
     // 연별
     public void validateYearly(List<MonthlySettlement> settlements) {
         validateNotEmpty(settlements);
@@ -140,6 +140,16 @@ public class SettlementValidator {
     public <T> void validateNotEmpty(List<T> settlements) {
         if (settlements == null || settlements.isEmpty()) {
             throw new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND);
+        }
+    }
+
+    // 1. 정산 금액 중 null이 하나라도 있는 경우 NPE 발생
+    public void validateResultNotNull(SettlementCalculator.Result result) {
+        if (result == null) {
+            throw new NullPointerException("정산 계산 결과가 NULL입니다");
+        }
+        if (result.totalAmount() == null || result.fee() == null || result.vat() == null || result.refundAmount() == null || result.settlementAmount() == null) {
+            throw new NullPointerException("정산 계산 결과에 NULL이 포함되어있습니다.");
         }
     }
 }
