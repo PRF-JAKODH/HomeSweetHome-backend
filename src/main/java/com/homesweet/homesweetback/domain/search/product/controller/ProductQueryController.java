@@ -1,11 +1,11 @@
-package com.homesweet.homesweetback.domain.product.product.query.controller;
+package com.homesweet.homesweetback.domain.search.product.controller;
 
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
+import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.search.product.service.ProductSearchService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +25,10 @@ import java.util.List;
 @RequestMapping("/api/v1/products")
 public class ProductQueryController {
 
-    private final ProductQueryService productQueryService;
+    private final ProductSearchService productSearchService;
 
     /**
-     * 상품 검색 (무한 스크롤)
+     * 인증 사용자 상품 조회 및 검색
      *
      */
     @GetMapping("/search")
@@ -46,7 +46,7 @@ public class ProductQueryController {
 
         Long userId = principal.getUserId();
 
-        SearchScrollResponse<ProductPreviewResponse> result = productQueryService.searchProducts(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId, optionFilters);
+        SearchScrollResponse<ProductPreviewResponse> result = productSearchService.searchProducts(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, userId, optionFilters);
 
         return ResponseEntity.ok(result);
     }
@@ -56,11 +56,13 @@ public class ProductQueryController {
      */
     @GetMapping("/search/autocomplete")
     public ResponseEntity<List<String>> autocomplete(@NotNull @RequestParam String keyword) {
-        List<String> result = productQueryService.autocomplete(keyword);
+        List<String> result = productSearchService.autocomplete(keyword);
         return ResponseEntity.ok(result);
     }
 
-    // [모두] 제품 프리뷰 조회 (스토어 > 제품 조회)
+    /**
+     * 비인증 사용자 상품 조회 및 검색
+     */
     @GetMapping("/previews")
     public ResponseEntity<SearchScrollResponse<ProductPreviewResponse>> getProductPreviews(
             @RequestParam(required = false) String nextCursor,
@@ -74,7 +76,7 @@ public class ProductQueryController {
     ) {
 
         SearchScrollResponse<ProductPreviewResponse> response =
-                productQueryService.getProductPreview(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
+                productSearchService.getProductPreview(nextCursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
 
         return ResponseEntity.ok(response);
     }
@@ -86,7 +88,7 @@ public class ProductQueryController {
 
         Long userId = principal.getUserId();
 
-        ProductDetailResponse response = productQueryService.getProductDetail(userId, productId);
+        ProductDetailResponse response = productSearchService.getProductDetail(userId, productId);
 
         return ResponseEntity.ok(response);
     }

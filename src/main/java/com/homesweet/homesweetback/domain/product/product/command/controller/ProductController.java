@@ -1,17 +1,13 @@
 package com.homesweet.homesweetback.domain.product.product.command.controller;
 
-import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductUploadRequest;
-import com.homesweet.homesweetback.domain.product.product.command.controller.request.search.ProductFilterRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.*;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,8 +1,6 @@
-package com.homesweet.homesweetback.domain.product.product.query.repository.document;
+package com.homesweet.homesweetback.domain.search.product.repository.document;
 
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
-
-import java.util.Optional;
 
 /**
  * 상품 Elastic 레포
