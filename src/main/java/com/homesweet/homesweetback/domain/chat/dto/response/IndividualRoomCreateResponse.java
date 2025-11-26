@@ -1,9 +1,9 @@
-package com.homesweet.homesweetback.domain.chat.dto;
+package com.homesweet.homesweetback.domain.chat.dto.response;
 
 import lombok.Builder;
 
 @Builder
-public record RoomDto (
+public record IndividualRoomCreateResponse(
 
     Long roomId,
     String type,   // "INDIVIDUAL" / "GROUP"

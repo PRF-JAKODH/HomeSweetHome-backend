@@ -139,16 +139,10 @@ public class ChatPreHandler implements ChannelInterceptor {
         ChatMessageService chatMessageService = chatMessageServiceProvider.getObject();
 
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
-//        Long roomId = extractRoomId(accessor.getDestination());
 
         if (userId == null) {
             throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
         }
-
-//        boolean canSend = chatMessageService.canSendMessage(userId, roomId);
-//        if (!canSend) {
-//            throw new BusinessException(ErrorCode.MESSAGE_UNAUTHORIZED_ACCESS);
-//        }
 
         log.info("SEND 권한 확인 완료 | userId={}", userId);
     }

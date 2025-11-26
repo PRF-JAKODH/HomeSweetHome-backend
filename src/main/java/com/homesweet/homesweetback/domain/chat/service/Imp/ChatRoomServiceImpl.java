@@ -5,7 +5,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomCreateResponse;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
@@ -52,7 +52,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
      */
     @Override
     @Transactional
-    public RoomDto createOrGetIndividualRoom(Long meId, Long targetId) {
+    public IndividualRoomCreateResponse createOrGetIndividualRoom(Long meId, Long targetId) {
 
         String pairKey = roomMemberService.buildPairKey(meId, targetId);
         Optional<ChatRoom> existing = chatRoomRepository.findByTypeAndPairKey(ChatRoomType.INDIVIDUAL, pairKey);
@@ -60,7 +60,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         // 기존 방이 있다면 재사용
         if (existing.isPresent()) {
             ChatRoom chatRoom = existing.get();
-            return RoomDto.builder()
+            return IndividualRoomCreateResponse.builder()
                     .roomId(chatRoom.getId())
                     .reused(true)
                     .build();
@@ -76,7 +76,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         // 멤버 저장
         roomMemberService.registerIndividualMember(room, meId, targetId);
 
-        return RoomDto.builder()
+        return IndividualRoomCreateResponse.builder()
                 .roomId(room.getId())
                 .type(room.getType().name())
                 .name(room.getName())
@@ -229,8 +229,8 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         return new JoinRoomResponse(
                 chatRoom.getId(),
                 chatRoom.getName(),
-                memberResponse,
-                joinType
+                List.of(memberResponse),
+                List.of(joinType)
         );
     }
 
