@@ -34,7 +34,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("매핑 테스트")
 class SettlementMapperTest {
-
     @InjectMocks
     private SettlementMapper settlementMapper;
 
@@ -68,34 +67,20 @@ class SettlementMapperTest {
         }
 
         @Test
-        @DisplayName("DailySettlementResponse -> List 매핑")
+        @DisplayName("DailySettlementResponse 리스트 매핑 성공")
         void toDailySettlementResponseList() {
+            // given
             DailySettlement d1 = HelperData.getDailySettlement();
             DailySettlement d2 = HelperData.getDailySettlement();
             List<DailySettlement> list = List.of(d1, d2);
 
+            // 기간 전체에 대한 계산 결과(공통 Stats)
             SettlementCalculator.SettlementStats stats =
                     new SettlementCalculator.SettlementStats(10L, 10L, 100.0);
 
-            DailySettlementResponse response =
-                    new DailySettlementResponse(
-                            d1.getTotalSales(),
-                            d1.getTotalFee(),
-                            d1.getTotalVat(),
-                            d1.getTotalRefund(),
-                            d1.getTotalSettlement(),
-                            d1.getSettlementDate().toLocalDate(),
-                            "COMPLETED",
-                            stats.completedRate(),
-                            stats.totalCount()
-                    );
-            // stats.apply(d) 함수는 매번 stats 반환하도록 구성
-            Function<DailySettlement, SettlementCalculator.SettlementStats> provider =
-                    (daily) -> stats;
-
             // when
             List<DailySettlementResponse> result =
-                    settlementMapper.toDailySettlementResponseList(list, provider);
+                    settlementMapper.toDailySettlementResponseList(list, stats);
 
             // then
             assertThat(result).hasSize(2);
@@ -107,7 +92,12 @@ class SettlementMapperTest {
             // 두 번째 요소 검증
             assertThat(result.get(1).settlementStatus()).isEqualTo("COMPLETED");
             assertThat(result.get(1).totalCount()).isEqualTo(10L);
+
+            // 금액 필드까지 꼼꼼히 검증하면 더 좋음
+            assertThat(result.get(0).totalSales()).isEqualTo(d1.getTotalSales());
+            assertThat(result.get(1).totalSales()).isEqualTo(d2.getTotalSales());
         }
+
 
         @Test
         @DisplayName("WeeklySettlement → WeeklySettlementResponse 매핑이 정상적으로 수행된다")
@@ -300,16 +290,18 @@ class SettlementMapperTest {
             // given
             List<DailySettlement> emptyList = List.of();
 
-            Function<DailySettlement, SettlementCalculator.SettlementStats> provider =
-                    d -> new SettlementCalculator.SettlementStats(0L, 0L, 0.0);
+            // 전체 기간에 대한 계산이 0일 때의 Stats 객체
+            SettlementCalculator.SettlementStats stats =
+                    new SettlementCalculator.SettlementStats(0L, 0L, 0.0);
 
             // when
             List<DailySettlementResponse> result =
-                    settlementMapper.toDailySettlementResponseList(emptyList, provider);
+                    settlementMapper.toDailySettlementResponseList(emptyList, stats);
 
             // then
             assertThat(result).isEmpty();
         }
+
 
         @Test
         @DisplayName("리스트 매핑 실패 - DailySettlement 요소가 null이면 예외 발생")
@@ -321,14 +313,16 @@ class SettlementMapperTest {
             List<DailySettlement> list = new ArrayList<>();
             list.add(d1);
             list.add(null);
-            Function<DailySettlement, SettlementCalculator.SettlementStats> provider =
-                    d -> new SettlementCalculator.SettlementStats(1L, 1L, 100.0);
+
+            SettlementCalculator.SettlementStats stats =
+                    new SettlementCalculator.SettlementStats(1L, 1L, 100.0);
 
             // when & then
             assertThatThrownBy(() ->
-                    settlementMapper.toDailySettlementResponseList(list, provider)
+                    settlementMapper.toDailySettlementResponseList(list, stats)
             ).isInstanceOf(NullPointerException.class);
         }
+
 
         @Test
         @DisplayName("WeeklySettlement 리스트에 null 요소가 포함되면 NPE 발생")

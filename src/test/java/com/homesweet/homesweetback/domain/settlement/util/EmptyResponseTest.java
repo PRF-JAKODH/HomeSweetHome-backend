@@ -1,9 +1,6 @@
 package com.homesweet.homesweetback.domain.settlement.util;
 
-import com.homesweet.homesweetback.domain.settlement.dto.response.DailySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.MonthlySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.*;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.WeeklyDateRangeCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

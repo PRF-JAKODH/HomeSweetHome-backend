@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -42,28 +43,38 @@ public class SettlementMapper {
         );
     }
 
-    // 일별 리스트 매핑
-    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, Function<DailySettlement, SettlementCalculator.SettlementStats> stats) {
-//        List<DailySettlementResponse> dailySettlementResponseList = new ArrayList<>(dailySettlement.size());
-        return dailySettlement.stream().map(d -> toDailySettlementResponse(d, stats.apply(d))).toList();
+    // 일별 리스트 매핑 stream을 사용하지 않는게 더 좋음!
+    public List<DailySettlementResponse> toDailySettlementResponseList(List<DailySettlement> dailySettlement, SettlementCalculator.SettlementStats stats) {
+        int size = dailySettlement.size();
+        List<DailySettlementResponse> responses = new ArrayList<>(size);
+        for(DailySettlement d : dailySettlement) {
+            responses.add(toDailySettlementResponse(d, stats));
+        }
+        return responses;
     }
 
     // 주별 매핑
     public List<WeeklySettlementResponse> toWeeklySettlementResponse(List<WeeklySettlement> ws, SettlementCalculator.SettlementStats stats, byte week) {
-        return ws.stream().map(w -> new WeeklySettlementResponse(
-                w.getYear(),
-                w.getMonth(),
-                week,
-                w.getWeekStartDate(),
-                w.getWeekEndDate(),
-                w.getTotalSales(),
-                w.getTotalFee(),
-                w.getTotalVat(),
-                w.getTotalRefund(),
-                w.getTotalSettlement(),
-                stats.completedRate(),
-                stats.totalCount()
-        )).toList();
+
+        return ws.stream().map(w -> {
+            // 주차 계산 (월 기준)
+            byte realWeek = (byte) WeekFields.ISO.weekOfMonth()
+                    .getFrom(w.getWeekStartDate());
+            return new WeeklySettlementResponse(
+                    w.getYear(),
+                    w.getMonth(),
+                    realWeek,
+                    w.getWeekStartDate(),
+                    w.getWeekEndDate(),
+                    w.getTotalSales(),
+                    w.getTotalFee(),
+                    w.getTotalVat(),
+                    w.getTotalRefund(),
+                    w.getTotalSettlement(),
+                    stats.completedRate(),
+                    stats.totalCount()
+            );
+        }).toList();
     }
 
     private final MonthlyGrowthCalculator monthlyGrowthCalculator;

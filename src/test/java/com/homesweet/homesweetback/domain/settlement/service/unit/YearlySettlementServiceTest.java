@@ -10,7 +10,7 @@ import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlemen
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.YearlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.service.YearlySettlementService;
-import com.homesweet.homesweetback.domain.settlement.util.EmptyResponse;
+import com.homesweet.homesweetback.domain.settlement.dto.response.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.YearlyDateRangeCalculator;
 import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;

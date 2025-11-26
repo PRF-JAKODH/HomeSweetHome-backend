@@ -73,13 +73,9 @@ public class DailySettlementRepositoryImpl implements CustomDailySettlementRepos
     @Override
     @Transactional
     public void upsertDaily(Long userId, LocalDateTime settlementDate, SettlementTotals totals) {
-
-        LocalDateTime normalized = settlementDate
-                .withHour(0).withMinute(0).withSecond(0).withNano(0);
-
+        LocalDateTime normalized = settlementDate.withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime start = normalized;
         LocalDateTime end = normalized.plusDays(1);
-
         // 1) 기존 row 존재 여부 확인 — 날짜로 검색
         DailySettlement exists = jpaQueryFactory
                 .selectFrom(qDailySettlement)
@@ -89,7 +85,6 @@ public class DailySettlementRepositoryImpl implements CustomDailySettlementRepos
                                 .and(qDailySettlement.settlementDate.lt(end))
                 )
                 .fetchOne();
-
         // 2) Insert
         if (exists == null) {
             DailySettlement newDaily = DailySettlement.builder()
@@ -101,11 +96,9 @@ public class DailySettlementRepositoryImpl implements CustomDailySettlementRepos
                     .totalRefund(totals.getTotalRefund())
                     .totalSettlement(totals.getTotalSettlement())
                     .build();
-
             em.persist(newDaily);
             return;
         }
-
         // 3) Update
         jpaQueryFactory
                 .update(qDailySettlement)

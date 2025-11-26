@@ -16,22 +16,6 @@ public class CustomSettlementRepositoryImpl implements CustomSettlementRepositor
     private final QSettlement qSettlement = QSettlement.settlement;
     private final SettlementRepository settlementRepository; // JPA 레포를 여기서 사용
 
-
-    // 환불 금액 계산
-//    @Override
-//    @Transactional
-//    public int applyRefundAmount(Long orderId, BigDecimal refundAmount) {
-//        return (int) jpaQueryFactory
-//                .update(qSettlement)
-//                .set(qSettlement.refundAmount, qSettlement.refundAmount.add(refundAmount))
-//                .set(qSettlement.settlementAmount, qSettlement.salesAmount
-//                        .add(qSettlement.vat)
-//                        .subtract(qSettlement.fee)
-//                        .subtract(qSettlement.refundAmount.add(refundAmount)))
-//                .set(qSettlement.settlementStatus, "CANCELED")
-//                .where(qSettlement.order.id.eq(orderId))
-//                .execute();
-//    }
     @Override
     @Transactional
     public int applyRefundAmount(Long orderId, BigDecimal refundAmount) {
