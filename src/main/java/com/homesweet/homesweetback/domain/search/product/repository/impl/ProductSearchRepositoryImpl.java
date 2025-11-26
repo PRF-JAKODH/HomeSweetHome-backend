@@ -4,7 +4,8 @@ import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
-import com.homesweet.homesweetback.common.util.CursorUtil;
+import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
+import com.homesweet.homesweetback.common.util.scroll.ProductCursorStrategy;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.search.product.repository.ProductSearchRepository;
@@ -125,7 +126,7 @@ public class ProductSearchRepositoryImpl implements ProductSearchRepository {
 
         List<SortOptions> sorts = buildSortOptions(sortType);
 
-        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, sortType);
+        List<Object> searchAfter = cursorUtil.decode(nextCursor, new ProductCursorStrategy(sortType));
 
         int fetchSize = limit + 1;
 
