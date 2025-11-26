@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.common.util;
+package com.homesweet.homesweetback.common.util.scroll;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.search.chat.controller;
 
-import com.homesweet.homesweetback.common.util.SearchScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSearchResponse;
 import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;

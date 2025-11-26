@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.search.chat.service.impl;
 
-import com.homesweet.homesweetback.common.util.CursorUtil;
-import com.homesweet.homesweetback.common.util.SearchScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
+import com.homesweet.homesweetback.common.util.scroll.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
 import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSearchResponse;
 import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;
@@ -78,7 +78,7 @@ public class ChatRoomSearchServiceImpl implements ChatRoomSearchService {
             }
         }
 
-        String nextCursor = cursorUtil.encodeSortValues(sortValues);
+        String nextCursor = cursorUtil.encode(sortValues);
 
         List<ChatRoomSearchResponse> responses = result.stream()
                 .map(ChatRoomSearchResponse::from)
