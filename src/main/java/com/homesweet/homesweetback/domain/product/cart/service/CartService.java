@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.product.cart.service;
 
-import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;

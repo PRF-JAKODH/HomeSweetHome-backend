@@ -1,6 +1,6 @@
 package com.homesweet.homesweetback.domain.search.product.service;
 
-import com.homesweet.homesweetback.common.util.SearchScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.search.product.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;

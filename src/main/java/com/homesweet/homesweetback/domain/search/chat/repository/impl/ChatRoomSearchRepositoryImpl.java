@@ -3,7 +3,8 @@ package com.homesweet.homesweetback.domain.search.chat.repository.impl;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
-import com.homesweet.homesweetback.common.util.CursorUtil;
+import com.homesweet.homesweetback.common.util.scroll.ChatRoomCursorStrategy;
+import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
 import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;
 import com.homesweet.homesweetback.domain.search.chat.repository.ChatRoomSearchRepository;
 import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
@@ -112,7 +113,7 @@ public class ChatRoomSearchRepositoryImpl implements ChatRoomSearchRepository {
         Query finalQuery = buildBoolQuery(keywordQuery);
         List<SortOptions> sorts = buildSortOptions(keyword, sortType);
 
-        List<Object> searchAfter = cursorUtil.decodeCursor(nextCursor, null);
+        List<Object> searchAfter = cursorUtil.decode(nextCursor, new ChatRoomCursorStrategy(sortType));
         int fetchSize = limit + 1;
 
         NativeQuery query = NativeQuery.builder()
