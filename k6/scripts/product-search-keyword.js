@@ -3,12 +3,12 @@ import { check } from "k6";
 import { sleep } from "k6";
 
 
-const token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMSIsImVtYWlsIjoianVubnVraW0xMDA3QGdtYWlsLmNvbSIsIm5hbWUiOiLquYDspIDsmrAiLCJwcm92aWRlciI6Imdvb2dsZSIsInJvbGUiOiJTRUxMRVIiLCJpYXQiOjE3NjQwNTI1MDgsImV4cCI6MTc2NDA3MDUwOH0.JFS1lEv4bFErFnvyqPtWWE7ogtS71MPn5kkxQQisfOcGJMcuOwDRkkc65sRwX4AS0FS207_z74xbFpW1YyhYPA"
-;
+const token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMSIsImVtYWlsIjoianVubnVraW0xMDA3QGdtYWlsLmNvbSIsIm5hbWUiOiLquYDspIDsmrAiLCJwcm92aWRlciI6Imdvb2dsZSIsInJvbGUiOiJTRUxMRVIiLCJpYXQiOjE3NjQxNTE2NjgsImV4cCI6MTc2NDE2OTY2OH0.oiXnHA9BlYKgXLuMJKnEeINcFMFRIVWYjjEvW9ZyncZd8JifGA0i0C686wYtvjmnAFPf81i2hnbO2LwtjOR6ZQ"
 
 export const options = {
-    vus: 1000,
-    duration: "60s"
+    stages: [
+        {duration: '3m', target: 1000}
+    ]
 };
 
 export default function () {
