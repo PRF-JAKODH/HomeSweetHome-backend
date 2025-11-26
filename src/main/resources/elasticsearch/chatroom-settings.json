@@ -1,0 +1,31 @@
+{
+  "analysis": {
+    "analyzer": {
+      "chat_name_analyzer": {
+        "tokenizer": "nori_tokenizer",
+        "filter": [
+          "lowercase",
+          "nori_readingform"
+        ]
+      },
+      "chat_ngram_analyzer": {
+        "tokenizer": "edge_ngram_tokenizer",
+        "filter": [
+          "lowercase"
+        ]
+      }
+    },
+    "tokenizer": {
+      "edge_ngram_tokenizer": {
+        "type": "edge_ngram",
+        "min_gram": "1",
+        "max_gram": "30",
+        "token_chars": [
+          "letter",
+          "digit",
+          "hangul"
+        ]
+      }
+    }
+  }
+}
