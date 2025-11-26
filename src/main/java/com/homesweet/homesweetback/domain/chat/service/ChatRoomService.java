@@ -19,8 +19,6 @@ public interface ChatRoomService {
 
     GroupChatDetailResponse getGroupChatDetail(Long userId, Long roomId);
 
-    void joinRoom(Long roomId, Long userId);
-
     List<IndividualRoomListResponse> findMyIndividualRooms(Long userId);
 
     List<GroupRoomListResponse> findMyGroupRooms(Long userId);
@@ -29,7 +27,9 @@ public interface ChatRoomService {
 
     List<GroupRoomListResponse> getAllGroupRooms();
 
-    void exitRoom(Long roomId, Long userId);
+    void leaveRoom(Long roomId, Long userId);
 
-//    ChatRoomDetailResponse findChatRoomInfo(Long roomId, Long userId);
+    JoinRoomResponse joinRoom(Long roomId, Long userId);
+
+
 }

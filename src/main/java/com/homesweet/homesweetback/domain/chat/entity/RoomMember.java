@@ -34,23 +34,15 @@ public class RoomMember {
     @Column(name = "last_read_message_id", nullable = true)
     private Long lastReadId;
 
-    @Builder
-    private RoomMember(User user, ChatRoom room, ChatUserRole role,
-                       Boolean isExit, Long lastReadId) {
-        this.user = user;
-        this.room = room;
-        this.role = role != null ? role : ChatUserRole.MEMBER;
-        this.isExit = isExit != null ? isExit : false;
-        this.lastReadId = lastReadId;
-    }
-
     public static RoomMember createMember(ChatRoom room, User user, ChatUserRole role) {
-        return RoomMember.builder()
-                .room(room)
-                .user(user)
-                .role(role != null ? role : ChatUserRole.MEMBER)
-                .isExit(false)
-                .build();
+    RoomMember newMember = new RoomMember();
+    newMember.room = room;
+    newMember.user = user;
+    newMember.role = role != null ? role : ChatUserRole.MEMBER;
+    newMember.isExit = false;     // 생성 시 기본 규칙
+    newMember.lastReadId = null;
+
+    return newMember;
     }
 
     public void join() {
@@ -59,13 +51,5 @@ public class RoomMember {
 
     public void exit() {
         this.isExit = true;
-    }
-
-    public void updateLastReadMessageId(Long lastReadMessageId) {
-        this.lastReadId = lastReadMessageId;
-    }
-
-    public boolean isActive() {
-        return !this.isExit;
     }
 }

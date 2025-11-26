@@ -72,8 +72,8 @@ class ChatMessageServiceUnitTest {
     private ChatMessage mockMessage;
 
     // 실제 엔티티 객체 (JSON 직렬화 테스트용)
-    private User sender;
-    private ChatRoom room;
+    private User testUser;
+    private ChatRoom testRoom;
     private RoomMember roomMember;
     private ChatMessage chatMessage;
 
@@ -96,27 +96,22 @@ class ChatMessageServiceUnitTest {
         mockMessage = mock(ChatMessage.class);
 
         // 실제 엔티티 객체 초기화 (JSON 직렬화 테스트용)
-        sender = User.builder()
+        testUser = User.builder()
                 .id(1L)
                 .name("맹구씨")
                 .profileImageUrl("https://test.com/profile.jpg")
                 .build();
 
-        room = ChatRoom.builder()
+        testRoom = ChatRoom.builder()
                 .id(100L)
                 .build();
 
-        roomMember = RoomMember.builder()
-                .room(room)
-                .user(sender)
-                .role(ChatUserRole.MEMBER)
-                .isExit(false)
-                .build();
+        roomMember = RoomMember.createMember(testRoom, testUser, ChatUserRole.MEMBER);
 
         chatMessage = ChatMessage.builder()
                 .id(1L)
-                .room(room)
-                .sender(sender)
+                .room(testRoom)
+                .sender(testUser)
                 .content("안녕 짱구씨")
                 .messageType(MessageType.TEXT)
                 .sentAt(LocalDateTime.now())
@@ -351,7 +346,7 @@ class ChatMessageServiceUnitTest {
             Long senderId = 1L;
             String content = "안녕 짱구씨";
 
-            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(room));
+            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(testRoom));
             given(roomMemberRepository.findByUserIdAndRoomId(senderId, roomId)).willReturn(roomMember);
             given(chatMessageRepository.save(any(ChatMessage.class))).willReturn(chatMessage);
 
@@ -381,7 +376,7 @@ class ChatMessageServiceUnitTest {
             Long senderId = 1L;
             String content = "안녕 짱구씨";
 
-            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(room));
+            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(testRoom));
             given(roomMemberRepository.findByUserIdAndRoomId(senderId, roomId)).willReturn(roomMember);
             given(chatMessageRepository.save(any(ChatMessage.class))).willReturn(chatMessage);
 
@@ -410,7 +405,7 @@ class ChatMessageServiceUnitTest {
             Long senderId = 1L;
             String content = "시간 테스트";
 
-            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(room));
+            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(testRoom));
             given(roomMemberRepository.findByUserIdAndRoomId(senderId, roomId)).willReturn(roomMember);
             given(chatMessageRepository.save(any(ChatMessage.class))).willReturn(chatMessage);
 
@@ -434,7 +429,7 @@ class ChatMessageServiceUnitTest {
             Long senderId = 1L;
             String content = "전체 필드 테스트";
 
-            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(room));
+            given(chatRoomRepository.findById(roomId)).willReturn(Optional.of(testRoom));
             given(roomMemberRepository.findByUserIdAndRoomId(senderId, roomId)).willReturn(roomMember);
             given(chatMessageRepository.save(any(ChatMessage.class))).willReturn(chatMessage);
 
@@ -467,28 +462,28 @@ class ChatMessageServiceUnitTest {
             Pageable pageable = PageRequest.of(0, size);
             LocalDateTime baseTime = LocalDateTime.now();
 
-            // 실제 Entity 사용 (기존 setUp의 sender, room 활용)
+            // 실제 Entity 사용 (기존 setUp의 testUser, testRoom 활용)
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(3L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 3")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
                             .build(),
                     ChatMessage.builder()
                             .id(2L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 2")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime.minusMinutes(1))
                             .build(),
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 1")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime.minusMinutes(2))
@@ -539,16 +534,16 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(2L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 2")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
                             .build(),
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 1")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime.minusMinutes(1))
@@ -607,8 +602,8 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("마지막 메시지")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
@@ -638,16 +633,16 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(2L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 2")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
                             .build(),
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 1")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime.minusMinutes(1))
@@ -677,8 +672,8 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
@@ -711,8 +706,8 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
@@ -744,16 +739,16 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(1L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 1")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime)
                             .build(),
                     ChatMessage.builder()
                             .id(2L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("테스트 메시지 2")
                             .messageType(MessageType.TEXT)
                             .sentAt(baseTime.minusMinutes(1))
@@ -786,8 +781,8 @@ class ChatMessageServiceUnitTest {
             List<ChatMessage> messages = Arrays.asList(
                     ChatMessage.builder()
                             .id(100L)
-                            .room(room)
-                            .sender(sender)
+                            .room(testRoom)
+                            .sender(testUser)
                             .content("전체 필드 테스트")
                             .messageType(MessageType.TEXT)
                             .sentAt(sentAt)
@@ -806,7 +801,7 @@ class ChatMessageServiceUnitTest {
             ChatMessageDto dto = response.getMessages().get(0);
             assertThat(dto.messageId()).isEqualTo(100L);
             assertThat(dto.roomId()).isEqualTo(roomId);
-            assertThat(dto.senderId()).isEqualTo(sender.getId());
+            assertThat(dto.senderId()).isEqualTo(testUser.getId());
             assertThat(dto.content()).isEqualTo("전체 필드 테스트");
             assertThat(dto.sentAt()).isEqualTo(sentAt);
             assertThat(dto.senderName()).isEqualTo("맹구씨");

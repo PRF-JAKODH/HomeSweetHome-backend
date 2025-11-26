@@ -42,11 +42,8 @@ class RoomMemberTest {
     @DisplayName("exit() 호출 시 isExit이 true로 변경된다")
     void exit_shouldSetIsExitTrue() {
         // Given
-        RoomMember member = RoomMember.builder()
-                .user(testUser)
-                .room(testRoom)
-                .isExit(false)
-                .build();
+        RoomMember member = RoomMember.createMember(testRoom, testUser, ChatUserRole.MEMBER);
+        assertThat(member.isExit()).isFalse();
 
         // When
         member.exit();
@@ -59,10 +56,7 @@ class RoomMemberTest {
     @DisplayName("생성 시 기본값으로 isExit은 false이다")
     void constructor_shouldSetIsExitFalse() {
         // Given & When
-        RoomMember member = RoomMember.builder()
-                .user(testUser)
-                .room(testRoom)
-                .build();
+        RoomMember member = RoomMember.createMember(testRoom, testUser, ChatUserRole.MEMBER);
 
         // Then
         assertThat(member.isExit()).isFalse();
@@ -72,11 +66,9 @@ class RoomMemberTest {
     @DisplayName("이미 퇴장한 상태에서 exit() 재호출 시에도 isExit은 true를 유지한다")
     void exit_whenAlreadyExited_shouldRemainTrue() {
         // Given
-        RoomMember member = RoomMember.builder()
-                .user(testUser)
-                .room(testRoom)
-                .isExit(false)
-                .build();
+        RoomMember member = RoomMember.createMember(testRoom, testUser, ChatUserRole.MEMBER);
+        assertThat(member.isExit()).isFalse();
+
         member.exit(); // 첫 번째 퇴장
 
         // When
@@ -132,19 +124,6 @@ class RoomMemberTest {
         assertThat(memberWithNull.isExit()).isFalse();
     }
 
-    @Test
-    @DisplayName("createMember() - MEMBER role로 명시적으로 생성")
-    void createMember_withMemberRole_shouldCreateWithMemberRole() {
-        // Given
-        ChatUserRole memberRole = ChatUserRole.MEMBER;
-
-        // When
-        RoomMember member = RoomMember.createMember(testRoom, testUser, memberRole);
-
-        // Then
-        assertThat(member.getRole()).isEqualTo(ChatUserRole.MEMBER);
-        assertThat(member.isExit()).isFalse();
-    }
 
     @Test
     @DisplayName("createMember() - 모든 ChatUserRole에 대해 정상 생성")

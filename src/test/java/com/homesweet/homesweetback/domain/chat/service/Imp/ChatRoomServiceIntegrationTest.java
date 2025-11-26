@@ -15,31 +15,40 @@ import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
+import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventListener;
+import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
-import java.security.Provider;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("[Integration] 채팅방 서비스 통합 테스트")
 class ChatRoomServiceIntegrationTest {
+
+    @LocalServerPort
+    private int port;
 
     @Autowired
     private ChatRoomServiceImpl chatRoomService;
@@ -59,6 +68,16 @@ class ChatRoomServiceIntegrationTest {
     @Autowired
     private ChatMessageService chatMessageService;
 
+    @Autowired
+    ChatRoomEventPublisher chatRoomEventPublisher;
+
+    @Autowired
+    ChatRoomEventListener chatRoomEventListener;
+
+    // stomp 객체
+    private WebSocketStompClient stompClient;
+    private StompSession stompSession;
+    private final String WS_URL = "ws://localhost:{port}/ws";
 
     private User user1;
     private User user2;
@@ -70,6 +89,36 @@ class ChatRoomServiceIntegrationTest {
             "image/jpeg",                     // Content-Type
             "test image content".getBytes()   // 파일 내용
     );
+
+    /**
+     * STOMP 클라이언트 및 세션 설정
+     */
+//    @BeforeEach
+//    void setup() throws Exception {
+//        // 1. WebSocket 클라이언트 설정
+//        stompClient = new WebSocketStompClient(new SockJsClient(
+//                List.of(new WebSocketTransport(new StandardWebSocketClient()))
+//        ));
+//        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+//
+//        // 2. STOMP 세션 연결
+//        stompSession = stompClient.connect(WS_URL, this.port)
+//                .get(1, TimeUnit.SECONDS);
+//    }
+
+    /**
+     * 세션 및 클라이언트 해제
+     */
+    @AfterEach
+    void tearDown() {
+        if (stompSession != null && stompSession.isConnected()) {
+            stompSession.disconnect();
+        }
+        if (stompClient != null) {
+            stompClient.stop();
+        }
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -345,59 +394,6 @@ class ChatRoomServiceIntegrationTest {
             assertThat(response.participants()).hasSize(1);
         }
 
-//        @Test
-//        @DisplayName("[성공] 새로운 멤버가 조회하면 자동으로 등록된다")
-//        void getGroupChatDetail_NewMember_AutoRegistered() {
-//            // given
-//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-//                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-//            );
-//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-//
-//            // when - user2가 처음 조회
-//            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
-//                    user2.getId(), createdRoom.roomId()
-//            );
-//
-//            // then
-//            assertThat(response.memberCount()).isEqualTo(2);
-//            assertThat(response.participants()).hasSize(2);
-//
-//            // DB 검증
-//            RoomMember newMember = roomMemberRepository
-//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-//                    .orElseThrow();
-//            assertThat(newMember.getRole()).isEqualTo(ChatUserRole.MEMBER);
-//            assertThat(newMember.isExit()).isFalse();
-//        }
-
-//        @Test
-//        @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
-//        void getGroupChatDetail_ReEnter_Success() {
-//            // given
-//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-//                    3L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-//            );
-//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-//
-//            // user2가 입장했다가 퇴장
-//            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
-//            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
-//
-//            // when - user2가 다시 조회 (재입장)
-//            GroupChatDetailResponse response = chatRoomService.getGroupChatDetail(
-//                    user2.getId(), createdRoom.roomId()
-//            );
-//
-//            // then
-//            assertThat(response.memberCount()).isEqualTo(2);
-//
-//            RoomMember reenteredMember = roomMemberRepository
-//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-//                    .orElseThrow();
-//            assertThat(reenteredMember.isExit()).isFalse();
-//        }
-
         @Test
         @DisplayName("[실패] 개인 채팅방을 그룹 채팅방으로 조회하면 예외가 발생한다")
         void getGroupChatDetail_WrongRoomType_ThrowsException() {
@@ -416,6 +412,41 @@ class ChatRoomServiceIntegrationTest {
     }
 
     @Nested
+    @DisplayName("그룹채팅방 입장 테스트")
+    class joinRoom {
+
+        @Test
+        @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
+        void getGroupChatDetail_ReEnter_Success() {
+            // given
+            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+                    3L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+            );
+            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+
+            // user2가 입장했다가 퇴장
+            chatRoomService.joinRoom(createdRoom.roomId(), user2.getId());
+            chatRoomService.leaveRoom(user2.getId(), createdRoom.roomId());
+
+            // when - user2가 다시 조회 (재입장)
+            JoinRoomResponse response = chatRoomService.joinRoom(
+                    createdRoom.roomId(), user2.getId()
+            );
+
+            // then
+            assertThat(response.memberInfo().userId().equals(user2.getId()));
+
+            RoomMember reenteredMember = roomMemberRepository
+                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
+                    .orElseThrow();
+            assertThat(reenteredMember.isExit()).isFalse();
+        }
+
+
+    }
+
+
+    @Nested
     @DisplayName("채팅방 퇴장 테스트")
     class ExitRoomTest {
 
@@ -426,7 +457,7 @@ class ChatRoomServiceIntegrationTest {
             RoomDto room = chatRoomService.createOrGetIndividualRoom(user1.getId(), user2.getId());
 
             // when
-            chatRoomService.exitRoom(user1.getId(), room.roomId());
+            chatRoomService.leaveRoom(user1.getId(), room.roomId());
 
             // then
             RoomMember exitedMember = roomMemberRepository
@@ -439,25 +470,25 @@ class ChatRoomServiceIntegrationTest {
             assertThat(chatRoom.getIsDeleted()).isFalse();
         }
 
-//        @Test
-//        @DisplayName("[성공] 그룹 채팅방에서 퇴장한다")
-//        void exitRoom_GroupRoom_Success() {
-//            // given
-//            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-//                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-//            );
-//            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-//            chatRoomService.getGroupChatDetail(user2.getId(), createdRoom.roomId());
-//
-//            // when
-//            chatRoomService.exitRoom(user2.getId(), createdRoom.roomId());
-//
-//            // then
-//            RoomMember exitedMember = roomMemberRepository
-//                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-//                    .orElseThrow();
-//            assertThat(exitedMember.isExit()).isTrue();
-//        }
+        @Test
+        @DisplayName("[성공] 그룹 채팅방에서 퇴장한다")
+        void exitRoom_GroupRoom_Success() {
+            // given
+            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+                   1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+            );
+            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+            chatRoomService.joinRoom(createdRoom.roomId(), user2.getId());
+
+            // when
+            chatRoomService.leaveRoom(user2.getId(), createdRoom.roomId());
+
+            // then
+            RoomMember exitedMember = roomMemberRepository
+                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
+                    .orElseThrow();
+            assertThat(exitedMember.isExit()).isTrue();
+        }
 
         @Test
         @DisplayName("[성공] 그룹 채팅방의 마지막 멤버가 퇴장하면 방이 삭제된다")
@@ -469,7 +500,7 @@ class ChatRoomServiceIntegrationTest {
             GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
 
             // when - 방장이 퇴장 (마지막 멤버)
-            chatRoomService.exitRoom(user1.getId(), createdRoom.roomId());
+            chatRoomService.leaveRoom(user1.getId(), createdRoom.roomId());
 
             // then
             ChatRoom deletedRoom = chatRoomRepository.findById(createdRoom.roomId()).orElseThrow();
@@ -484,7 +515,7 @@ class ChatRoomServiceIntegrationTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    chatRoomService.exitRoom(user1.getId(), invalidRoomId)
+                    chatRoomService.leaveRoom(user1.getId(), invalidRoomId)
             )
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_NOT_FOUND);
@@ -498,7 +529,7 @@ class ChatRoomServiceIntegrationTest {
 
             // when & then - user3는 멤버가 아님
             assertThatThrownBy(() ->
-                    chatRoomService.exitRoom(user3.getId(), room.roomId())
+                    chatRoomService.leaveRoom(user3.getId(), room.roomId())
             )
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_MEMBER_NOT_FOUND);
@@ -551,7 +582,7 @@ class ChatRoomServiceIntegrationTest {
             chatRoomService.createOrGetIndividualRoom(user1.getId(), user3.getId());
 
             // room1에서 퇴장
-            chatRoomService.exitRoom(user1.getId(), room1.roomId());
+            chatRoomService.leaveRoom(user1.getId(), room1.roomId());
 
             // when
             List<IndividualRoomListResponse> rooms = chatRoomService.findMyIndividualRooms(user1.getId());
@@ -655,7 +686,7 @@ class ChatRoomServiceIntegrationTest {
         void isUserInRoom_ExitedUser_ReturnsFalse() {
             // given
             RoomDto room = chatRoomService.createOrGetIndividualRoom(user1.getId(), user2.getId());
-            chatRoomService.exitRoom(user1.getId(), room.roomId());
+            chatRoomService.leaveRoom(user1.getId(), room.roomId());
 
             // when
             boolean result = chatRoomService.isUserInRoom(user1.getId(), room.roomId());

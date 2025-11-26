@@ -1,9 +1,13 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
-import com.homesweet.homesweetback.domain.chat.dto.response.RegisterGroupMemberResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.JoinRoomResponse;
+import com.homesweet.homesweetback.domain.chat.dto.response.RoomMemberResponse;
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
+import com.zaxxer.hikari.metrics.dropwizard.CodaHaleMetricsTracker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,22 +22,27 @@ import org.springframework.web.bind.annotation.*;
 public class RoomMemberController {
 
     private final RoomMemberService roomMemberService;
-    private final RoomMemberRepository roomMemberRepository;
+    private final ChatRoomService chatRoomService;
 
 
+    // TODO 1 : 신규 멤버 및 퇴장한 멤버 등록
+    // 신규 멤버 등록
+    @PostMapping("/group/{roomId}")
+    public ResponseEntity<JoinRoomResponse> createOrRejoinMember(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long roomId) {
 
-    // 새 멤버 등록
-//    @PostMapping("/group/{roomId}")
-//    public ResponseEntity<RegisterGroupMemberResponse> registerGroupRoom(
-//            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-//            @PathVariable Long roomId) {
-//
-//        Long userId = principal.getUserId();
-//
-//        RegisterGroupMemberResponse response = roomMemberService.registerGroupMember(roomId, userId);
-//
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
+        Long userId = principal.getUserId();
+        JoinRoomResponse response = chatRoomService.joinRoom(roomId, userId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // TODO 2 : 멤버 목록 조회
+
+
+    // TODO 3 : 멤버 목록 업데이트
+
 
 
     // 임시 멤버 목록 갱신용 컨트롤러

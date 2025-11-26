@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
+import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class RoomController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final RoomMemberService roomMemberService;
 
     /**
      * 1:1 채팅방 생성 또는 재사용
@@ -66,8 +68,31 @@ public class RoomController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // 입장 ( 신규 입장, 퇴장했던 멤버가 재입장(is_exit = true))
+    @PostMapping("/{roomId}/join")
+    public ResponseEntity<Void> joinRoom(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long roomId
+    ) {
+        chatRoomService.joinRoom(roomId, principal.getUserId());
+        return ResponseEntity.ok().build();
+    }
 
-    // 개인채팅방 상세조회
+    // 퇴장
+    @PostMapping("/{roomId}/exit")
+    public ResponseEntity<Void> exitRoom(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal,
+            @PathVariable Long roomId
+
+    ) {
+        Long userId = principal.getUserId();
+
+        chatRoomService.leaveRoom(userId, roomId);
+        return ResponseEntity.ok().build();
+    }
+
+
+    // 단순 조회 (채팅방에 속한 멤버가 해당 채팅방을 조회하는 경우)
     @GetMapping("/individual/{roomId}")
     public ResponseEntity<IndividualChatDetailResponse> getIndividualRoomInfo(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
@@ -79,8 +104,8 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    // TODO : 그룹 채팅방 조회(GET), 새 멤버 등록(POST), 멤버 목록 업데이트(PUT) 분리
-    // 세가지 로직이 다 합쳐져 있어 멱등성 보장이 안됨.
+    // TODO: 멤버 목록 업데이트(PUT) 분리
+    // 단순 조회 (채팅방에 속한 멤버가 해당 채팅방을 조회하는 경우)
     @GetMapping("/group/{roomId}")
     public ResponseEntity<GroupChatDetailResponse> getGroupRoomInfo(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
@@ -92,8 +117,7 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-
-
+    // 개인 채팅방 목록 조회
     @GetMapping("/my/individual")
     public ResponseEntity<List<IndividualRoomListResponse>> getMyIndividualRoomList(
             @AuthenticationPrincipal OAuth2UserPrincipal principal
@@ -103,6 +127,7 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
+    // 그룹 채팅방 목록 조회
     @GetMapping("/my/group")
     public ResponseEntity<List<GroupRoomListResponse>> getMyGroupRoomList(
             @AuthenticationPrincipal OAuth2UserPrincipal principal
@@ -120,29 +145,6 @@ public class RoomController {
     public ResponseEntity<List<GroupRoomListResponse>> getAllGroupRooms() {
         List<GroupRoomListResponse> response = chatRoomService.getAllGroupRooms();
         return ResponseEntity.ok(response);
-    }
-
-//    // ??
-//    @PostMapping("/{roomId}/join")
-//    public ResponseEntity<Void> joinRoom(
-//            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-//            @PathVariable Long roomId
-//    ) {
-//        chatRoomService.joinRoom(roomId, principal.getUserId());
-//        return ResponseEntity.ok().build();
-//    }
-
-    // 퇴장
-    @PostMapping("/{roomId}/exit")
-    public ResponseEntity<Void> exitRoom(
-            @AuthenticationPrincipal OAuth2UserPrincipal principal,
-            @PathVariable Long roomId
-
-    ) {
-        Long userId = principal.getUserId();
-
-        chatRoomService.exitRoom(userId, roomId);
-        return ResponseEntity.ok().build();
     }
 
     /**

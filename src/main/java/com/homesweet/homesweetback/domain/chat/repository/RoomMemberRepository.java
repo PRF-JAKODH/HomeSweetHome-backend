@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.chat.repository;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomListResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomListResponse;
+import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -72,20 +73,11 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     // 유저가 해당 방에 속해 있고 퇴장하지 않았는지 확인
     boolean existsByRoom_IdAndUser_IdAndIsExitFalse(Long roomId,Long userId);
 
-    // 현재 참여중 방 멤버 목록 조회
+    // 참여중인 채팅방 내 활성 멤버 조회 (채팅방 1개)
     List<RoomMember> findByRoom_IdAndIsExitFalse(Long roomId);
 
+    // 참여중인 채팅방 수 조회
     Long countByRoomId(Long roomId);
-
-    //여러 방의 멤버 수 한번에 조회
-//    @Query("""
-//            SELECT rm.room.id, COUNT(rm)
-//            FROM RoomMember rm
-//            WHERE rm.room.id IN :roomIds
-//              AND (rm.isExit = false OR rm.isExit IS NULL)
-//            GROUP BY rm.room.id
-//        """)
-//    Map<Long, Long> countMembersByRoomIds(@Param("roomIds") List<Long> roomIds);
 
     /**
      * 개인 채팅방에서 상대방 User 찾기 (최적화)
