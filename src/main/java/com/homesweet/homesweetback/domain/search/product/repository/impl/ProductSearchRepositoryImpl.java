@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.query.repository.impl;
+package com.homesweet.homesweetback.domain.search.product.repository.impl;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOptions;
@@ -7,8 +7,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import com.homesweet.homesweetback.common.util.CursorUtil;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.query.repository.ProductQueryRepository;
-import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
+import com.homesweet.homesweetback.domain.search.product.repository.ProductSearchRepository;
+import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Repository
 @RequiredArgsConstructor
-public class ProductQueryRepositoryImpl implements ProductQueryRepository {
+public class ProductSearchRepositoryImpl implements ProductSearchRepository {
 
     private final ElasticsearchOperations operations;
     private final CacheCategory cacheCategory;

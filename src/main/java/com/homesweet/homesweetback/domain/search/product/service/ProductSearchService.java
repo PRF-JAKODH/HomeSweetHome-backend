@@ -1,9 +1,9 @@
-package com.homesweet.homesweetback.domain.product.product.query.service;
+package com.homesweet.homesweetback.domain.search.product.service;
 
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 11. 24.
  */
-public interface ProductQueryService {
+public interface ProductSearchService {
 
     List<String> autocomplete(String keyword);
 

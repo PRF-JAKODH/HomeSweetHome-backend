@@ -1,7 +1,7 @@
-package com.homesweet.homesweetback.domain.product.product.query.repository;
+package com.homesweet.homesweetback.domain.search.product.repository;
 
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
+import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import org.springframework.data.elasticsearch.core.SearchHits;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 11. 24.
  */
-public interface ProductQueryRepository {
+public interface ProductSearchRepository {
 
     List<String> autocomplete(String keyword);
 

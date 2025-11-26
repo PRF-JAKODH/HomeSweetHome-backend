@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.product.query.service.impl;
+package com.homesweet.homesweetback.domain.search.product.service.impl;
 
 import com.homesweet.homesweetback.common.util.CursorUtil;
 import com.homesweet.homesweetback.common.util.SearchScrollResponse;
@@ -6,19 +6,18 @@ import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.ProductSortType;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
-import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.query.repository.ProductQueryRepository;
-import com.homesweet.homesweetback.domain.product.product.query.repository.document.ProductDocument;
-import com.homesweet.homesweetback.domain.product.product.query.service.ProductQueryService;
+import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.search.product.repository.ProductSearchRepository;
+import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
+import com.homesweet.homesweetback.domain.search.product.service.ProductSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -30,9 +29,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ProductQueryServiceImpl implements ProductQueryService {
+public class ProductSearchServiceImpl implements ProductSearchService {
 
-    private final ProductQueryRepository productQueryRepository;
+    private final ProductSearchRepository productSearchRepository;
     private final RecentSearchService recentSearchService;
     private final CursorUtil cursorUtil;
     private final ProductValidator productValidator;
@@ -42,9 +41,12 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     @Override
     public List<String> autocomplete(String keyword) {
-        return productQueryRepository.autocomplete(keyword);
+        return productSearchRepository.autocomplete(keyword);
     }
 
+    /**
+     * [인증] 사용자 상품 검색 및 조회
+     */
     @Override
     public SearchScrollResponse<ProductPreviewResponse> searchProducts(
             String cursor, Long categoryId, String keyword, ProductSortType sortType,
@@ -57,10 +59,11 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         return executeSearch(cursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
     }
 
+    /**
+     * [비인증] 사용자 상품 검색 및 조회
+     */
     @Override
     public SearchScrollResponse<ProductPreviewResponse> getProductPreview(String cursor, Long categoryId, String keyword, ProductSortType sortType, Double minPrice, Double maxPrice, int limit, List<String> optionFilters) {
-        SearchHits<ProductDocument> hits = productQueryRepository.search(
-                cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
 
         return executeSearch(cursor, categoryId, keyword, sortType, minPrice, maxPrice, limit, optionFilters);
     }
@@ -93,7 +96,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             List<String> optionFilters
     ) {
 
-        SearchHits<ProductDocument> hits = productQueryRepository.search(
+        SearchHits<ProductDocument> hits = productSearchRepository.search(
                 cursor, categoryId, limit, keyword, sortType, minPrice, maxPrice, optionFilters);
 
         List<ProductDocument> docs = hits.getSearchHits().stream()
