@@ -38,6 +38,7 @@ public class ProductSyncService {
             ProductDocument document = productDocumentMapping.convertToDocument(product, category);
 
             productDocumentRepository.save(document);
+            log.info("성공적으로 엘라스틱서치에 동기화가 되었습니다 -> productId: {}", productId);
         } catch (Exception e) {
             log.error("Failed to sync product {} to Elasticsearch", productId, e);
         }

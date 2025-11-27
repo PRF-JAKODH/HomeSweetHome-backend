@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.event;
 
+import com.homesweet.homesweetback.common.event.DomainEvent;
 import lombok.Getter;
 
 /**
@@ -9,30 +10,29 @@ import lombok.Getter;
  * @date 25. 11. 27.
  */
 @Getter
-public class ProductEvent {
+public class ProductEvent extends DomainEvent {
     private final Long productId;
-    private final EventType eventType;
-    private final Long timestamp;
+    private final ProductEventType productEventType;
 
-    private ProductEvent(Long productId, EventType eventType) {
+    public ProductEvent(Long productId, ProductEventType eventType) {
+        super("product." + eventType.name().toLowerCase());
         this.productId = productId;
-        this.eventType = eventType;
-        this.timestamp = System.currentTimeMillis();
+        this.productEventType = eventType;
     }
 
     public static ProductEvent created(Long productId) {
-        return new ProductEvent(productId, EventType.CREATED);
+        return new ProductEvent(productId, ProductEventType.CREATED);
     }
 
     public static ProductEvent updated(Long productId) {
-        return new ProductEvent(productId, EventType.UPDATED);
+        return new ProductEvent(productId, ProductEventType.UPDATED);
     }
 
     public static ProductEvent deleted(Long productId) {
-        return new ProductEvent(productId, EventType.DELETED);
+        return new ProductEvent(productId, ProductEventType.DELETED);
     }
 
     public static ProductEvent statusChanged(Long productId) {
-        return new ProductEvent(productId, EventType.STATUS_CHANGED);
+        return new ProductEvent(productId, ProductEventType.STATUS_CHANGED);
     }
 }

@@ -1,6 +1,5 @@
-package com.homesweet.homesweetback.domain.product.event.handler;
+package com.homesweet.homesweetback.domain.product.event;
 
-import com.homesweet.homesweetback.domain.product.event.ProductEvent;
 import com.homesweet.homesweetback.domain.search.product.sync.service.ProductSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,17 +17,17 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ProductEventHandler {
+public class ProductEventConsumer {
 
     private final ProductSyncService productSyncService;
 
     @Async("productEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleProductEvent(ProductEvent event) {
+    public void consume(ProductEvent event) {
         log.info("[상품 이벤트] 실행 : type={}, productId={}", event.getEventType(), event.getProductId());
 
         try {
-            switch (event.getEventType()) {
+            switch (event.getProductEventType()) {
                 case CREATED, UPDATED, STATUS_CHANGED -> productSyncService.syncToElasticsearch(event.getProductId());
                 case DELETED -> productSyncService.deleteFromElasticsearch(event.getProductId());
             }
