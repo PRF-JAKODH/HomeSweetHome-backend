@@ -79,10 +79,10 @@ public class ProductDocument {
     @Field(type = FieldType.Long, name = "review_count")
     private Long reviewCount;
 
-    @Field(type = FieldType.Date, name = "created_at", format = DateFormat.date_time)
+    @Field(type = FieldType.Date, name = "created_at", format = DateFormat.date_hour_minute_second)
     private LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date, name = "updated_at", format = DateFormat.date_time)
+    @Field(type = FieldType.Date, name = "updated_at", format = DateFormat.date_hour_minute_second)
     private LocalDateTime updatedAt;
 
     @Field(type = FieldType.Nested, name = "option_groups")
