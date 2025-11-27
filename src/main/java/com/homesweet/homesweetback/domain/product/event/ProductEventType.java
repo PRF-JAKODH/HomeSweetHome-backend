@@ -6,6 +6,6 @@ package com.homesweet.homesweetback.domain.product.event;
  * @author junnukim1007gmail.com
  * @date 25. 11. 27.
  */
-public enum EventType {
+public enum ProductEventType {
     CREATED, UPDATED, DELETED, STATUS_CHANGED
 }

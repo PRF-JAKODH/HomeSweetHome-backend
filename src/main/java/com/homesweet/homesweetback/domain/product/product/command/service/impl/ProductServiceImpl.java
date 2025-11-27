@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.product.product.command.service.impl;
 
+import com.homesweet.homesweetback.common.event.EventPublisher;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
@@ -19,7 +20,6 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Sku
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +37,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final ApplicationEventPublisher eventPublisher;
+    private final EventPublisher eventPublisher;
     private final ProductValidator productValidator;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
@@ -79,7 +79,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product save = productRepository.save(product);
 
-        eventPublisher.publishEvent(ProductEvent.created(save.getId()));
+        eventPublisher.publish(ProductEvent.created(save.getId()));
 
         return ProductResponse.from(save);
     }
@@ -123,7 +123,7 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.update(productId, update);
 
-        eventPublisher.publishEvent(ProductEvent.updated(productId));
+        eventPublisher.publish(ProductEvent.updated(productId));
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.updateStatus(domain.getId(), request.status());
 
-        eventPublisher.publishEvent(ProductEvent.updated(productId));
+        eventPublisher.publish(ProductEvent.statusChanged(productId));
     }
 
     @Override
@@ -183,5 +183,7 @@ public class ProductServiceImpl implements ProductService {
             // DB에 새 이미지 추가
             productRepository.addDetailImages(productId, newDetailImageUrls);
         }
+
+        eventPublisher.publish(ProductEvent.updated(productId));
     }
 }
