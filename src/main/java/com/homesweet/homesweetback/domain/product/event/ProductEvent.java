@@ -14,7 +14,7 @@ public class ProductEvent extends DomainEvent {
     private final Long productId;
     private final ProductEventType productEventType;
 
-    public ProductEvent(Long productId, ProductEventType eventType) {
+    protected ProductEvent(Long productId, ProductEventType eventType) {
         super("product." + eventType.name().toLowerCase());
         this.productId = productId;
         this.productEventType = eventType;

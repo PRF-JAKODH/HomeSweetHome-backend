@@ -63,9 +63,43 @@ public class AsyncConfig {
         return executor;
     }
 
-    // 상품 이벤트 발행 비동기 처리
+    // 상품 검색 이벤트 발행 비동기 처리
     @Bean(name = "productEventExecutor")
     public Executor productEventExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("product-event-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler((r, executor1) -> {
+            log.warn("상품 이벤트 비동기 처리에 실패하였습니다.");
+        });
+        executor.initialize();
+        return executor;
+    }
+
+    // 게시글 검색 이벤트 발행 비동기 처리
+    @Bean(name = "communityEventExecutor")
+    public Executor communityEventExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("product-event-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler((r, executor1) -> {
+            log.warn("상품 이벤트 비동기 처리에 실패하였습니다.");
+        });
+        executor.initialize();
+        return executor;
+    }
+
+    // 채팅방 검색 이벤트 발행 비동기 처리
+    @Bean(name = "chatroomEventExecutor")
+    public Executor chatroomEventExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(8);

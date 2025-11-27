@@ -8,6 +8,9 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
+import com.homesweet.homesweetback.domain.community.event.CommunityEvent;
+import com.homesweet.homesweetback.domain.community.event.CommunityEventPublisher;
+import com.homesweet.homesweetback.domain.community.event.CommunityEventType;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommunityPostService {
 
+    private final CommunityEventPublisher communityEventPublisher;
     private final CommunityPostRepository postRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
@@ -69,6 +73,8 @@ public class CommunityPostService {
                 );
             }
         }
+
+        communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
 
         return CommunityPostResponse.from(savedPost, imageUrls);
     }
@@ -112,6 +118,8 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
+        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
+
         return CommunityPostResponse.from(post, imageUrls);
     }
 
@@ -131,6 +139,8 @@ public class CommunityPostService {
 
         // 게시글 소프트 삭제
         post.deletePost();
+
+        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
     }
 
     /**
