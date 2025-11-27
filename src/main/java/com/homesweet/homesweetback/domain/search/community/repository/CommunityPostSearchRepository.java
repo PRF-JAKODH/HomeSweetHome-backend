@@ -12,7 +12,7 @@ import java.util.List;
  * @author junnukim1007gmail.com
  * @date 25. 11. 26.
  */
-public interface CommunityPostRepository {
+public interface CommunityPostSearchRepository {
 
     List<String> autocomplete(String keyword);
 

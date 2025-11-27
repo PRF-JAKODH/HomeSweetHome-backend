@@ -10,7 +10,4 @@ public interface EventPublisher {
 
     // 이벤트 발행
     void publish(DomainEvent event);
-
-    // 이벤트 발행 (토픽, 라우팅키 지정)
-    void publish(String topic, DomainEvent event);
 }
