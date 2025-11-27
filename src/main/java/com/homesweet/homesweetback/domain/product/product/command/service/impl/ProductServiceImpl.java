@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.event.ProductEvent;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
@@ -18,6 +19,7 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Sku
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +37,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    private final ApplicationEventPublisher eventPublisher;
     private final ProductValidator productValidator;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
@@ -75,6 +78,8 @@ public class ProductServiceImpl implements ProductService {
         );
 
         Product save = productRepository.save(product);
+
+        eventPublisher.publishEvent(ProductEvent.created(save.getId()));
 
         return ProductResponse.from(save);
     }
@@ -117,6 +122,8 @@ public class ProductServiceImpl implements ProductService {
         Product update = product.update(request);
 
         productRepository.update(productId, update);
+
+        eventPublisher.publishEvent(ProductEvent.updated(productId));
     }
 
     @Override
@@ -140,6 +147,8 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND_ERROR));
 
         productRepository.updateStatus(domain.getId(), request.status());
+
+        eventPublisher.publishEvent(ProductEvent.updated(productId));
     }
 
     @Override

@@ -38,7 +38,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     @CacheEvict(value = {
             "topLevelCategories",
             "categoriesByParent",
-            "categoryHierarchy"
+            "categoryHierarchy",
+            "getCategoryById"
     }, allEntries = true)
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
@@ -61,6 +62,14 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         cacheCategory.evictAllCategoryCaches();
 
         return CategoryResponse.from(domain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "getCategoryById", key = "#categoryId")
+    public ProductCategory getCategoryById(Long categoryId) {
+        return repository.findById(categoryId)
+                .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));
     }
 
     @Override

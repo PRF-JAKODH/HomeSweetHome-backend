@@ -1,5 +1,6 @@
-package com.homesweet.homesweetback.domain.search.product.repository.document;
+package com.homesweet.homesweetback.domain.search.product.sync.repository;
 
+import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**
