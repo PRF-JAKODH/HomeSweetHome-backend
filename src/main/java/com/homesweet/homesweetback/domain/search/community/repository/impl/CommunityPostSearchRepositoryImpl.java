@@ -6,7 +6,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import com.homesweet.homesweetback.common.util.scroll.CommunityCursorStrategy;
 import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
 import com.homesweet.homesweetback.domain.search.community.controller.response.CommunitySortType;
-import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostSearchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -25,7 +25,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class CommunityPostSearchRepositoryImpl implements CommunityPostRepository {
+public class CommunityPostSearchRepositoryImpl implements CommunityPostSearchRepository {
 
     private final ElasticsearchOperations operations;
     private final CursorUtil cursorUtil;

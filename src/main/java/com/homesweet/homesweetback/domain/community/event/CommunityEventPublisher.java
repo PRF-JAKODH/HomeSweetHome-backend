@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.event;
+package com.homesweet.homesweetback.domain.community.event;
 
 import com.homesweet.homesweetback.common.event.DomainEvent;
 import com.homesweet.homesweetback.common.event.EventPublisher;
@@ -7,14 +7,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
- * 상품 이벤트 생성
+ * 게시글 이벤트 Publisher
  *
  * @author junnukim1007gmail.com
  * @date 25. 11. 27.
  */
 @Component
 @RequiredArgsConstructor
-public class ProductEventPublisher implements EventPublisher {
+public class CommunityEventPublisher implements EventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
 
