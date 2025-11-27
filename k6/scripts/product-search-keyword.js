@@ -7,7 +7,7 @@ const token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMSIsImVtYWlsIjoianVubnVraW0xMDA3
 
 export const options = {
     stages: [
-        {duration: '3m', target: 1000}
+        {duration: '3m', target: 100}
     ]
 };
 
@@ -15,7 +15,7 @@ export default function () {
     const keyword = encodeURIComponent("침대프레임");
 
     const response = http.get(
-        `http://localhost:8080/api/v1/products/search?size=12&keyword=${keyword}&sortType=LATEST`,
+        `http://localhost:8080/api/v1/products/search?size=12&keyword=${keyword}&sortType=RECOMMENDED`,
         {
             headers: {
                 "Authorization": `Bearer ${token}`
