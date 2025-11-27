@@ -3,10 +3,9 @@ package com.homesweet.homesweetback.domain.search.community.service.impl;
 import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
 import com.homesweet.homesweetback.common.util.scroll.SearchScrollResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
-import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRoomSortType;
 import com.homesweet.homesweetback.domain.search.community.controller.response.CommunityPostSearchResponse;
 import com.homesweet.homesweetback.domain.search.community.controller.response.CommunitySortType;
-import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostSearchRepository;
 import com.homesweet.homesweetback.domain.search.community.repository.document.CommunityPostDocument;
 import com.homesweet.homesweetback.domain.search.community.service.CommunitySearchService;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommunitySearchServiceImpl implements CommunitySearchService {
 
-    private final CommunityPostRepository communityPostRepository;
+    private final CommunityPostSearchRepository communityPostRepository;
     private final RecentSearchService recentSearchService;
     private final CursorUtil cursorUtil;
 

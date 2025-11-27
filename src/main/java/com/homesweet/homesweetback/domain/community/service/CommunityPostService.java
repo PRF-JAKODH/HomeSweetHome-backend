@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.community.service;
 
+import com.homesweet.homesweetback.common.event.EventPublisher;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.inject.Qualifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +32,8 @@ import java.util.List;
  * @date 25. 10. 21.
  */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class CommunityPostService {
 
     private final CommunityEventPublisher communityEventPublisher;
