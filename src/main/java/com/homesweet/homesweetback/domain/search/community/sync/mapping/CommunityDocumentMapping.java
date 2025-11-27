@@ -18,19 +18,13 @@ public class CommunityDocumentMapping {
         return CommunityPostDocument.builder()
                 .postId(post.getPostId())
                 .title(post.getTitle())
-                .titleNgram(post.getTitle())
-                .titleAutocomplete(post.getTitle())
-                .titleKeyword(post.getTitle())
-
                 .content(post.getContent())
                 .category(post.getCategory())
                 .authorId(post.getAuthor().getId())
-
                 .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount())
                 .isDeleted(post.getIsDeleted())
-
                 .createdAt(post.getCreatedAt())
                 .build();
     }

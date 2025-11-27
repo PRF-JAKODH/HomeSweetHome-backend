@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.community.event;
 import com.homesweet.homesweetback.common.event.DomainEvent;
 import com.homesweet.homesweetback.common.event.EventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
+@Qualifier("communityEventPublisher")
 public class CommunityEventPublisher implements EventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;

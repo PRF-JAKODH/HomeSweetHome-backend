@@ -5,10 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.Setting;
+import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.LocalDateTime;
 
@@ -74,6 +71,6 @@ public class CommunityPostDocument {
     @Field(type = FieldType.Boolean, name = "is_deleted")
     private Boolean isDeleted;
 
-    @Field(type = FieldType.Date, name = "created_at")
+    @Field(type = FieldType.Date, name = "created_at", format = DateFormat.date_hour_minute_second)
     private LocalDateTime createdAt;
 }
