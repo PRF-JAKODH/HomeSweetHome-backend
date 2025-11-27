@@ -94,6 +94,9 @@ dependencies {
     // ElasticSearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
+    // Spring Retry
+    implementation 'org.springframework.retry:spring-retry'
+
 }
 
 tasks.test {
