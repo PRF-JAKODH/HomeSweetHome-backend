@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.common.util.scroll.CursorUtil;
 import com.homesweet.homesweetback.domain.search.community.controller.response.CommunitySortType;
 import com.homesweet.homesweetback.domain.search.community.repository.CommunityPostSearchRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class CommunityPostSearchRepositoryImpl implements CommunityPostSearchRepository {
 
     private final ElasticsearchOperations operations;

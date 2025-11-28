@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.search.product.sync.repository.Product
 import com.homesweet.homesweetback.domain.search.product.sync.mapping.ProductDocumentMapping;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ProductSyncService {
 
     private final ProductDocumentRepository productDocumentRepository;

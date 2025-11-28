@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.common.config;
+package com.homesweet.homesweetback.domain.search.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
@@ -7,9 +7,9 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 /**
  * 엘라스틱 서치 설정 파일
@@ -17,8 +17,8 @@ import org.springframework.context.annotation.Profile;
  * @author junnukim1007gmail.com
  * @date 25. 11. 26.
  */
-@Profile("!test")
 @Configuration
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ElasticsearchConfig {
 
     @Value("${spring.elasticsearch.uris}")

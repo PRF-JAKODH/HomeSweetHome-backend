@@ -56,6 +56,9 @@ spring:
       port: 6379
       password:
       timeout: 2000ms
+    elasticsearch:
+      repositories:
+        enabled: false
   batch:
     jdbc:
       initialize-schema: always
@@ -85,3 +88,7 @@ app:
 payments:
   toss:
    secretKey: test-secret-key-for-test-only
+
+search:
+  elasticsearch:
+    enabled: false

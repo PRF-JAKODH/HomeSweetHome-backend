@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.search.community.repository.CommunityP
 import com.homesweet.homesweetback.domain.search.community.repository.document.CommunityPostDocument;
 import com.homesweet.homesweetback.domain.search.community.service.CommunitySearchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class CommunitySearchServiceImpl implements CommunitySearchService {
 
     private final CommunityPostSearchRepository communityPostRepository;

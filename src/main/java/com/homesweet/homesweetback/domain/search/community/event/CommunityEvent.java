@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.community.event;
+package com.homesweet.homesweetback.domain.search.community.event;
 
 import com.homesweet.homesweetback.common.event.DomainEvent;
 import lombok.Getter;

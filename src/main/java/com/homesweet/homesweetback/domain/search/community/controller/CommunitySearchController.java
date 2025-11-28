@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.search.community.controller.response.C
 import com.homesweet.homesweetback.domain.search.community.service.CommunitySearchService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/search/community")
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class CommunitySearchController {
 
     private final CommunitySearchService communitySearchService;

@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.event;
+package com.homesweet.homesweetback.domain.search.product.event;
 
 /**
  * 이벤트 타입

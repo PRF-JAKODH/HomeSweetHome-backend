@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.search.product.controller.response.Pro
 import com.homesweet.homesweetback.domain.search.product.service.ProductSearchService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ProductSearchController {
 
     private final ProductSearchService productSearchService;

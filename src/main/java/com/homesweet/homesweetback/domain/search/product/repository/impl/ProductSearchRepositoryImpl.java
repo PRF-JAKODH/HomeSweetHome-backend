@@ -11,6 +11,7 @@ import com.homesweet.homesweetback.domain.search.product.controller.request.Prod
 import com.homesweet.homesweetback.domain.search.product.repository.ProductSearchRepository;
 import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -32,7 +33,8 @@ import java.util.List;
  */
 @Repository
 @RequiredArgsConstructor
-public class ProductSearchRepositoryImpl implements ProductSearchRepository {
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
+class ProductSearchRepositoryImpl implements ProductSearchRepository {
 
     private final ElasticsearchOperations operations;
     private final CacheCategory cacheCategory;

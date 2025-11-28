@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.product.event;
+package com.homesweet.homesweetback.domain.search.product.event;
 
 import com.homesweet.homesweetback.common.event.DomainEvent;
 import com.homesweet.homesweetback.common.event.EventPublisher;
