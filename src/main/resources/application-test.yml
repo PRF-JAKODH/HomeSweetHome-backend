@@ -33,6 +33,8 @@ spring:
     aws:
       s3:
         bucket: ${AWS_S3_BUCKET:homesweet-back-test}
+  elasticsearch:
+    uris: http://localhost:9200
   security:
     oauth2:
       client:
