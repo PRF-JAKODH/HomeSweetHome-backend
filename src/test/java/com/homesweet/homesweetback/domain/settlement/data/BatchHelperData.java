@@ -9,9 +9,9 @@ import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
