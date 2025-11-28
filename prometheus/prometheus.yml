@@ -15,6 +15,10 @@ scrape_configs:
     static_configs:
       - targets: ['mysqld_exporter:9104']
 
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: [ 'elasticsearch_exporter:9114' ]
+
   - job_name: 'spring-actuator'
     metrics_path: '/actuator/prometheus'
     static_configs:
