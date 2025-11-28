@@ -14,6 +14,8 @@ import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
+import com.homesweet.homesweetback.domain.chat.event.search.ChatroomEvent;
+import com.homesweet.homesweetback.domain.chat.event.search.ChatroomSearchEventPublisher;
 import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
@@ -21,6 +23,7 @@ import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
+import com.homesweet.homesweetback.domain.search.chat.repository.ChatRoomSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ChatRoomServiceImpl implements ChatRoomService {
 
+    private final ChatroomSearchEventPublisher chatroomSearchEventPublisher;
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
     private final UserRepository userRepository;
@@ -111,6 +115,9 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         // 방장 정보 저장
         RoomMember roomOwner = RoomMember.createMember(chatRoom, owner, ChatUserRole.OWNER);
         roomMemberRepository.save(roomOwner);
+
+        // 엘라스틱 동기화
+        chatroomSearchEventPublisher.publish(ChatroomEvent.created(chatRoom.getId()));
 
         // 저장된 정보 응답
         return chatRoomMapper.toDto(chatRoom, ownerId);

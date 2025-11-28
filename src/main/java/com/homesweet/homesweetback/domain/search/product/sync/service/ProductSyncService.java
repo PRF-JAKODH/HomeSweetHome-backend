@@ -48,7 +48,7 @@ public class ProductSyncService {
     public void deleteFromElasticsearch(Long productId) {
         try {
             productDocumentRepository.deleteById(productId);
-            log.info("엘라스틱서치에 상품 데이터 저장이 성공했습니다!");
+            log.info("엘라스틱서치에 상품 데이터 삭제가 성공했습니다!");
         } catch (Exception e) {
             log.error("Failed to delete product {} from Elasticsearch", productId, e);
         }
