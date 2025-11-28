@@ -65,6 +65,13 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    public ProductCategory getCategoryById(Long categoryId) {
+        return repository.findById(categoryId)
+                .orElseThrow(() -> new ProductCategoryException(ErrorCode.CANNOT_FOUND_CATEGORY_ERROR));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "categoriesByParent", key = "#parentId")
     public List<CategoryResponse> getCategoriesByParentId(Long parentId) {
         return repository.findByParentId(parentId).stream()

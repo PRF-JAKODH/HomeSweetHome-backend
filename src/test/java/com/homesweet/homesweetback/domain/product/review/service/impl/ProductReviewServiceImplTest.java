@@ -1,16 +1,16 @@
 package com.homesweet.homesweetback.domain.product.review.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.notification.TemplateNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
-import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
+import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;

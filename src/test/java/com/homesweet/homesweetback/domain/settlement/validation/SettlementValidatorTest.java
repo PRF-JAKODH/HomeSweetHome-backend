@@ -9,8 +9,8 @@ import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelperData;
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
@@ -34,7 +34,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SettlementValidator 검증 테스트")

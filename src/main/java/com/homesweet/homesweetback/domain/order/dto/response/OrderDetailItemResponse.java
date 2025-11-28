@@ -1,8 +1,8 @@
 package com.homesweet.homesweetback.domain.order.dto.response;
 
 import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import lombok.Builder;
 
 import java.util.stream.Collectors;

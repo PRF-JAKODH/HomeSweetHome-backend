@@ -2,37 +2,29 @@ package com.homesweet.homesweetback.domain.product.review.service.impl;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.notification.domain.notification.ProductNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
-import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
-import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
-import com.homesweet.homesweetback.domain.product.review.controller.ProductReviewController;
+import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReview;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.ProductReviewRepository;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * 제품 리뷰 서비스 구현 코드

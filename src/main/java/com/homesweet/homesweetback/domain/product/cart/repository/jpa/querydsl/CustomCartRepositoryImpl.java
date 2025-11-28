@@ -2,7 +2,7 @@ package com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.QCartEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.*;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.*;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor

@@ -1,12 +1,11 @@
 package com.homesweet.homesweetback.domain.settlement.service.integration;
 
-import com.homesweet.homesweetback.HomesweetBackApplication;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.grade.repository.GradeRepository;
 import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import com.homesweet.homesweetback.domain.settlement.data.HelpIntegrationData;
 import com.homesweet.homesweetback.domain.settlement.dto.response.WeeklySettlementResponse;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
@@ -23,8 +22,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -3,7 +3,7 @@ package com.homesweet.homesweetback.domain.product.cart.repository.jpa;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
 import com.homesweet.homesweetback.domain.product.cart.repository.jpa.querydsl.CustomCartRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

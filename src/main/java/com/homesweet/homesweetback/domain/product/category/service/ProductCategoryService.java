@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.product.category.service;
 
 import com.homesweet.homesweetback.domain.product.category.controller.request.CategoryCreateRequest;
 import com.homesweet.homesweetback.domain.product.category.controller.response.CategoryResponse;
+import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ import java.util.List;
 public interface ProductCategoryService {
 
     CategoryResponse createCategory(CategoryCreateRequest request);
+
+    ProductCategory getCategoryById(Long categoryId);
 
     List<CategoryResponse> getCategoriesByParentId(Long parentId);
 

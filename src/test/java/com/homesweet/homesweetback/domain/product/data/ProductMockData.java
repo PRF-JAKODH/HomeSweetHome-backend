@@ -1,15 +1,14 @@
 package com.homesweet.homesweetback.domain.product.data;
 
-import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.domain.Sku;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
+import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.domain.Sku;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;

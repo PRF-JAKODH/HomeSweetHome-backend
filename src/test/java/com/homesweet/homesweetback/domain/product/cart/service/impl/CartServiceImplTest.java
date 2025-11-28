@@ -1,13 +1,13 @@
 package com.homesweet.homesweetback.domain.product.cart.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
+import com.homesweet.homesweetback.common.util.scroll.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.cart.controller.request.CartRequest;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
 import com.homesweet.homesweetback.domain.product.cart.domain.Cart;
 import com.homesweet.homesweetback.domain.product.cart.repository.CartRepository;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

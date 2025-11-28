@@ -2,7 +2,6 @@ package com.homesweet.homesweetback.domain.product.data;
 
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 
 import java.time.LocalDateTime;
 

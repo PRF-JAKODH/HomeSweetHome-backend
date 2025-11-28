@@ -1,7 +1,6 @@
 package com.homesweet.homesweetback.domain.product.category.repository.jpa.entity;
 
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;

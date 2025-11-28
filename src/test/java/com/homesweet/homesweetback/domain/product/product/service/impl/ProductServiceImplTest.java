@@ -1,25 +1,27 @@
 package com.homesweet.homesweetback.domain.product.product.service.impl;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.common.util.ScrollResponse;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.request.create.ProductCreateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductBasicInfoUpdateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductImageUpdateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductSkuUpdateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.request.update.ProductStatusUpdateRequest;
-import com.homesweet.homesweetback.domain.product.product.controller.response.*;
-import com.homesweet.homesweetback.domain.product.product.domain.Product;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductImages;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
-import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.SkuRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.util.ProductImageUploader;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
+import com.homesweet.homesweetback.domain.search.product.event.ProductEventPublisher;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductStatusUpdateRequest;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductImages;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.repository.ProductRepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.SkuRepository;
+import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
+import com.homesweet.homesweetback.domain.product.product.command.service.impl.ProductServiceImpl;
 import com.homesweet.homesweetback.domain.product.review.service.ProductReviewService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,12 +36,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static com.homesweet.homesweetback.domain.product.data.CategoryMockData.*;
 import static com.homesweet.homesweetback.domain.product.data.ProductMockData.*;
-import static com.homesweet.homesweetback.domain.product.data.ProductReviewMockData.createReviewStatisticsResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,6 +70,8 @@ class ProductServiceImplTest {
     private SkuRepository skuRepository;
     @Mock
     private ProductReviewService productReviewService;
+    @Mock
+    private ProductEventPublisher productEventPublisher;
 
 
     @Nested
@@ -281,105 +283,6 @@ class ProductServiceImplTest {
                 // then
                 assertThat(response.name()).isEqualTo("상세 이미지 상품");
             }
-        }
-
-        @Nested
-        @DisplayName("실패")
-        class Fail {
-
-        }
-    }
-
-    @Nested
-    @DisplayName("상품 프리뷰 조회")
-    class FindProductReviews {
-
-        @Nested
-        @DisplayName("성공")
-        class Success {
-
-            @Test
-            @DisplayName("상품이 limit 개수보다 많은 경우 다음 페이지 존재 플래그가 true다")
-            void getProducts_hasNextPage() {
-                // given
-                Long cursorId = null;
-                Long categoryId = 1L;
-                int limit = 2;
-                String keyword = null;
-                ProductSortType sortType = ProductSortType.LATEST;
-
-                List<ProductPreviewResponse> products = List.of(
-                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
-                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000),
-                        createProductPreviewResponse(3L, "테이블3", "한샘", 150000)
-                );
-
-                given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
-                        .willReturn(products);
-
-                // when
-                ScrollResponse<ProductPreviewResponse> response =
-                        service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
-
-                // then
-                assertThat(response.contents()).hasSize(limit);
-                assertThat(response.hasNext()).isTrue();
-                assertThat(response.nextCursorId()).isEqualTo(2L);
-            }
-
-            @Test
-            @DisplayName("상품이 limit 이하일 경우 hasNext는 false다")
-            void getProducts_noNextPage() {
-                // given
-                Long cursorId = null;
-                Long categoryId = 1L;
-                int limit = 3;
-                List<ProductPreviewResponse> products = List.of(
-                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000),
-                        createProductPreviewResponse(2L, "테이블2", "한샘", 150000)
-                );
-
-                given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, null, ProductSortType.LATEST))
-                        .willReturn(products);
-
-
-                // when
-                ScrollResponse<ProductPreviewResponse> response =
-                        service.getProductPreview(cursorId, categoryId, limit, null, ProductSortType.LATEST);
-
-                // then
-                assertThat(response.hasNext()).isFalse();
-                assertThat(response.nextCursorId()).isNull();
-                assertThat(response.contents()).hasSize(2);
-            }
-
-            @Test
-            @DisplayName("키워드 검색과 정렬 타입이 함께 적용되어도 정상적으로 페이지네이션 된다")
-            void getProducts_withKeywordAndSortType() {
-                // given
-                Long cursorId = null;
-                Long categoryId = null;
-                int limit = 2;
-                String keyword = "테이블";
-                ProductSortType sortType = ProductSortType.POPULAR;
-
-                List<ProductPreviewResponse> products = List.of(
-                        createProductPreviewResponse(1L, "테이블1", "한샘", 150000)
-                );
-
-                given(productRepository.findNextProducts(cursorId, categoryId, limit + 1, keyword, sortType))
-                        .willReturn(products);
-
-
-                // when
-                ScrollResponse<ProductPreviewResponse> response =
-                        service.getProductPreview(cursorId, categoryId, limit, keyword, sortType);
-
-                // then
-                assertThat(response.contents()).hasSize(1);
-                assertThat(response.hasNext()).isFalse();
-            }
-
         }
 
         @Nested

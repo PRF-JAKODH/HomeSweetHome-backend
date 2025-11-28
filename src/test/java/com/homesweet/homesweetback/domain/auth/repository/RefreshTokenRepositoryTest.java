@@ -3,10 +3,7 @@ package com.homesweet.homesweetback.domain.auth.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
-import com.homesweet.homesweetback.domain.product.product.repository.ProductRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl.CustomProductRepository;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.querydsl.CustomProductRepositoryImpl;
-import com.homesweet.homesweetback.domain.product.product.repository.mapper.ProductMapper;
+import com.homesweet.homesweetback.domain.product.product.command.repository.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

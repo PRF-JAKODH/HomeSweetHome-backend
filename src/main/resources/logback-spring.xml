@@ -58,6 +58,12 @@
         </rollingPolicy>
     </appender>
 
+    <springProfile name="dev">
+        <logger name="org.elasticsearch.client" level="DEBUG"/>
+        <logger name="co.elastic.clients" level="DEBUG"/>
+        <logger name="org.springframework.data.elasticsearch" level="DEBUG"/>
+    </springProfile>
+
     <!-- dev 환경: 콘솔 + 파일 -->
     <springProfile name="dev">
         <root level="INFO">

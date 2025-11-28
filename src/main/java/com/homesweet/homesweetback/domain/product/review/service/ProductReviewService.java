@@ -1,15 +1,10 @@
 package com.homesweet.homesweetback.domain.product.review.service;
 
-import com.homesweet.homesweetback.common.util.ScrollResponse;
-import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
+import com.homesweet.homesweetback.common.util.scroll.ScrollResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewCreateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.request.ProductReviewUpdateRequest;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * 제품 리뷰 서비스 명세

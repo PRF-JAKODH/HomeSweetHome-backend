@@ -1,21 +1,17 @@
 package com.homesweet.homesweetback.domain.product.review.repository.jpa.querydsl;
 
 import com.homesweet.homesweetback.domain.auth.entity.QUser;
-import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.QProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.QProductEntity;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewResponse;
 import com.homesweet.homesweetback.domain.product.review.controller.response.ProductReviewStatisticsResponse;
-import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import com.homesweet.homesweetback.domain.product.review.repository.jpa.entity.QProductReviewEntity;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

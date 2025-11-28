@@ -3,13 +3,11 @@ package com.homesweet.homesweetback.domain.product.product.repository.jpa.queryd
 import com.homesweet.homesweetback.common.config.QueryDslConfig;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
 import com.homesweet.homesweetback.domain.product.category.service.cache.CacheCategory;
-import com.homesweet.homesweetback.domain.product.product.controller.request.ProductSortType;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductDetailResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.ProductPreviewResponse;
-import com.homesweet.homesweetback.domain.product.product.controller.response.SkuStockResponse;
-import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
-import org.junit.jupiter.api.BeforeEach;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.querydsl.CustomProductRepositoryImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,100 +45,6 @@ class CustomProductRepositoryImplTest {
 
     @MockitoBean
     private CacheCategory cacheCategory;
-
-    @Nested
-    @DisplayName("상품 무한 스크롤 조회 (findNextProducts)")
-    class FindNextProducts {
-
-        @Test
-        @DisplayName("최신순 정렬로 상품을 조회할 수 있다")
-        void findLatestProducts() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
-
-            assertThat(results).isNotEmpty();
-            assertThat(results).allSatisfy(r -> assertThat(r.status()).isNotEqualTo(ProductStatus.SUSPENDED));
-            assertThat(results).extracting(ProductPreviewResponse::name)
-                    .containsExactlyInAnyOrder("고급 의자", "저가 의자", "책상 세트");
-        }
-
-        @Test
-        @DisplayName("가격 오름차순 정렬로 조회할 수 있다")
-        void findPriceLowToHigh() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_LOW);
-
-            assertThat(results).isNotEmpty();
-            assertThat(results.getFirst().basePrice()).isLessThanOrEqualTo(results.getLast().basePrice());
-        }
-
-        @Test
-        @DisplayName("가격 내림차순 정렬로 조회할 수 있다")
-        void findPriceHighToLow() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.PRICE_HIGH);
-
-            assertThat(results).isNotEmpty();
-            assertThat(results.getFirst().basePrice()).isGreaterThanOrEqualTo(results.getLast().basePrice());
-
-            int maxPrice = results.stream()
-                    .mapToInt(ProductPreviewResponse::basePrice)
-                    .max()
-                    .orElseThrow();
-            assertThat(results.getFirst().basePrice()).isEqualTo(maxPrice);
-        }
-
-        @Test
-        @DisplayName("인기순(리뷰 개수 순)으로 상품을 조회할 수 있다")
-        void findByPopularity() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.POPULAR);
-
-            assertThat(results).isNotEmpty();
-
-            Long previousReviewCount = Long.MAX_VALUE;
-            for (ProductPreviewResponse response : results) {
-                assertThat(response.reviewCount()).isLessThanOrEqualTo(previousReviewCount);
-                previousReviewCount = response.reviewCount();
-            }
-
-            // 고급 의자 상품에 리뷰가 2개로 가장 많음
-            ProductPreviewResponse mostPopular = results.getFirst();
-            assertThat(mostPopular.name()).isEqualTo("고급 의자");
-            assertThat(mostPopular.reviewCount()).isEqualTo(2L);
-        }
-
-//        @Test
-//        @DisplayName("검색 키워드가 있으면 제품명 또는 브랜드로 검색된다")
-//        void findByKeyword() {
-//            List<ProductPreviewResponse> results =
-//                    repository.findNextProducts(null, 1L, 10, "홈스윗", ProductSortType.LATEST);
-//
-//            assertThat(results).isNotEmpty();
-//            assertThat(results).allSatisfy(p ->
-//                    assertThat(p.brand()).contains("홈스윗")
-//            );
-//        }
-
-        @Test
-        @DisplayName("판매 중지 상품은 조회되지 않는다")
-        void excludeSuspendedProducts() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
-
-            assertThat(results).noneMatch(p -> p.status() == ProductStatus.SUSPENDED);
-        }
-
-        @Test
-        @DisplayName("카테고리를 선택하면 하위 카테고리 상품도 함께 조회된다")
-        void includeSubCategoryProducts() {
-            List<ProductPreviewResponse> results =
-                    repository.findNextProducts(null, 1L, 10, null, ProductSortType.LATEST);
-
-            assertThat(results).extracting(ProductPreviewResponse::categoryId)
-                    .contains(2L, 3L);
-        }
-    }
 
     @Nested
     @DisplayName("상품 옵션 조합 별 추가 금액 및 재고 조회")

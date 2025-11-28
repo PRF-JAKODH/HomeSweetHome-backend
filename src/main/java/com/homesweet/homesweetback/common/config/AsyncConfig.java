@@ -46,6 +46,7 @@ public class AsyncConfig {
         return executor;
     }
 
+    // 최근 검색어 비동기 처리 설정
     @Bean(name = "recentSearchTaskExecutor")
     public Executor recentSearchTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -57,6 +58,57 @@ public class AsyncConfig {
         executor.setAwaitTerminationSeconds(30);
         executor.setRejectedExecutionHandler((r, executor1) -> {
             log.warn("최근 검색어 저장 작업이 거부되었습니다. 큐가 가득 찼습니다.");
+        });
+        executor.initialize();
+        return executor;
+    }
+
+    // 상품 검색 이벤트 발행 비동기 처리
+    @Bean(name = "productEventExecutor")
+    public Executor productEventExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("product-event-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler((r, executor1) -> {
+            log.warn("상품 이벤트 비동기 처리에 실패하였습니다.");
+        });
+        executor.initialize();
+        return executor;
+    }
+
+    // 게시글 검색 이벤트 발행 비동기 처리
+    @Bean(name = "communityEventExecutor")
+    public Executor communityEventExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("community-event-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler((r, executor1) -> {
+            log.warn("게시글 엘라스틱 이벤트 비동기 처리에 실패하였습니다.");
+        });
+        executor.initialize();
+        return executor;
+    }
+
+    // 채팅방 검색 이벤트 발행 비동기 처리
+    @Bean(name = "chatroomEventExecutor")
+    public Executor chatroomEventExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("chatroom-event-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setRejectedExecutionHandler((r, executor1) -> {
+            log.warn("채팅방 엘라스틱 이벤트 비동기 처리에 실패하였습니다.");
         });
         executor.initialize();
         return executor;

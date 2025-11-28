@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.product.cart.controller.request;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.product.product.domain.exception.ProductException;
+import com.homesweet.homesweetback.domain.product.product.command.domain.exception.ProductException;
 import lombok.Builder;
 
 /**

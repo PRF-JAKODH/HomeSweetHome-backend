@@ -70,6 +70,9 @@ dependencies {
     testRuntimeOnly    'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.awaitility:awaitility:4.2.0'
     testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation "org.testcontainers:testcontainers"
+    testImplementation "org.testcontainers:elasticsearch"
+    testImplementation "org.testcontainers:junit-jupiter"
 
     // Swagger
     implementation "io.swagger.core.v3:swagger-annotations:2.2.39"
@@ -95,6 +98,13 @@ dependencies {
     // Batch
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.batch:spring-batch-core'
+
+
+    // ElasticSearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // Spring Retry
+    implementation 'org.springframework.retry:spring-retry'
 
 }
 
