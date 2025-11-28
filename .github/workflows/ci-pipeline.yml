@@ -14,9 +14,18 @@ jobs:
       pull-requests: write
 
     services:
-      docker:
-        image: docker:24.0.5-dind
-        privileged: true
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd="curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
