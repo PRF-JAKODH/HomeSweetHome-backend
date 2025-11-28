@@ -14,6 +14,7 @@ import com.homesweet.homesweetback.domain.notification.domain.notification.Commu
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,21 +29,82 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CommunityCountService {
 
+    private final RedisCounter redisCounter;
     private final CommunityPostRepository postRepository;
     private final CommunityPostLikeRepository postLikeRepository;
     private final CommunityCommentRepository commentRepository;
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
+    private final RedisTemplate<String, Object> redisTemplate;
+
     /**
-     *
+     * 조회수 초기화
      */
     @Transactional
+    public void initViewCountFromDB(Long postId){
+        CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
+            .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        String key = "post:" + postId + ":viewCount";
+        redisCounter.setCounter(key, communityPostEntity.getViewCount());
+    }
+
+    // 조회수 증가
+    @Transactional
     public void increaseViewCount(Long postId) {
-        int updated = postRepository.incrementViewCount(postId);
-        if (updated == 0) {
-            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+        String key = "post:" + postId + ":viewCount"; // redis 서버 주소
+
+        // redis에 없으면 db에서 초기화
+        Boolean hasKey = redisTemplate.hasKey(key);
+
+        // TODO 이게 뭔소리야? 문제: hasKey() + init 사이에 race condition -> 해결: SETNX 또는 Lua script로 원자적 처리
+        if (hasKey == null || !hasKey) {
+            initViewCountFromDB(postId);
         }
+
+        redisCounter.incrementCounter(key);
+    }
+
+//        int updated = postRepository.incrementViewCount(postId);
+//        if (updated == 0) {
+//            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
+//        }
+
+    // 댓글수 초기화
+    @Transactional
+    public void initCommentCountFromDB(Long postId){
+        CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        String key = "post:" + postId + ":commentCount";
+        redisCounter.setCounter(key, communityPostEntity.getCommentCount());
+    }
+
+    // 댓글수 증가
+    @Transactional
+    public void increaseCommentCount(Long postId) {
+        String key = "post:" + postId + ":commentCount";
+        // redis에 없으면 db에서 초기화
+        Boolean hasKey = redisTemplate.hasKey(key);
+        if (hasKey == null || !hasKey) {
+            initCommentCountFromDB(postId);
+        }
+
+        redisCounter.incrementCounter(key);
+    }
+
+    // 댓글수 감소
+    @Transactional
+    public void decreaseCommentCount(Long postId) {
+        String key = "post:" + postId + ":commentCount";
+        // redis에 없으면 db에서 초기화
+        Boolean hasKey = redisTemplate.hasKey(key);
+        if (hasKey == null || !hasKey) {
+            initCommentCountFromDB(postId);
+        }
+
+        redisCounter.decrementCounter(key);
     }
 
     /**
@@ -147,7 +209,7 @@ public class CommunityCountService {
             //                 .commentId(comment.getCommentId())
             //                 .build());
         }
-    }  
+    }
 
     /**
      * 댓글 좋아요 확인
