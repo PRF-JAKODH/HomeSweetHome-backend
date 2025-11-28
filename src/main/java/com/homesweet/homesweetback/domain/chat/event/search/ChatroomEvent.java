@@ -26,11 +26,11 @@ public class ChatroomEvent extends DomainEvent {
         return new ChatroomEvent(chatroomId, ChatroomEventType.CREATED);
     }
 
-    public static ChatroomEvent updated(Long communityId) {
-        return new ChatroomEvent(communityId, ChatroomEventType.UPDATED);
+    public static ChatroomEvent updated(Long chatroomId) {
+        return new ChatroomEvent(chatroomId, ChatroomEventType.UPDATED);
     }
 
-    public static ChatroomEvent deleted(Long communityId) {
-        return new ChatroomEvent(communityId, ChatroomEventType.DELETED);
+    public static ChatroomEvent deleted(Long chatroomId) {
+        return new ChatroomEvent(chatroomId, ChatroomEventType.DELETED);
     }
 }
