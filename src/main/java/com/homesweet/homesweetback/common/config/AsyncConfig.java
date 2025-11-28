@@ -87,11 +87,11 @@ public class AsyncConfig {
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("product-event-");
+        executor.setThreadNamePrefix("community-event-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
         executor.setRejectedExecutionHandler((r, executor1) -> {
-            log.warn("상품 이벤트 비동기 처리에 실패하였습니다.");
+            log.warn("게시글 엘라스틱 이벤트 비동기 처리에 실패하였습니다.");
         });
         executor.initialize();
         return executor;
@@ -104,11 +104,11 @@ public class AsyncConfig {
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("product-event-");
+        executor.setThreadNamePrefix("chatroom-event-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
         executor.setRejectedExecutionHandler((r, executor1) -> {
-            log.warn("상품 이벤트 비동기 처리에 실패하였습니다.");
+            log.warn("채팅방 엘라스틱 이벤트 비동기 처리에 실패하였습니다.");
         });
         executor.initialize();
         return executor;
