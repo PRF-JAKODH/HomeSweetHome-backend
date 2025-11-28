@@ -42,7 +42,7 @@ public class ElasticsearchConfig {
         return new RestClientTransport(restClient, new JacksonJsonpMapper());
     }
 
-    @Bean
+    @Bean(name = "esRestClientBuilder")
     public ElasticsearchClient elasticsearchClient(ElasticsearchTransport transport) {
         return new ElasticsearchClient(transport);
     }
