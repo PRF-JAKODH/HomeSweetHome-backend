@@ -2,10 +2,6 @@ server:
   port: 8080
 
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
-      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
   application:
     name: homesweet-back
   datasource:
@@ -37,8 +33,6 @@ spring:
     aws:
       s3:
         bucket: ${AWS_S3_BUCKET:homesweet-back-test}
-  elasticsearch:
-    uris: http://localhost:9200
   security:
     oauth2:
       client:
