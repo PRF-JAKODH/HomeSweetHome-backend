@@ -46,12 +46,18 @@ spring:
       timeout: 2000ms
   cache:
     type: redis
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
 
 logging:
   level:
     com.homesweet.homesweetback: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.batch: DEBUG
 
 # JWT 개발 환경 설정
 jwt:

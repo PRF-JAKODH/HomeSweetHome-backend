@@ -266,7 +266,7 @@ public class SettlementValidatorTest {
 
                 assertThatThrownBy(() -> settlementValidator.validateSeller(user))
                         .isInstanceOf(BusinessException.class)
-                        .hasMessage(ErrorCode.INVALID_SELLER_ROLE.getMessage());
+                        .hasMessage(ErrorCode.SELLER_NOT_FOUND.getMessage());
             }
         }
         @Nested

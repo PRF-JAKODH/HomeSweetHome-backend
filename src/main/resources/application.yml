@@ -16,6 +16,11 @@ spring:
         static: ap-northeast-2
       s3:
         bucket: ${AWS_S3_BUCKET}
+  batch:
+    job:
+      enabled: true
+    jdbc:
+      initialize-schema: always
 
   datasource:
     hikari:

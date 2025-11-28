@@ -56,6 +56,11 @@ spring:
       port: 6379
       password:
       timeout: 2000ms
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
 
 logging:
   level:

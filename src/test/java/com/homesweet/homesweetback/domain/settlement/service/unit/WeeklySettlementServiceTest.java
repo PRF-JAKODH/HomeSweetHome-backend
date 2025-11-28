@@ -84,7 +84,6 @@ class WeeklySettlementServiceTest {
     @DisplayName("성공 케이스")
     class Success {
         private WeeklySettlementService weeklySettlementService;
-        private SettlementAggregator settlementAggregator;
 
         @BeforeEach
         void setUp() {
@@ -228,7 +227,7 @@ class WeeklySettlementServiceTest {
     @DisplayName("실패 케이스")
     class fail {
         @Test
-        @DisplayName("Repository 예외 발생 시 그대로 전파된다")
+        @DisplayName("Repository 예외 발생 시 그대로 전달된다")
         void getWeeklySummary_fail_repositoryThrows() {
             // given
             LocalDate start = LocalDate.of(2025, 11, 10);

@@ -1,129 +1,40 @@
 package com.homesweet.homesweetback.domain.settlement.scheduled;
-
-import com.homesweet.homesweetback.domain.auth.entity.UserRole;
-import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
-import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
-import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
-import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.service.*;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class SettlementScheduler {
-    private static final Logger log = LogManager.getLogger(SettlementScheduler.class);
-    private final UserRepository userRepository;
-    private final DailySettlementService dailySettlementService;
-    private final WeeklySettlementService weeklySettlementService;
-    private final MonthlySettlementService monthlySettlementService;
-    private final YearlySettlementService yearlySettlementService;
-    private final SettlementService settlementService;
-    private final OrderRepository orderRepository;
-    private final SettlementRepository settlementRepository;
-
-    // 정산 생성
-    @Transactional
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void settlementScheduled(){
-        ZoneId KST = ZoneId.of("Asia/Seoul");
-        LocalDateTime cutoffTime = LocalDateTime.now(KST);
-        log.info("정산 생성 실행");
-        List<Order> settlementCompleted = settlementRepository.findUnSettlementOrders(OrderStatus.COMPLETED, cutoffTime);
-        for (Order order : settlementCompleted) {
-            try {
-                settlementService.createSettlement(order);
-                log.info("정산 생성 완료");
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
+    private final JobLauncher jobLauncher;
+    private final Job settlementJob;
+    // 정산의 모든 step(생성 ~ 연별 집계)-> 10초 간격으로 진행
+    @Scheduled(fixedRate = 10000)
+    public void runSettlementCreateJob() {
+        Map<String, JobParameter<?>> parameters = new HashMap<>();
+        parameters.put("cutoff", new JobParameter<>(
+                LocalDateTime.now().toString(), String.class, true
+        ));
+        parameters.put("time", new JobParameter<>(
+                System.currentTimeMillis(), Long.class, true
+        ));
+        try {
+            jobLauncher.run(settlementJob, new JobParameters(parameters));
+            log.info("SettlementJob 실행");
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
-        log.info("정산 생성 스케줄러");
-    }
-
-    // 정산 취소
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void cancelSettlementScheduled(){
-        ZoneId KST = ZoneId.of("Asia/Seoul");
-        LocalDateTime cutoffTime = LocalDateTime.now(KST);
-        log.info("정산 취소 실행");
-        List<Order> canceledOrders = settlementRepository.findCancelSettlement(DeliveryStatus.CANCELLED, cutoffTime);
-        for (Order order : canceledOrders) {
-            try {
-                settlementService.orderCanceled(order);
-                log.info("정산 취소 완료");
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-        }
-        log.info("정산 취소 스케줄러 완료");
-    }
-
-    // 1분마다 실행
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void dailyScheduled() {
-        ZoneId KST = ZoneId.of("Asia/Seoul");
-        LocalDate target = LocalDate.now(KST);
-        LocalDateTime start = target.atStartOfDay();
-        LocalDateTime endEx = target.plusDays(1).atStartOfDay();
-
-        userRepository.findAllByRole(UserRole.SELLER).forEach(seller -> {
-            try {
-                dailySettlementService.getSettlement(seller.getId(), start, endEx);
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-            }
-            log.info("일별 스케줄 실행");
-        });
-    }
-
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void weeklyScheduled() {
-        ZoneId KST = ZoneId.of("Asia/Seoul");
-
-        LocalDate target = LocalDate.now(KST);
-        LocalDate weekStart = target.minusWeeks(1).with(java.time.DayOfWeek.MONDAY);
-        LocalDate weekEnd = weekStart.plusDays(7);
-        userRepository.findAllByRole(UserRole.SELLER).forEach(seller -> {
-            try {
-                weeklySettlementService.getWeeklySettlement(seller.getId(), weekStart, weekEnd);
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-            }
-            log.info("주별 스케줄 실행");
-        });
-    }
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void monthlyScheduled() {
-        userRepository.findAllByRole(UserRole.SELLER).forEach(seller -> {
-            try {
-                monthlySettlementService.getMonthlySettlement(seller.getId());
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-            }
-            log.info("월별 스케줄 실행");
-        });
-    }
-    @Scheduled(cron = "0 */1 * * * *", zone = "Asia/Seoul")
-    public void yearlyScheduled() {
-        userRepository.findAllByRole(UserRole.SELLER).forEach(seller -> {
-            try {
-                yearlySettlementService.getYearlySettlement(seller.getId());
-            } catch (Exception e) {
-                e.printStackTrace(System.out);
-            }
-            log.info("연별 스케줄 실행");
-        });
+        log.info("======== 정산 스케줄러 ========");
     }
 }

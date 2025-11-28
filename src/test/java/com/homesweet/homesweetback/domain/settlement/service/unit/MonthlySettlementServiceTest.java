@@ -84,8 +84,8 @@ class MonthlySettlementServiceTest {
     @Nested
     @DisplayName("성공 케이스")
     class Success {
-        SettlementAggregator settlementAggregator;
         MonthlySettlementService monthlySettlementService;
+
         @BeforeEach
         void setup() {
             // 실제 주입
@@ -176,7 +176,7 @@ class MonthlySettlementServiceTest {
         }
 
         @Test
-        @DisplayName("[성공] 월별 데이터가 없으면 EmptyResponse 반환")
+        @DisplayName("월별 데이터가 없으면 EmptyResponse 반환")
         void getMonthlySummary_empty() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2025, 1, 1);
@@ -218,8 +218,9 @@ class MonthlySettlementServiceTest {
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).totalSales()).isEqualTo(BigDecimal.ZERO);
         }
+
         @Test
-        @DisplayName("[성공] 월별 집계가 정상적으로 수행된다")
+        @DisplayName("월별 집계가 정상적으로 수행된다")
         void getMonthlySettlement_success() {
             Long userId = 1L;
 
@@ -256,9 +257,6 @@ class MonthlySettlementServiceTest {
                     YearMonth.of(2025, 2), SettlementTotals.empty()
             );
 
-//            given(settlementAggregator.aggregate(anyList(), any(), any()))
-//                    .willReturn((Map) aggregated);
-
             // when
             monthlySettlementService.getMonthlySettlement(userId);
 
@@ -268,10 +266,6 @@ class MonthlySettlementServiceTest {
 
             verify(settlementValidator, times(1))
                     .validateMonthly(settlements);
-
-//            verify(settlementAggregator, times(1))
-//                    .aggregate(anyList(), any(), any());
-
             // 저장이 월 개수만큼 호출되는지 검증 → 2번
             verify(settlementSaver, times(2))
                     .saveMonthly(eq(userId), any(YearMonth.class), any(SettlementTotals.class));
@@ -280,9 +274,9 @@ class MonthlySettlementServiceTest {
 
     @Nested
     @DisplayName("실패 케이스")
-    class Failure{
+    class Failure {
         @Test
-        @DisplayName("[실패] repository 에러 발생 시 예외 전파")
+        @DisplayName("repository 에러 발생 시 예외 전달")
         void getMonthlySummary_fail_repoError() {
 
             Long userId = 1L;
@@ -310,8 +304,9 @@ class MonthlySettlementServiceTest {
             ).isInstanceOf(RuntimeException.class)
                     .hasMessage("DB error");
         }
+
         @Test
-        @DisplayName("[실패] weeklySettlement 리스트가 비어있으면 예외 발생")
+        @DisplayName("weeklySettlement 리스트가 비어있으면 예외 발생")
         void getMonthlySettlement_fail_emptyList() {
             Long userId = 1L;
 
@@ -320,14 +315,16 @@ class MonthlySettlementServiceTest {
 
             // Mock이지만 실제 로직 실행하도록 설정
             doCallRealMethod().when(settlementValidator).validateMonthly(anyList());
+            doCallRealMethod().when(settlementValidator).validateNotEmpty(anyList());
 
             assertThatThrownBy(() ->
                     monthlySettlementService.getMonthlySettlement(userId)
             ).isInstanceOf(BusinessException.class)
                     .hasMessage(ErrorCode.SETTLEMENT_NOT_FOUND.getMessage());
         }
+
         @Test
-        @DisplayName("[실패(X)] null 요소가 포함되어도 예외가 발생하지 않아야 한다")
+        @DisplayName("null 요소가 포함되어도 예외가 발생하지 않아야 한다")
         void getMonthlySettlement_nullElement_shouldNotThrow() {
             Long userId = 1L;
 
@@ -347,8 +344,9 @@ class MonthlySettlementServiceTest {
                     monthlySettlementService.getMonthlySettlement(userId)
             ).doesNotThrowAnyException();
         }
+
         @Test
-        @DisplayName("[실패] aggregator.aggregate() 가 null 반환하면 NPE 발생")
+        @DisplayName("aggregator.aggregate() 가 null 반환하면 NPE 발생")
         void getMonthlySettlement_fail_aggregateReturnsNull() {
             Long userId = 1L;
             List<WeeklySettlement> settlements = List.of(HelperData.getWeeklySettlement());

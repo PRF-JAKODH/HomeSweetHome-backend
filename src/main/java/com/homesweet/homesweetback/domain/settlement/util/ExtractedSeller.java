@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.order.entity.Order;
+import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import org.springframework.stereotype.Component;
 
 // 판매자 정보 추출

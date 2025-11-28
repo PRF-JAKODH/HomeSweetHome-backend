@@ -24,40 +24,40 @@ import java.util.Optional;
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     // 판매자 조회
     @Query("""
-    SELECT p.seller FROM Order o
-        JOIN o.orderItems oi
-        JOIN oi.sku s
-        JOIN s.product p
-        WHERE o.id =:orderId
-    """)
+            SELECT p.seller FROM Order o
+                JOIN o.orderItems oi
+                JOIN oi.sku s
+                JOIN s.product p
+                WHERE o.id =:orderId
+            """)
     Optional<User> findBySellerId(@Param("orderId") Long orderId);
 
     // 주문건별에서 전체 목록 조회
     @Query("""
-        SELECT o.orderedAt, o.orderNumber,
-            CONCAT(MIN(p.name), CASE WHEN COUNT(oi) > 1 THEN CONCAT (' 외 ', (COUNT(oi) - 1), '개') ELSE '' END)
-           , s.salesAmount,s.fee,s.vat, s.refundAmount, s.settlementAmount,s.settlementDate, s.settlementStatus
-        FROM Settlement s
-        JOIN s.order o
-            JOIN o.orderItems oi JOIN oi.sku sku JOIN sku.product p
-        WHERE s.userId =:userId
-          AND o.orderedAt >= :startDate
-          AND o.orderedAt < :endDate
-          AND (:settlementStatus IS NULL OR :settlementStatus = '' OR s.settlementStatus = :settlementStatus)
-        GROUP BY o.orderedAt, o.orderNumber, s.salesAmount, s.fee, s.vat, s.refundAmount, s.settlementAmount, s.settlementDate, s.settlementStatus
-        ORDER BY o.orderedAt DESC
-    """)
+                SELECT o.orderedAt, o.orderNumber,
+                    CONCAT(MIN(p.name), CASE WHEN COUNT(oi) > 1 THEN CONCAT (' 외 ', (COUNT(oi) - 1), '개') ELSE '' END)
+                   , s.salesAmount,s.fee,s.vat, s.refundAmount, s.settlementAmount,s.settlementDate, s.settlementStatus
+                FROM Settlement s
+                JOIN s.order o
+                    JOIN o.orderItems oi JOIN oi.sku sku JOIN sku.product p
+                WHERE s.userId =:userId
+                  AND o.orderedAt >= :startDate
+                  AND o.orderedAt < :endDate
+                  AND (:settlementStatus IS NULL OR :settlementStatus = '' OR s.settlementStatus = :settlementStatus)
+                GROUP BY o.orderedAt, o.orderNumber, s.salesAmount, s.fee, s.vat, s.refundAmount, s.settlementAmount, s.settlementDate, s.settlementStatus
+                ORDER BY o.orderedAt DESC
+            """)
     Page<SettlementResponse> findBySettlement(@Param("userId") Long userId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("settlementStatus") String settlementStatus, Pageable pageable);
 
     // 정산일 기준 집계에서 사용
     @Query("""
-        SELECT s
-        FROM Settlement s
-        WHERE s.userId = :userId
-          AND s.settlementDate >= :startDate
-          AND s.settlementDate < :endDate
-        ORDER BY s.settlementDate DESC, s.settlementId DESC
-    """)
+                SELECT s
+                FROM Settlement s
+                WHERE s.userId = :userId
+                  AND s.settlementDate >= :startDate
+                  AND s.settlementDate < :endDate
+                ORDER BY s.settlementDate DESC, s.settlementId DESC
+            """)
     List<Settlement> findBySettlementDateRange(
             @Param("userId") Long userId,
             @Param("startDate") LocalDateTime startDate,
@@ -68,13 +68,13 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     @Modifying
     @Transactional
     @Query("""
-      UPDATE Settlement s
-      SET s.settlementStatus = 'COMPLETED'
-      WHERE s.userId = :userId
-        AND s.settlementDate >= :startDate
-        AND s.settlementDate <  :endDate
-        AND s.settlementStatus = 'PENDING'
-    """)
+              UPDATE Settlement s
+              SET s.settlementStatus = 'COMPLETED'
+              WHERE s.userId = :userId
+                AND s.settlementDate >= :startDate
+                AND s.settlementDate <  :endDate
+                AND s.settlementStatus = 'PENDING'
+            """)
     int markCompletedInRange(
             @Param("userId") Long userId,
             @Param("startDate") LocalDateTime startDate,
@@ -83,41 +83,55 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     // 정산 완료율 계산
     @Query("""
-    SELECT COUNT(s) FROM Settlement s
-    JOIN s.order o
-    WHERE s.userId =:userId AND s.settlementStatus='COMPLETED'
-    AND o.orderedAt>= :startDate And o.orderedAt < :endDate
-    """)
+            SELECT COUNT(s) FROM Settlement s
+            JOIN s.order o
+            WHERE s.userId =:userId AND s.settlementStatus='COMPLETED'
+            AND o.orderedAt>= :startDate And o.orderedAt < :endDate
+            """)
     long countCompletedSettlements(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 
     // 총 주문건수 계산
     @Query("""
-        SELECT COUNT(s)
-        FROM Settlement s JOIN s.order o
-        WHERE s.userId = :userId
-        AND o.orderedAt >= :startDate AND o.orderedAt < :endDate
-    """)
+                SELECT COUNT(s)
+                FROM Settlement s JOIN s.order o
+                WHERE s.userId = :userId
+                AND o.orderedAt >= :startDate AND o.orderedAt < :endDate
+            """)
     long countAllByOrderedAt(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 
-    Optional<Settlement>findByOrderId(@Param("orderId")Long orderId);
+    Optional<Settlement> findByOrderId(@Param("orderId") Long orderId);
 
+    // 사용자별 목록 조회
+    @Query("SELECT DISTINCT s.userId FROM Settlement s")
+    List<Long> findDistinctUserIds();
+
+
+    // Batch
     // 신규 정산건 찾기
+//    @Query("""
+//    SELECT o FROM Order o
+//    LEFT JOIN Settlement s ON o.id = s.order.id
+//    WHERE o.orderStatus = :orderStatus
+//    AND o.orderedAt > :cutOffTime
+//    AND NOT EXISTS (SELECT 1 FROM Settlement s2 WHERE s2.order.id = o.id)
+//    """)
     @Query("""
-    SELECT o FROM Order o
-    LEFT JOIN Settlement s ON o.id = s.order.id
-    WHERE o.orderStatus =:orderStatus
-    AND o.orderedAt <= :cutOffTime
-    AND s.settlementId IS NULL
-    """)
+                SELECT o FROM Order o
+                WHERE o.orderStatus = :orderStatus
+                AND o.orderedAt > :cutOffTime
+                AND NOT EXISTS (
+                    SELECT 1 FROM Settlement s2 WHERE s2.order.id = o.id
+                )
+            """)
     List<Order> findUnSettlementOrders(@Param("orderStatus") OrderStatus orderStatus, @Param("cutOffTime") LocalDateTime cutoffTime);
 
     // 정산 취소건 찾기
     @Query("""
-    SELECT o FROM Order o
-    LEFT JOIN Settlement s ON o.id = s.order.id
-    WHERE o.deliveryStatus = :deliveryStatus
-    AND o.orderedAt <= :cutOffTime
-    AND s.settlementId IS NOT NULL
-    """)
-    List<Order> findCancelSettlement(@Param("deliveryStatus")DeliveryStatus deliveryStatus, @Param("cutOffTime") LocalDateTime cutoffTime);
+            SELECT o FROM Order o
+            LEFT JOIN Settlement s ON o.id = s.order.id
+            WHERE o.deliveryStatus = :deliveryStatus
+            AND o.orderedAt <= :cutOffTime
+            AND s.settlementId IS NOT NULL
+            """)
+    List<Order> findCancelSettlement(@Param("deliveryStatus") DeliveryStatus deliveryStatus, @Param("cutOffTime") LocalDateTime cutoffTime);
 }

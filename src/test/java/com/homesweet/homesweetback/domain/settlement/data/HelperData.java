@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.settlement.data;
 
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class HelperData {
     public static OrderItem getOrderItem(SkuEntity sku) {
@@ -63,20 +65,24 @@ public class HelperData {
     public static Order getOrder(User user) {
         Order order = com.homesweet.homesweetback.domain.order.entity.Order.builder()
                 .user(user)
+                .orderNumber(UUID.randomUUID().toString())
                 .orderStatus(OrderStatus.COMPLETED)
                 .deliveryStatus(DeliveryStatus.DELIVERED)
                 .totalAmount(150000L)
+                .orderedAt(LocalDateTime.of(2025, 11, 25, 0, 0))
                 .build();
         return order;
     }
 
     public static User getUser() {
         User user = User.builder()
-                .id(13L)
+//                .id(13L)
                 .name("chulsoo")
                 .phoneNumber("010-1234-1234")
                 .address("서울시 강남구 논현로 1")
                 .email("chulsoo@gmail.com")
+                .provider(OAuth2Provider.GOOGLE)
+                .providerId(UUID.randomUUID().toString())
                 .role(UserRole.USER)
                 .build();
         return user;
@@ -199,6 +205,7 @@ public class HelperData {
                 .totalSettlement(BigDecimal.valueOf(85000))
                 .build();
     }
+
     public static WeeklySettlement getWeeklySettlementWithDate(LocalDate date) {
 
         LocalDate weekStart = date.with(DayOfWeek.MONDAY);
@@ -230,6 +237,21 @@ public class HelperData {
                 .totalSettlement(BigDecimal.valueOf(85000))
                 .build();
     }
+
+    public static MonthlySettlement getMonthlySettlement() {
+        return MonthlySettlement.builder()
+                .monthlyId(1L)
+                .userId(1L)
+                .year((short) 2025)
+                .month((byte) 11)
+                .totalSales(BigDecimal.valueOf(100000))
+                .totalFee(BigDecimal.valueOf(5000))
+                .totalVat(BigDecimal.valueOf(10000))
+                .totalRefund(BigDecimal.ZERO)
+                .totalSettlement(BigDecimal.valueOf(85000))
+                .build();
+    }
+
     public static YearlySettlement getYearlySettlement() {
         return YearlySettlement.builder()
                 .year((short) 2025)
@@ -241,6 +263,18 @@ public class HelperData {
                 .build();
     }
 
-
-
+    // 정산 생성
+    public static Settlement createSettlement(Long id, Order order) {
+        return Settlement.builder()
+                .settlementId(id)
+                .userId(11L)
+                .salesAmount(BigDecimal.valueOf(150000))
+                .fee(BigDecimal.valueOf(7500))
+                .vat(BigDecimal.valueOf(15000))
+                .refundAmount(BigDecimal.ZERO)
+                .settlementAmount(BigDecimal.valueOf(127500))
+                .settlementDate(order.getOrderedAt())
+                .order(order)
+                .build();
+    }
 }

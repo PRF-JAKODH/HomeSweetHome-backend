@@ -218,7 +218,7 @@ class YearlySettlementServiceTest {
     @DisplayName("실패 케이스")
     class Failure {
         @Test
-        @DisplayName("Range 계산 중 에러 발생 → 예외 전파")
+        @DisplayName("Range 계산 중 에러 발생")
         void getYearlySummary_fail_rangeError() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
@@ -332,7 +332,7 @@ class YearlySettlementServiceTest {
                     .hasMessageContaining("Content must not be null");
         }
         @Test
-        @DisplayName("Mapper 내부에서 예외 발생 → 전파")
+        @DisplayName("Mapper 내부에서 예외 발생")
         void getYearlySummary_fail_mapperException() {
             Long userId = 1L;
             LocalDate start = LocalDate.of(2024, 1, 1);
