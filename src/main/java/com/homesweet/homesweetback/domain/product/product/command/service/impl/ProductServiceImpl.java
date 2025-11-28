@@ -1,13 +1,12 @@
 package com.homesweet.homesweetback.domain.product.product.command.service.impl;
 
-import com.homesweet.homesweetback.common.event.EventPublisher;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.product.event.ProductEvent;
-import com.homesweet.homesweetback.domain.product.event.ProductEventPublisher;
+import com.homesweet.homesweetback.domain.search.product.event.ProductEvent;
+import com.homesweet.homesweetback.domain.search.product.event.ProductEventPublisher;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
@@ -21,7 +20,6 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Sku
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;

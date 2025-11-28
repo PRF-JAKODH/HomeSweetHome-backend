@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.chat.event.search;
+package com.homesweet.homesweetback.domain.search.chat.event;
 
 /**
  * 채팅방 이벤트 타입

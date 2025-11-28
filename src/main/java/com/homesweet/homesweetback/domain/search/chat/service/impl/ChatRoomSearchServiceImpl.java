@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.search.chat.repository.ChatRoomSearchR
 import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
 import com.homesweet.homesweetback.domain.search.chat.service.ChatRoomSearchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ChatRoomSearchServiceImpl implements ChatRoomSearchService {
 
     private final ChatRoomSearchRepository chatRoomSearchRepository;

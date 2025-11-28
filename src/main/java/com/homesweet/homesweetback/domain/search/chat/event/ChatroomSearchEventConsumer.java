@@ -1,8 +1,10 @@
-package com.homesweet.homesweetback.domain.chat.event.search;
+package com.homesweet.homesweetback.domain.search.chat.event;
 
 import com.homesweet.homesweetback.domain.search.chat.sync.service.ChatroomSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -14,9 +16,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * @author junnukim1007gmail.com
  * @date 25. 11. 27.
  */
+@Profile("!test")
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ChatroomSearchEventConsumer {
 
     private final ChatroomSyncService chatroomSyncService;

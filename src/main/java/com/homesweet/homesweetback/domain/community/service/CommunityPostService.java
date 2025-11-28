@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.domain.community.service;
 
-import com.homesweet.homesweetback.common.event.EventPublisher;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -9,9 +8,8 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.community.event.CommunityEventPublisher;
-import com.homesweet.homesweetback.domain.community.event.CommunityEventType;
+import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
+import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.inject.Qualifier;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -15,7 +15,7 @@ import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
-import com.homesweet.homesweetback.domain.chat.event.search.ChatroomSearchEventPublisher;
+import com.homesweet.homesweetback.domain.search.chat.event.ChatroomSearchEventPublisher;
 import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
 import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;

@@ -9,6 +9,7 @@ import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRo
 import com.homesweet.homesweetback.domain.search.chat.repository.ChatRoomSearchRepository;
 import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -30,6 +31,7 @@ import java.util.List;
  */
 @Repository
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ChatRoomSearchRepositoryImpl implements ChatRoomSearchRepository {
 
     private final ElasticsearchOperations operations;

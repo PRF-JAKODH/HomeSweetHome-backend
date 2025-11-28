@@ -10,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 @TestConfiguration
 @ActiveProfiles("test")
 public class TestSecurityConfig {
-    @Bean
+    @Bean(name = "testSecurityFilterChain")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)

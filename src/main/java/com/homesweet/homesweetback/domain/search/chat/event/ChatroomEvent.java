@@ -1,8 +1,6 @@
-package com.homesweet.homesweetback.domain.chat.event.search;
+package com.homesweet.homesweetback.domain.search.chat.event;
 
 import com.homesweet.homesweetback.common.event.DomainEvent;
-import com.homesweet.homesweetback.domain.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.community.event.CommunityEventType;
 import lombok.Getter;
 
 /**

@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.community.event;
+package com.homesweet.homesweetback.domain.search.chat.event;
 
 import com.homesweet.homesweetback.common.event.DomainEvent;
 import com.homesweet.homesweetback.common.event.EventPublisher;
@@ -8,15 +8,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
- * 게시글 이벤트 Publisher
+ * 채팅방 이벤트 Publisher
  *
  * @author junnukim1007gmail.com
- * @date 25. 11. 27.
+ * @date 25. 11. 28.
  */
 @Component
 @RequiredArgsConstructor
-@Qualifier("communityEventPublisher")
-public class CommunityEventPublisher implements EventPublisher {
+@Qualifier("chatroomEventPublisher")
+public class ChatroomSearchEventPublisher implements EventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
 

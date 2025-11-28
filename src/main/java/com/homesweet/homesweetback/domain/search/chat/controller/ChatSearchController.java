@@ -7,6 +7,7 @@ import com.homesweet.homesweetback.domain.search.chat.controller.response.ChatRo
 import com.homesweet.homesweetback.domain.search.chat.service.ChatRoomSearchService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/search/chat")
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "search.elasticsearch.enabled", havingValue = "true")
 public class ChatSearchController {
 
     private final ChatRoomSearchService chatRoomSearchService;
