@@ -4,6 +4,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
+import com.homesweet.homesweetback.domain.product.event.ProductEventPublisher;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
@@ -69,6 +70,8 @@ class ProductServiceImplTest {
     private SkuRepository skuRepository;
     @Mock
     private ProductReviewService productReviewService;
+    @Mock
+    private ProductEventPublisher productEventPublisher;
 
 
     @Nested
