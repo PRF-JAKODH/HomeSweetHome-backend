@@ -13,6 +13,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: false
         default_batch_fetch_size: 30
+  elasticsearch:
+    uris: http://localhost:9200
   security:
     oauth2:
       client:
