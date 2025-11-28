@@ -110,3 +110,6 @@ management:
       export:
         enabled: true
 
+search:
+  elasticsearch:
+    enabled: true
