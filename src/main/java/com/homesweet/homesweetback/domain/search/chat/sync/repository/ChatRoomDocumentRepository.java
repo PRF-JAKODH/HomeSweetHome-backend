@@ -1,5 +1,6 @@
-package com.homesweet.homesweetback.domain.search.chat.repository.document;
+package com.homesweet.homesweetback.domain.search.chat.sync.repository;
 
+import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**
