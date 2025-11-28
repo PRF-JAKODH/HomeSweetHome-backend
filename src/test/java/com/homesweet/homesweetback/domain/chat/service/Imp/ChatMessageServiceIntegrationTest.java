@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.chat.service.Imp;
 
+import com.homesweet.homesweetback.common.config.IntegrationTestSupport;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
@@ -29,11 +30,9 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
 
-@ActiveProfiles("test")
-@SpringBootTest
 @Transactional
 @DisplayName("ChatMessageService 통합 테스트")
-class ChatMessageServiceIntegrationTest {
+class ChatMessageServiceIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private ChatMessageService chatMessageService;
