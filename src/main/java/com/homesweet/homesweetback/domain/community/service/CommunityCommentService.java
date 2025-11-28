@@ -26,6 +26,7 @@ public class CommunityCommentService {
     private final CommunityPostRepository postRepository;
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
+    private final CommunityCountService communityCountService;
 
     /**
      * 댓글 작성
@@ -36,11 +37,7 @@ public class CommunityCommentService {
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
 
-        // 1. 먼저 카운트 증가 (X lock 획득) - 데드락 방지를 위해 가장 먼저!
-        int updated = postRepository.updateCommentCount(postId, 1);
-        if (updated == 0) {
-            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-        }
+        communityCountService.increaseCommentCount(postId);
 
         // 2. 대댓글인 경우 부모 댓글 존재 여부 확인
         if (request.parentCommentId() != null) {
@@ -123,10 +120,7 @@ public class CommunityCommentService {
         // 댓글 소프트 삭제
         comment.deleteComment();
 
-        // 게시글의 댓글 수 감소 (JPQL로 직접 업데이트)
-        int updated = postRepository.updateCommentCount(postId, -1);
-        if (updated == 0) {
-            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-        }
+        // 게시글의 댓글 수 감소
+        communityCountService.decreaseCommentCount(postId);
     }
 }
