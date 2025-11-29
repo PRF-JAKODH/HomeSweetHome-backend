@@ -28,12 +28,26 @@ public class ElasticsearchConfig {
     public RestClient restClient() {
 
         return RestClient.builder(HttpHost.create(elasticsearchUrl))
-                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
-                        // 전체 커넥션 수
-                        .setMaxConnTotal(200)
-                        // 노드당 커넥션 수
-                        .setMaxConnPerRoute(50)
+
+                // ES HTTP Connection Pool 튜닝
+                .setHttpClientConfigCallback(httpClientBuilder ->
+                        httpClientBuilder
+                                // 전체 커넥션 수
+                                .setMaxConnTotal(300)
+                                // 노드당 커넥션 수
+                                .setMaxConnPerRoute(300)
+                                // Keep-Alive (커넥션 재사용)
+                                .setKeepAliveStrategy((response, context) -> 30_000) // 30초
                 )
+
+                // Request Timeout, Connect Timeout 설정
+                .setRequestConfigCallback(requestConfig ->
+                        requestConfig
+                                .setConnectTimeout(1500)
+                                .setSocketTimeout(30_000)
+                                .setConnectionRequestTimeout(500)
+                )
+
                 .build();
     }
 
