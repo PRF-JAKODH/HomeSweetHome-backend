@@ -3,13 +3,12 @@ package com.homesweet.homesweetback.domain.community.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static org.apache.logging.log4j.ThreadContext.isEmpty;
-import static org.yaml.snakeyaml.tokens.Token.ID.Key;
 
 @Component
 @RequiredArgsConstructor
@@ -47,7 +46,7 @@ public class RedisCounter {
         return result != null && result;
     }
 
-    public Long getSetSize(String key){
+    public Long getSetSize(String key) {
         return redisTemplate.opsForSet().size(key);
     }
 
@@ -83,5 +82,36 @@ public class RedisCounter {
     // 큐 사이즈
     public Long getQueueSize(String key) {
         return redisTemplate.opsForList().size(key);
+    }
+
+    /**
+     * Lua Script를 사용한 원자적 좋아요 토글 + 큐 적재
+     * 
+     * @param setKey   Redis Set 키 (좋아요 목록)
+     * @param member   Set의 멤버 (userId)
+     * @param queueKey 이벤트 큐 키
+     * @param idPrefix 큐에 저장될 이벤트 접두사 (예: "1:100" -> postId:userId)
+     * @return 1이면 추가됨(좋아요), 0이면 제거됨(좋아요 취소)
+     */
+    public Long toggleSetMemberAndPushEvent(String setKey, String member, String queueKey, String idPrefix) {
+        String luaScript = "local setKey = KEYS[1] " +
+                "local queueKey = KEYS[2] " +
+                "local member = ARGV[1] " +
+                "local idPrefix = ARGV[2] " +
+                "local isMember = redis.call('SISMEMBER', setKey, member) " +
+                "if isMember == 1 then " +
+                "    redis.call('SREM', setKey, member) " +
+                "    redis.call('RPUSH', queueKey, 'REM:' .. idPrefix) " +
+                "    return 0 " +
+                "else " +
+                "    redis.call('SADD', setKey, member) " +
+                "    redis.call('RPUSH', queueKey, 'ADD:' .. idPrefix) " +
+                "    return 1 " +
+                "end";
+
+        return redisTemplate.execute(
+                new DefaultRedisScript<>(luaScript, Long.class),
+                Arrays.asList(setKey, queueKey),
+                member, idPrefix);
     }
 }
