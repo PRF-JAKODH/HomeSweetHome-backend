@@ -1,32 +1,27 @@
 package com.homesweet.homesweetback.domain.community.service;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
-import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
-import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Community Count 서비스
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true) // 기본적으로 조회용
 public class CommunityCountService {
 
     private final RedisCounter redisCounter;
@@ -34,40 +29,36 @@ public class CommunityCountService {
     private final CommunityPostLikeRepository postLikeRepository;
     private final CommunityCommentRepository commentRepository;
     private final CommunityCommentLikeRepository commentLikeRepository;
-    private final UserRepository userRepository;
-    private final NotificationSendService notificationSendService;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final LikeSyncService likeSyncService;
 
-    /**
-     * 조회수 초기화
-     */
+    // 상수 정의 (Key 분리)
+    private static final String POST_LIKE_KEY_PREFIX = "post:%d:likes";
+    private static final String POST_LIKE_EVENT_QUEUE = "post:like:events"; // 게시글 좋아요 대기열
+
+    private static final String COMMENT_LIKE_KEY_PREFIX = "comment:%d:likes";
+    private static final String COMMENT_LIKE_EVENT_QUEUE = "comment:like:events"; // 댓글 좋아요 대기열
+
+
     @Transactional
     public void initViewCountFromDB(Long postId){
         CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
-            .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
 
         String key = "post:" + postId + ":viewCount";
         redisCounter.setCounter(key, communityPostEntity.getViewCount());
     }
 
-    // 조회수 증가
     @Transactional
     public void increaseViewCount(Long postId) {
-        String key = "post:" + postId + ":viewCount"; // redis 서버 주소
+        String key = "post:" + postId + ":viewCount";
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, -1);
 
-        // redis에 없으면 db에서 초기화
-        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
-
-        // TODO 이게 뭔소리야? 문제: hasKey() + init 사이에 race condition -> 해결: SETNX 또는 Lua script로 원자적 처리
         if (Boolean.TRUE.equals(wasAbsent)) {
             initViewCountFromDB(postId);
         }
-
         redisCounter.incrementCounter(key);
     }
 
-    // 댓글수 초기화
     @Transactional
     public void initCommentCountFromDB(Long postId){
         CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
@@ -77,50 +68,73 @@ public class CommunityCountService {
         redisCounter.setCounter(key, communityPostEntity.getCommentCount());
     }
 
-    // 댓글수 증가
     @Transactional
     public void increaseCommentCount(Long postId) {
         String key = "post:" + postId + ":commentCount";
-        // redis에 없으면 db에서 초기화
-        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, -1);
 
         if (Boolean.TRUE.equals(wasAbsent)) {
             initCommentCountFromDB(postId);
         }
-
         redisCounter.incrementCounter(key);
     }
 
-    // 댓글수 감소
     @Transactional
     public void decreaseCommentCount(Long postId) {
         String key = "post:" + postId + ":commentCount";
-        // redis에 없으면 db에서 초기화
-        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, -1);
 
-        if  (Boolean.TRUE.equals(wasAbsent)) {
+        if (Boolean.TRUE.equals(wasAbsent)) {
             initCommentCountFromDB(postId);
         }
-
         redisCounter.decrementCounter(key);
     }
 
     /**
-     * 게시글 좋아요 토글
+     * Lazy Loading: 캐시에 없으면 DB에서 로딩
      */
-    @Transactional
+    private void ensurePostLikesLoaded(Long postId) {
+        String key = String.format(POST_LIKE_KEY_PREFIX, postId);
+
+        if (!redisCounter.hasKey(key)) {
+            log.info("Cache Miss: Loading likes for post {}", postId);
+            // DB 조회 (인덱스 타므로 빠름)
+            List<Long> userIds = postLikeRepository.findAllUserIdsByPostId(postId);
+
+            if (!userIds.isEmpty()) {
+                Set<String> userIdStrs = userIds.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toSet());
+                redisCounter.addAllToSet(key, userIdStrs);
+                redisCounter.expire(key, 3, TimeUnit.HOURS); // 3시간 후 만료
+            }
+        } else {
+            redisCounter.expire(key, 3, TimeUnit.HOURS); // 접근 시 만료시간 연장
+        }
+    }
+
+    /**
+     * 게시글 좋아요 토글
+     * ★ 중요: DB 커넥션을 쓰지 않기 위해 @Transactional 제거
+     */
     public void togglePostLike(Long postId, Long userId) {
-        String key = "post:" + postId + ":likes";
+        // 1. 캐시 확보 (없으면 로딩)
+        ensurePostLikesLoaded(postId);
+
+        String key = String.format(POST_LIKE_KEY_PREFIX, postId);
         String userIdStr = String.valueOf(userId);
 
-        if (redisCounter.isMemberOfSet(key, userIdStr)) {
-            // 좋아요 제거
+        // 2. Redis Set 토글
+        boolean isLiked = redisCounter.isMemberOfSet(key, userIdStr);
+
+        if (isLiked) {
             redisCounter.removeFromSet(key, userIdStr);
-            likeSyncService.syncPostLikeToDBAsync(postId, userId, false);  // 비동기 DB 삭제
+            // 3. 큐에 "삭제" 이벤트 적재 (Write Back)
+            redisCounter.pushToQueue(POST_LIKE_EVENT_QUEUE, "REM:" + postId + ":" + userId);
         } else {
-            // 좋아요 추가
             redisCounter.addToSet(key, userIdStr);
-            likeSyncService.syncPostLikeToDBAsync(postId, userId, true);   // 비동기 DB 추가
+            // 3. 큐에 "추가" 이벤트 적재 (Write Back)
+            redisCounter.pushToQueue(POST_LIKE_EVENT_QUEUE, "ADD:" + postId + ":" + userId);
         }
 
         // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
@@ -137,30 +151,59 @@ public class CommunityCountService {
         //                 .build());
     }
 
-    /**
-     * 게시글 좋아요 확인
-     */
     public boolean isPostLiked(Long postId, Long userId) {
-        String key = "post:" + postId + ":likes";
-        String userIdStr = String.valueOf(userId);
-
-        return redisCounter.isMemberOfSet(key, userIdStr);
+        ensurePostLikesLoaded(postId);
+        String key = String.format(POST_LIKE_KEY_PREFIX, postId);
+        return redisCounter.isMemberOfSet(key, String.valueOf(userId));
     }
 
-    // 댓글 좋아요 토글
-    @Transactional
+    public Long getPostLikeCount(Long postId) {
+        ensurePostLikesLoaded(postId);
+        String key = String.format(POST_LIKE_KEY_PREFIX, postId);
+        return redisCounter.getSetSize(key);
+    }
+
+
+    // ================= [댓글 좋아요 로직 (변경됨)] =================
+
+    private void ensureCommentLikesLoaded(Long commentId) {
+        String key = String.format(COMMENT_LIKE_KEY_PREFIX, commentId);
+
+        if (!redisCounter.hasKey(key)) {
+            log.info("Cache Miss: Loading likes for comment {}", commentId);
+            // DB 조회
+            List<Long> userIds = commentLikeRepository.findAllUserIdsByCommentId(commentId);
+
+            if (!userIds.isEmpty()) {
+                Set<String> userIdStrs = userIds.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toSet());
+                redisCounter.addAllToSet(key, userIdStrs);
+                redisCounter.expire(key, 3, TimeUnit.HOURS);
+            }
+        } else {
+            redisCounter.expire(key, 3, TimeUnit.HOURS);
+        }
+    }
+
+    /**
+     * 댓글 좋아요 토글
+     * ★ 중요: @Transactional 제거
+     */
     public void toggleCommentLike(Long commentId, Long userId) {
-        String key = "comment:" + commentId + ":likes";
+        ensureCommentLikesLoaded(commentId);
+
+        String key = String.format(COMMENT_LIKE_KEY_PREFIX, commentId);
         String userIdStr = String.valueOf(userId);
 
-        if (redisCounter.isMemberOfSet(key, userIdStr)) {
-            // 좋아요 제거
+        boolean isLiked = redisCounter.isMemberOfSet(key, userIdStr);
+
+        if (isLiked) {
             redisCounter.removeFromSet(key, userIdStr);
-            likeSyncService.syncCommentLikeToDBAsync(commentId, userId, false);  // 비동기 DB 삭제
+            redisCounter.pushToQueue(COMMENT_LIKE_EVENT_QUEUE, "REM:" + commentId + ":" + userId);
         } else {
-            // 좋아요 추가
             redisCounter.addToSet(key, userIdStr);
-            likeSyncService.syncCommentLikeToDBAsync(commentId, userId, true);   // 비동기 DB 추가
+            redisCounter.pushToQueue(COMMENT_LIKE_EVENT_QUEUE, "ADD:" + commentId + ":" + userId);
         }
 
         // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
@@ -178,13 +221,15 @@ public class CommunityCountService {
         //                 .build());
     }
 
-    /**
-     * 댓글 좋아요 확인
-     */
     public boolean isCommentLiked(Long commentId, Long userId) {
-        String key = "comment:" + commentId + ":likes";
-        String userIdStr = String.valueOf(userId);
+        ensureCommentLikesLoaded(commentId); // Post -> Comment로 수정됨
+        String key = String.format(COMMENT_LIKE_KEY_PREFIX, commentId);
+        return redisCounter.isMemberOfSet(key, String.valueOf(userId));
+    }
 
-        return redisCounter.isMemberOfSet(key, userIdStr);
+    public Long getCommentLikeCount(Long commentId) {
+        ensureCommentLikesLoaded(commentId); // Post -> Comment로 수정됨
+        String key = String.format(COMMENT_LIKE_KEY_PREFIX, commentId);
+        return redisCounter.getSetSize(key);
     }
 }
