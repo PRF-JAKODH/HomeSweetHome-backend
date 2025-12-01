@@ -38,9 +38,8 @@ public class CommunityCountService {
     private static final String COMMENT_LIKE_KEY_PREFIX = "comment:%d:likes";
     private static final String COMMENT_LIKE_EVENT_QUEUE = "comment:like:events"; // 댓글 좋아요 대기열
 
-
     @Transactional
-    public void initViewCountFromDB(Long postId){
+    public void initViewCountFromDB(Long postId) {
         CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
 
@@ -60,7 +59,7 @@ public class CommunityCountService {
     }
 
     @Transactional
-    public void initCommentCountFromDB(Long postId){
+    public void initCommentCountFromDB(Long postId) {
         CommunityPostEntity communityPostEntity = postRepository.findByPostIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
 
@@ -115,40 +114,35 @@ public class CommunityCountService {
 
     /**
      * 게시글 좋아요 토글
-     * ★ 중요: DB 커넥션을 쓰지 않기 위해 @Transactional 제거
+     * ★ 개선: Lua Script로 원자적 처리 (Race Condition 방지)
+     * ★ readOnly 트랜잭션: Lazy Loading 시 DB 조회 지원
      */
+    @Transactional(readOnly = true)
     public void togglePostLike(Long postId, Long userId) {
         // 1. 캐시 확보 (없으면 로딩)
         ensurePostLikesLoaded(postId);
 
         String key = String.format(POST_LIKE_KEY_PREFIX, postId);
         String userIdStr = String.valueOf(userId);
+        String eventPrefix = postId + ":" + userId;
 
-        // 2. Redis Set 토글
-        boolean isLiked = redisCounter.isMemberOfSet(key, userIdStr);
-
-        if (isLiked) {
-            redisCounter.removeFromSet(key, userIdStr);
-            // 3. 큐에 "삭제" 이벤트 적재 (Write Back)
-            redisCounter.pushToQueue(POST_LIKE_EVENT_QUEUE, "REM:" + postId + ":" + userId);
-        } else {
-            redisCounter.addToSet(key, userIdStr);
-            // 3. 큐에 "추가" 이벤트 적재 (Write Back)
-            redisCounter.pushToQueue(POST_LIKE_EVENT_QUEUE, "ADD:" + postId + ":" + userId);
-        }
+        // 2. Lua Script로 원자적 토글 + 큐 적재
+        redisCounter.toggleSetMemberAndPushEvent(key, userIdStr, POST_LIKE_EVENT_QUEUE, eventPrefix);
 
         // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
         // User user = userRepository.findById(userId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-        // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+        // .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+        // CommunityPostEntity post =
+        // postRepository.findByPostIdAndIsDeletedFalse(postId)
+        // .orElseThrow(() -> new
+        // CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
         // notificationSendService.sendTemplateNotificationToSingleUser(
-        //         post.getAuthor().getId(),
-        //         CommunityNotification.NewLike.builder()
-        //                 .userName(user.getName())
-        //                 .postId(post.getPostId())
-        //                 .postTitle(post.getTitle())
-        //                 .build());
+        // post.getAuthor().getId(),
+        // CommunityNotification.NewLike.builder()
+        // .userName(user.getName())
+        // .postId(post.getPostId())
+        // .postTitle(post.getTitle())
+        // .build());
     }
 
     public boolean isPostLiked(Long postId, Long userId) {
@@ -162,7 +156,6 @@ public class CommunityCountService {
         String key = String.format(POST_LIKE_KEY_PREFIX, postId);
         return redisCounter.getSetSize(key);
     }
-
 
     // ================= [댓글 좋아요 로직 (변경됨)] =================
 
@@ -188,37 +181,34 @@ public class CommunityCountService {
 
     /**
      * 댓글 좋아요 토글
-     * ★ 중요: @Transactional 제거
+     * ★ 개선: Lua Script로 원자적 처리 (Race Condition 방지)
+     * ★ readOnly 트랜잭션: Lazy Loading 시 DB 조회 지원
      */
+    @Transactional(readOnly = true)
     public void toggleCommentLike(Long commentId, Long userId) {
         ensureCommentLikesLoaded(commentId);
 
         String key = String.format(COMMENT_LIKE_KEY_PREFIX, commentId);
         String userIdStr = String.valueOf(userId);
+        String eventPrefix = commentId + ":" + userId;
 
-        boolean isLiked = redisCounter.isMemberOfSet(key, userIdStr);
-
-        if (isLiked) {
-            redisCounter.removeFromSet(key, userIdStr);
-            redisCounter.pushToQueue(COMMENT_LIKE_EVENT_QUEUE, "REM:" + commentId + ":" + userId);
-        } else {
-            redisCounter.addToSet(key, userIdStr);
-            redisCounter.pushToQueue(COMMENT_LIKE_EVENT_QUEUE, "ADD:" + commentId + ":" + userId);
-        }
+        // Lua Script로 원자적 토글 + 큐 적재
+        redisCounter.toggleSetMemberAndPushEvent(key, userIdStr, COMMENT_LIKE_EVENT_QUEUE, eventPrefix);
 
         // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
         // User user = userRepository.findById(userId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+        // .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
         // CommunityCommentEntity comment = commentRepository.findById(commentId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
+        // .orElseThrow(() -> new
+        // CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
         // notificationSendService.sendTemplateNotificationToSingleUser(
-        //         comment.getAuthor().getId(),
-        //         CommunityNotification.NewCommentLike.builder()
-        //                 .userName(user.getName())
-        //                 .postId(comment.getPost().getPostId())
-        //                 .postTitle(comment.getPost().getTitle())
-        //                 .commentId(comment.getCommentId())
-        //                 .build());
+        // comment.getAuthor().getId(),
+        // CommunityNotification.NewCommentLike.builder()
+        // .userName(user.getName())
+        // .postId(comment.getPost().getPostId())
+        // .postTitle(comment.getPost().getTitle())
+        // .commentId(comment.getCommentId())
+        // .build());
     }
 
     public boolean isCommentLiked(Long commentId, Long userId) {
