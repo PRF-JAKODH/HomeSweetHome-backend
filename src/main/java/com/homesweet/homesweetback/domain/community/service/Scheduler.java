@@ -1,17 +1,14 @@
 package com.homesweet.homesweetback.domain.community.service;
 
-import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.Set;
 
 @Component
 @Slf4j
@@ -24,26 +21,33 @@ public class Scheduler {
     @Transactional
     @Scheduled(initialDelay = 1000000, fixedDelay = 1000000)
     public void updateCountData() {
-        //  Redis에서 모든 조회수 key 찾기
-        Set<String> keys = redisTemplate.keys("post:*:viewCount"); // * 모든 문자들 매칭
+        //  scan으로 변경
+        ScanOptions options = ScanOptions.scanOptions()
+                .match("post:*:viewCount")
+                .count(100)
+                .build();
 
-        //  각 key마다 반복
-        for (String key : keys) {
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
 
-            //  key에서 postId 추출
-            String[] parts = key.split(":");
-            Long postId = Long.parseLong(parts[1]);
+            //  각 key마다 반복
+            while(cursor.hasNext()) {
+                String key = cursor.next();
 
-            // 키에 대한 밸류 가져옴 redis에서
-            Integer viewCount = (Integer) redisTemplate.opsForValue().get(key);
-            if (viewCount == null) continue;
+                //  key에서 postId 추출
+                String[] parts = key.split(":");
+                Long postId = Long.parseLong(parts[1]);
 
-            // db저장
-            if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
-                communityPostRepository.updateViewCount(postId, viewCount);
+                // 키에 대한 밸류 가져옴 redis에서
+                Integer viewCount = (Integer) redisTemplate.opsForValue().get(key);
+                if (viewCount == null) continue;
+
+                // db저장
+                if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
+                    communityPostRepository.updateViewCount(postId, viewCount);
+                }
+                // redis 삭제
+                redisTemplate.delete(key);
             }
-            // redis 삭제
-            redisTemplate.delete(key);
         }
     }
 
@@ -52,20 +56,28 @@ public class Scheduler {
     @Scheduled(initialDelay = 1500000, fixedDelay = 1500000)
     public void updateCommentData() {
             //  Redis에서 모든 조회수 key 찾기
-        Set<String> keys = redisTemplate.keys("post:*:commentCount");
+        ScanOptions options =ScanOptions.scanOptions()
+                .match("post:*:commentCount")
+                .count(100)
+                .build();
 
-        for (String key : keys) {
-            String[] parts = key.split(":");
-            Long postId = Long.parseLong(parts[1]);
-            Integer commentCount = (Integer) redisTemplate.opsForValue().get(key);
-            if (commentCount == null) continue;
+            try (Cursor<String> cursor = redisTemplate.scan(options)) {
 
-            if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
-                communityPostRepository.setCommentCount(postId, commentCount); // setcomment 증가 감소
+                while (cursor.hasNext()){
+                    String key = cursor.next();
+
+                    String[] parts = key.split(":");
+                    Long postId = Long.parseLong(parts[1]);
+                    Integer commentCount = (Integer) redisTemplate.opsForValue().get(key);
+                    if (commentCount == null) continue;
+
+                    if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
+                        communityPostRepository.setCommentCount(postId, commentCount); // setcomment 증가 감소
+                    }
+
+                    redisTemplate.delete(key);
+                }
             }
-            redisTemplate.delete(key);
-        }
-
 
     }
 }
