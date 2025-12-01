@@ -37,6 +37,7 @@ public class CommunityCountService {
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final LikeSyncService likeSyncService;
 
     /**
      * 조회수 초기화
@@ -105,113 +106,85 @@ public class CommunityCountService {
     }
 
     /**
-     *
+     * 게시글 좋아요 토글
      */
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
-        // 1. 좋아요 존재 여부 확인
-        boolean exists = postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId);
+        String key = "post:" + postId + ":likes";
+        String userIdStr = String.valueOf(userId);
 
-        if (exists) {
-            // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
-            int updated = postRepository.updateLikeCount(postId, -1);
-            if (updated == 0) {
-                throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-            }
-            int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, userId);
-            if (deleted == 0) {
-                // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
-                postRepository.updateLikeCount(postId, 1);
-            }
+        if (redisCounter.isMemberOfSet(key, userIdStr)) {
+            // 좋아요 제거
+            redisCounter.removeFromSet(key, userIdStr);
+            likeSyncService.syncPostLikeToDBAsync(postId, userId, false);  // 비동기 DB 삭제
         } else {
-            // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
-            int updated = postRepository.updateLikeCount(postId, 1);
-            if (updated == 0) {
-                throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-            }
-
-            // 네이티브 INSERT IGNORE (중복 시 에러 없이 0 반환)
-            int inserted = postLikeRepository.insertPostLike(postId, userId);
-            if (inserted == 0) {
-                // 이미 다른 트랜잭션이 추가함 → 카운트 원복
-                postRepository.updateLikeCount(postId, -1);
-            }
-
-            // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
-            // User user = userRepository.findById(userId)
-            //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-            // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-            //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-            // notificationSendService.sendTemplateNotificationToSingleUser(
-            //         post.getAuthor().getId(),
-            //         CommunityNotification.NewLike.builder()
-            //                 .userName(user.getName())
-            //                 .postId(post.getPostId())
-            //                 .postTitle(post.getTitle())
-            //                 .build());
+            // 좋아요 추가
+            redisCounter.addToSet(key, userIdStr);
+            likeSyncService.syncPostLikeToDBAsync(postId, userId, true);   // 비동기 DB 추가
         }
+
+        // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
+        // User user = userRepository.findById(userId)
+        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+        // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+        // notificationSendService.sendTemplateNotificationToSingleUser(
+        //         post.getAuthor().getId(),
+        //         CommunityNotification.NewLike.builder()
+        //                 .userName(user.getName())
+        //                 .postId(post.getPostId())
+        //                 .postTitle(post.getTitle())
+        //                 .build());
     }
 
     /**
      * 게시글 좋아요 확인
      */
     public boolean isPostLiked(Long postId, Long userId) {
-        return postLikeRepository.existsByPost_PostIdAndUser_Id(postId, userId);
+        String key = "post:" + postId + ":likes";
+        String userIdStr = String.valueOf(userId);
+
+        return redisCounter.isMemberOfSet(key, userIdStr);
     }
 
-    /**
-     *
-     */
+    // 댓글 좋아요 토글
     @Transactional
     public void toggleCommentLike(Long commentId, Long userId) {
-        // 1. 좋아요 존재 여부 확인 (락 없이 읽기만)
-        boolean exists = commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId);
+        String key = "comment:" + commentId + ":likes";
+        String userIdStr = String.valueOf(userId);
 
-        if (exists) {
-            // 취소: 부모 먼저 UPDATE (X-LOCK) → 자식 DELETE
-            int updated = commentRepository.updateLikeCount(commentId, -1);
-            if (updated == 0) {
-                throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
-            }
-            int deleted = commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId);
-            if (deleted == 0) {
-                // 이미 다른 트랜잭션이 삭제함 → 카운트 원복
-                commentRepository.updateLikeCount(commentId, 1);
-            }
+        if (redisCounter.isMemberOfSet(key, userIdStr)) {
+            // 좋아요 제거
+            redisCounter.removeFromSet(key, userIdStr);
+            likeSyncService.syncCommentLikeToDBAsync(commentId, userId, false);  // 비동기 DB 삭제
         } else {
-            // 추가: 부모 먼저 UPDATE (X-LOCK) → 자식 INSERT
-            int updated = commentRepository.updateLikeCount(commentId, 1);
-            if (updated == 0) {
-                throw new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND);
-            }
-
-            // 네이티브 INSERT IGNORE (중복 시 에러 없이 0 반환)
-            int inserted = commentLikeRepository.insertCommentLike(commentId, userId);
-            if (inserted == 0) {
-                // 이미 다른 트랜잭션이 추가함 → 카운트 원복
-                commentRepository.updateLikeCount(commentId, -1);
-            }
-
-            // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
-            // User user = userRepository.findById(userId)
-            //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-            // CommunityCommentEntity comment = commentRepository.findById(commentId)
-            //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
-            // notificationSendService.sendTemplateNotificationToSingleUser(
-            //         comment.getAuthor().getId(),
-            //         CommunityNotification.NewCommentLike.builder()
-            //                 .userName(user.getName())
-            //                 .postId(comment.getPost().getPostId())
-            //                 .postTitle(comment.getPost().getTitle())
-            //                 .commentId(comment.getCommentId())
-            //                 .build());
+            // 좋아요 추가
+            redisCounter.addToSet(key, userIdStr);
+            likeSyncService.syncCommentLikeToDBAsync(commentId, userId, true);   // 비동기 DB 추가
         }
+
+        // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
+        // User user = userRepository.findById(userId)
+        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
+        // CommunityCommentEntity comment = commentRepository.findById(commentId)
+        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
+        // notificationSendService.sendTemplateNotificationToSingleUser(
+        //         comment.getAuthor().getId(),
+        //         CommunityNotification.NewCommentLike.builder()
+        //                 .userName(user.getName())
+        //                 .postId(comment.getPost().getPostId())
+        //                 .postTitle(comment.getPost().getTitle())
+        //                 .commentId(comment.getCommentId())
+        //                 .build());
     }
 
     /**
      * 댓글 좋아요 확인
      */
     public boolean isCommentLiked(Long commentId, Long userId) {
-        return commentLikeRepository.existsByComment_CommentIdAndUser_Id(commentId, userId);
+        String key = "comment:" + commentId + ":likes";
+        String userIdStr = String.valueOf(userId);
+
+        return redisCounter.isMemberOfSet(key, userIdStr);
     }
 }
