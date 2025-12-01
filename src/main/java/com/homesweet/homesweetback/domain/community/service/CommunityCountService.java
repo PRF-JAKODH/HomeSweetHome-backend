@@ -56,20 +56,15 @@ public class CommunityCountService {
         String key = "post:" + postId + ":viewCount"; // redis 서버 주소
 
         // redis에 없으면 db에서 초기화
-        Boolean hasKey = redisTemplate.hasKey(key);
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
 
         // TODO 이게 뭔소리야? 문제: hasKey() + init 사이에 race condition -> 해결: SETNX 또는 Lua script로 원자적 처리
-        if (hasKey == null || !hasKey) {
+        if (Boolean.TRUE.equals(wasAbsent)) {
             initViewCountFromDB(postId);
         }
 
         redisCounter.incrementCounter(key);
     }
-
-//        int updated = postRepository.incrementViewCount(postId);
-//        if (updated == 0) {
-//            throw new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND);
-//        }
 
     // 댓글수 초기화
     @Transactional
@@ -86,8 +81,9 @@ public class CommunityCountService {
     public void increaseCommentCount(Long postId) {
         String key = "post:" + postId + ":commentCount";
         // redis에 없으면 db에서 초기화
-        Boolean hasKey = redisTemplate.hasKey(key);
-        if (hasKey == null || !hasKey) {
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
+
+        if (Boolean.TRUE.equals(wasAbsent)) {
             initCommentCountFromDB(postId);
         }
 
@@ -99,8 +95,9 @@ public class CommunityCountService {
     public void decreaseCommentCount(Long postId) {
         String key = "post:" + postId + ":commentCount";
         // redis에 없으면 db에서 초기화
-        Boolean hasKey = redisTemplate.hasKey(key);
-        if (hasKey == null || !hasKey) {
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "-1");
+
+        if  (Boolean.TRUE.equals(wasAbsent)) {
             initCommentCountFromDB(postId);
         }
 
