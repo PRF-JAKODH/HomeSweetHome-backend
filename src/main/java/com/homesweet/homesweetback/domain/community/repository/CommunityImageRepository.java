@@ -15,4 +15,6 @@ import java.util.List;
 
 public interface CommunityImageRepository extends JpaRepository<CommunityImageEntity, Long> {
     List<CommunityImageEntity> findByPostOrderByImageOrderAsc(CommunityPostEntity post);
+    // N+1 문제 해결위해 추가
+    List<CommunityImageEntity> findAllByPostInOrderByPostPostIdAscImageOrderAsc(List<CommunityPostEntity> posts);
 }

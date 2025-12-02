@@ -21,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Community 서비스
@@ -143,15 +145,25 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 목록 조회 (페이지네이션)
+     * 게시글 목록 조회 (페이지네이션) / EntityGraph로 N+1 문제 해결
      */
     public Page<CommunityPostResponse> getPosts(Pageable pageable) {
-        Page<CommunityPostEntity> posts = postRepository.findByIsDeletedFalse(pageable);
-        return posts.map(post -> {
-            List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
-                    .stream()
-                    .map(CommunityImageEntity::getImageUrl)
-                    .toList();
+        Page<CommunityPostEntity> postsPage = postRepository.findByIsDeletedFalse(pageable);
+        List<CommunityPostEntity> posts = postsPage.getContent();
+
+        if (posts.isEmpty()) {
+            return postsPage.map(post -> CommunityPostResponse.from(post, null));
+        }
+        List<CommunityImageEntity> allImages = imageRepository.findAllByPostInOrderByPostPostIdAscImageOrderAsc(posts);
+
+        Map<Long, List<String>> postImagesMap = allImages.stream()
+                .collect(Collectors.groupingBy(
+                        image -> image.getPost().getPostId(),
+                        Collectors.mapping(CommunityImageEntity::getImageUrl, Collectors.toList())
+                ));
+
+        return postsPage.map(post -> {
+            List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());
             return CommunityPostResponse.from(post, imageUrls);
         });
     }
