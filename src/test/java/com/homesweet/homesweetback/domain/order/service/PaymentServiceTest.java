@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.order.service;
 
 import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
 import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
@@ -39,6 +40,9 @@ class PaymentServiceTest {
     @Mock
     private PaymentProcessor paymentProcessor;
 
+    @Mock
+    private RedisStockService redisStockService;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -60,7 +64,7 @@ class PaymentServiceTest {
                 .totalAmount(amount)
                 .orderStatus(OrderStatus.PENDING)
                 .build();
-        doReturn(Optional.of(order)).when(orderRepository).findByOrderNumber(orderNumber);
+        doReturn(Optional.of(order)).when(orderRepository).findByOrderNumberWithItems(orderNumber);
 
         Map<String, Object> tossResponse = Map.of("status", "DONE", "paymentKey", "pk_test_12345");
         doReturn(tossResponse).when(tossPaymentsAdapter).confirmPaymentToToss(dto);
@@ -106,7 +110,7 @@ class PaymentServiceTest {
 
         // 4. 'Mock' Repository 행동 정의 (Stubbing)
         // (OrderRepository는 정상적으로 Order를 반환해야 함)
-        given(orderRepository.findByOrderNumber(orderNumber)).willReturn(Optional.of(order));
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
 
         // 5. [핵심] Adapter가 RuntimeException을 "발생"시키도록 설정
         // "tossPaymentsAdapter.confirmPaymentToToss(dto)가 호출되면,
@@ -166,7 +170,7 @@ class PaymentServiceTest {
 
         // 4. 'Mock' Repository 행동 정의 (Stubbing)
         // OrderRepository는 DB 원본(10000L)이 담긴 order를 정상 반환
-        given(orderRepository.findByOrderNumber(orderNumber)).willReturn(Optional.of(order));
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
 
         // (이 테스트에서는 tossPaymentsAdapter나 다른 메서드가 호출되기 "전"에
         //  실패해야 하므로, 다른 given() 대본은 필요 없습니다.)
@@ -430,6 +434,52 @@ class PaymentServiceTest {
 
         // [핵심] "API가 실패했으니, DB 롤백(재고 복구) 로직은 '절대' 호출되면 안 됨."
         verify(paymentProcessor, never()).processPaymentCancelDB(any(Order.class), any(Payment.class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("시나리오: DB에 주문이 없어도 Redis 캐시에서 조회하여 결제 승인을 진행한다.")
+    void confirmPayment_Success_FromRedisCache() {
+        // --- GIVEN ---
+        Long userId = 1L;
+        String orderNumber = "ORD-REDIS-TEST";
+        Long amount = 20000L;
+        PaymentConfirmRequest dto = new PaymentConfirmRequest("pk_test", orderNumber, amount);
+
+        // 1. DB 조회 실패 설정 (null 반환)
+        // (Service 코드가 .orElse(null)을 쓰므로 Optional.empty()를 리턴하면 null이 됨)
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.empty());
+
+        // 2. Redis 캐시 조회 성공 설정
+        // (PendingOrder DTO 생성 -> Entity 변환 로직 검증)
+        PendingOrder cachedOrder = new PendingOrder(
+                userId, orderNumber, amount, List.of(),
+                "테스터", "010-1234-5678", "서울", "문앞"
+        );
+        given(redisStockService.getCachedOrder(orderNumber)).willReturn(cachedOrder);
+
+        // 3. Toss Adapter 성공 설정
+        Map<String, Object> tossResponse = Map.of("status", "DONE", "paymentKey", "pk_test");
+        given(tossPaymentsAdapter.confirmPaymentToToss(dto)).willReturn(tossResponse);
+
+        // 4. Processor 호출 설정
+        doNothing().when(paymentProcessor).processPaymentSuccessDB(any(Order.class), any(Map.class), eq(userId));
+
+
+        // --- WHEN ---
+        PaymentConfirmResponse response = paymentService.confirmPayment(dto, userId);
+
+
+        // --- THEN ---
+        assertThat(response).isNotNull();
+
+        // 1. DB 조회는 했으나 실패했음
+        verify(orderRepository, times(1)).findByOrderNumberWithItems(orderNumber);
+
+        // 2. [핵심] Redis 조회를 수행했음
+        verify(redisStockService, times(1)).getCachedOrder(orderNumber);
+
+        // 3. 정상적으로 결제 승인까지 이어짐
+        verify(paymentProcessor, times(1)).processPaymentSuccessDB(any(Order.class), eq(tossResponse), eq(userId));
     }
 
 }

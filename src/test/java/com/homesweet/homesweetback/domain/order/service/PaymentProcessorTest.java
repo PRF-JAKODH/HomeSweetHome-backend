@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.order.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingPayment;
 import com.homesweet.homesweetback.domain.order.entity.*;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
@@ -29,14 +30,11 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentProcessorTest {
 
-    // [핵심] PaymentProcessor가 사용하는 의존성들만 @Mock으로 선언
     @Mock
     private OrderRepository orderRepository;
     @Mock
@@ -48,12 +46,15 @@ class PaymentProcessorTest {
     @Mock
     private ObjectMapper objectMapper;
 
-    // [핵심] 테스트 대상: PaymentProcessor
+    // 👇 [추가] Redis 서비스 Mock
+    @Mock
+    private RedisStockService redisStockService;
+
     @InjectMocks
     private PaymentProcessor paymentProcessor;
 
     @Test
-    @DisplayName("시나리오 4: processPaymentSuccessDB가 Payment 저장, Order 상태변경, Cart 삭제를 수행한다.")
+    @DisplayName("시나리오 4: processPaymentSuccessDB가 DB 저장 대신 Redis에 결제 정보를 Push한다.")
     void processPaymentSuccessDB_Success() {
         // --- GIVEN ---
         Long userId = 1L;
@@ -75,54 +76,55 @@ class PaymentProcessorTest {
 
         Order fakeOrder = Order.builder()
                 .id(1L)
+                .orderNumber("ORD-TEST-123") // OrderNumber 필수
                 .user(fakeUser)
                 .orderStatus(OrderStatus.PENDING)
+                .totalAmount(20000L)
                 .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
                 .orderedAt(LocalDateTime.now())
                 .build();
 
-        // [핵심] 리스트 Stubbing (Spy 사용) - for문 실행을 위해 필수
         List<OrderItem> fakeItemsList = List.of(fakeItem);
         Order spiedFakeOrder = Mockito.spy(fakeOrder);
         given(spiedFakeOrder.getOrderItems()).willReturn(fakeItemsList);
 
-        // Repository Stubbing
-        // 1. Payment 저장
-        given(paymentRepository.save(any(Payment.class))).willAnswer(i -> i.getArgument(0));
+        // [Stubbing] Redis Push 동작 (void)
+        doNothing().when(redisStockService).pushPendingPayment(any(PendingPayment.class));
 
-        // 2. Cart 삭제 (void)
+        // Cart 삭제
         doNothing().when(cartRepository).deleteByUserIdAndSkuIdIn(anyLong(), anyList());
-
-        // (참고: 재고 차감 로직은 삭제되었으므로 skuRepository Stubbing 필요 없음)
 
         // --- WHEN ---
         paymentProcessor.processPaymentSuccessDB(spiedFakeOrder, tossResponse, userId);
 
         // --- THEN ---
-        // 1. Payment 저장 호출 확인
-        verify(paymentRepository, times(1)).save(any(Payment.class));
 
-        // 2. Cart 삭제 호출 확인
+        // 1. [핵심] Redis에 결제 정보가 Push 되었는지 검증
+        verify(redisStockService, times(1)).pushPendingPayment(any(PendingPayment.class));
+
+        // 2. [중요] DB 저장은 절대 호출되지 않아야 함 (스케줄러가 할 일)
+        verify(paymentRepository, never()).save(any(Payment.class));
+        verify(orderRepository, never()).save(any(Order.class)); // 상태 변경도 스케줄러가 함
+
+        // 3. Cart 삭제는 정상적으로 호출되어야 함
         verify(cartRepository, times(1)).deleteByUserIdAndSkuIdIn(eq(userId), eq(List.of(skuId)));
-
-        // 3. Order 상태 변경 확인
-        assertThat(spiedFakeOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
-        assertThat(spiedFakeOrder.getDeliveryStatus()).isEqualTo(DeliveryStatus.DELIVERED);
     }
 
     @Test
     @DisplayName("시나리오 B2: processPaymentCancelDB가 재고 복구, Order/Payment 상태 변경을 수행한다.")
     void processPaymentCancelDB_Success() {
+        // (취소 로직은 기존 DB 롤백 방식을 유지한다고 가정하므로 변경 없음)
+        // 단, Lock 메서드 이름 변경(findById -> findByIdWithPessimisticLock) 주의
+
         // --- GIVEN ---
         Long skuId = 100L;
         Long quantity = 2L;
         Map<String, Object> tossResponse = Map.of("status", "CANCELED");
 
-        // 가짜 엔티티 (재고 복구를 위해 stockQuantity 필수)
         SkuEntity fakeSku = SkuEntity.builder()
                 .id(skuId)
                 .product(ProductEntity.builder().build())
-                .stockQuantity(10L) // 👈 초기 재고
+                .stockQuantity(10L)
                 .build();
         OrderItem fakeItem = OrderItem.builder().sku(fakeSku).quantity(quantity).build();
 
@@ -133,19 +135,18 @@ class PaymentProcessorTest {
                 .build();
         Payment fakePayment = Payment.builder().paymentStatus("DONE").build();
 
-        // 리스트 Stubbing
         List<OrderItem> fakeItemsList = List.of(fakeItem);
         Order spiedFakeOrder = Mockito.spy(fakeOrder);
         given(spiedFakeOrder.getOrderItems()).willReturn(fakeItemsList);
 
-        // Repository Stubbing (재고 복구용)
+        // [수정] 락을 사용하는 조회 메서드로 Stubbing
         given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
 
         // --- WHEN ---
         paymentProcessor.processPaymentCancelDB(spiedFakeOrder, fakePayment, tossResponse);
 
         // --- THEN ---
-        // 1. 재고 복구 로직 호출 확인
+        // 1. 재고 복구 로직 호출 확인 (락 조회)
         verify(skuJPARepository, times(1)).findByIdWithPessimisticLock(skuId);
 
         // 2. Order 상태 변경 확인
@@ -154,7 +155,8 @@ class PaymentProcessorTest {
 
         // 3. Payment 상태 변경 확인
         assertThat(fakePayment.getPaymentStatus()).isEqualTo("CANCELED");
+
+        // 4. 변경 사항 저장 확인
+        verify(orderRepository, times(1)).save(spiedFakeOrder);
     }
-
-
 }

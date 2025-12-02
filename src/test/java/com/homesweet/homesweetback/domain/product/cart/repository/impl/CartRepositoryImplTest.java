@@ -307,13 +307,13 @@ class CartRepositoryImplTest {
             Long userId = 10L;
             List<Long> skuIds = List.of(100L, 200L);
 
-            willDoNothing().given(jpaRepository).deleteByUserIdAndSkuIdIn(userId, skuIds);
+            willDoNothing().given(jpaRepository).deleteCartItemNative(userId, skuIds);
 
             // when
             repository.deleteByUserIdAndSkuIdIn(userId, skuIds);
 
             // then
-            verify(jpaRepository).deleteByUserIdAndSkuIdIn(userId, skuIds);
+            verify(jpaRepository).deleteCartItemNative(userId, skuIds);
         }
     }
 }

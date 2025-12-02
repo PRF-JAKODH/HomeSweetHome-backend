@@ -24,7 +24,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class RecentViewServiceImpl implements RecentViewService {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> stringRedisTemplate;
 
     private static final String VIEW_KEY_PREFIX = "recent:view:";
     private static final String PREVIEW_KEY_PREFIX = "product:preview:";
@@ -38,18 +38,18 @@ public class RecentViewServiceImpl implements RecentViewService {
         String key = VIEW_KEY_PREFIX + userId;
         double score = System.currentTimeMillis(); // 최신순 정렬
 
-        redisTemplate.opsForZSet().add(key, productId.toString(), score);
+        stringRedisTemplate.opsForZSet().add(key, productId.toString(), score);
 
-        redisTemplate.opsForZSet().removeRange(key, 0, -(MAX_PRODUCTS + 1));
+        stringRedisTemplate.opsForZSet().removeRange(key, 0, -(MAX_PRODUCTS + 1));
 
-        redisTemplate.expire(key, TTL);
+        stringRedisTemplate.expire(key, TTL);
     }
 
     // 최근 본 상품 캐싱
     @Async("recentSearchTaskExecutor")
     @Override
     public void cacheDetail(Long productId, ProductDetailResponse detail) {
-        redisTemplate.opsForValue().set(
+        stringRedisTemplate.opsForValue().set(
                 PREVIEW_KEY_PREFIX + productId,
                 JsonUtils.toJson(RecentViewPreviewResponse.fromDetail(detail)),
                 TTL
@@ -60,7 +60,7 @@ public class RecentViewServiceImpl implements RecentViewService {
     public List<Long> getRecentViewsIds(Long userId) {
         String key = VIEW_KEY_PREFIX + userId;
 
-        Set<String> result = redisTemplate.opsForZSet()
+        Set<String> result = stringRedisTemplate.opsForZSet()
                 .reverseRange(key, 0, MAX_PRODUCTS - 1);
 
         return result == null
@@ -71,7 +71,7 @@ public class RecentViewServiceImpl implements RecentViewService {
     @Override
     public RecentViewPreviewResponse getCachedPreview(Long productId) {
 
-        String json = redisTemplate.opsForValue()
+        String json = stringRedisTemplate.opsForValue()
                 .get(PREVIEW_KEY_PREFIX + productId);
 
         if (json == null) return null;
@@ -85,10 +85,10 @@ public class RecentViewServiceImpl implements RecentViewService {
         String previewKey = PREVIEW_KEY_PREFIX + productId;
 
         // ZSET에서 제거
-        redisTemplate.opsForZSet().remove(viewKey, productId.toString());
+        stringRedisTemplate.opsForZSet().remove(viewKey, productId.toString());
 
         // Preview 캐시 제거
-        redisTemplate.delete(previewKey);
+        stringRedisTemplate.delete(previewKey);
     }
 
 }

@@ -65,4 +65,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         return findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + orderNumber));
     }
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.orderItems oi JOIN FETCH oi.sku WHERE o.orderNumber = :orderNumber")
+    Optional<Order> findByOrderNumberWithItems(@Param("orderNumber") String orderNumber);
 }
