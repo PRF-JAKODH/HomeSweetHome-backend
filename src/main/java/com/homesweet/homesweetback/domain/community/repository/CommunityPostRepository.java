@@ -1,6 +1,7 @@
 package com.homesweet.homesweetback.domain.community.repository;
 
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -23,7 +24,8 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     // 특정 게시글 조회
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
-    // 페이지네이션 쿼리 메서드
+    // 페이지네이션 쿼리 메서드 / N+1문제 해결위해 EntityGraph 추가
+    @EntityGraph(attributePaths = "author")
     Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
