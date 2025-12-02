@@ -25,7 +25,7 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
     // 페이지네이션 쿼리 메서드 / N+1문제 해결위해 EntityGraph 추가
-    @EntityGraph(attributePaths = "author")
+    @EntityGraph(attributePaths = {"author", "author.grade"})
     Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
