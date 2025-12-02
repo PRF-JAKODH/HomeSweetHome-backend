@@ -89,6 +89,7 @@ log:
 payments:
   toss:
     secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
+    mock: true
 
 management:
   endpoints:

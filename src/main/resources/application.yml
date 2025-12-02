@@ -17,8 +17,8 @@ spring:
       s3:
         bucket: ${AWS_S3_BUCKET}
   batch:
-    job:
-      enabled: true
+#    job:
+#      enabled: true
     jdbc:
       initialize-schema: always
 
@@ -72,3 +72,6 @@ retry:
       # (옵션) 400 Bad Request 같은 건 재시도해도 소용없으니 제외
       ignoreExceptions:
         - org.springframework.web.client.HttpClientErrorException
+payments:
+  toss:
+    mock: true
