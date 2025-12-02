@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl;
+package com.homesweet.homesweetback.domain.settlement.repository.querydsl.testImpl;
 
 import com.homesweet.homesweetback.domain.auth.entity.QUser;
 import com.homesweet.homesweetback.domain.grade.entity.QGrade;

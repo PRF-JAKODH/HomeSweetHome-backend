@@ -13,6 +13,7 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.Validator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class YearlySettlementTasklet implements Tasklet {
     private final SettlementRepository settlementRepository;
     private final SettlementValidator settlementValidator;
     private final SettlementSaver settlementSaver;
+    private final Validator validator;
 
     @Value("#{jobParameters['cutoff']}")
     private String cutoffString;
