@@ -16,33 +16,43 @@ const activeVUs = new Gauge('active_vus');
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const API_BASE = `${BASE_URL}/api/v1/community`;
 
-// Test data configuration
+// ==================== Test Data Configuration ====================
 const MIN_POST_ID = 1;
 const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 1394;
 
-// ==================== ⚡ QUICK TEST (3분) - 현실적인 혼합 워크로드 ====================
-// 🎯 목적: 개발 중 빠른 피드백을 위한 짧은 테스트
-// ⏱️ 총 시간: 3분
+// ==================== ⚡ QUICK TEST (3분) - DAU 30만 기준 빠른 검증 ====================
+// 🎯 목적: 개발 중 빠른 피드백을 위한 짧은 성능 테스트
+// ⏱️ 총 시간: 3분 (본 테스트의 30%)
 //
-// 🎯 핵심 개선사항:
-// 1. ✅ 사용자 페르소나별 시나리오 분리 (조회, 상호작용, 작성)
-// 2. ✅ 모든 작업이 동시에 실행 (현실적인 혼합 워크로드)
-// 3. ✅ Sleep 최소화 및 더 빠른 반복
-// 4. ✅ 실제 사용자 비율 반영
+// 📊 서비스 규모:
+// - DAU: 300,000명
+// - 피크 시간대 동시접속자: ~20,000명
+// - 본 테스트 목표: 2,000 VU (피크의 10%)
+// - Quick 테스트 목표: 500 VU (본 테스트의 25%, 빠른 검증용)
+//
+// 📊 사용자 비율 (본 테스트와 동일한 비율 유지):
+// - Lurker (70%): 350 VU - 조회만
+// - Active User (20%): 100 VU - 조회 + 간단한 상호작용
+// - Interactive (8%): 40 VU - 적극적 상호작용
+// - Creator (2%): 10 VU - 콘텐츠 생성
+// - Total: 500 VU
 //
 // 📌 사용 시나리오:
-//    - 코드 수정 후 즉시 성능 확인
-//    - PR 생성 전 빠른 검증
-//    - 로컬 개발 환경에서 자주 실행
+// - 코드 수정 후 즉시 성능 확인
+// - PR 생성 전 빠른 검증
+// - 로컬/개발 환경에서 자주 실행
 //
 // 🚀 실행 방법:
-//    k6 run k6/community/V2_test_quick.js
+//    k6 run k6/community/v3Quick.js
 //
 export const options = {
     scenarios: {
         // ========================================
-        // 1️⃣ Smoke Test: 기본 기능 검증 (30초)
+        // 1️⃣ Smoke Test: API 기본 기능 검증
         // ========================================
+        // 🎯 목적: 테스트 시작 전 API가 정상 작동하는지 확인
+        // 📊 부하: 최소 (1 VU)
+        // ⏱️ 시간: 30초
         smoke_test: {
             executor: 'constant-vus',
             vus: 1,
@@ -52,14 +62,17 @@ export const options = {
         },
 
         // ========================================
-        // 2️⃣ Lurker Scenario (70% - 조회만)
+        // 2️⃣ Lurker Scenario - 조회만 하는 사용자 (70%)
         // ========================================
+        // 🎯 목적: 대다수 사용자의 브라우징 패턴 (빠른 검증)
+        // 📊 부하: 최대 350 VU (전체의 70%)
+        // ⏱️ 시간: 90초
         lurker_scenario: {
             executor: 'ramping-vus',
             startTime: '30s',
             stages: [
-                { duration: '30s', target: 100 },    // 빠른 증가
-                { duration: '30s', target: 140 },   // 피크
+                { duration: '30s', target: 250 },   // 빠른 증가
+                { duration: '30s', target: 350 },   // 피크
                 { duration: '30s', target: 0 },     // 종료
             ],
             exec: 'lurkerFlow',
@@ -67,14 +80,17 @@ export const options = {
         },
 
         // ========================================
-        // 3️⃣ Active User Scenario (20% - 조회 + 상호작용)
+        // 3️⃣ Active User Scenario - 조회 + 간단한 상호작용 (20%)
         // ========================================
+        // 🎯 목적: 콘텐츠 소비 + 가벼운 참여
+        // 📊 부하: 최대 100 VU (전체의 20%)
+        // ⏱️ 시간: 90초
         active_user_scenario: {
             executor: 'ramping-vus',
             startTime: '30s',
             stages: [
-                { duration: '30s', target: 500 },
-                { duration: '30s', target: 500 },
+                { duration: '30s', target: 70 },
+                { duration: '30s', target: 100 },   // 피크
                 { duration: '30s', target: 0 },
             ],
             exec: 'activeUserFlow',
@@ -82,14 +98,17 @@ export const options = {
         },
 
         // ========================================
-        // 4️⃣ Interactive Scenario (8% - 좋아요/댓글 집중)
+        // 4️⃣ Interactive Scenario - 적극적 상호작용 (8%)
         // ========================================
+        // 🎯 목적: 좋아요 토글, 댓글 작성 등 활발한 상호작용 (동시성 테스트)
+        // 📊 부하: 최대 40 VU (전체의 8%)
+        // ⏱️ 시간: 90초
         interactive_scenario: {
             executor: 'ramping-vus',
             startTime: '30s',
             stages: [
-                { duration: '30s', target: 100 },
-                { duration: '30s', target: 300 },
+                { duration: '30s', target: 30 },
+                { duration: '30s', target: 40 },    // 피크 (동시성 압박)
                 { duration: '30s', target: 0 },
             ],
             exec: 'interactiveFlow',
@@ -97,14 +116,17 @@ export const options = {
         },
 
         // ========================================
-        // 5️⃣ Creator Scenario (2% - 게시글/댓글 작성)
+        // 5️⃣ Creator Scenario - 콘텐츠 생성 (2%)
         // ========================================
+        // 🎯 목적: 게시글/댓글 작성 등 쓰기 작업
+        // 📊 부하: 최대 10 VU (전체의 2%)
+        // ⏱️ 시간: 90초
         creator_scenario: {
             executor: 'ramping-vus',
             startTime: '30s',
             stages: [
-                { duration: '30s', target: 200 },
-                { duration: '30s', target: 200 },
+                { duration: '30s', target: 7 },
+                { duration: '30s', target: 10 },    // 피크
                 { duration: '30s', target: 0 },
             ],
             exec: 'creatorFlow',
@@ -112,14 +134,17 @@ export const options = {
         },
 
         // ========================================
-        // 6️⃣ Spike Scenario (트래픽 급증)
+        // 6️⃣ Spike Scenario - 바이럴 트래픽 급증
         // ========================================
+        // 🎯 목적: 갑작스런 트래픽 폭증 시뮬레이션
+        // 📊 부하: 추가 100 VU (피크 대비 +20% 급증)
+        // ⏱️ 시간: 60초 (중간에 짧게 발생)
         spike_scenario: {
             executor: 'ramping-vus',
-            startTime: '1m30s',  // 중간에 갑자기 발생
+            startTime: '1m30s',                     // 중간에 갑자기 발생
             stages: [
-                { duration: '10s', target: 150 },   // 급증!
-                { duration: '30s', target: 200 },   // 유지
+                { duration: '10s', target: 100 },   // 급증!
+                { duration: '30s', target: 100 },   // 유지
                 { duration: '20s', target: 0 },     // 급감
             ],
             exec: 'spikeFlow',
@@ -128,17 +153,35 @@ export const options = {
     },
 
     // ========================================
-    // 📊 성능 목표 (완화된 기준)
+    // 📊 성능 목표 (완화된 기준 - Quick Test)
     // ========================================
+    // ⚠️ Quick 테스트는 빠른 피드백을 위해 기준이 완화됨
+    //
+    // 💡 본 테스트 vs Quick 테스트:
+    //    - 본 테스트: p(95)<1500ms, 실패율 5%
+    //    - Quick 테스트: p(95)<2000ms, 실패율 10% (더 관대한 기준)
+    //
     thresholds: {
-        http_req_duration: ['p(95)<2000'],     // 2초 이내
-        http_req_failed: ['rate<0.1'],         // 실패율 10% 이하 (빠른 테스트라 완화)
-        error_rate: ['rate<0.1'],
-        concurrency_errors: ['count<100'],     // 동시성 에러 100건 이하
+        // ✅ HTTP 전체 응답 시간
+        http_req_duration: ['p(95)<2000'],     // 95% 요청: 2초 이내 (본 테스트보다 완화)
+
+        // ✅ HTTP 실패율
+        http_req_failed: ['rate<0.1'],         // 10% 이하 (빠른 테스트라 완화)
+
+        // ✅ 커스텀 에러율
+        error_rate: ['rate<0.1'],              // 10% 이하
+
+        // ✅ 동시성 에러
+        concurrency_errors: ['count<100'],     // 100건 이하 (본 테스트: 50건)
     },
 };
 
 // ==================== Setup & Teardown ====================
+/**
+ * 🔧 Setup: 테스트 시작 전 초기화
+ * - API 헬스 체크로 서버가 정상 작동하는지 확인
+ * - 실패 시 테스트 중단
+ */
 export function setup() {
     console.log('⚡ Quick Test setup: Verifying API health');
     const res = http.get(`${API_BASE}/posts?page=0&size=1`);
@@ -153,19 +196,43 @@ export function setup() {
     };
 }
 
+/**
+ * 🔧 Teardown: 테스트 종료 후 정리
+ */
 export function teardown(data) {
     console.log(`⚡ Quick Test completed. Started at: ${data.startTime}`);
 }
 
 // ==================== Helper Functions ====================
+/**
+ * 📝 JSON 요청용 헤더 생성
+ */
 function getHeaders() {
     return { 'Content-Type': 'application/json' };
 }
 
+/**
+ * 📝 Multipart/form-data 요청용 헤더 생성
+ * (k6가 자동으로 boundary 설정)
+ */
 function getMultipartHeaders() {
     return {};
 }
 
+/**
+ * ✅ HTTP 응답 검증 및 메트릭 기록
+ *
+ * @param {Object} res - HTTP 응답 객체
+ * @param {Object} options - 검증 옵션
+ *   - tag: 로그용 태그
+ *   - expectStatus: 예상 상태 코드 (기본: 200)
+ *   - allowNotFound: 404도 성공으로 간주 (기본: false)
+ *
+ * 동작:
+ * 1. 응답 시간 체크 (3초 이내)
+ * 2. 상태 코드 검증
+ * 3. 5xx 에러 발생 시 메트릭 기록 및 동시성 이슈 감지
+ */
 function checkResponse(res, options = {}) {
     const { tag = 'unknown', expectStatus = 200, allowNotFound = false } = options;
 
@@ -181,10 +248,12 @@ function checkResponse(res, options = {}) {
 
     const success = check(res, checks);
 
+    // 5xx 에러만 실제 에러로 카운팅
     if (res.status >= 500) {
         errorRate.add(1);
         dbErrors.add(1);
 
+        // 동시성 이슈 감지
         if (res.body) {
             const body = String(res.body);
             if (body.includes('Deadlock') || body.includes('Lock') || body.includes('concurrent')) {
@@ -199,14 +268,30 @@ function checkResponse(res, options = {}) {
     return success;
 }
 
+/**
+ * 🎲 랜덤 게시글 ID 선택 (파레토 법칙 적용)
+ *
+ * 💡 80% 확률로 인기 게시글(1-200번), 20% 확률로 전체 게시글
+ *
+ * @returns {number} 게시글 ID
+ */
 function getRandomPostId() {
     if (Math.random() < 0.8) {
+        // Hot posts: 전체 요청의 80%
         return randomIntBetween(MIN_POST_ID, Math.min(200, MAX_POST_ID));
     } else {
+        // All posts: 나머지 20%
         return randomIntBetween(MIN_POST_ID, MAX_POST_ID);
     }
 }
 
+/**
+ * ✍️ 게시글 작성 API 호출
+ *
+ * API: POST /api/v1/community/posts
+ *
+ * @returns {number|null} 생성된 게시글 ID (실패 시 null)
+ */
 function createPost() {
     const formData = {
         request: http.file(JSON.stringify({
@@ -230,6 +315,14 @@ function createPost() {
     return null;
 }
 
+/**
+ * 💬 댓글 작성 API 호출
+ *
+ * API: POST /api/v1/community/posts/{postId}/comments
+ *
+ * @param {number} postId - 댓글을 작성할 게시글 ID
+ * @returns {boolean} 성공 여부
+ */
 function createComment(postId) {
     const payload = JSON.stringify({
         content: `Quick test comment ${Date.now()}`
@@ -247,11 +340,11 @@ function createComment(postId) {
 }
 
 /**
- * 📌 좋아요 토글 헬퍼 함수
+ * ❤️ 좋아요 토글 헬퍼 함수
  *
- * 💡 현실적인 사용자 행동 반영:
- *    - 70% 확률: 한번만 좋아요 (좋아요 추가)
- *    - 30% 확률: 2-3번 토글 (좋아요 추가 → 취소 → 추가)
+ * API: POST /api/v1/community/posts/{postId}/likes
+ *
+ * 💡 70% 확률로 1회, 30% 확률로 2-3회 토글 (현실적인 사용자 행동)
  *
  * @param {number} postId - 게시글 ID
  * @param {object} options - { tag, allowMultiple }
@@ -259,7 +352,7 @@ function createComment(postId) {
 function toggleLike(postId, options = {}) {
     const { tag = 'like', allowMultiple = true } = options;
 
-    // 70% 확률로 한번만, 30% 확률로 2-3번 토글
+    // 70% 확률로 1회, 30% 확률로 2-3회 토글
     const shouldToggleMultiple = allowMultiple && Math.random() < 0.3;
     const toggleCount = shouldToggleMultiple ? randomIntBetween(2, 3) : 1;
 
@@ -270,7 +363,7 @@ function toggleLike(postId, options = {}) {
         });
         checkResponse(res, { tag: 'Like' });
 
-        // 여러번 토글할 때 사이에 짧은 대기
+        // 여러 번 토글할 때 사이에 짧은 대기 (0.1~0.3초)
         if (toggleCount > 1 && i < toggleCount - 1) {
             sleep(randomIntBetween(0.1, 0.3));
         }
