@@ -1,7 +1,7 @@
 package com.homesweet.homesweetback.domain.search.community.sync.service;
 
 import com.homesweet.homesweetback.common.exception.ErrorCode;
-import com.homesweet.homesweetback.domain.community.dto.exception.CommunityException;
+import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import com.homesweet.homesweetback.domain.search.community.repository.document.CommunityPostDocument;
