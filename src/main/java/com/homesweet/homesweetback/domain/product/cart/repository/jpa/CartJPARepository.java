@@ -33,7 +33,7 @@ public interface CartJPARepository extends JpaRepository<CartEntity, Long>, Cust
 
     int countByUser_Id(Long userId);
 
-    @Modifying
-    @Query("DELETE FROM CartEntity c WHERE c.user.id = :userId AND c.sku.id IN :skuIds")
-    void deleteByUserIdAndSkuIdIn(@Param("userId") Long userId, @Param("skuIds") List<Long> skuIds); // 장바구니에서 구매가 완료된 SKU 목록 삭제 - 안채호
+    @Modifying(clearAutomatically = true)
+    @Query(value = "DELETE FROM carts WHERE user_id = :userId AND sku_id IN (:skuIds)", nativeQuery = true)
+    void deleteCartItemNative(@Param("userId") Long userId, @Param("skuIds") List<Long> skuIds); // 장바구니에서 구매가 완료된 SKU 목록 삭제 - 안채호
 }

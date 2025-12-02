@@ -27,7 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecentSearchServiceImpl implements RecentSearchService {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> stringRedisTemplate;
 
     private static final String KEY_PREFIX = "recent:search:";
     private static final int MAX_KEYWORDS = 10;
@@ -41,35 +41,35 @@ public class RecentSearchServiceImpl implements RecentSearchService {
         String key = getKey(userId);
 
         // 1; 기존 동일 키워드 제거 → 중복 제거
-        redisTemplate.opsForList().remove(key, 0, keyword);
+        stringRedisTemplate.opsForList().remove(key, 0, keyword);
 
         // 2. 맨 앞에 삽입
-        redisTemplate.opsForList().leftPush(key, keyword);
+        stringRedisTemplate.opsForList().leftPush(key, keyword);
 
         // 3. MAX_KEYWORDS 개수 유지
-        redisTemplate.opsForList().trim(key, 0, MAX_KEYWORDS - 1);
+        stringRedisTemplate.opsForList().trim(key, 0, MAX_KEYWORDS - 1);
 
-        redisTemplate.expire(key, TTL);
+        stringRedisTemplate.expire(key, TTL);
 
     }
 
     // 최근 검색어 조회
     @Override
     public List<String> getRecent(Long userId) {
-        return redisTemplate.opsForList()
+        return stringRedisTemplate.opsForList()
                 .range(getKey(userId), 0, MAX_KEYWORDS - 1);
     }
 
     // 최근 검색어 단일 제거
     @Override
     public void deleteKeyword(Long userId, String keyword) {
-        redisTemplate.opsForList().remove(getKey(userId), 0, keyword);
+        stringRedisTemplate.opsForList().remove(getKey(userId), 0, keyword);
     }
 
     // 최근 검색어 전체 제거
     @Override
     public void clearAll(Long userId) {
-        redisTemplate.delete(getKey(userId));
+        stringRedisTemplate.delete(getKey(userId));
     }
 
     private String getKey(Long userId) {

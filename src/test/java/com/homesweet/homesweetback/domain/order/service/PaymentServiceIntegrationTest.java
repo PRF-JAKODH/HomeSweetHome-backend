@@ -4,10 +4,12 @@ package com.homesweet.homesweetback.domain.order.service;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.order.adapter.TossPaymentsAdapter;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingPayment;
 import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
 import com.homesweet.homesweetback.domain.order.entity.*;
+import com.homesweet.homesweetback.domain.order.repository.OrderItemRepository;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 import com.homesweet.homesweetback.domain.product.cart.controller.response.CartResponse;
@@ -23,12 +25,13 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.jpa
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2Provider;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean; // 👈 2. [추가] @MockBean import
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,17 +43,22 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given; // 👈 3. [추가] given import
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@Transactional // 테스트 후 DB 롤백
 @ActiveProfiles("test")
 class PaymentServiceIntegrationTest {
 
     // --- 4. [수정] "진짜" Service와 Repository 주입 ---
     @Autowired
+    private OrderItemRepository orderItemRepository;
+    @Autowired
     private PaymentService paymentService;
-
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
@@ -65,16 +73,33 @@ class PaymentServiceIntegrationTest {
     private ProductCategoryJPARepository productCategoryJPARepository;
     @Autowired
     private ProductJPARepository productJPARepository;
+    @Autowired
+    EntityManager entityManager; // 테스트 클래스에 주입 필요
 
     // --- 5. [핵심] "가짜" Adapter Bean 주입 ---
-    @MockBean // 👈 @Mock이 아닌 @MockBean
+    @MockitoBean // 👈 @Mock이 아닌 @MockBean
     private TossPaymentsAdapter tossPaymentsAdapter;
+
+    @MockitoBean
+    private RedisStockService redisStockService;
 
     // (테스트 간 데이터를 공유할 필드)
     private User savedUser;
     private SkuEntity savedSku;
     private Order savedPendingOrder; // 👈 결제할 'PENDING' 주문
     private final long INITIAL_STOCK = 10L;
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        paymentRepository.deleteAll();
+        cartRepository.deleteAll();
+        orderItemRepository.deleteAll();
+        orderRepository.deleteAll();
+        skuJPARepository.deleteAll();
+        productJPARepository.deleteAll();
+        productCategoryJPARepository.deleteAll();
+        userRepository.deleteAll();
+    }
 
     @BeforeEach
     void setUp() {
@@ -122,35 +147,42 @@ class PaymentServiceIntegrationTest {
                 .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
                 .orderedAt(LocalDateTime.now())
                 .build();
+        savedPendingOrder = orderRepository.save(order); // 1. Order 먼저 저장
         // (OrderService가 재고를 차감했다고 가정. 여기서는 재고 차감 로직은 테스트하지 않음)
 
         OrderItem orderItem = OrderItem.builder()
-                .sku(savedSku) // 👈 @BeforeEach에서 저장한 Sku
+                .sku(savedSku)
                 .quantity(1L)
                 .price(10000L) // (OrderService가 계산한 가격)
+                .order(savedPendingOrder) // 👈 2. 저장된 Order를 넣어줌
                 .build();
-        order.addOrderItem(orderItem); // 👈 [핵심] Order에 OrderItem 추가
+        orderItemRepository.save(orderItem);
 
-        savedPendingOrder = orderRepository.save(order);
+        savedPendingOrder = orderRepository.findByIdWithDetails(savedPendingOrder.getId()).get();
+
+        System.err.println("저장된 주문의 SKU ID: " + savedPendingOrder.getOrderItems().get(0).getSku().getId());
 
         // [핵심] PaymentService가 삭제할 '장바구니' 데이터를 미리 저장
         Cart cartItem = Cart.create(savedUser.getId(), savedSku.getId(), 1); // 👈 Sku 1개
         cartRepository.save(cartItem);
     }
     @Test
-    @DisplayName("confirmPayment 통합 테스트: API 성공 시 DB 작업(Payment 저장, Cart 삭제, Order 상태 변경)이 성공한다.")
+    @DisplayName("confirmPayment 통합 테스트: API 성공 시 Redis에 결제 정보를 Push하고 장바구니를 비운다.")
     void confirmPayment_IntegrationTest_Success() {
 
-        // --- GIVEN (준비) ---
-        // 1. '입력값' DTO 생성 (@BeforeEach의 savedPendingOrder 정보와 일치)
+        System.err.println("저장된 주문의 아이템 개수: " + savedPendingOrder.getOrderItems().size());
+        if (!savedPendingOrder.getOrderItems().isEmpty()) {
+            System.err.println("첫 번째 아이템 SKU ID: " + savedPendingOrder.getOrderItems().get(0).getSku().getId());
+        }
+
+        // --- GIVEN ---
         PaymentConfirmRequest dto = new PaymentConfirmRequest(
                 "pk_test_payment_123",
-                savedPendingOrder.getOrderNumber(), // 👈 @BeforeEach에서 저장한 주문번호
-                savedPendingOrder.getTotalAmount()  // 👈 @BeforeEach에서 저장한 총액
+                savedPendingOrder.getOrderNumber(),
+                savedPendingOrder.getTotalAmount()
         );
         Long userId = savedUser.getId();
 
-        // 2. '가짜' Toss 응답 데이터 생성
         Map<String, Object> tossResponse = Map.of(
                 "paymentKey", "pk_test_payment_123",
                 "method", "카드",
@@ -158,41 +190,35 @@ class PaymentServiceIntegrationTest {
                 "paidAt", "2025-11-17T10:00:00"
         );
 
-        // 3. [핵심] @MockBean으로 등록된 '가짜' 어댑터의 행동 정의
-        // "tossPaymentsAdapter.confirmPaymentToToss(dto)가 호출되면,
-        //  (실제 API 호출 대신) '가짜 성공 응답'을 반환해라."
+        // [Stubbing] Toss 성공
         given(tossPaymentsAdapter.confirmPaymentToToss(dto)).willReturn(tossResponse);
 
+        // [Stubbing] Redis 동작 (void)
+        doNothing().when(redisStockService).pushPendingPayment(any(PendingPayment.class));
+        // (DB에 없을 때를 대비한 캐시 조회도 일단 Stubbing 해두면 안전함)
+        given(redisStockService.getCachedOrder(anyString())).willReturn(null);
 
-        // --- WHEN (실행) ---
-        // [핵심] "진짜" PaymentService의 "진짜" confirmPayment 메서드를 호출
+
+        // --- WHEN ---
         PaymentConfirmResponse response = paymentService.confirmPayment(dto, userId);
 
 
-        // --- THEN (검증) ---
-        // 1. [DTO 검증] 반환된 DTO의 상태가 'COMPLETED'인지?
-        assertThat(response.orderId()).isEqualTo(savedPendingOrder.getId());
-        assertThat(response.status()).isEqualTo(OrderStatus.COMPLETED.name());
+        // --- THEN ---
+        // 1. [핵심] Redis 서비스가 호출되었는지 검증 (DB 저장 대신)
+        verify(redisStockService, times(1)).pushPendingPayment(any(PendingPayment.class));
 
-        // 2. [DB 검증 1: Order] '진짜' H2 DB를 조회
-        Order updatedOrder = orderRepository.findById(savedPendingOrder.getId()).get();
-        // [핵심] Order 상태가 PENDING에서 COMPLETED로 변경되었는지?
-        assertThat(updatedOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        List<CartResponse> remainingItems = cartRepository.findNextCartItems(userId, null, 100);
+        if (!remainingItems.isEmpty()) {
+            Long remainingSkuId = remainingItems.get(0).skuId(); // (record니까 .skuId())
+            System.err.println(">>>>>>>> 남은 장바구니 SKU ID: " + remainingSkuId);
+            System.err.println(">>>>>>>> 기대했던(주문한) SKU ID: " + savedSku.getId());
 
-        // 3. [DB 검증 2: Payment] '진짜' H2 DB를 조회
-        Payment savedPayment = paymentRepository.findByOrder(updatedOrder)
-                .orElseThrow(() -> new AssertionError("Payment가 DB에 저장되지 않았습니다."));
+            // 만약 두 ID가 다르다면, Order에 들어간 Sku ID가 잘못된 것입니다.
+        }
 
-        // [핵심] Payment가 tossResponse 내용으로 저장되었는지?
-        assertThat(savedPayment.getPgTransactionId()).isEqualTo("pk_test_payment_123");
-        assertThat(savedPayment.getPaymentStatus()).isEqualTo("DONE");
-        assertThat(savedPayment.getAmount()).isEqualTo(savedPendingOrder.getTotalAmount());
-
-        // 4. [DB 검증 3: Cart (Side Effect)] '진짜' H2 DB를 조회
-        List<CartResponse> cartItems = cartRepository.findNextCartItems(userId, null, 10);
-
-        // [핵심] 장바구니가 비워졌는지?
-        assertThat(cartItems).isEmpty();
+        // 2. [DB 검증: Cart] 장바구니는 여기서 바로 지워지므로 검증 가능
+        long cartCount = cartRepository.countByUserId(savedUser.getId()); // (Repository 메서드로 확인)
+        assertThat(cartCount).isEqualTo(0); // 비워져야 함
     }
 
     @Test

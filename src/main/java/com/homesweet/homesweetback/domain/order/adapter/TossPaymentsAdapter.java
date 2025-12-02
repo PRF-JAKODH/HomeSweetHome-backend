@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmReques
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,6 +24,7 @@ import java.util.Map;
 @Slf4j
 @Component // @Service와 동일하게 Bean으로 등록되지만, '어댑터'임을 명시
 @RequiredArgsConstructor
+@Profile("Prod")
 public class TossPaymentsAdapter {
     // 토스 목킹
     @Value("${payments.toss.mock:true}")
@@ -47,8 +49,8 @@ public class TossPaymentsAdapter {
     @CircuitBreaker(name = "toss-payments", fallbackMethod = "fallbackConfirmPayment") // 서킷 브레이커 적용
     public Map<String, Object> confirmPaymentToToss(PaymentConfirmRequest dto) {
 //        TODO: 부하테스트 할 때 목킹서버를 따로 만들지 않는 경우, 스레드에 시간초를
-//        Thread.sleep(2000);
-//        return null;
+//        try { Thread.sleep(2000); } catch (InterruptedException e) {}
+
 
         // 1) mock 활성화 시 실제 Toss API 호출 절대 X
         if (tossMock) {

@@ -1,5 +1,12 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 500
+      min-spare: 50
+    accept-count: 2000 # OS 레벨 대기열 크기
+    max-connections: 10000 #
+    connection-timeout: 20000
 
 spring:
   application:
@@ -11,6 +18,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: user
     password: password
+    hikari:
+      maximum-pool-size: 150
 
   jpa:
     hibernate:
@@ -18,9 +27,10 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         highlight_sql: true
         use_sql_comments: true
+        default_batch_fetch_size: 30
   elasticsearch:
     uris: http://localhost:9200
   security:
