@@ -3,6 +3,7 @@ package com.homesweet.homesweetback.domain.order.service;
 import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
 import com.homesweet.homesweetback.domain.order.dto.request.CreateOrderRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.OrderDetailResponse;
 import com.homesweet.homesweetback.domain.order.dto.response.OrderReadyResponse;
@@ -55,6 +56,9 @@ class OrderServiceTest{
     @Mock
     private ProductJPARepository productJPARepository;
 
+    @Mock
+    private RedisStockService redisStockService;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -70,7 +74,14 @@ class OrderServiceTest{
         long expectedTotalAmount = (expectedDiscountedPrice * quantity) + expectedShippingPrice;
 
         CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, quantity);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest));
+
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest),
+                "홍길동",         // recipientName
+                "010-1234-5678",  // recipientPhone
+                "서울시 강남구",    // shippingAddress
+                "문 앞에 놔주세요"   // shippingRequest
+        );
 
         User fakeUser = User.builder()
                 .id(userId)
@@ -93,9 +104,11 @@ class OrderServiceTest{
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
-        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
-        given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
+
+        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
+        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
+        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
 
         // WHEN
         OrderReadyResponse response = orderService.createOrder(dto, userId);
@@ -107,10 +120,9 @@ class OrderServiceTest{
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
         //행위 검증(가짜 Repository 올바르게 호출했는지 검증)
-        verify(orderRepository, times(1)).save(any(Order.class));
-        verify(userRepository, times(1)).findById(userId);
-        verify(skuJPARepository, times(1)).findByIdWithPessimisticLock(skuId);
-        verify(paymentRepository, never()).findByOrder(any(Order.class));
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
+        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
     }
 
     @Test
@@ -129,7 +141,14 @@ class OrderServiceTest{
 
         CreateOrderRequest.OrderItemRequest itemRequest1 = new CreateOrderRequest.OrderItemRequest(skuId_S, 1);
         CreateOrderRequest.OrderItemRequest itemRequest2 = new CreateOrderRequest.OrderItemRequest(skuId_M, 1);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest1, itemRequest2));
+
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest1, itemRequest2),
+                "홍길동",         // recipientName
+                "010-1234-5678",  // recipientPhone
+                "서울시 강남구",    // shippingAddress
+                "문 앞에 놔주세요"   // shippingRequest
+        );
 
         User fakeUser = User.builder().id(userId).build();
 
@@ -156,10 +175,12 @@ class OrderServiceTest{
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId_S)).willReturn(Optional.of(fakeSku_S));
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId_M)).willReturn(Optional.of(fakeSku_M));
-        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
-        given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(skuJPARepository.findById(skuId_S)).willReturn(Optional.of(fakeSku_S));
+        given(skuJPARepository.findById(skuId_M)).willReturn(Optional.of(fakeSku_M));
+
+        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
+        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
+        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
 
         // WHEN
         OrderReadyResponse response = orderService.createOrder(dto, userId);
@@ -171,8 +192,10 @@ class OrderServiceTest{
 
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
-        verify(skuJPARepository, times(2)).findByIdWithPessimisticLock(anyLong());
-        verify(orderRepository, times(1)).save(any(Order.class));
+        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
+        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
+        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(orderRepository, never()).save(any(Order.class));
     }
 
     @Test
@@ -203,7 +226,14 @@ class OrderServiceTest{
         // 2. '입력값' DTO 생성 (항목 2개)
         CreateOrderRequest.OrderItemRequest itemRequest1 = new CreateOrderRequest.OrderItemRequest(skuId_A, 1);
         CreateOrderRequest.OrderItemRequest itemRequest2 = new CreateOrderRequest.OrderItemRequest(skuId_B, 1);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest1, itemRequest2));
+
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest1, itemRequest2),
+                "홍길동",         // recipientName
+                "010-1234-5678",  // recipientPhone
+                "서울시 강남구",    // shippingAddress
+                "문 앞에 놔주세요"   // shippingRequest
+        );
 
         // 3. '가짜 엔티티' 생성
         User fakeUser = User.builder().id(userId).build();
@@ -221,7 +251,7 @@ class OrderServiceTest{
                 .id(skuId_A)
                 .priceAdjustment(0)
                 .stockQuantity(100L)
-                .product(fakeProduct_A) // 👈 상품 A 연결
+                .product(fakeProduct_A)
                 .build();
 
         ProductEntity fakeProduct_B = ProductEntity.builder()
@@ -236,19 +266,19 @@ class OrderServiceTest{
                 .id(skuId_B)
                 .priceAdjustment(0)
                 .stockQuantity(100L)
-                .product(fakeProduct_B) // 👈 상품 B 연결
+                .product(fakeProduct_B)
                 .build();
 
         // 4. 'Mock' Repository의 행동 정의 (Stubbing)
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
         // [핵심] 2개의 SKU 조회에 각각 다른 상품/SKU를 반환
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId_A)).willReturn(Optional.of(fakeSku_A));
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId_B)).willReturn(Optional.of(fakeSku_B));
-        given(productJPARepository.findByIdWithPessimisticLock(productId_A)).willReturn(Optional.of(fakeProduct_A));
-        given(productJPARepository.findByIdWithPessimisticLock(productId_B)).willReturn(Optional.of(fakeProduct_B));
-        given(orderRepository.save(any(Order.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(skuJPARepository.findById(skuId_A)).willReturn(Optional.of(fakeSku_A));
+        given(skuJPARepository.findById(skuId_B)).willReturn(Optional.of(fakeSku_B));
+
+        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong());
+        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
+        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
 
 
         // --- WHEN (실행) ---
@@ -266,8 +296,10 @@ class OrderServiceTest{
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
         // 2. '행위' 검증
-        verify(skuJPARepository, times(2)).findByIdWithPessimisticLock(anyLong());
-        verify(orderRepository, times(1)).save(any(Order.class));
+        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
+        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
     }
 
     @Test
@@ -281,7 +313,13 @@ class OrderServiceTest{
 
         // 2. '입력값' DTO 생성
         CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(nonExistingSkuId, 1);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest));
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest),
+                "테스트수령인",
+                "010-0000-0000",
+                "테스트주소",
+                "요청사항"
+        );
 
         // 3. '가짜 엔티티' 생성 (User는 필요함)
         User fakeUser = User.builder().id(userId).build();
@@ -292,8 +330,7 @@ class OrderServiceTest{
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
         // [핵심] skuJPARepository는 '빈 Optional'을 반환하도록 설정
-        given(skuJPARepository.findByIdWithPessimisticLock(nonExistingSkuId)).willReturn(Optional.empty());
-
+        given(skuJPARepository.findById(nonExistingSkuId)).willReturn(Optional.empty());
 
         // --- WHEN (실행) & THEN (결과) ---
         // [핵심] "orderService.createOrder()를 실행할 때,
@@ -311,6 +348,8 @@ class OrderServiceTest{
         // 3. (가장 중요) '행위' 검증
         // [핵심] 예외가 발생했으므로, 'save'는 절대(never) 호출되면 안 됨.
         verify(orderRepository, never()).save(any(Order.class));
+        verify(redisStockService, never()).pushPendingOrder(any(PendingOrder.class));
+        verify(redisStockService, never()).cacheOrder(any(PendingOrder.class));
     }
 
     @Test
@@ -324,7 +363,13 @@ class OrderServiceTest{
 
         // 2. '입력값' DTO 생성
         CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, 1);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest));
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest),
+                "테스트수령인",
+                "010-0000-0000",
+                "테스트주소",
+                "요청사항"
+        );
 
         // 3. '가짜 엔티티' 생성 (필요 없음)
 
@@ -352,6 +397,8 @@ class OrderServiceTest{
         //      'sku' 조회나 'order' 저장은 '절대' 호출되면 안 됨.
         verify(skuJPARepository, never()).findByIdWithPessimisticLock(anyLong());
         verify(orderRepository, never()).save(any(Order.class));
+        verify(redisStockService, never()).pushPendingOrder(any(PendingOrder.class));
+        verify(redisStockService, never()).cacheOrder(any(PendingOrder.class));
     }
 
     @Test
@@ -483,7 +530,13 @@ class OrderServiceTest{
 
         // DTO 생성
         CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, 1);
-        CreateOrderRequest dto = new CreateOrderRequest(List.of(itemRequest));
+        CreateOrderRequest dto = new CreateOrderRequest(
+                List.of(itemRequest),
+                "테스트수령인",
+                "010-0000-0000",
+                "테스트주소",
+                "요청사항"
+        );
 
         // 가짜 엔티티 생성
         User fakeUser = User.builder().id(userId).build();
@@ -502,8 +555,7 @@ class OrderServiceTest{
         // Mock 행동 정의
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
         // (주의: 비관적 락 메서드를 사용하므로 이것을 Mocking 해야 함)
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
-        given(productJPARepository.findByIdWithPessimisticLock(anyLong())).willReturn(Optional.of(fakeProduct));
+        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
 
 
         // --- WHEN & THEN ---

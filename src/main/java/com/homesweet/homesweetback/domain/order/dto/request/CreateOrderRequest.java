@@ -11,7 +11,19 @@ public record CreateOrderRequest(
 
         @Valid //리스트 안의 객체(OrderItemRequst)도 유효성 검사를 하도록 함
         @NotEmpty(message = "주문 상품 목록이 비어있습니다.")//orderItem은 리스트이기 때문에 NotEmpty
-        List<OrderItemRequest> orderItems
+        List<OrderItemRequest> orderItems,
+
+        @NotBlank(message = "수령인 이름은 필수입니다.")
+        String recipientName,
+
+        @NotBlank(message = "연락처는 필수입니다.")
+        String recipientPhone,
+
+        @NotBlank(message = "배송지는 필수입니다.")
+        String shippingAddress,
+
+        String shippingRequest
+
 ){
     public record OrderItemRequest(
             @NotNull(message = "상품 ID가 필요합니다.")

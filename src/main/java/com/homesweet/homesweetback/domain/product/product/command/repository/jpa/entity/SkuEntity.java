@@ -86,6 +86,16 @@ public class SkuEntity {
         }
     }
 
+    // Redis 동기화를 위한 재고 업데이트 메서드
+    public void updateStock(Long newStock) {
+        if (newStock < 0) {
+            // 로그를 남기거나 0으로 보정하는 로직을 넣을 수 있음
+            this.stockQuantity = 0L;
+        } else {
+            this.stockQuantity = newStock;
+        }
+    }
+
     //단가 * 수량 * 상품별(주문하나에 여러 상품이 있으닌깐)
     //단가 * 수량 * 상품별 * 크리스마스 부각세
     public long getFinalPrice() {

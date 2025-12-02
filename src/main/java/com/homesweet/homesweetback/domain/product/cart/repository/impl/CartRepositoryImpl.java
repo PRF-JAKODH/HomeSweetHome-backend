@@ -26,6 +26,7 @@ public class CartRepositoryImpl implements CartRepository {
 
     private final CartJPARepository jpaRepository;
     private final CartMapper mapper;
+    private final CartJPARepository cartJPARepository;
 
     @Override
     public Cart save(Cart cart) {
@@ -86,6 +87,11 @@ public class CartRepositoryImpl implements CartRepository {
 
     @Override
     public void deleteByUserIdAndSkuIdIn(Long userId, List<Long> skuIds) {
-        jpaRepository.deleteByUserIdAndSkuIdIn(userId, skuIds);
+        jpaRepository.deleteCartItemNative(userId, skuIds);
+    }
+
+    @Override
+    public void deleteAll() {
+        cartJPARepository.deleteAll(); // 테스트 드래곤
     }
 }

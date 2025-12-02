@@ -1,5 +1,4 @@
 version: '3.9'
-
 services:
   db:
     image: mysql:8.0
@@ -231,6 +230,7 @@ volumes:
   mysqldata:
   redisdata:
   es_data:
+  grafana-storage:
   influxdb-data:
   grafana-data:
   prometheus-data:

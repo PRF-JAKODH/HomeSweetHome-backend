@@ -2,6 +2,7 @@ package com.homesweet.homesweetback.domain.order.service;
 
 // --- DTO Imports ---
 import com.homesweet.homesweetback.domain.order.adapter.TossPaymentsAdapter;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
 import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
 import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
@@ -15,7 +16,6 @@ import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 
 // --- Exception Imports ---
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
-import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
 import jakarta.persistence.EntityNotFoundException;
 
 // --- Spring & Java Imports ---
@@ -25,6 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+
+import com.homesweet.homesweetback.domain.order.service.RedisStockService;
+
+import com.homesweet.homesweetback.domain.auth.entity.User;
 
 
 @Service
@@ -37,6 +41,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final TossPaymentsAdapter tossPaymentsAdapter;
     private final PaymentProcessor paymentProcessor;
+    private final RedisStockService redisStockService;
 
     /**
      * API 2: 결제 검증 및 완료
@@ -45,13 +50,37 @@ public class PaymentService {
     public PaymentConfirmResponse confirmPayment(PaymentConfirmRequest dto, Long userId) {
 
         // 1. Order ID (PK)로 DB에서 Order 조회
-        Order order = orderRepository.findByOrderNumber(dto.orderId())
-                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
-        log.debug(order.toString());
-        log.debug(order.getOrderStatus().toString());
-        log.debug(order.getTotalAmount().toString());
-        log.debug(dto.amount().toString());
+        Order order = orderRepository.findByOrderNumberWithItems(dto.orderId()).orElse(null);
 
+        //                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
+//        log.debug(order.toString());
+//        log.debug(order.getOrderStatus().toString());
+//        log.debug(order.getTotalAmount().toString());
+//        log.debug(dto.amount().toString());
+
+        // 2. [신규] DB에 없으면 Redis 캐시에서 조회 (Fallback)
+        if (order == null) {
+            PendingOrder cachedOrder = redisStockService.getCachedOrder(dto.orderId());
+
+            if (cachedOrder != null) {
+                // DTO -> Entity 변환 (검증 로직을 위해 임시 객체 생성)
+                // (User, Sku 등은 검증용으로 가짜 객체를 넣거나 ID만 비교해야 함)
+                User tempUser = User.builder().id(cachedOrder.userId()).build();
+                order = Order.builder()
+                        .id(0L) // ID 없음
+                        .user(tempUser)
+                        .orderNumber(cachedOrder.orderNumber())
+                        .totalAmount(cachedOrder.totalAmount())
+                        .orderStatus(OrderStatus.PENDING) // 초기 상태
+                        .build();
+            } else {
+                // 둘 다 없으면 진짜 없는 것
+                throw new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId());
+            }
+        }
+
+        // (로그 출력 위치 이동: order가 null이 아닐 때 찍어야 안전함)
+        log.debug("Order Found: {}, Status: {}", order.getOrderNumber(), order.getOrderStatus());
 
         //TODO: 현재 아키텍쳐 잘 짜셧는데, 도메인에 핏한 기능들이 결제쪽에서 처리하는게 맞을까? v
         order.validateOwner(userId);
@@ -110,7 +139,7 @@ public class PaymentService {
             throw new RuntimeException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
         }
 
-        // 6. (내부 DB 처리) [신규] API 취소가 성공하면, DB 작업용 트랜잭션 메서드 호출
+        // 6. (내부 DB 처리) API 취소가 성공하면, DB 작업용 트랜잭션 메서드 호출
         paymentProcessor.processPaymentCancelDB(order, payment, tossResponse);
     }
 

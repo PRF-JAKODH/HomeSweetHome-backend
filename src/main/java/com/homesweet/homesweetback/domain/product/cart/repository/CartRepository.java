@@ -33,4 +33,6 @@ public interface CartRepository {
     int countByUserId(Long userId);
 
     void deleteByUserIdAndSkuIdIn(Long userId, List<Long> skuIds); // 장바구니 구매 완료 상품 삭제 - 안채호
+
+    void deleteAll(); //테스트 드래곤
 }
