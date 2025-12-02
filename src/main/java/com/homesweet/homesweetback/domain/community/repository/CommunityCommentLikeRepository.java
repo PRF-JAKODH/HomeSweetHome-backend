@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.homesweet.homesweetback.domain.community.entity.*;
 
-import java.util.List;
-
 /**
  * CommunityCommentLike 레포
  *
@@ -24,7 +22,4 @@ public interface CommunityCommentLikeRepository extends JpaRepository<CommunityC
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "INSERT IGNORE INTO community_comment_likes (comment_id, user_id, created_at) VALUES (:commentId, :userId, NOW())", nativeQuery = true)
     int insertCommentLike(@Param("commentId") Long commentId, @Param("userId") Long userId);
-
-    @Query("SELECT pl.user.id FROM CommunityCommentLikeEntity pl WHERE pl.comment.commentId = :postId")
-    List<Long> findAllUserIdsByCommentId(@Param("commentId") Long commentId);
 }
