@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.community.service;
+package com.homesweet.homesweetback.domain.community.scheduler;
 
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
