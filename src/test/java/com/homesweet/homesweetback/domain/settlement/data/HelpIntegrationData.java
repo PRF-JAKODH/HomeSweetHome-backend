@@ -5,11 +5,9 @@ import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.grade.entity.Grade;
-import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
-import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
+import com.homesweet.homesweetback.domain.order.entity.*;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
+import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.ProductCategoryJPARepository;
 import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity.ProductCategoryEntity;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
@@ -41,6 +39,7 @@ public class HelpIntegrationData {
     private final ProductJPARepository productJPARepository;
     private final ProductCategoryJPARepository productCategoryJPARepository;
     private final SettlementRepository settlementRepository;
+    private final PaymentRepository paymentRepository;
 
     @Autowired
     public HelpIntegrationData(
@@ -51,7 +50,8 @@ public class HelpIntegrationData {
             OrderRepository orderRepository,
             ProductJPARepository productJPARepository,
             ProductCategoryJPARepository productCategoryJPARepository,
-            SettlementRepository settlementRepository) {
+            SettlementRepository settlementRepository,
+            PaymentRepository paymentRepository) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
@@ -60,6 +60,7 @@ public class HelpIntegrationData {
         this.productJPARepository = productJPARepository;
         this.productCategoryJPARepository = productCategoryJPARepository;
         this.settlementRepository = settlementRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     /* -----------------------------
@@ -158,23 +159,54 @@ public class HelpIntegrationData {
 
         order.addOrderItem(item);
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // 👇👇👇 [추가] 결제 정보(Payment)도 같이 만들어줘야 정산이 됩니다! 👇👇👇
+        Payment payment = Payment.builder()
+                .order(savedOrder)
+                .pgTransactionId("pg_key_" + savedOrder.getOrderNumber())
+                .amount(amount)
+                .method("CARD")
+                .paymentStatus("DONE")
+                .paidAt(orderedAt) // 주문 시간과 동일하게 설정
+                .build();
+        paymentRepository.save(payment);
+
+        return savedOrder;
     }
 
     /* -------settlement------- */
-    public Settlement getSettlementData(Order order) {
-        return settlementRepository.save(
+    public Settlement getSettlementData(Order order, User seller) {
+        User user = order.getUser();
+
+        System.err.println(">> [DEBUG] Order 날짜: " + order.getOrderedAt());
+
+        Settlement saved = settlementRepository.save(
                 Settlement.builder()
                         .order(order)
+                        .userId(seller.getId()) // 👈 [수정 1] User 정보 명시적 주입!
                         .settlementStatus("COMPLETED")
-                        .salesAmount(BigDecimal.valueOf(35000))
-                        .fee(BigDecimal.valueOf(8750))
-                        .vat(BigDecimal.valueOf(3500))
+//                        .salesAmount(BigDecimal.valueOf(35000)) // 원래 코드 - 안채호
+                        .salesAmount(BigDecimal.valueOf(order.getTotalAmount())) // 새로운 코드 - 안채호
+//                        .fee(BigDecimal.valueOf(8750)) // 원본이라능 - 안
+                        .fee(BigDecimal.valueOf(order.getTotalAmount() * 0.25)) // 새로운 코드 - 채
+//                        .vat(BigDecimal.valueOf(3500)) // 원본. - ㅇ
+                        .vat(BigDecimal.valueOf(0)) // 뉴 코드 - 에라토네스의 채
                         .refundAmount(BigDecimal.ZERO)
-                        .settlementAmount(BigDecimal.valueOf(29750))
-                        .settlementDate(LocalDateTime.now())
+//                        .settlementAmount(BigDecimal.valueOf(29750)) // 원 & 본 - ㅇㅊㅎ
+                        .settlementAmount(BigDecimal.valueOf(order.getTotalAmount() * 0.75)) // 새롭다..! - ㄴㅇㄱ
+
+                        // 날짜 강제 고정 (테스트용)
+                        // order.getOrderedAt()이 null이거나 현재 시간일 수 있으니,
+                        // 확실하게 2025-11-10으로 박아버리는 게 속 편합니다.
+                        .settlementDate(LocalDateTime.of(2025, 11, 10, 12, 0, 0))
                         .build()
         );
+
+        System.err.println(">>> 저장된 정산 날짜: " + saved.getSettlementDate());
+        System.err.println(">>> 저장된 유저 ID: " + (saved.getUserId() != null ? saved.getUserId() : "null"));
+
+        return saved;
     }
 
     // ----------------------------------

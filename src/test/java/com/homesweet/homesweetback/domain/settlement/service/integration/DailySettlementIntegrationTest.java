@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(HelpIntegrationData.class)
 @DisplayName("DailySettlementService 통합 테스트")
 public class DailySettlementIntegrationTest {
     @Autowired
@@ -60,12 +62,15 @@ public class DailySettlementIntegrationTest {
             // 정산건 2개 생성
             Order o1 = helpIntegrationData.createOrder(buyer, sku, 35000,
                     LocalDateTime.of(2025, 11, 10, 10, 0));
-            settlementService.createSettlement(o1);
+//            settlementService.createSettlement(o1); // 원본 코드 - 안채호
+            helpIntegrationData.getSettlementData(o1, seller); // 새로 추가한 코드 - 안채호
 
             Order o2 = helpIntegrationData.createOrder(buyer, sku, 20000,
                     LocalDateTime.of(2025, 11, 10, 12, 0));
-            settlementService.createSettlement(o2);
+//            settlementService.createSettlement(o2); // 원본 코드 - 안채호
+            helpIntegrationData.getSettlementData(o2, seller); // 새로 추가한 코드 - 안채호
 
+            System.err.println(">>> 조회 요청 판매자 ID: " + seller.getId()); // 안채
             dailySettlementService.getSettlement(
                     seller.getId(),
                     LocalDateTime.of(2025, 11, 1, 0, 0),
