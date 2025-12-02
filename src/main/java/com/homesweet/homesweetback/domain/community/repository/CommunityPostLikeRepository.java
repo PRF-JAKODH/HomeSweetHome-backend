@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.homesweet.homesweetback.domain.community.entity.*;
 
+import java.util.List;
+
 /**
  * CommunityPostLike 레포
  *
@@ -23,4 +25,8 @@ public interface CommunityPostLikeRepository extends JpaRepository<CommunityPost
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "INSERT IGNORE INTO community_post_likes (post_id, user_id, created_at) VALUES (:postId, :userId, NOW())", nativeQuery = true)
     int insertPostLike(@Param("postId") Long postId, @Param("userId") Long userId);
+
+    // Redis 초기화용: 좋아요한 사용자 ID 목록 조회
+    @Query("SELECT pl.user.id FROM CommunityPostLikeEntity pl WHERE pl.post.postId = :postId")
+    List<Long> findUserIdsByPostId(@Param("postId") Long postId);
 }
