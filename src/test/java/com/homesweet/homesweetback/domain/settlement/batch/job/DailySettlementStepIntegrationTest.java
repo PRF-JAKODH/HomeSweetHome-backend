@@ -17,27 +17,38 @@ import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
+import com.homesweet.homesweetback.domain.settlement.util.TestAuditingConfig;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.*;
 import org.springframework.batch.test.JobLauncherTestUtils;
+import org.springframework.batch.test.JobRepositoryTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.*;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest(properties = "spring.batch.job.enabled=true")
 @SpringBatchTest
 @ActiveProfiles("test")
-@Import(BatchConfig.class)
+@Import({BatchConfig.class, TestAuditingConfig.class})
+@TestPropertySource(properties = {
+        "logging.level.com.homesweet=DEBUG",
+        "logging.level.org.springframework.batch=DEBUG"
+})
 @DisplayName("일별 집계 step 통합테스트")
 class DailySettlementStepIntegrationTest {
     @Autowired
@@ -61,61 +72,83 @@ class DailySettlementStepIntegrationTest {
     private GradeRepository gradeRepository;
     @Autowired
     private DailySettlementRepository dailySettlementRepository;
+    @Autowired
+    private EntityManager em;
+
+    @Autowired
+    private JobRepositoryTestUtils jobRepositoryTestUtils;
+
     @BeforeEach
     void setUp() {
         jobLauncherTestUtils.setJob(settlementJob);
     }
+
+
+    // 고정 Clock (2025-01-10)
+    private final Clock fixedClock = Clock.fixed(
+            LocalDateTime.of(2025, 1, 10, 0, 0).toInstant(ZoneOffset.UTC),
+            ZoneId.of("UTC")
+    );
+
     @Test
     @DisplayName("dailyStep 실행 시 일별 집계가 된다.")
     void dailyStep() {
-        // 1) Grade & Seller 저장
-        Grade grade = gradeRepository.save(BatchHelperData.createGrade());
-        User seller = userRepository.save(BatchHelperData.createSeller(grade));
+        jobRepositoryTestUtils.removeJobExecutions();
 
-        // 2) Product Category, Product, SKU 저장
-        ProductCategoryEntity category = categoryRepository.save(BatchHelperData.createCategory());
-        ProductEntity product = productRepository.save(BatchHelperData.createProduct(seller, category));
-        SkuEntity sku = skuRepository.save(BatchHelperData.createSku(product));
+        Long userId = 10L;
+        LocalDate cutoffDate = LocalDate.of(2025, 1, 10);
 
-        // 3) Order 생성 및 저장
-        Order order = BatchHelperData.createCompletedOrder(seller, LocalDateTime.now().minusHours(5));
-        order = BatchHelperData.setupFullOrderGraph(order, sku);
-        orderRepository.saveAndFlush(order);
+        // --- 테스트용 Settlement 데이터 삽입 ---
+        Settlement settlement1 = Settlement.builder()
+                .userId(userId)
+                .salesAmount(BigDecimal.valueOf(10000))
+                .fee(BigDecimal.valueOf(500))
+                .vat(BigDecimal.valueOf(1000))
+                .refundAmount(BigDecimal.ZERO)
+                .settlementAmount(BigDecimal.valueOf(8500))
+                .settlementDate(LocalDateTime.of(2025, 1, 10, 10, 0))
+                .build();
 
-        // 4) Step1 : Settlement 생성
-        JobParameters createParams = new JobParametersBuilder()
-                .addString("cutoff", order.getOrderedAt().minusDays(1).toString(),false)
-                .addLong("time", System.currentTimeMillis(),true)
+        Settlement settlement2 = Settlement.builder()
+                .userId(userId)
+                .salesAmount(BigDecimal.valueOf(20000))
+                .fee(BigDecimal.valueOf(1000))
+                .vat(BigDecimal.valueOf(2000))
+                .refundAmount(BigDecimal.ZERO)
+                .settlementAmount(BigDecimal.valueOf(17000))
+                .settlementDate(LocalDateTime.of(2025, 1, 10, 15, 0))
+                .build();
+
+        settlementRepository.saveAll(List.of(settlement1, settlement2));
+
+        // --- job parameter 준비 ---
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("cutoff", "2025-01-10T00:00:00")
                 .toJobParameters();
 
-        jobLauncherTestUtils.launchStep("settlementCreateStep", createParams);
+        // when: job 실행
+        JobExecution execution = jobLauncherTestUtils.launchStep("dailyStep", jobParameters);
+        System.out.println(execution);
 
-        // Settlement 1개 존재 확인
-        List<Settlement> settlements = settlementRepository.findAll();
-        assertThat(settlements).hasSize(1);
+        // then: 상태 확인
+        assertThat(execution.getExitStatus().getExitCode()).isEqualTo("COMPLETED");
 
-        LocalDate cutoffDate = order.getOrderedAt().toLocalDate();
-        JobParameters params = new JobParametersBuilder()
-            .addString("cutoff", cutoffDate.atStartOfDay().toString(),false)
-            .addLong("time", System.currentTimeMillis(), true).toJobParameters();
+        // DailySettlement row 확인
+        List<DailySettlement> results =
+                dailySettlementRepository.findByDailySettlementByRange(
+                        userId,
+                        cutoffDate.atStartOfDay(),
+                        cutoffDate.plusDays(1).atStartOfDay(),
+                        Pageable.unpaged()
+                ).getContent();
 
-        // 5) Step3 : Daily 집계 Step 실행
-        JobExecution execution = jobLauncherTestUtils.launchStep("dailyStep", params);
-        execution.getAllFailureExceptions().forEach(Throwable::printStackTrace);
+        assertThat(results).hasSize(1);
 
-        assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+        DailySettlement daily = results.get(0);
 
-        // 6) DailySettlement 생성 확인
-        List<DailySettlement> dailySettlements = dailySettlementRepository.findAll();
-        assertThat(dailySettlements).hasSize(1);
-
-        DailySettlement daily = dailySettlements.get(0);
-        LocalDate expectedDate = order.getOrderedAt().toLocalDate();
-
-        assertThat(daily.getSettlementDate().toLocalDate()).isEqualTo(expectedDate);
-
-        // 금액 검증 (정확한 계산은 SettlementCalculator 기반)
-        assertThat(daily.getTotalSales()).isEqualTo(settlements.get(0).getSalesAmount());
-        assertThat(daily.getTotalSettlement()).isEqualTo(settlements.get(0).getSettlementAmount());
+        assertThat(daily.getTotalSales()).isEqualByComparingTo("30000");
+        assertThat(daily.getTotalFee()).isEqualByComparingTo("1500");
+        assertThat(daily.getTotalVat()).isEqualByComparingTo("3000");
+        assertThat(daily.getTotalSettlement()).isEqualByComparingTo("25500");
     }
 }

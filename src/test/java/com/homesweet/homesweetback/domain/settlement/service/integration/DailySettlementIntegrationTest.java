@@ -51,7 +51,6 @@ public class DailySettlementIntegrationTest {
         @Test
         @DisplayName("일별 집계 생성 성공")
         void dailySettlement_success() {
-
             Grade grade = gradeRepository.findById(5).orElseThrow();
             User seller = helpIntegrationData.createSeller(grade);
             User buyer = helpIntegrationData.createBuyer();
@@ -66,19 +65,23 @@ public class DailySettlementIntegrationTest {
                     LocalDateTime.of(2025, 11, 10, 12, 0));
             settlementService.createSettlement(o2);
 
+
+            LocalDate fixed = LocalDate.now(); // = 2025-11-15 (Clock fixed)
+            LocalDateTime start = fixed.withDayOfMonth(1).atStartOfDay();
+            LocalDateTime end = fixed.withDayOfMonth(fixed.lengthOfMonth()).atTime(23,59,59);
+
             dailySettlementService.getSettlement(
                     seller.getId(),
-                    LocalDateTime.of(2025, 11, 1, 0, 0),
-                    LocalDateTime.of(2025, 11, 30, 23, 59)
+                    start,
+                    end
             );
-
             // when
             Pageable pageable = PageRequest.of(0, 10);
 
             Page<DailySettlementResponse> daily = dailySettlementService.getDailySummary(
                     seller.getId(),
-                    LocalDate.of(2025, 11, 1),
-                    LocalDate.of(2025, 11, 30),
+                    LocalDate.of(2025, 12, 1),
+                    LocalDate.of(2025, 12, 30),
                     pageable
             );
             // then

@@ -2,7 +2,6 @@ package com.homesweet.homesweetback.domain.settlement.repository.querydsl;
 
 import com.homesweet.homesweetback.domain.settlement.entity.DailySettlement;
 import com.homesweet.homesweetback.domain.settlement.repository.DailySettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.repository.querydsl.impl.DailySettlementRepositoryImpl;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 

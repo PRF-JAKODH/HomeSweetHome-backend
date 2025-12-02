@@ -12,6 +12,7 @@ import com.homesweet.homesweetback.domain.product.category.repository.jpa.entity
 import com.homesweet.homesweetback.domain.product.product.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.ProductEntity;
 import com.homesweet.homesweetback.domain.product.product.repository.jpa.entity.SkuEntity;
+import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -72,6 +73,7 @@ public class BatchHelperData {
                 .deliveryStatus(DeliveryStatus.DELIVERED)
                 .totalAmount(150000L)
                 .orderedAt(orderedAt)
+                .settlementProcessed(false)
                 .build();
     }
 
@@ -86,4 +88,15 @@ public class BatchHelperData {
         order.addOrderItem(item);
         return order;
     }
+
+    public static SettlementTotals totals() {
+        return new SettlementTotals(
+                BigDecimal.valueOf(10000),      // totalSales
+                BigDecimal.valueOf(500),        // totalFee
+                BigDecimal.valueOf(1000),       // totalVat
+                BigDecimal.ZERO,                // totalRefund
+                BigDecimal.valueOf(8500)        // totalSettlement
+        );
+    }
+
 }
