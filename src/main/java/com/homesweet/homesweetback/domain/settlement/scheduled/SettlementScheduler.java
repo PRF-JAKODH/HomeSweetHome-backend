@@ -20,7 +20,7 @@ public class SettlementScheduler {
     private final JobLauncher jobLauncher;
     private final Job settlementJob;
     // 정산의 모든 step(생성 ~ 연별 집계)-> 10초 간격으로 진행
-    @Scheduled(fixedRate = 10000)
+//    @Scheduled(fixedRate = 10000)
     public void runSettlementCreateJob() {
         Map<String, JobParameter<?>> parameters = new HashMap<>();
         parameters.put("cutoff", new JobParameter<>(
