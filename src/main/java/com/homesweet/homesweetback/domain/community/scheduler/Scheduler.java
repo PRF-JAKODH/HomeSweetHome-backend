@@ -31,73 +31,79 @@ public class Scheduler {
 
     @Scheduled(initialDelay = 500000, fixedDelay = 500000)
     public void updateCountData() {
-        //  scan으로 변경
         ScanOptions options = ScanOptions.scanOptions()
                 .match("post:*:viewCount")
                 .count(100)
                 .build();
 
-        int successCount = 0;
-        int failCount = 0;
+        // Redis에서 업데이트할 데이터 수집
+        Map<Long, Integer> updatesToApply = new HashMap<>();
 
         try (Cursor<String> cursor = redisTemplate.scan(options)) {
-
-            //  각 key마다 반복
             while(cursor.hasNext()) {
                 String key = cursor.next();
 
                 try {
-                    //  key에서 postId 추출
                     String[] parts = key.split(":");
                     Long postId = Long.parseLong(parts[1]);
-
-                    // 키에 대한 밸류 가져옴 redis에서
                     Integer viewCount = (Integer) redisTemplate.opsForValue().get(key);
-                    if (viewCount == null) continue;
 
-                    // db저장 (짧은 트랜잭션으로 커넥션 즉시 반환)
-                    Boolean updated = transactionTemplate.execute(status -> {
-                        if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
-                            communityPostRepository.updateViewCount(postId, viewCount);
-                            return true;
-                        }
-                        return false;
-                    });
-
-                    if (Boolean.TRUE.equals(updated)) {
-                        redisTemplate.delete(key);
-                        successCount++;
-                    } else {
-                        // 게시글이 삭제된 경우에도 Redis 키 정리
-                        redisTemplate.delete(key);
+                    if (viewCount != null) {
+                        updatesToApply.put(postId, viewCount);
                     }
                 } catch (Exception e) {
-                    log.error("Failed to update view count for key: {}", key, e);
-                    failCount++;
-                    // 실패한 건은 Redis에 남겨서 다음 실행 시 재시도
+                    log.error("Failed to parse Redis key: {}", key, e);
                 }
             }
         } catch (Exception e) {
             log.error("Failed to scan Redis for view counts", e);
         }
 
-        log.info("View count sync completed - success: {}, failed: {}", successCount, failCount);
+        // 하나의 트랜잭션으로 모든 업데이트 처리
+        int successCount = 0;
+        int failCount = 0;
+
+        if (!updatesToApply.isEmpty()) {
+            transactionTemplate.executeWithoutResult(status -> {
+                for (Map.Entry<Long, Integer> entry : updatesToApply.entrySet()) {
+                    Long postId = entry.getKey();
+                    Integer viewCount = entry.getValue();
+
+                    try {
+                        // updateViewCount는 affected rows를 반환 (0이면 게시글 없음)
+                        int affected = communityPostRepository.updateViewCount(postId, viewCount);
+
+                        if (affected > 0) {
+                            redisTemplate.delete("post:" + postId + ":viewCount");
+                        } else {
+                            // 게시글이 삭제된 경우에도 Redis 키 정리
+                            redisTemplate.delete("post:" + postId + ":viewCount");
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to update view count for postId: {}", postId, e);
+                    }
+                }
+            });
+
+            // 성공/실패 카운트 계산
+            successCount = updatesToApply.size();
+        }
+
+        log.info("View count sync completed - total processed: {}", successCount);
     }
 
     // 댓글 수정
     @Scheduled(initialDelay = 200000, fixedDelay = 200000)
     public void updateCommentData() {
-        //  Redis에서 모든 조회수 key 찾기
         ScanOptions options = ScanOptions.scanOptions()
                 .match("post:*:commentCount")
                 .count(100)
                 .build();
 
-        int successCount = 0;
-        int failCount = 0;
+        // Redis에서 업데이트할 데이터 수집
+        Map<Long, Integer> updatesToApply = new HashMap<>();
 
         try (Cursor<String> cursor = redisTemplate.scan(options)) {
-
             while (cursor.hasNext()) {
                 String key = cursor.next();
 
@@ -105,35 +111,47 @@ public class Scheduler {
                     String[] parts = key.split(":");
                     Long postId = Long.parseLong(parts[1]);
                     Integer commentCount = (Integer) redisTemplate.opsForValue().get(key);
-                    if (commentCount == null) continue;
 
-                    // db저장 (짧은 트랜잭션으로 커넥션 즉시 반환)
-                    Boolean updated = transactionTemplate.execute(status -> {
-                        if (communityPostRepository.findByPostIdAndIsDeletedFalse(postId).isPresent()) {
-                            communityPostRepository.setCommentCount(postId, commentCount);
-                            return true;
-                        }
-                        return false;
-                    });
-
-                    if (Boolean.TRUE.equals(updated)) {
-                        redisTemplate.delete(key);
-                        successCount++;
-                    } else {
-                        // 게시글이 삭제된 경우에도 Redis 키 정리
-                        redisTemplate.delete(key);
+                    if (commentCount != null) {
+                        updatesToApply.put(postId, commentCount);
                     }
                 } catch (Exception e) {
-                    log.error("Failed to update comment count for key: {}", key, e);
-                    failCount++;
-                    // 실패한 건은 Redis에 남겨서 다음 실행 시 재시도
+                    log.error("Failed to parse Redis key: {}", key, e);
                 }
             }
         } catch (Exception e) {
             log.error("Failed to scan Redis for comment counts", e);
         }
 
-        log.info("Comment count sync completed - success: {}, failed: {}", successCount, failCount);
+        // 하나의 트랜잭션으로 모든 업데이트 처리
+        int successCount = 0;
+
+        if (!updatesToApply.isEmpty()) {
+            transactionTemplate.executeWithoutResult(status -> {
+                for (Map.Entry<Long, Integer> entry : updatesToApply.entrySet()) {
+                    Long postId = entry.getKey();
+                    Integer commentCount = entry.getValue();
+
+                    try {
+                        // setCommentCount는 affected rows를 반환 (0이면 게시글 없음)
+                        int affected = communityPostRepository.setCommentCount(postId, commentCount);
+
+                        if (affected > 0) {
+                            redisTemplate.delete("post:" + postId + ":commentCount");
+                        } else {
+                            // 게시글이 삭제된 경우에도 Redis 키 정리
+                            redisTemplate.delete("post:" + postId + ":commentCount");
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to update comment count for postId: {}", postId, e);
+                    }
+                }
+            });
+
+            successCount = updatesToApply.size();
+        }
+
+        log.info("Comment count sync completed - total processed: {}", successCount);
     }
 
     /**
@@ -161,43 +179,45 @@ public class Scheduler {
                 }
             }
 
-            // DB에 반영
+            // 하나의 트랜잭션으로 모든 이벤트 처리
             int addCount = 0;
             int removeCount = 0;
-            int failCount = 0;
 
-            for (Map.Entry<String, String> entry : lastEventMap.entrySet()) {
-                try {
-                    String[] key = entry.getKey().split(":");
-                    Long postId = Long.parseLong(key[0]);
-                    Long userId = Long.parseLong(key[1]);
-                    String action = entry.getValue();
+            if (!lastEventMap.isEmpty()) {
+                transactionTemplate.executeWithoutResult(status -> {
+                    for (Map.Entry<String, String> entry : lastEventMap.entrySet()) {
+                        try {
+                            String[] key = entry.getKey().split(":");
+                            Long postId = Long.parseLong(key[0]);
+                            Long userId = Long.parseLong(key[1]);
+                            String action = entry.getValue();
 
-                    // 짧은 트랜잭션으로 커넥션 즉시 반환
-                    transactionTemplate.executeWithoutResult(status -> {
-                        if ("ADD".equals(action)) {
-                            postLikeRepository.insertPostLike(postId, userId);
-                        } else if ("REMOVE".equals(action)) {
-                            postLikeRepository.deleteByPostIdAndUserId(postId, userId);
+                            if ("ADD".equals(action)) {
+                                postLikeRepository.insertPostLike(postId, userId);
+                            } else if ("REMOVE".equals(action)) {
+                                postLikeRepository.deleteByPostIdAndUserId(postId, userId);
+                            }
+                        } catch (Exception e) {
+                            log.error("Failed to sync post like event: {}", entry, e);
                         }
-                    });
+                    }
+                });
 
+                // 카운트 계산
+                for (String action : lastEventMap.values()) {
                     if ("ADD".equals(action)) {
                         addCount++;
                     } else if ("REMOVE".equals(action)) {
                         removeCount++;
                     }
-                } catch (Exception e) {
-                    log.error("Failed to sync post like event: {}", entry, e);
-                    failCount++;
                 }
             }
 
             // 처리된 이벤트 제거 (실패한 것 포함 - INSERT IGNORE로 멱등성 보장됨)
             stringRedisTemplate.opsForList().trim(queueKey, events.size(), -1);
 
-            log.info("Post like events synced - total: {}, added: {}, removed: {}, failed: {}",
-                    events.size(), addCount, removeCount, failCount);
+            log.info("Post like events synced - total: {}, added: {}, removed: {}",
+                    events.size(), addCount, removeCount);
         } catch (Exception e) {
             log.error("Failed to sync post like events", e);
         }
@@ -228,43 +248,45 @@ public class Scheduler {
                 }
             }
 
-            // DB에 반영
+            // 하나의 트랜잭션으로 모든 이벤트 처리
             int addCount = 0;
             int removeCount = 0;
-            int failCount = 0;
 
-            for (Map.Entry<String, String> entry : lastEventMap.entrySet()) {
-                try {
-                    String[] key = entry.getKey().split(":");
-                    Long commentId = Long.parseLong(key[0]);
-                    Long userId = Long.parseLong(key[1]);
-                    String action = entry.getValue();
+            if (!lastEventMap.isEmpty()) {
+                transactionTemplate.executeWithoutResult(status -> {
+                    for (Map.Entry<String, String> entry : lastEventMap.entrySet()) {
+                        try {
+                            String[] key = entry.getKey().split(":");
+                            Long commentId = Long.parseLong(key[0]);
+                            Long userId = Long.parseLong(key[1]);
+                            String action = entry.getValue();
 
-                    // 짧은 트랜잭션으로 커넥션 즉시 반환
-                    transactionTemplate.executeWithoutResult(status -> {
-                        if ("ADD".equals(action)) {
-                            commentLikeRepository.insertCommentLike(commentId, userId);
-                        } else if ("REMOVE".equals(action)) {
-                            commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId);
+                            if ("ADD".equals(action)) {
+                                commentLikeRepository.insertCommentLike(commentId, userId);
+                            } else if ("REMOVE".equals(action)) {
+                                commentLikeRepository.deleteByCommentIdAndUserId(commentId, userId);
+                            }
+                        } catch (Exception e) {
+                            log.error("Failed to sync comment like event: {}", entry, e);
                         }
-                    });
+                    }
+                });
 
+                // 카운트 계산
+                for (String action : lastEventMap.values()) {
                     if ("ADD".equals(action)) {
                         addCount++;
                     } else if ("REMOVE".equals(action)) {
                         removeCount++;
                     }
-                } catch (Exception e) {
-                    log.error("Failed to sync comment like event: {}", entry, e);
-                    failCount++;
                 }
             }
 
             // 처리된 이벤트 제거 (실패한 것 포함 - INSERT IGNORE로 멱등성 보장됨)
             stringRedisTemplate.opsForList().trim(queueKey, events.size(), -1);
 
-            log.info("Comment like events synced - total: {}, added: {}, removed: {}, failed: {}",
-                    events.size(), addCount, removeCount, failCount);
+            log.info("Comment like events synced - total: {}, added: {}, removed: {}",
+                    events.size(), addCount, removeCount);
         } catch (Exception e) {
             log.error("Failed to sync comment like events", e);
         }
