@@ -11,13 +11,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * CommunityImage 엔티티
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
-
 @Entity
 @Table(name = "community_images")
 @EntityListeners(AuditingEntityListener.class)

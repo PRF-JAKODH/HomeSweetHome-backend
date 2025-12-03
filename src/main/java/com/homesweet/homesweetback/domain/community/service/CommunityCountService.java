@@ -23,12 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Community Count 서비스
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
