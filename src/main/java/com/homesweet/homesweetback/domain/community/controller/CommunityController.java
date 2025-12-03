@@ -35,9 +35,9 @@ import java.util.List;
 
 public class CommunityController {
 
-    private final CommunityPostService CommunityPostService;
-    private final CommunityCommentService CommunityCommentService;
-    private final CommunityCountService CommunityCountService;
+    private final CommunityPostService communityPostService;
+    private final CommunityCommentService communityCommentService;
+    private final CommunityCountService communityCountService;
 
     /**
      * 게시글 작성 API
@@ -50,7 +50,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityPostResponse response = CommunityPostService.createPost(images, request, principal.getUserId());
+        CommunityPostResponse response = communityPostService.createPost(images, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -59,8 +59,15 @@ public class CommunityController {
      */
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityPostResponse> getPost(@PathVariable Long postId) {
-        CommunityPostResponse response = CommunityPostService.getPost(postId);
+        CommunityPostResponse response = communityPostService.getPost(postId);
         return ResponseEntity.ok(response);
+    }
+
+    // 조회수 초기화 (redis)
+    @PostMapping("/posts/{postId}/views/init")
+    public ResponseEntity<Void> initViewCountFromDB(@PathVariable Long postId) {
+        communityCountService.initViewCountFromDB(postId);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -73,7 +80,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityPostResponse response = CommunityPostService.updatePost(postId, request, principal.getUserId());
+        CommunityPostResponse response = communityPostService.updatePost(postId, request, principal.getUserId());
         return ResponseEntity.ok(response);
     }
 
@@ -86,7 +93,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityPostService.deletePost(postId, principal.getUserId());
+        communityPostService.deletePost(postId, principal.getUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -100,7 +107,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityCommentResponse response = CommunityCommentService.createComment(postId, request, principal.getUserId());
+        CommunityCommentResponse response = communityCommentService.createComment(postId, request, principal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -111,7 +118,7 @@ public class CommunityController {
     public ResponseEntity<List<CommunityCommentResponse>> getComments (
             @PathVariable Long postId
     ){
-        List<CommunityCommentResponse> responses = CommunityCommentService.getCommentsByPostId(postId);
+        List<CommunityCommentResponse> responses = communityCommentService.getCommentsByPostId(postId);
         return ResponseEntity.ok(responses);
     }
 
@@ -125,7 +132,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityCommentResponse response = CommunityCommentService.updateComment(commentId, request, principal.getUserId());
+        CommunityCommentResponse response = communityCommentService.updateComment(commentId, request, principal.getUserId());
         return ResponseEntity.ok(response);
     }
 
@@ -139,7 +146,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityCommentService.deleteComment(commentId, postId, principal.getUserId());
+        communityCommentService.deleteComment(commentId, postId, principal.getUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -148,7 +155,7 @@ public class CommunityController {
      */
     @PostMapping("/posts/{postId}/views")
     public ResponseEntity<Void> increaseViewCount(@PathVariable Long postId) {
-        CommunityCountService.increaseViewCount(postId);
+        communityCountService.increaseViewCount(postId);
         return ResponseEntity.ok().build();
     }
 
@@ -161,7 +168,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityCountService.togglePostLike(postId, principal.getUserId());
+        communityCountService.togglePostLike(postId, principal.getUserId());
         return ResponseEntity.ok().build();
     }
 
@@ -174,7 +181,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        boolean isLiked = CommunityCountService.isPostLiked(postId, principal.getUserId());
+        boolean isLiked = communityCountService.isPostLiked(postId, principal.getUserId());
         return ResponseEntity.ok(isLiked);
     }
 
@@ -188,7 +195,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        CommunityCountService.toggleCommentLike(commentId, principal.getUserId());
+        communityCountService.toggleCommentLike(commentId, principal.getUserId());
         return ResponseEntity.ok().build();
     }
 
@@ -202,7 +209,7 @@ public class CommunityController {
             Authentication authentication
     ) {
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
-        boolean isLiked = CommunityCountService.isCommentLiked(commentId, principal.getUserId());
+        boolean isLiked = communityCountService.isCommentLiked(commentId, principal.getUserId());
         return ResponseEntity.ok(isLiked);
     }
 
@@ -219,7 +226,9 @@ public class CommunityController {
         Sort.Direction sortDirection = Sort.Direction.valueOf(direction.toUpperCase());
 
         Pageable pageable = PageRequest.of(page, size, sortDirection, sort);
-        Page<CommunityPostResponse> posts = CommunityPostService.getPosts(pageable);
+        Page<CommunityPostResponse> posts = communityPostService.getPosts(pageable);
         return ResponseEntity.ok(posts);
     }
 }
+
+

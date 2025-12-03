@@ -47,4 +47,14 @@ public class RedisConfig {
 
         return template;
     }
+
+    /**
+     * Event Queue 전용 StringRedisTemplate
+     * 단순 문자열 데이터를 위한 템플릿 (JSON 직렬화 불필요)
+     */
+    @Bean
+    public org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate(
+            RedisConnectionFactory connectionFactory) {
+        return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
+    }
 }
