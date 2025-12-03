@@ -1,6 +1,10 @@
 package com.homesweet.homesweetback.common.config;
 
 import com.homesweet.homesweetback.domain.notification.service.SseService;
+import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
+
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -28,7 +32,7 @@ public class TestSseServiceConfig {
      * 실제 SSE 전송 없이 동작하며, 테스트에서 SSE 연결 없이도 정상 동작하도록 합니다.
      */
     private static class NoOpSseService implements SseService {
-        
+
         @Override
         public SseEmitter subscribe(Long userId) {
             // 테스트 환경에서는 실제 SseEmitter를 생성하지 않고 null을 반환하거나
@@ -42,10 +46,13 @@ public class TestSseServiceConfig {
         }
 
         @Override
-        public void sendNotification(Long userId, String data) {
-            // 테스트 환경에서는 실제 SSE 전송 없이 로그만 남깁니다.
-            // 이렇게 하면 테스트에서 SSE 연결 없이도 NotificationSendService가 정상 동작합니다.
+        public void sendNotification(Long userId, PushNotificationDTO data) {
+            // 테스트 환경에서는 실제 SSE 전송 없이 동작하므로 아무것도 하지 않습니다.
+        }
+
+        @Override
+        public void sendNotifications(Map<Long, PushNotificationDTO> notifications) {
+            // 테스트 환경에서는 실제 SSE 전송 없이 동작하므로 아무것도 하지 않습니다.
         }
     }
 }
-

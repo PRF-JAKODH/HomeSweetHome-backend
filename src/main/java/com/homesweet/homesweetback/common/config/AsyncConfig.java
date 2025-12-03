@@ -2,12 +2,12 @@ package com.homesweet.homesweetback.common.config;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import java.util.concurrent.Executor;
 
@@ -24,34 +24,13 @@ import java.util.concurrent.Executor;
 @Profile("!test")
 public class AsyncConfig {
 
-    @Value("${notification.async.corePoolSize}")
-    private int corePoolSize;
-    @Value("${notification.async.maxPoolSize}")
-    private int maxPoolSize;
-    @Value("${notification.async.queueCapacity}")
-    private int queueCapacity;
-
     /**
-     * 알림 전용 스레드 풀
-     * 
-     * - corePoolSize: 기본 스레드 수 (5개)
-     * - maxPoolSize: 최대 스레드 수 (10개)
-     * - queueCapacity: 대기 큐 크기 (100개)
-     * - threadNamePrefix: 스레드 이름 접두사
+     * 알림 전송 전용 스레드 풀 (Virtual Threads)
      */
     @Bean(name = "notificationTaskExecutor")
     public Executor notificationTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(queueCapacity);
-        executor.setThreadNamePrefix("notification-async-");
-        executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(60);
-        executor.setRejectedExecutionHandler((r, executor1) -> {
-            log.warn("알림 작업이 거부되었습니다. 큐가 가득 찼습니다.");
-        });
-        executor.initialize();
+        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("notification-vt-");
+        executor.setVirtualThreads(true);
         return executor;
     }
 

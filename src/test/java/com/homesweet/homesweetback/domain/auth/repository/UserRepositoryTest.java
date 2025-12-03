@@ -27,10 +27,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 @DisplayName("UserRepository 테스트")
 @Import({
-    QueryDslConfig.class,
-    ProductCategoryRepositoryImpl.class,
-    ProductCategoryMapper.class,
-    ProductMapper.class
+        QueryDslConfig.class,
+        ProductCategoryRepositoryImpl.class,
+        ProductCategoryMapper.class,
+        ProductMapper.class
 })
 class UserRepositoryTest {
     @Autowired
@@ -128,6 +128,34 @@ class UserRepositoryTest {
 
         // then
         assertThat(foundUser).isEmpty();
+    }
+
+    @Autowired
+    private com.homesweet.homesweetback.domain.grade.repository.GradeRepository gradeRepository;
+
+    @Test
+    @DisplayName("ID 목록으로 사용자 조회 및 Grade Fetch Join 테스트")
+    void testFindAllByIdIn_Success() {
+        // given
+        com.homesweet.homesweetback.domain.grade.entity.Grade grade = com.homesweet.homesweetback.domain.grade.entity.Grade
+                .builder()
+                .grade("GOLD")
+                .feeRate(java.math.BigDecimal.valueOf(0.05))
+                .build();
+        gradeRepository.save(grade);
+
+        User user = createTestUser(UserRole.SELLER);
+        user.setGrade(grade);
+        userRepository.save(user);
+
+        // when
+        List<User> users = userRepository.findAllByIdIn(List.of(user.getId()));
+
+        // then
+        assertThat(users).isNotEmpty();
+        assertThat(users.get(0).getId()).isEqualTo(user.getId());
+        assertThat(users.get(0).getGrade()).isNotNull();
+        assertThat(users.get(0).getGrade().getGrade()).isEqualTo("GOLD");
     }
 
     private User createTestUser(UserRole role) {

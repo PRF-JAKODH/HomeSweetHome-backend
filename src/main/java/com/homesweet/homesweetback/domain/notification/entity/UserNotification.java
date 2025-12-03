@@ -60,11 +60,11 @@ public class UserNotification {
     private LocalDateTime createdAt; // JPA Auditing이 자동으로 설정
 
     @Builder
-    public UserNotification(User user, 
-                            NotificationTemplate template, 
-                            Map<String, Object> contextData,
-                            Boolean isRead, 
-                            Boolean isDeleted) {
+    public UserNotification(User user,
+            NotificationTemplate template,
+            Map<String, Object> contextData,
+            Boolean isRead,
+            Boolean isDeleted) {
         // 필수 필드 검증
         if (user == null || user.getId() == null) {
             throw new NotificationException(ErrorCode.NOTIFICATION_USER_ID_IS_NULL);
@@ -72,7 +72,7 @@ public class UserNotification {
         if (contextData == null) {
             throw new NotificationException(ErrorCode.NOTIFICATION_CONTEXT_DATA_IS_NULL);
         }
-        
+
         this.user = user;
         this.template = template;
         this.contextData = contextData;
@@ -86,6 +86,10 @@ public class UserNotification {
 
     public void markAsDeleted() {
         this.isDeleted = true;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
 }

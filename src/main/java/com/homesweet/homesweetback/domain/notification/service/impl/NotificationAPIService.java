@@ -23,65 +23,73 @@ public class NotificationAPIService {
 
     /**
      * 사용자의 알림 목록 조회 (최대 20개)
+     * 
      * @param userId 사용자 ID
      * @return 알림 목록 (최대 20개)
      */
     @Transactional(readOnly = true)
     public List<PushNotificationDTO> getAllNotifications(Long userId) {
-        List<UserNotification> userNotifications = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(userId);
+        List<UserNotification> userNotifications = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(userId);
 
         // List<UserNotification>을 List<PushNotificationDTO>로 변환하고 최대 20개로 제한
         return userNotifications.stream()
-            .limit(20)
-            .map(userNotification -> {
-                var template = userNotification.getTemplate();
-                return PushNotificationDTO.builder()
-                    .notificationId(userNotification.getId())
-                    .title(template.getTitle())
-                    .content(template.getContent())
-                    .redirectUrl(template.getRedirectUrl())
-                    .contextData(userNotification.getContextData())
-                    .isRead(userNotification.getIsRead())
-                    .categoryType(template.getCategory().getCategoryType())
-                    .createdAt(userNotification.getCreatedAt())
-                    .build();
-            })
-            .collect(Collectors.toList());
+                .limit(20)
+                .map(userNotification -> {
+                    var template = userNotification.getTemplate();
+                    return PushNotificationDTO.builder()
+                            .notificationId(userNotification.getId())
+                            .title(template.getTitle())
+                            .content(template.getContent())
+                            .redirectUrl(template.getRedirectUrl())
+                            .contextData(userNotification.getContextData())
+                            .isRead(userNotification.getIsRead())
+                            .categoryType(template.getCategory().getCategoryType())
+                            .createdAt(userNotification.getCreatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * 사용자의 알림 읽음 처리 (단일 및 여러 개 모두 처리)
-     * @param userId 사용자 ID
+     * 
+     * @param userId          사용자 ID
      * @param notificationIds 알림 ID 리스트
+     * @throws IllegalArgumentException 알림 ID 리스트가 null이거나 비어있는 경우
+     * @throws NotificationException    알림을 찾을 수 없는 경우
      */
     @Transactional
     public void markAsRead(Long userId, List<Long> notificationIds) {
         List<UserNotification> userNotifications = userNotificationRepository.findByIdInAndUserIdAndNotDeleted(notificationIds, userId);
-        
+
         if (userNotifications.isEmpty()) {
             throw new NotificationException(ErrorCode.NOTIFICATION_NOT_FOUND);
         }
-        
+
         userNotifications.forEach(UserNotification::markAsRead);
         userNotificationRepository.saveAll(userNotifications);
     }
 
     /**
      * 알림 삭제 처리 (단일 및 여러 개 모두 처리)
-     * @param userId 사용자 ID
+     * 
+     * @param userId          사용자 ID
      * @param notificationIds 알림 ID 리스트
+     * @throws IllegalArgumentException 알림 ID 리스트가 null이거나 비어있는 경우
+     * @throws NotificationException    알림을 찾을 수 없는 경우
      */
     @Transactional
     public void markAsDeleted(Long userId, List<Long> notificationIds) {
         List<UserNotification> userNotifications = userNotificationRepository.findByIdInAndUserIdAndNotDeleted(notificationIds, userId);
-        
+
         if (userNotifications.isEmpty()) {
             throw new NotificationException(ErrorCode.NOTIFICATION_NOT_FOUND);
         }
-        
+
         userNotifications.forEach(UserNotification::markAsDeleted);
         userNotifications.forEach(UserNotification::markAsRead);
-        
+
         userNotificationRepository.saveAll(userNotifications);
     }
 }

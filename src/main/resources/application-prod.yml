@@ -4,7 +4,17 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DATABASE_USERNAME:homesweet}
     password: ${DATABASE_PASSWORD:homesweet}
+    hikari:
+      maximum-pool-size: ${DATABASE_MAXIMUM_POOL_SIZE:10}
+      minimum-idle: ${DATABASE_MINIMUM_IDLE:5}
+      idle-timeout: ${DATABASE_IDLE_TIMEOUT:60000}
+      max-lifetime: ${DATABASE_MAX_LIFETIME:1800000}
+      connection-timeout: ${DATABASE_CONNECTION_TIMEOUT:30000}
+      validation-timeout: ${DATABASE_VALIDATION_TIMEOUT:5000}
+      validation-interval: ${DATABASE_VALIDATION_INTERVAL:30000}
+      validation-query: SELECT 1
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
     show-sql: false
@@ -46,16 +56,8 @@ spring:
 
 logging:
   level:
-    com.homesweet.homesweetback: INFO
-    org.springframework.security: WARN
-    org.springframework.batch: INFO
+    com.homesweet.homesweetback: ERROR
 
-# 알림 비동기
-notification:
-  async:
-    corePoolSize: ${NOTIFICATION_ASYNC_CORE_POOL_SIZE:5}
-    maxPoolSize: ${NOTIFICATION_ASYNC_MAX_POOL_SIZE:10}
-    queueCapacity: ${NOTIFICATION_ASYNC_QUEUE_CAPACITY:100}
 # 프로덕션 환경 애플리케이션 설정
 app:
   cors:
@@ -92,3 +94,14 @@ management:
     metrics:
       export:
         enabled: true
+otel:
+  service:
+    name: homesweet-back
+  exporter:
+    otlp:
+      protocol: grpc
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+  metrics:
+    exporter: none
+  logs:
+    exporter: none

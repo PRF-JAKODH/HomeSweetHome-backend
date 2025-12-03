@@ -1,12 +1,16 @@
 package com.homesweet.homesweetback.domain.notification.controller;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,13 +41,24 @@ public class NotificationController {
      * SSE 알림 테스트
      * 
      **/
-    @GetMapping("/test")
-    public void testMessage(){
+    @GetMapping("/test/{range}")
+    public void testMessage(@PathVariable Long range){
         var notification = OrderNotification.OrderCompleted.builder()
             .userName("test")
             .orderId(12345L)
             .build();
-        notificationSendService.sendTemplateNotificationToSingleUser(3L, notification);
+        Long userId = ThreadLocalRandom.current().nextLong(1, range); 
+        notificationSendService.sendTemplateNotificationToSingleUser(userId, notification);
+    }
+
+    @GetMapping("/test/multiple/{range}")
+    public void testMultipleMessage(@PathVariable Long range){
+        var notification = OrderNotification.OrderCompleted.builder()
+            .userName("test")
+            .orderId(12345L)
+            .build();
+        List<Long> userIds = IntStream.rangeClosed(1, range.intValue()).mapToObj(i -> (long) i).collect(Collectors.toList());
+        notificationSendService.sendTemplateNotificationToMultipleUsers(userIds, notification);
     }
 
     @GetMapping(value = "/subscribe", produces = "text/event-stream")

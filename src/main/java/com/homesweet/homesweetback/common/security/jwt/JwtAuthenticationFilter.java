@@ -56,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 테스트용: 1~10의 토큰으로 해당 user_id의 사용자를 인증
                 if (isTestToken(accessToken)) {
                     Long userId = Long.parseLong(accessToken);
-                    if (userId >= 1 && userId <= 10) {
+                    if (userId >= 1 && userId <= 20011) {
                         User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("Test user not found with id: " + userId));
 

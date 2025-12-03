@@ -10,18 +10,19 @@ import org.junit.jupiter.api.Test;
 
 import com.homesweet.homesweetback.domain.notification.domain.NotificationTemplateType;
 import com.homesweet.homesweetback.domain.notification.domain.notification.OrderNotification;
+import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
 
 @DisplayName("TemplateNotificationEvent 테스트")
 public class TemplateNotificationEventTest {
-    
+
     @Test
     @DisplayName("TemplateNotificationEvent 생성 테스트_단일 사용자")
     void testCreateTemplateNotificationEvent_SingleUser() {
         // Given
         TemplateNotificationEvent event = new TemplateNotificationEvent(1L, OrderNotification.OrderCompleted.builder()
-            .userName("홍길동")
-            .orderId(12345L)
-            .build());
+                .userName("홍길동")
+                .orderId(12345L)
+                .build());
 
         // Then
         assertThat(event.userIds()).containsExactly(1L);
@@ -33,10 +34,11 @@ public class TemplateNotificationEventTest {
     @DisplayName("TemplateNotificationEvent 생성 테스트_다수 사용자")
     void testCreateTemplateNotificationEvent_MultipleUsers() {
         // Given
-        TemplateNotificationEvent event = new TemplateNotificationEvent(List.of(1L, 2L, 3L), OrderNotification.OrderCompleted.builder()
-            .userName("홍길동")
-            .orderId(12345L)
-            .build());
+        TemplateNotificationEvent event = new TemplateNotificationEvent(List.of(1L, 2L, 3L),
+                OrderNotification.OrderCompleted.builder()
+                        .userName("홍길동")
+                        .orderId(12345L)
+                        .build());
 
         // Then
         assertThat(event.userIds()).containsExactly(1L, 2L, 3L);
@@ -49,8 +51,10 @@ public class TemplateNotificationEventTest {
     void testCreateTemplateNotificationEvent_Validation() {
         // Given
         // When & Then
-        assertThatThrownBy(() -> new TemplateNotificationEvent(List.of(1L), null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new TemplateNotificationEvent(List.of(), null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new TemplateNotificationEvent(1L, null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new TemplateNotificationEvent(List.of(1L), null))
+                .isInstanceOf(NotificationException.class);
+        assertThatThrownBy(() -> new TemplateNotificationEvent(List.of(), null))
+                .isInstanceOf(NotificationException.class);
+        assertThatThrownBy(() -> new TemplateNotificationEvent(1L, null)).isInstanceOf(NotificationException.class);
     }
 }

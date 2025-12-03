@@ -31,22 +31,25 @@ import com.homesweet.homesweetback.domain.product.category.repository.impl.Produ
 import com.homesweet.homesweetback.domain.product.category.repository.mapper.ProductCategoryMapper;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.homesweet.homesweetback.common.config.JPAConfig;
+
 @ActiveProfiles("test")
 @DataJpaTest // Transaction 포함 되어 있음
 // ProductRepository의 의존성이 필요해서 추가
 @Import({
-    QueryDslConfig.class,
-    ProductCategoryRepositoryImpl.class,
-    ProductCategoryMapper.class,
-    ProductMapper.class,
+        JPAConfig.class,
+        QueryDslConfig.class,
+        ProductCategoryRepositoryImpl.class,
+        ProductCategoryMapper.class,
+        ProductMapper.class,
 })
 public class UserNotificationRepositoryTest {
-    
+
     @Autowired
     private UserNotificationRepository userNotificationRepository;
 
     @Autowired
-    private UserRepository userRepository;  
+    private UserRepository userRepository;
 
     @Autowired
     private NotificationTemplateRepository notificationTemplateRepository;
@@ -109,17 +112,18 @@ public class UserNotificationRepositoryTest {
         UserNotification savedUserNotification = userNotificationRepository.save(userNotification);
 
         // When
-        UserNotification foundUserNotification = userNotificationRepository.findById(savedUserNotification.getId()).orElseThrow();
+        UserNotification foundUserNotification = userNotificationRepository.findById(savedUserNotification.getId())
+                .orElseThrow();
 
         // Then
         assertThat(foundUserNotification.getId()).isNotNull();
         assertThat(foundUserNotification.getUser()).isEqualTo(testUser);
         assertThat(foundUserNotification.getTemplate()).isEqualTo(testTemplate);
-        assertThat(foundUserNotification.getContextData()).isEqualTo(Map.of("orderId", savedUserNotification.getContextData().get("orderId")));
+        assertThat(foundUserNotification.getContextData())
+                .isEqualTo(Map.of("orderId", savedUserNotification.getContextData().get("orderId")));
         assertThat(foundUserNotification.getIsRead()).isEqualTo(false);
         assertThat(foundUserNotification.getIsDeleted()).isEqualTo(false);
     }
-
 
     @Test
     @DisplayName("특정 사용자의 알림 목록 최신 20개 조회_성공")
@@ -131,7 +135,8 @@ public class UserNotificationRepositoryTest {
         savedUserNotificationList.forEach(userNotificationRepository::save);
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(20);
@@ -147,7 +152,8 @@ public class UserNotificationRepositoryTest {
         savedUserNotificationList.forEach(userNotificationRepository::save);
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(15);
@@ -160,7 +166,8 @@ public class UserNotificationRepositoryTest {
         // setUp()에서 설정된 testUser 사용
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(0);
@@ -175,7 +182,8 @@ public class UserNotificationRepositoryTest {
         userNotification = userNotificationRepository.save(userNotification);
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList).isEmpty();
@@ -188,7 +196,7 @@ public class UserNotificationRepositoryTest {
         // setUp()에서 설정된 testUser, testTemplate 사용
 
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 30);
-        
+
         for (int i = 0; i < savedUserNotificationList.size(); i++) {
             UserNotification userNotification = savedUserNotificationList.get(i);
             if (i % 3 == 0) {
@@ -198,7 +206,8 @@ public class UserNotificationRepositoryTest {
         }
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(20);
@@ -218,7 +227,8 @@ public class UserNotificationRepositoryTest {
         });
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findTop20ByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(testUser.getId());
 
         // Then
         assertThat(userNotificationList).isEmpty();
@@ -259,7 +269,6 @@ public class UserNotificationRepositoryTest {
         assertThat(count).isEqualTo(0);
     }
 
-
     @Test
     @DisplayName("사용자의 모든 읽지 않은 알림이 없을 때 빈 리스트 반환_성공")
     void findAllUnreadUserNotification_Success_Empty() {
@@ -273,7 +282,8 @@ public class UserNotificationRepositoryTest {
         });
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findByUserIdAndIsReadFalseAndIsDeletedFalse(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findByUserIdAndIsReadFalseAndIsDeletedFalse(testUser.getId());
 
         // Then
         assertThat(userNotificationList).isEmpty();
@@ -284,7 +294,7 @@ public class UserNotificationRepositoryTest {
     void findAllUnreadUserNotification_Success() {
         // Given
         // setUp()에서 설정된 testUser, testTemplate 사용
-        
+
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 10);
         for (int i = 0; i < savedUserNotificationList.size(); i++) {
             UserNotification userNotification = savedUserNotificationList.get(i);
@@ -295,7 +305,8 @@ public class UserNotificationRepositoryTest {
         }
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findByUserIdAndIsReadFalseAndIsDeletedFalse(testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findByUserIdAndIsReadFalseAndIsDeletedFalse(testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(5);
@@ -307,7 +318,7 @@ public class UserNotificationRepositoryTest {
     void findByIdInAndUserIdAndNotDeleted_Success() {
         // Given
         // setUp()에서 설정된 testUser, testTemplate 사용
-        
+
         List<UserNotification> savedUserNotificationList = createTestUserNotificationList(testUser, testTemplate, 30);
         for (int i = 0; i < savedUserNotificationList.size(); i++) {
             UserNotification userNotification = savedUserNotificationList.get(i);
@@ -317,14 +328,17 @@ public class UserNotificationRepositoryTest {
             userNotificationRepository.save(userNotification);
         }
 
-        List<Long> notificationIdsToDelete = savedUserNotificationList.stream().filter(userNotification -> !userNotification.getIsDeleted()).map(UserNotification::getId).toList();
+        List<Long> notificationIdsToDelete = savedUserNotificationList.stream()
+                .filter(userNotification -> !userNotification.getIsDeleted()).map(UserNotification::getId).toList();
 
         // When
-        List<UserNotification> userNotificationList = userNotificationRepository.findByIdInAndUserIdAndNotDeleted(notificationIdsToDelete, testUser.getId());
+        List<UserNotification> userNotificationList = userNotificationRepository
+                .findByIdInAndUserIdAndNotDeleted(notificationIdsToDelete, testUser.getId());
 
         // Then
         assertThat(userNotificationList.size()).isEqualTo(15);
-        assertThat(userNotificationList.stream().allMatch(userNotification -> userNotification.getIsDeleted())).isFalse();
+        assertThat(userNotificationList.stream().allMatch(userNotification -> userNotification.getIsDeleted()))
+                .isFalse();
     }
 
     private User createTestUser() {
@@ -359,7 +373,7 @@ public class UserNotificationRepositoryTest {
                 .contextData(Map.of("orderId", orderId))
                 .isRead(false)
                 .isDeleted(false)
-                .build();   
+                .build();
     }
 
     private List<UserNotification> createTestUserNotificationList(User user, NotificationTemplate template, int count) {

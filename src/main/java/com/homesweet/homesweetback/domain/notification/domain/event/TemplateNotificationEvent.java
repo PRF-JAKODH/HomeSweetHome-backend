@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.notification.domain.event;
 
+import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.notification.domain.notification.TemplateNotification;
+import com.homesweet.homesweetback.domain.notification.exception.NotificationException;
 
 import java.util.List;
 
@@ -13,18 +15,17 @@ import java.util.List;
  * @author dogyungkim
  */
 public record TemplateNotificationEvent(
-    List<Long> userIds,
-    TemplateNotification notification
-) {
+        List<Long> userIds,
+        TemplateNotification notification) {
     public TemplateNotificationEvent {
         if (userIds == null || userIds.isEmpty()) {
-            throw new IllegalArgumentException("userIds는 필수이며 비어있을 수 없습니다.");
+            throw new NotificationException(ErrorCode.DATA_MISSING);
         }
         if (notification == null) {
-            throw new IllegalArgumentException("notification은 필수입니다.");
+            throw new NotificationException(ErrorCode.DATA_MISSING);
         }
     }
-    
+
     /**
      * 단일 사용자용 생성자
      */
@@ -32,4 +33,3 @@ public record TemplateNotificationEvent(
         this(List.of(userId), notification);
     }
 }
-

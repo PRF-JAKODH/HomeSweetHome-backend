@@ -19,7 +19,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.List;
 import java.util.Optional;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -31,31 +30,31 @@ import static org.assertj.core.api.Assertions.assertThat;
     ProductMapper.class,
 })
 public class NotificationTemplateRepositoryTest {
-    
-    @Autowired
-    private NotificationTemplateRepository notificationTemplateRepository;
 
-    @MockitoBean
-    private CacheCategory cacheCategory;
+  @MockitoBean
+  private CacheCategory cacheCategory;
+  @Autowired
+  private NotificationTemplateRepository notificationTemplateRepository;
 
-    @Test
-    @DisplayName("알림 템플릿 타입 조회")
-    public void get_all_notification_templates() {
-        List<NotificationTemplate> notificationTemplates = notificationTemplateRepository.findAll();
+  @Test
+  @DisplayName("알림 템플릿 타입 조회")
+  public void get_all_notification_templates() {
+    List<NotificationTemplate> notificationTemplates = notificationTemplateRepository.findAll();
 
-        assertThat(notificationTemplates).isNotEmpty();
-    }
+    assertThat(notificationTemplates).isNotEmpty();
+  }
 
-    @Test
-    @DisplayName("특정 알림 타입으로 템플릿 조회_성공")
-    public void get_notification_template_by_type_success() {
-        NotificationTemplateType notificationEventType = NotificationTemplateType.NEW_COMMENT_LIKE;
-        Optional<NotificationTemplate> notificationTemplate = notificationTemplateRepository.findByTemplateType(notificationEventType);
+  @Test
+  @DisplayName("특정 알림 타입으로 템플릿 조회_성공")
+  public void get_notification_template_by_type_success() {
+    NotificationTemplateType notificationEventType = NotificationTemplateType.NEW_COMMENT_LIKE;
+    Optional<NotificationTemplate> notificationTemplate = notificationTemplateRepository
+        .findByTemplateType(notificationEventType);
 
-        assertThat(notificationTemplate).isPresent();
-        assertThat(notificationTemplate.get().getTemplateType()).isEqualTo(notificationEventType);
-        assertThat(notificationTemplate.get().getTitle()).isEqualTo("새 댓글 좋아요");
-        assertThat(notificationTemplate.get().getContent()).isEqualTo("{userName}님이 댓글에 좋아요를 눌렀습니다.");
-        assertThat(notificationTemplate.get().getRedirectUrl()).isEqualTo("/community/posts/{postId}");
-    }
+    assertThat(notificationTemplate).isPresent();
+    assertThat(notificationTemplate.get().getTemplateType()).isEqualTo(notificationEventType);
+    assertThat(notificationTemplate.get().getTitle()).isEqualTo("새 댓글 좋아요");
+    assertThat(notificationTemplate.get().getContent()).isEqualTo("{userName}님이 댓글에 좋아요를 눌렀습니다.");
+    assertThat(notificationTemplate.get().getRedirectUrl()).isEqualTo("/community/posts/{postId}");
+  }
 }

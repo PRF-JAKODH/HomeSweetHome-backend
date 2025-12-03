@@ -18,4 +18,9 @@ public class TestAsyncConfig {
     public Executor notificationTaskExecutor() {
         return new SyncTaskExecutor();
     }
+    @Bean
+    @Primary
+    public Executor sseTaskExecutor() {
+        return new SyncTaskExecutor();
+    }
 }

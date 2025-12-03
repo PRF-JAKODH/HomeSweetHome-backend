@@ -12,7 +12,6 @@ import com.homesweet.homesweetback.domain.notification.domain.NotificationCatego
 import lombok.Builder;
 import lombok.Getter;
 
-
 @Builder
 @Getter
 public class PushNotificationDTO {
@@ -25,14 +24,4 @@ public class PushNotificationDTO {
     NotificationCategoryType categoryType;
     LocalDateTime createdAt;
 
-    public String toJson() {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new JavaTimeModule());
-            objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            return objectMapper.writeValueAsString(this);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to convert to JSON", e);
-        }
-    }
-}   
+}

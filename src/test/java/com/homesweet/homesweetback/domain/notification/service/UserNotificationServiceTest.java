@@ -79,11 +79,11 @@ public class UserNotificationServiceTest {
         Map<String, Object> contextData = Map.of("orderId", 12345L, "userName", "홍길동");
 
         // When
-        UserNotification savedNotification = userNotificationService.createAndSaveUserNotification(
-                testUser.getId(),
+        UserNotification notification = userNotificationService.createUserNotification(
+                testUser,
                 testTemplate,
-                contextData
-        );
+                contextData);
+        UserNotification savedNotification = userNotificationRepository.save(notification);
 
         // Then
         assertThat(savedNotification.getId()).isNotNull();
@@ -98,16 +98,16 @@ public class UserNotificationServiceTest {
     @DisplayName("사용자 알림 생성 및 저장 테스트_실패_존재하지 않는 사용자")
     void createAndSaveUserNotification_Failure_UserNotFound() {
         // Given
-        Long nonExistentUserId = 999999L;
+        User nonExistentUser = User.builder().id(999999L).build();
         Map<String, Object> contextData = Map.of("orderId", 12345L);
 
         // When & Then
         assertThatThrownBy(() -> {
-            userNotificationService.createAndSaveUserNotification(
-                    nonExistentUserId,
+            UserNotification notification = userNotificationService.createUserNotification(
+                    nonExistentUser,
                     testTemplate,
-                    contextData
-            );
+                    contextData);
+            userNotificationRepository.save(notification);
         }).isInstanceOf(Exception.class); // 외래키 제약조건 위반 또는 EntityNotFoundException
     }
 
@@ -123,8 +123,7 @@ public class UserNotificationServiceTest {
         NotificationTemplate savedTemplate = userNotificationService.createAndSaveCustomNotificationTemplate(
                 title,
                 content,
-                redirectUrl
-        );
+                redirectUrl);
 
         // Then
         assertThat(savedTemplate.getId()).isNotNull();
@@ -157,7 +156,8 @@ public class UserNotificationServiceTest {
     void getNotificationTemplate_VariousTemplateTypes() {
         // Given & When & Then
         // 다양한 템플릿 타입 조회 테스트
-        NotificationTemplate orderTemplate = userNotificationService.getNotificationTemplate(NotificationTemplateType.ORDER_COMPLETED);
+        NotificationTemplate orderTemplate = userNotificationService
+                .getNotificationTemplate(NotificationTemplateType.ORDER_COMPLETED);
         assertThat(orderTemplate).isNotNull();
         assertThat(orderTemplate.getTemplateType()).isEqualTo(NotificationTemplateType.ORDER_COMPLETED);
     }
@@ -170,15 +170,14 @@ public class UserNotificationServiceTest {
                 "orderId", 12345L,
                 "userName", "홍길동",
                 "amount", 50000,
-                "status", "completed"
-        );
+                "status", "completed");
 
         // When
-        UserNotification savedNotification = userNotificationService.createAndSaveUserNotification(
-                testUser.getId(),
+        UserNotification notification = userNotificationService.createUserNotification(
+                testUser,
                 testTemplate,
-                complexContextData
-        );
+                complexContextData);
+        UserNotification savedNotification = userNotificationRepository.save(notification);
 
         // Then
         assertThat(savedNotification.getId()).isNotNull();
@@ -202,8 +201,7 @@ public class UserNotificationServiceTest {
         NotificationTemplate savedTemplate = userNotificationService.createAndSaveCustomNotificationTemplate(
                 longTitle,
                 longContent,
-                redirectUrl
-        );
+                redirectUrl);
 
         // Then
         assertThat(savedTemplate.getId()).isNotNull();
@@ -234,4 +232,3 @@ public class UserNotificationServiceTest {
                 .build();
     }
 }
-
