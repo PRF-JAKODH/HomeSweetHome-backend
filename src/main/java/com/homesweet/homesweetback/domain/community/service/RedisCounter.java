@@ -14,15 +14,4 @@ public class RedisCounter {
     public void setCounter(String key, Integer value) {
         redisTemplate.opsForValue().set(key, value); // 초기화
     }
-
-    public void incrementCounter(String key) {
-        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
-        // Increment by 1
-        ops.increment(key);
-    }
-
-    public void decrementCounter(String key) {
-        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
-        ops.decrement(key);
-    }
 }
