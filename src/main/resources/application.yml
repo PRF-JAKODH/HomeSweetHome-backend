@@ -40,7 +40,7 @@ server:
       max: 200
       min-spare: 50
     accept-count: 200
-    
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -76,3 +76,5 @@ retry:
       # (옵션) 400 Bad Request 같은 건 재시도해도 소용없으니 제외
       ignoreExceptions:
         - org.springframework.web.client.HttpClientErrorException
+notification:
+  batchSize: ${NOTIFICATION_BATCH_SIZE:250}

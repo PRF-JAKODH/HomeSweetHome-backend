@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +23,20 @@ public abstract class UserNotificationJdbcRepository {
 
     protected abstract String getJsonPlaceholder();
 
+    @Value("${notification.batchSize:250}")
+    private int batchSize;
+
     @Transactional
     public void saveAll(List<UserNotification> notifications) {
+        saveAll(notifications, batchSize);
+    }
+
+    @Transactional
+    public void saveAll(List<UserNotification> notifications, int batchSize) {
         if (notifications.isEmpty()) {
             return;
         }
 
-        int batchSize = 1000; // 쿼리 길이 제한을 고려하여 1000개씩 끊어서 처리
         for (int i = 0; i < notifications.size(); i += batchSize) {
             List<UserNotification> batchList = notifications.subList(i, Math.min(i + batchSize, notifications.size()));
             bulkInsertBatch(batchList);
