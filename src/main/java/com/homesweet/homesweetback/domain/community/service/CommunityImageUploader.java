@@ -15,10 +15,6 @@ public class CommunityImageUploader {
 
     public List<String> uploadCommunityImages(List<MultipartFile> images) {
         return imageUploader.uploadFiles(images, "community");
-
-//      준우님이 적어주신거
-//    public void uploadCommunityImage(List<MultipartFile> images) {
-//        imageUploader.uploadFiles(images, "community");
     }
 
 

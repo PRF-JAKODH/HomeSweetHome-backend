@@ -24,12 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Community 서비스
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor

@@ -8,13 +8,6 @@ import com.homesweet.homesweetback.domain.community.entity.*;
 
 import java.util.List;
 
-/**
- * CommunityPostLike 레포
- *
- * @author ohhalim777@gmail.com
- * @date 25. 10. 21.
- */
-
 public interface CommunityPostLikeRepository extends JpaRepository<CommunityPostLikeEntity, Long> {
     boolean existsByPost_PostIdAndUser_Id(Long postId, Long userId);
 
