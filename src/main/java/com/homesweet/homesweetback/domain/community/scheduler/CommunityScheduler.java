@@ -10,7 +10,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.HashMap;
@@ -20,7 +19,7 @@ import java.util.Map;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class Scheduler {
+public class CommunityScheduler {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
