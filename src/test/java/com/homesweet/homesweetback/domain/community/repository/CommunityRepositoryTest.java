@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-@Disabled("CI 환경 Redis 없어 테스트 오류 -> 다른 브랜치에서 고치겠음 일단 비활성화")
 class CommunityRepositoryTest {
 
     @Autowired

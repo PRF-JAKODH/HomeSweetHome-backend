@@ -11,7 +11,6 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,11 +43,13 @@ import io.awspring.cloud.s3.S3Template;
  * - 트랜잭션 롤백으로 테스트 격리 보장
  * - S3Template, S3ImageUploader는 다른 서비스(ChatRoomServiceImpl 등)에서 직접 의존하므로 MockitoBean 필요
  * - CommunityImageUploader를 Mock하여 S3 업로드를 시뮬레이션
+ *
+ * Redis 기반 통합 테스트
+ * CI 환경에서는 GitHub Actions의 Redis service container를 사용합니다.
  */
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-@Disabled("CI 환경 Redis 없어 테스트 오류 -> 다른 브랜치에서 고치겠음 일단 비활성화")
 class CommunityPostServiceIntegratTest {
 
     @Autowired
@@ -128,6 +129,7 @@ class CommunityPostServiceIntegratTest {
         assertThat(response.content()).isEqualTo("테스트 내용입니다.");
         assertThat(response.category()).isEqualTo("자유게시판");
         assertThat(response.authorName()).isEqualTo("테스트유저");
+        // DB에 저장된 초기 값은 0
         assertThat(response.viewCount()).isZero();
         assertThat(response.likeCount()).isZero();
         assertThat(response.commentCount()).isZero();
@@ -164,6 +166,10 @@ class CommunityPostServiceIntegratTest {
         assertThat(response.postId()).isEqualTo(post.getPostId());
         assertThat(response.title()).isEqualTo("조회 테스트");
         assertThat(response.content()).isEqualTo("내용");
+        // Redis Cache-Aside 패턴으로 DB에서 초기 값을 로드
+        assertThat(response.viewCount()).isNotNull();
+        assertThat(response.likeCount()).isNotNull();
+        assertThat(response.commentCount()).isNotNull();
     }
 
     @Test
@@ -548,17 +554,5 @@ class CommunityPostServiceIntegratTest {
                 .category("자유게시판")
                 .build();
         return postRepository.save(post);
-    }
-
-    /**
-     * 테스트용 MockMultipartFile 생성 헬퍼 메소드
-     */
-    private MockMultipartFile createMockImage(String fileName) {
-        return new MockMultipartFile(
-                "image",
-                fileName,
-                "image/jpeg",
-                "test image content".getBytes()
-        );
     }
 }
