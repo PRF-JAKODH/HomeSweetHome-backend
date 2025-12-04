@@ -36,4 +36,31 @@ public record CommunityPostResponse(
                 (imageUrls.isEmpty()) ? List.of() : imageUrls
         );
     }
+
+    /**
+     * Cache-Aside 패턴용: Redis에서 조회한 카운터 값을 사용
+     */
+    public static CommunityPostResponse fromWithCachedCounts(
+            CommunityPostEntity entity,
+            List<String> imageUrls,
+            Integer viewCount,
+            Integer likeCount,
+            Integer commentCount
+    ) {
+        return new CommunityPostResponse(
+                entity.getPostId(),
+                entity.getAuthor().getId(),
+                entity.getAuthor().getName(),
+                entity.getTitle(),
+                entity.getContent(),
+                entity.getCategory(),
+                viewCount,
+                likeCount,
+                commentCount,
+                entity.getIsModified(),
+                entity.getCreatedAt(),
+                entity.getModifiedAt(),
+                (imageUrls == null || imageUrls.isEmpty()) ? List.of() : imageUrls
+        );
+    }
 }

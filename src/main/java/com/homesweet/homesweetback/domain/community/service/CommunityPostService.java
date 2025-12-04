@@ -34,6 +34,7 @@ public class CommunityPostService {
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
     private final CommunityImageUploader imageUploader;
+    private final CommunityCountService communityCountService;
 
     /**
      * 게시글 작성
@@ -75,7 +76,7 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 단건 조회
+     * 게시글 단건 조회 - Cache-Aside 패턴 적용
      */
     public CommunityPostResponse getPost(Long postId) {
         CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
@@ -87,7 +88,12 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        return CommunityPostResponse.from(post, imageUrls);
+        // Redis에서 실시간 카운터 조회 (Cache-Aside)
+        Integer viewCount = communityCountService.getViewCountFromCache(postId);
+        Integer likeCount = communityCountService.getLikeCountFromCache(postId);
+        Integer commentCount = communityCountService.getCommentCountFromCache(postId);
+
+        return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
     }
 
     /**
@@ -139,7 +145,7 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 목록 조회 (페이지네이션) / EntityGraph로 N+1 문제 해결
+     * 게시글 목록 조회 (페이지네이션) - Cache-Aside 패턴 적용
      */
     public Page<CommunityPostResponse> getPosts(Pageable pageable) {
         Page<CommunityPostEntity> postsPage = postRepository.findByIsDeletedFalse(pageable);
@@ -158,7 +164,13 @@ public class CommunityPostService {
 
         return postsPage.map(post -> {
             List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());
-            return CommunityPostResponse.from(post, imageUrls);
+
+            // Redis에서 실시간 카운터 조회 (Cache-Aside)
+            Integer viewCount = communityCountService.getViewCountFromCache(post.getPostId());
+            Integer likeCount = communityCountService.getLikeCountFromCache(post.getPostId());
+            Integer commentCount = communityCountService.getCommentCountFromCache(post.getPostId());
+
+            return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
         });
     }
 }
