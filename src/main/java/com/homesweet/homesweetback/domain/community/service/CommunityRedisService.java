@@ -62,39 +62,96 @@ public class CommunityRedisService {
 
     // --- View Count Logic ---
     public Long incrementPostViewCount(Long postId) {
-        return executeScript(INCREMENT_COUNTER_SCRIPT, Long.class, List.of(getPostViewKey(postId)));
+        String key = getPostViewKey(postId);
+        Long result = executeScript(INCREMENT_COUNTER_SCRIPT, Long.class, List.of(key));
+
+        // 접근 시 TTL 연장 (7일)
+        if (result != null && result != -1) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     public void setPostViewCount(Long postId, int count) {
-        redisTemplate.opsForValue().set(getPostViewKey(postId), count);
+        String key = getPostViewKey(postId);
+        redisTemplate.opsForValue().set(key, count);
+        // TTL 7일 설정
+        redisTemplate.expire(key, 7, TimeUnit.DAYS);
     }
 
     public Integer getPostViewCount(Long postId) {
-        return (Integer) redisTemplate.opsForValue().get(getPostViewKey(postId));
+        String key = getPostViewKey(postId);
+        Integer count = (Integer) redisTemplate.opsForValue().get(key);
+
+        // 조회 시 TTL 연장 (7일)
+        if (count != null) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        }
+
+        return count;
     }
 
     // --- Comment Count Logic ---
     public Long incrementPostCommentCount(Long postId) {
-        return executeScript(INCREMENT_COUNTER_SCRIPT, Long.class, List.of(getPostCommentCountKey(postId)));
+        String key = getPostCommentCountKey(postId);
+        Long result = executeScript(INCREMENT_COUNTER_SCRIPT, Long.class, List.of(key));
+
+        // 접근 시 TTL 연장 (7일)
+        if (result != null && result != -1) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     public Long decreasePostCommentCount(Long postId) {
-        return executeScript(UPDATE_COUNTER_SCRIPT, Long.class, List.of(getPostCommentCountKey(postId)), "-1");
+        String key = getPostCommentCountKey(postId);
+        Long result = executeScript(UPDATE_COUNTER_SCRIPT, Long.class, List.of(key), "-1");
+
+        // 접근 시 TTL 연장 (7일)
+        if (result != null && result != -1) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     public void setPostCommentCount(Long postId, int count) {
-        redisTemplate.opsForValue().set(getPostCommentCountKey(postId), count);
+        String key = getPostCommentCountKey(postId);
+        redisTemplate.opsForValue().set(key, count);
+        // TTL 7일 설정
+        redisTemplate.expire(key, 7, TimeUnit.DAYS);
     }
 
     public Integer getPostCommentCount(Long postId) {
-        return (Integer) redisTemplate.opsForValue().get(getPostCommentCountKey(postId));
+        String key = getPostCommentCountKey(postId);
+        Integer count = (Integer) redisTemplate.opsForValue().get(key);
+
+        // 조회 시 TTL 연장 (7일)
+        if (count != null) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+        }
+
+        return count;
     }
 
     // --- Post Like Logic ---
     public Long togglePostLike(Long postId, Long userId) {
-        return executeScript(TOGGLE_LIKE_SCRIPT, Long.class,
-                Arrays.asList(getPostLikeSetKey(postId), getPostLikeCountKey(postId)),
+        String likeSetKey = getPostLikeSetKey(postId);
+        String countKey = getPostLikeCountKey(postId);
+
+        Long result = executeScript(TOGGLE_LIKE_SCRIPT, Long.class,
+                Arrays.asList(likeSetKey, countKey),
                 userId.toString());
+
+        // 접근 시 TTL 연장 (7일)
+        if (result != null && result != -1) {
+            redisTemplate.expire(likeSetKey, 7, TimeUnit.DAYS);
+            redisTemplate.expire(countKey, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     public void setPostLikes(Long postId, List<Long> userIds) {
@@ -121,7 +178,16 @@ public class CommunityRedisService {
     }
 
     public Integer getPostLikeCount(Long postId) {
-        return (Integer) redisTemplate.opsForValue().get(getPostLikeCountKey(postId));
+        String key = getPostLikeCountKey(postId);
+        Integer count = (Integer) redisTemplate.opsForValue().get(key);
+
+        // 조회 시 TTL 연장 (7일)
+        if (count != null) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+            redisTemplate.expire(getPostLikeSetKey(postId), 7, TimeUnit.DAYS);
+        }
+
+        return count;
     }
 
     public void addPostLikeEvent(Long postId, Long userId, boolean isAdded) {
@@ -131,9 +197,20 @@ public class CommunityRedisService {
 
     // --- Comment Like Logic ---
     public Long toggleCommentLike(Long commentId, Long userId) {
-        return executeScript(TOGGLE_LIKE_SCRIPT, Long.class,
-                Arrays.asList(getCommentLikeSetKey(commentId), getCommentLikeCountKey(commentId)),
+        String likeSetKey = getCommentLikeSetKey(commentId);
+        String countKey = getCommentLikeCountKey(commentId);
+
+        Long result = executeScript(TOGGLE_LIKE_SCRIPT, Long.class,
+                Arrays.asList(likeSetKey, countKey),
                 userId.toString());
+
+        // 접근 시 TTL 연장 (7일)
+        if (result != null && result != -1) {
+            redisTemplate.expire(likeSetKey, 7, TimeUnit.DAYS);
+            redisTemplate.expire(countKey, 7, TimeUnit.DAYS);
+        }
+
+        return result;
     }
 
     public void setCommentLikes(Long commentId, List<Long> userIds) {
@@ -159,7 +236,16 @@ public class CommunityRedisService {
     }
 
     public Integer getCommentLikeCount(Long commentId) {
-        return (Integer) redisTemplate.opsForValue().get(getCommentLikeCountKey(commentId));
+        String key = getCommentLikeCountKey(commentId);
+        Integer count = (Integer) redisTemplate.opsForValue().get(key);
+
+        // 조회 시 TTL 연장 (7일)
+        if (count != null) {
+            redisTemplate.expire(key, 7, TimeUnit.DAYS);
+            redisTemplate.expire(getCommentLikeSetKey(commentId), 7, TimeUnit.DAYS);
+        }
+
+        return count;
     }
 
     public void addCommentLikeEvent(Long commentId, Long userId, boolean isAdded) {
