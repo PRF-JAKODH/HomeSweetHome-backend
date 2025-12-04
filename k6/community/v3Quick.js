@@ -17,8 +17,9 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const API_BASE = `${BASE_URL}/api/v1/community`;
 
 // ==================== Test Data Configuration ====================
-const MIN_POST_ID = 1;
-const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 1394;
+// 🔧 실제 DB의 게시글 ID 범위로 설정 (존재하지 않는 ID 조회 방지)
+const MIN_POST_ID = 248;
+const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 4799;
 
 // ==================== ⚡ QUICK TEST (3분) - DAU 30만 기준 빠른 검증 ====================
 // 🎯 목적: 개발 중 빠른 피드백을 위한 짧은 성능 테스트
@@ -198,9 +199,29 @@ export function setup() {
 
 /**
  * 🔧 Teardown: 테스트 종료 후 정리
+ *
+ * ⚠️ k6는 DB에 직접 접근할 수 없어서 자동 정리 불가능
+ *
+ * 🧹 테스트 데이터 정리 방법:
+ *    테스트 종료 후 아래 명령어 실행:
+ *
+ *    ./k6/community/cleanup-test-data.sh "시작시간"
+ *
+ * 💡 자동화된 실행 예시:
+ *    START_TIME=$(date -u '+%Y-%m-%d %H:%M:%S')
+ *    k6 run k6/community/v3Quick.js
+ *    ./k6/community/cleanup-test-data.sh "$START_TIME"
+ *
+ * 📝 스크립트가 하는 일:
+ *    - "Quick Test Post", "Test Post"로 시작하는 게시글 삭제
+ *    - "test comment"를 포함한 댓글 삭제
+ *    - CASCADE로 관련 좋아요 자동 삭제
+ *    - 기존 프로덕션 데이터는 보존
  */
 export function teardown(data) {
     console.log(`⚡ Quick Test completed. Started at: ${data.startTime}`);
+    console.log(`🧹 To cleanup test data, run:`);
+    console.log(`   ./k6/community/cleanup-test-data.sh "${data.startTime}"`);
 }
 
 // ==================== Helper Functions ====================
@@ -352,12 +373,15 @@ function createComment(postId) {
 function toggleLike(postId, options = {}) {
     const { tag = 'like', allowMultiple = true } = options;
 
+    // 🔥 핵심: 각 가상 유저마다 다른 userId 사용 (좋아요 누적을 위해)
+    const userId = randomIntBetween(2, 100);
+
     // 70% 확률로 1회, 30% 확률로 2-3회 토글
     const shouldToggleMultiple = allowMultiple && Math.random() < 0.3;
     const toggleCount = shouldToggleMultiple ? randomIntBetween(2, 3) : 1;
 
     for (let i = 0; i < toggleCount; i++) {
-        const res = http.post(`${API_BASE}/posts/${postId}/likes`, null, {
+        const res = http.post(`${API_BASE}/posts/${postId}/likes?testUserId=${userId}`, null, {
             headers: getHeaders(),
             tags: { name: tag },
         });
