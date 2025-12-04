@@ -40,8 +40,9 @@ public class CommunityCountService {
     private final org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
 
     // Lua Script: 좋아요 토글 (원자적 처리)
+    // COUNT 키로 Cache Miss 체크 (Set은 빈 경우 존재하지 않을 수 있음)
     private static final String TOGGLE_LIKE_SCRIPT =
-            "if redis.call('EXISTS', KEYS[1]) == 0 then " +
+            "if redis.call('EXISTS', KEYS[2]) == 0 then " +
             "  return -1 " +
             "end " +
             "local isMember = redis.call('SISMEMBER', KEYS[1], ARGV[1]) " +
@@ -314,5 +315,103 @@ public class CommunityCountService {
         redisTemplate.expire(countKey, 7, java.util.concurrent.TimeUnit.DAYS);
 
         log.info("Loaded comment likes from DB - commentId: {}, count: {}", commentId, userIds.size());
+    }
+
+    /**
+     * 조회수 조회 - Cache-Aside 패턴 (Redis 우선 → DB Fallback)
+     */
+    public Integer getViewCountFromCache(Long postId) {
+        String key = "post:" + postId + ":viewCount";
+
+        // Redis에서 조회
+        Integer viewCount = (Integer) redisTemplate.opsForValue().get(key);
+
+        if (viewCount != null) {
+            return viewCount;
+        }
+
+        // Cache Miss - DB에서 조회 후 Redis에 캐싱
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        viewCount = post.getViewCount();
+        redisTemplate.opsForValue().set(key, viewCount);
+
+        log.debug("View count loaded from DB and cached - postId: {}, viewCount: {}", postId, viewCount);
+        return viewCount;
+    }
+
+    /**
+     * 좋아요수 조회 - Cache-Aside 패턴 (Redis 우선 → DB Fallback)
+     */
+    public Integer getLikeCountFromCache(Long postId) {
+        String key = "post:" + postId + ":likeCount";
+
+        // Redis에서 조회
+        Integer likeCount = (Integer) redisTemplate.opsForValue().get(key);
+
+        if (likeCount != null) {
+            return likeCount;
+        }
+
+        // Cache Miss - DB에서 조회 후 Redis에 캐싱
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        likeCount = post.getLikeCount();
+        redisTemplate.opsForValue().set(key, likeCount);
+        redisTemplate.expire(key, 7, java.util.concurrent.TimeUnit.DAYS);
+
+        log.debug("Like count loaded from DB and cached - postId: {}, likeCount: {}", postId, likeCount);
+        return likeCount;
+    }
+
+    /**
+     * 댓글수 조회 - Cache-Aside 패턴 (Redis 우선 → DB Fallback)
+     */
+    public Integer getCommentCountFromCache(Long postId) {
+        String key = "post:" + postId + ":commentCount";
+
+        // Redis에서 조회
+        Integer commentCount = (Integer) redisTemplate.opsForValue().get(key);
+
+        if (commentCount != null) {
+            return commentCount;
+        }
+
+        // Cache Miss - DB에서 조회 후 Redis에 캐싱
+        CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
+
+        commentCount = post.getCommentCount();
+        redisTemplate.opsForValue().set(key, commentCount);
+
+        log.debug("Comment count loaded from DB and cached - postId: {}, commentCount: {}", postId, commentCount);
+        return commentCount;
+    }
+
+    /**
+     * 댓글 좋아요수 조회 - Cache-Aside 패턴 (Redis 우선 → DB Fallback)
+     */
+    public Integer getCommentLikeCountFromCache(Long commentId) {
+        String key = "comment:" + commentId + ":likeCount";
+
+        // Redis에서 조회
+        Integer likeCount = (Integer) redisTemplate.opsForValue().get(key);
+
+        if (likeCount != null) {
+            return likeCount;
+        }
+
+        // Cache Miss - DB에서 조회 후 Redis에 캐싱
+        CommunityCommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_COMMENT_NOT_FOUND));
+
+        likeCount = comment.getLikeCount();
+        redisTemplate.opsForValue().set(key, likeCount);
+        redisTemplate.expire(key, 7, java.util.concurrent.TimeUnit.DAYS);
+
+        log.debug("Comment like count loaded from DB and cached - commentId: {}, likeCount: {}", commentId, likeCount);
+        return likeCount;
     }
 }

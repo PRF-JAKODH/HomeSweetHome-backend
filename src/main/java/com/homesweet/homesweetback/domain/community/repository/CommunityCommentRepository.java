@@ -23,4 +23,8 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
     @Query("UPDATE CommunityCommentEntity c SET c.likeCount = c.likeCount + :delta WHERE c.commentId = :commentId")
     int updateLikeCount(@Param("commentId") Long commentId, @Param("delta") int delta);
 
+    @Modifying
+    @Query("UPDATE CommunityCommentEntity c SET c.likeCount = :likeCount WHERE c.commentId = :commentId AND c.isDeleted = false")
+    int setLikeCount(@Param("commentId") Long commentId, @Param("likeCount") Integer likeCount);
+
 }
