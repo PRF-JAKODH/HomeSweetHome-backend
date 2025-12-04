@@ -34,12 +34,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+//@Transactional(readOnly = true)
 public class OrderService {
 
     // --- 주문 생성에 필요한 Repository만 주입 ---
@@ -57,90 +60,68 @@ public class OrderService {
      * API 1: 주문 생성 (결제 준비)
      * (재고 검증 로직은 PaymentService로 이동)
      */
-    @Transactional
+//    @Transactional
     public OrderReadyResponse createOrder(CreateOrderRequest dto, Long userId) {
 
-        // 1. 사용자(User) 조회
+        // ------[1]DB 조회 구간------
+        // 사용자(User) 조회 - 레포지토리 자체적으로 트랜잭션이 있어서 안전함.
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
 
-        List<OrderItem> orderItemsList = new ArrayList<>();
+        // 상품(Sku) 일괄 조회 (N+1 방지 및 DB 접근 최소화)
+        // DTO에서 skuId 목록만 추출
+        List<Long> skuIds = dto.orderItems().stream()
+                .map(CreateOrderRequest.OrderItemRequest::skuId)
+                .toList();
+
+        // (DB에서 한 번에서 가져옴 - findAllById 사용)
+        List<SkuEntity> skus = skuJPARepository.findAllById(skuIds);
+
+        // 검증: 요청한 개수와 조회된 개수가 맞는지
+        if (skus.size() != skuIds.size()) {
+            throw new EntityNotFoundException("일부 상품을 찾을 수 없습니다.");
+        }
+
+        // 편리한 사용을 위해 Map으로 변환: SkuId -> SkuEntity
+        Map<Long, SkuEntity> skuMap = skus.stream()
+                .collect(Collectors.toMap(SkuEntity::getId, sku -> sku));
+
+        //------[2] 비즈니스 로직(메모리 연산)------
+        List<PendingOrder.PendingOrderItem> pendingItems = new ArrayList<>();
         long totalAmount = 0L;
         int totalShippingPrice = 0;
+        Set<Long> processedProductIds = new HashSet<>();
 
-        // 배송비를 계산한 상품 ID를 저장할 Set
-        java.util.Set<Long> processedProductIds = new java.util.HashSet<>();
-
-        // 2. 주문 항목(SKU) 조회 및 총액 계산
-        for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()) {
-            // 2-1. SKU 조회 (ProductEntity 포함)
-            SkuEntity sku = skuJPARepository.findById(itemDto.skuId())
-                    .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: "));
-
+        for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()){
+            // 메모리에 올려둔 Map에서 꺼냄 (DB 조회 X)
+            SkuEntity sku = skuMap.get(itemDto.skuId());
             ProductEntity product = sku.getProduct();
 
-            // 상품 판매 상태 검증
+            // 상태 검증
             if (product.getStatus() != ProductStatus.ON_SALE) {
-                // (테스트 코드의 hasMessageContaining 내용과 일치해야 함)
                 throw new RuntimeException("판매 중인 상품이 아닙니다. 상품 ID: " + product.getId());
             }
 
-            // 2-2. 주문 항목 가격 계산
-            // TODO: 계산의 주체는 order가 아니라 product가 하면 변경점이 적어진다 v -> skuEntity에 분리함 v
-            long discountedPrice = sku.getFinalPrice();
+            // 가격 계산
+            long discountedPrice = sku.getFinalPrice(); // 메모리 연산
+            totalAmount += sku.calculateTotalPrice(itemDto.quantity()); // 메모리 연산
 
-            // TODO: getFinalPrice 구하는 수량을 넘겨서 상품 총 가격을 받는게 맞지않을까? v
-
-            // 2-3. 총 주문 금액 계산 (상품 총액)
-            totalAmount += sku.calculateTotalPrice(itemDto.quantity());
-
-            // 2-4. ★★★ 재고 선점(차감) ★★★
+            // Redis 재고 차감 (네트워크 I/O) -> 트랜잭션 밖이라 안전 -> 이 부분에서 시간이 걸려도 DB 커넥션은 안 잡고 있음
             redisStockService.decreaseStock(itemDto.skuId(), itemDto.quantity());
 
-
-            // 2-5. 총 배송비 계산 (productId 기준 1회만)
-            //TODO: 배송한테 값얼만지 요청해야한다.
-            Long currentProductId = product.getId();
-            if (!processedProductIds.contains(currentProductId)) {
-                totalShippingPrice += product.getShippingPrice();
-                processedProductIds.add(currentProductId);
-            }
-
-            // 2-6. OrderItem 엔티티 생성
-            OrderItem orderItem = OrderItem.builder()
-                    .sku(sku)
-                    .quantity(itemDto.quantity()) //TODO: long 타입 변환이 필요한가? dto 변환 v
-                    .price(discountedPrice) // 주문 시점의 '단가' 스냅샷
-                    .build();
-            orderItemsList.add(orderItem);
+            // DTO 생성
+            pendingItems.add(new PendingOrder.PendingOrderItem(
+                    sku.getId(),
+                    itemDto.quantity(),
+                    discountedPrice
+            ));
         }
 
-        // 3. 최종 결제 금액 = 상품 총액 + 총 배송비
+        // 총액 합산
         totalAmount += totalShippingPrice;
-
         String newOrderNumber = this.generateOrderNumber();
 
-        // 4. Order 엔티티 생성 (PENDING, BEFORE_SHIPMENT 상태)
-        Order order = Order.builder()
-                .user(user)
-                .orderStatus(OrderStatus.PENDING)
-                .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
-                .totalAmount(totalAmount)
-                .orderNumber(newOrderNumber)
-                .build();
-
-        // 5. 연관관계 설정 (Order <-> OrderItem)
-        for (OrderItem item : orderItemsList) {
-            order.addOrderItem(item);
-        }
-
-        // [데이터 준비] PendingOrder DTO 생성
-        List<PendingOrder.PendingOrderItem> pendingItems = orderItemsList.stream()
-                .map(item -> new PendingOrder.PendingOrderItem(
-                        item.getSku().getId(),
-                        item.getQuantity().intValue(),
-                        item.getPrice()
-                )).collect(Collectors.toList());
+        //------[3]Redis 저장------
 
         PendingOrder pendingOrder = new PendingOrder(
                 userId,
@@ -153,72 +134,22 @@ public class OrderService {
                 dto.shippingRequest()
         );
 
-        // 6. DB에 저장 (Order, OrderItem 동시 저장)
-//        Order savedOrder = orderRepository.save(order);
         redisStockService.pushPendingOrder(pendingOrder);
-
-        // 2. [신규] 결제 서비스가 바로 조회할 수 있도록 '캐시'에도 저장
         redisStockService.cacheOrder(pendingOrder);
 
-        // [가짜 응답 반환]
+        // 응답 반환
         return new OrderReadyResponse(
                 null,
                 newOrderNumber,
-                "Processing...", // 이름 등은 생략
+                "Processing...",
                 "", "", new ArrayList<>(),
                 totalAmount,
                 totalShippingPrice
         );
 
-        // 7. OrderReadyResponse DTO 생성
-//        List<OrderReadyResponse.OrderItemDetail> itemDetails = savedOrder.getOrderItems().stream()
-//                .map(oi -> {
-//                    SkuEntity sku = oi.getSku();
-//                    ProductEntity product = sku.getProduct();
-//                    String optionName = "옵션명 (수정 필요)";
-//
-//                    long finalItemPrice = oi.getPrice() * oi.getQuantity();
-//
-//                    return new OrderReadyResponse.OrderItemDetail(
-//                            oi.getId(),
-//                            product.getImageUrl(),
-//                            product.getBrand(),
-//                            product.getName(),
-//                            optionName,
-//                            product.getBasePrice(),
-//                            product.getDiscountRate(),
-//                            product.getShippingPrice(),
-//                            finalItemPrice, // (할인된 단가 * 수량)
-//                            oi.getQuantity().intValue()
-//                    );
-//                }).collect(Collectors.toList());
-//
-//        return new OrderReadyResponse(
-//                savedOrder.getId(),
-//                newOrderNumber,
-//                user.getName(),
-//                user.getAddress(),
-//                user.getPhoneNumber(),
-//                itemDetails,
-//                savedOrder.getTotalAmount(),
-//                totalShippingPrice
-//        );
-
-        // [테스트용] 테스트 통과를 위한 '가짜(Dummy)' 응답 반환
-        // (어차피 k6는 status 200인지만 체크하므로 내용은 상관없음)
-//        return new OrderReadyResponse(
-//                1L,                     // 임시 Order ID
-//                newOrderNumber,         // 주문 번호
-//                user.getName(),         // 유저 이름
-//                user.getAddress(),      // 주소
-//                user.getPhoneNumber(),  // 전화번호
-//                new ArrayList<>(),      // 빈 아이템 리스트
-//                totalAmount,            // 총액
-//                totalShippingPrice      // 배송비
-//        );
-
     }
 
+    @Transactional(readOnly = true)
     public List<MyOrderItemResponse> getMyOrders(Long userId) {
         // 1. 사용자(User) 조회
         //TODO: userRepo를 참조해서 order에서 검증하는게 맞나? v
@@ -270,6 +201,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(Long orderId, Long userId) {
 
         // 1. 주문 조회 (N+1 방지를 위해 모든 연관 엔티티를 fetch join)

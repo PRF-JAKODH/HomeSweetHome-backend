@@ -6,9 +6,7 @@ import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 export const options = {
 
     stages: [
-        { duration: '1m', target: 3800 },
-        { duration: '3m', target: 3800 },
-        { duration: '1m', target: 0 },
+        { duration: '1m', target: 100 }
     ],
 
     // vus: 500,
@@ -41,7 +39,7 @@ export default function () {
         shippingRequest: "",
     });
 
-    const createRes = http.post('http://localhost:8080/api/v1/orders', orderCreationPayload, { headers: headers });
+    const createRes = http.post('http://43.201.52.249:8080/api/v1/orders', orderCreationPayload, { headers: headers });
 
     // 💡 검증: 주문 생성이 200/201로 성공했는지 확인
     check(createRes, {
@@ -66,7 +64,7 @@ export default function () {
         amount: totalAmount,  // 1단계에서 계산된 최종 금액 사용
     });
 
-    const confirmRes = http.post('http://localhost:8080/api/v1/orders/payments/confirm', confirmPayload, { headers: headers });
+    const confirmRes = http.post('http://43.201.52.249:8080/api/v1/orders/payments/confirm', confirmPayload, { headers: headers });
 
     //  검증: 결제 승인이 200/201로 성공했는지 확인
     check(confirmRes, {

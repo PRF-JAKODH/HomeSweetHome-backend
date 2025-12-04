@@ -14,7 +14,7 @@ public record PendingOrder(
 ) {
     public record PendingOrderItem(
             Long skuId,
-            int quantity,
+            long quantity,
             long price
     ) {}
 }
