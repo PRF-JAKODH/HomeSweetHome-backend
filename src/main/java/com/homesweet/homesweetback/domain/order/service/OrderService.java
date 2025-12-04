@@ -106,6 +106,12 @@ public class OrderService {
             long discountedPrice = sku.getFinalPrice(); // 메모리 연산
             totalAmount += sku.calculateTotalPrice(itemDto.quantity()); // 메모리 연산
 
+            // 배송비 계산
+            if (!processedProductIds.contains(product.getId())) {
+                totalShippingPrice += product.getShippingPrice();
+                processedProductIds.add(product.getId());
+            }
+
             // Redis 재고 차감 (네트워크 I/O) -> 트랜잭션 밖이라 안전 -> 이 부분에서 시간이 걸려도 DB 커넥션은 안 잡고 있음
             redisStockService.decreaseStock(itemDto.skuId(), itemDto.quantity());
 
