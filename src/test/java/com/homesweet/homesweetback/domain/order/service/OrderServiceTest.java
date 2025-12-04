@@ -104,7 +104,7 @@ class OrderServiceTest{
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
+        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku));
 
         doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
         doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
@@ -175,8 +175,7 @@ class OrderServiceTest{
                 .build();
 
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        given(skuJPARepository.findById(skuId_S)).willReturn(Optional.of(fakeSku_S));
-        given(skuJPARepository.findById(skuId_M)).willReturn(Optional.of(fakeSku_M));
+        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku_S, fakeSku_M));
 
         doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
         doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
@@ -194,7 +193,7 @@ class OrderServiceTest{
 
         verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
         verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
-        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(skuJPARepository, times(1)).findAllById(any());
         verify(orderRepository, never()).save(any(Order.class));
     }
 
@@ -273,8 +272,7 @@ class OrderServiceTest{
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
         // [핵심] 2개의 SKU 조회에 각각 다른 상품/SKU를 반환
-        given(skuJPARepository.findById(skuId_A)).willReturn(Optional.of(fakeSku_A));
-        given(skuJPARepository.findById(skuId_B)).willReturn(Optional.of(fakeSku_B));
+        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku_A, fakeSku_B));
 
         doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong());
         doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
@@ -296,7 +294,7 @@ class OrderServiceTest{
         assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
 
         // 2. '행위' 검증
-        verify(skuJPARepository, times(2)).findById(anyLong());
+        verify(skuJPARepository, times(1)).findAllById(any());
         verify(orderRepository, never()).save(any(Order.class));
         verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
         verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
@@ -326,15 +324,13 @@ class OrderServiceTest{
 
         // 4. 'Mock' Repository의 행동 정의 (Stubbing)
 
-        // [핵심] userRepository는 정상적으로 User를 반환
+        // userRepository는 정상적으로 User를 반환
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
 
-        // [핵심] skuJPARepository는 '빈 Optional'을 반환하도록 설정
-        given(skuJPARepository.findById(nonExistingSkuId)).willReturn(Optional.empty());
+        given(skuJPARepository.findAllById(any())).willReturn(List.of());
 
         // --- WHEN (실행) & THEN (결과) ---
-        // [핵심] "orderService.createOrder()를 실행할 때,
-        //        EntityNotFoundException이 발생하는 것을 기대(assert)한다."
+        //  "orderService.createOrder()를 실행할 때, EntityNotFoundException이 발생하는 것을 기대(assert)한다."
         assertThatThrownBy(() -> {
             orderService.createOrder(dto, userId);
 
@@ -342,7 +338,7 @@ class OrderServiceTest{
         }).isInstanceOf(EntityNotFoundException.class)
 
                 // 2. (선택) '예외 메시지' 검증
-                .hasMessageContaining("SKU를 찾을 수 없습니다");
+                .hasMessageContaining("일부 상품을 찾을 수 없습니다.");
 
 
         // 3. (가장 중요) '행위' 검증
@@ -554,8 +550,7 @@ class OrderServiceTest{
 
         // Mock 행동 정의
         given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-        // (주의: 비관적 락 메서드를 사용하므로 이것을 Mocking 해야 함)
-        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
+        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku));
 
 
         // --- WHEN & THEN ---
