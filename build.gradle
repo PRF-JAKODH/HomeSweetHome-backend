@@ -97,6 +97,8 @@ dependencies {
     implementation 'org.springframework.batch:spring-batch-core'
     implementation 'org.apache.commons:commons-collections4:4.4'
 
+    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.10.0'
+
 }
 
 tasks.test {
@@ -150,4 +152,8 @@ tasks.jacocoTestCoverageVerification {
             excludes = jacocoExcludes
         }
     }
+}
+test {
+    minHeapSize = "1g"
+    maxHeapSize = "4g"
 }

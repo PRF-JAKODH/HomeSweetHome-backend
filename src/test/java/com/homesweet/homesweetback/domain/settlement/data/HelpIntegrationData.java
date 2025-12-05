@@ -165,7 +165,7 @@ public class HelpIntegrationData {
     public Settlement getSettlementData(Order order) {
         return settlementRepository.save(
                 Settlement.builder()
-                        .order(order)
+                        .orderId(1L)
                         .settlementStatus("COMPLETED")
                         .salesAmount(BigDecimal.valueOf(35000))
                         .fee(BigDecimal.valueOf(8750))

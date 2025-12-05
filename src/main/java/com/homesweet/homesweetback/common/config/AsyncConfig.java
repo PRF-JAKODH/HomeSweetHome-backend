@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @Configuration
 @EnableAsync
-@Profile("!test")
+//@Profile("!test")
 public class AsyncConfig {
 
     /**
@@ -61,5 +61,16 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+    @Bean(name = "batchTaskExecutor")
+    public Executor batchTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("batch-async-");
+        executor.initialize();
+        return executor;
+    }
+
 }
 
