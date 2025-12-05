@@ -8,9 +8,10 @@ import com.homesweet.homesweetback.domain.order.entity.Order;
 import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementCreateDto;
 import com.homesweet.homesweetback.domain.settlement.entity.Settlement;
 import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.dto.response.SettlementStatsDto;
+import com.homesweet.homesweetback.domain.settlement.util.SettlementStatsProjection;
 import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -61,11 +62,10 @@ public class SettlementCalculator {
     public SettlementStats calculateStats(Long userId, LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
+        SettlementStatsProjection stats = settlementRepository.findStats(userId, start, end);
 
-        SettlementStatsDto stats = settlementRepository.findStats(userId, start, end);
-        long totalCount = stats.totalCount() == null ? 0L : stats.totalCount();
-        long completedCount = stats.completedCount() == null ? 0L : stats.completedCount();
-
+        long totalCount = stats.getTotalCount();  // 총 주문건수
+        long completedCount = stats.getCompletedCount();
         double completedRate = totalCount == 0 ? 0.0 : Math.round(((double) completedCount * 100.0 / totalCount) * 10) / 10.0;  // 정산 완료율
         return new SettlementStats(totalCount, completedCount, completedRate);
     }

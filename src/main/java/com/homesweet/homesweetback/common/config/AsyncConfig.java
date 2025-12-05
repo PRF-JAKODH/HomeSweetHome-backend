@@ -113,6 +113,7 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+    // 정산 배치 비동기 처리
     @Bean(name = "batchTaskExecutor")
     public Executor batchTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
