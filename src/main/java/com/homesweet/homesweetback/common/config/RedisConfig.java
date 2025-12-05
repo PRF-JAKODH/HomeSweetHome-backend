@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -22,19 +25,26 @@ public class RedisConfig {
     @Bean
     @Primary
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(mapper);
+
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
         template.setKeySerializer(new StringRedisSerializer());
-
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-
+        template.setValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashValueSerializer(serializer);
 
         template.afterPropertiesSet();
         return template;
     }
+
 
     @Bean(name = "stockRedisTemplate")
     public RedisTemplate<String, String> stockRedisTemplate(RedisConnectionFactory connectionFactory) {
@@ -57,4 +67,22 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory) {
         return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
     }
+
+
+    /**
+     * @author 주아현
+     * @since 2025-12-05
+     */
+    @Bean(name = "chatRoomRedisTemplate")
+    public RedisTemplate<String, Object> chatRoomRedisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.afterPropertiesSet();
+
+        return template;
+    }
+
 }

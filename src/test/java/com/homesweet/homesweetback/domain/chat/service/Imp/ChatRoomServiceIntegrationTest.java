@@ -17,14 +17,13 @@ import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
 import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventListener;
 import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
-import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatMessageRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -33,9 +32,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
-import static com.homesweet.homesweetback.domain.auth.entity.QUser.user;
 import static org.assertj.core.api.Assertions.*;
 
 //@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

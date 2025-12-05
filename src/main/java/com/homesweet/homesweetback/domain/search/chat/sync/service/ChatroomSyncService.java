@@ -3,7 +3,7 @@ package com.homesweet.homesweetback.domain.search.chat.sync.service;
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
 import com.homesweet.homesweetback.domain.search.chat.repository.document.ChatRoomDocument;
 import com.homesweet.homesweetback.domain.search.chat.sync.mapping.ChatroomDocumentMapping;
 import com.homesweet.homesweetback.domain.search.chat.sync.repository.ChatRoomDocumentRepository;
