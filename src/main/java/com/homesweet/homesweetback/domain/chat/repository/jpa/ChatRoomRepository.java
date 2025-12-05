@@ -1,4 +1,4 @@
-package com.homesweet.homesweetback.domain.chat.repository;
+package com.homesweet.homesweetback.domain.chat.repository.jpa;
 
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;

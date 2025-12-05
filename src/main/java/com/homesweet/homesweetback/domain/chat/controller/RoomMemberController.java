@@ -2,12 +2,8 @@ package com.homesweet.homesweetback.domain.chat.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.chat.dto.response.JoinRoomResponse;
-import com.homesweet.homesweetback.domain.chat.dto.response.RoomMemberResponse;
-import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
-import com.zaxxer.hikari.metrics.dropwizard.CodaHaleMetricsTracker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

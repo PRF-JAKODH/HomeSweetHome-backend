@@ -53,39 +53,6 @@ export const options = {
     }
 };
 
-// // 테스트 종료 후 통계 출력
-// export function handleSummary(data) {
-//     const sent = data.metrics.ws_messages_sent?.values.count || 0;
-//     const received = data.metrics.ws_messages_received?.values.count || 0;
-//
-//     console.log('\n========================================');
-//     console.log('브로드캐스트 통계');
-//     console.log('========================================');
-//     console.log(`총 전송 메시지: ${sent}`);
-//     console.log(`총 수신 메시지: ${received}`);
-//
-//     if (sent > 0) {
-//         const broadcastRatio = (received / sent).toFixed(2);
-//         console.log(`브로드캐스트 비율: ${broadcastRatio}배 (평균 방 인원)`);
-//     }
-//
-//     console.log('\n 방별 통계:');
-//     for (let i = 1; i <= 10; i++) {
-//         const roomSent = data.metrics[`room_${i}_msgs_sent`]?.values.count || 0;
-//         const roomReceived = data.metrics[`room_${i}_msgs_received`]?.values.count || 0;
-//         const roomRatio = roomSent > 0 ? (roomReceived / roomSent).toFixed(1) : 0;
-//
-//         if (roomSent > 0) {
-//             console.log(`  Room ${i}: 전송 ${roomSent}개 → 수신 ${roomReceived}개 (${roomRatio}배)`);
-//         }
-//     }
-//     console.log('========================================\n');
-//
-//     return {
-//         'stdout': JSON.stringify(data, null, 2)
-//     };
-// }
-
 export default function () {
     const url = 'ws://localhost:8080/ws-stomp';
 
@@ -204,12 +171,7 @@ export default function () {
                     if (bodyIndex !== -1 && bodyIndex >= 0) {
                         try {
                             const body = msg.substring(bodyIndex + 2).replace(/\0$/g, '');
-                            // const data = JSON.parse(body);
                             //
-                            // // 방별 수신 카운트
-                            // if (data.roomId && roomMessagesReceived[data.roomId]) {
-                            //     roomMessagesReceived[data.roomId].add(1);
-                            // }
 
                             const data = JSON.parse(body);
                             const payload = data.data;   // 서버가 보낸 실제 메시지

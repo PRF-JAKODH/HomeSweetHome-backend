@@ -17,10 +17,10 @@ import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
 import com.homesweet.homesweetback.domain.search.chat.event.ChatroomEvent;
 import com.homesweet.homesweetback.domain.search.chat.event.ChatroomSearchEventPublisher;
 import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
-import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatMessageRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
 
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import lombok.RequiredArgsConstructor;

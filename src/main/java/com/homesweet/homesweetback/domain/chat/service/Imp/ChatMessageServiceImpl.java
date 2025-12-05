@@ -11,10 +11,12 @@ import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.MessageType;
-import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatMessageRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.redis.ChatRoomRedisRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
+import com.homesweet.homesweetback.domain.chat.service.ChatRoomMetadataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -36,7 +38,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMemberRepository roomMemberRepository;
-
+    private final ChatRoomMetadataService chatRoomMetadataService;
 
     /**
      * 메시지 전송/저장
@@ -70,7 +72,9 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        chatRoom.updateLastMessage(content, savedMessage.getSentAt());
+        chatRoomMetadataService.updateLastMessage(roomId, content, savedMessage.getSentAt());
+
+//        chatRoom.updateLastMessage(content, savedMessage.getSentAt());
 
         log.info("메시지 저장 완료 - message: {}", savedMessage);
 
