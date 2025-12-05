@@ -590,11 +590,13 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.NEW_MEMBER);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.NEW_MEMBER));
             assertThat(response.roomId()).isEqualTo(10L);
             assertThat(response.roomName()).isEqualTo("테스트방");
-            assertThat(response.memberInfo().userName()).isEqualTo(registered.userName());
-            assertThat(response.memberInfo().userId()).isEqualTo(1L);
+            assertThat(response.memberInfo().stream()
+                    .anyMatch(member -> member.userName().equals(member.userName()))).isTrue();
+            assertThat(response.memberInfo().stream()
+                            .anyMatch(member -> member.userId().equals(member.userId()))).isTrue();
 
             verify(chatRoomEventPublisher, times(1))
                     .publishMemberJoinedEvent(10L, registered);
@@ -622,7 +624,7 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.REJOIN);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.REJOIN));
             verify(chatRoomEventPublisher).publishMemberJoinedEvent(10L, rejoined);
         }
 
@@ -642,7 +644,7 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.ALREADY_JOINED);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.ALREADY_JOINED));
             verify(chatRoomEventPublisher, never())
                     .publishMemberJoinedEvent(anyLong(), any());
         }

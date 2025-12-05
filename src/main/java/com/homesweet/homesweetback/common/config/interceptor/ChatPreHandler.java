@@ -2,25 +2,22 @@ package com.homesweet.homesweetback.common.config.interceptor;
 
 import com.homesweet.homesweetback.common.exception.BusinessException;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
+import com.homesweet.homesweetback.common.security.jwt.JwtAuthenticationFilter;
 import com.homesweet.homesweetback.common.security.jwt.JwtTokenProvider;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 
 @Slf4j
 @Component
@@ -28,23 +25,26 @@ import java.util.List;
 public class ChatPreHandler implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<ChatRoomService> chatRoomServiceProvider;
     private final ObjectProvider<ChatMessageService> chatMessageServiceProvider;
 
+    @Value("${test.mode:false}")
+    private boolean testMode;  // application.yml에서 설정
 
-    // channel mock객체로 둬서 테스트 해보자요
-    // send, connect 연결은 메서드 호출해서 사용할 수 있을 듯
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
+        log.info(" Remote message {} : ", message);
+        log.info(" channel {} : ", channel);
+
 
         StompHeaderAccessor accessor = StompHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
+
         if (accessor == null || accessor.getCommand() == null) return message;
 
         StompCommand command = accessor.getCommand();
-
-        log.info("🔍 Command: {}, SessionId: {}, Destination: {}",
-                command, accessor.getSessionId(), accessor.getDestination());
 
         try {
             switch (command) {
@@ -78,50 +78,50 @@ public class ChatPreHandler implements ChannelInterceptor {
      * CONNECT 단계 처리 (JWT 인증)
      */
     private void handleConnect(StompHeaderAccessor accessor) {
+
         String authorization = accessor.getFirstNativeHeader("Authorization");
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-            throw new BusinessException(ErrorCode.TOKEN_MISSING);
-        }
-
-        String token = authorization.substring(7);
-
-        if (!jwtTokenProvider.validateToken(token)) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
+        String token = authorization.substring(7);
+        Long userId;
 
-        if (jwtTokenProvider.isRefreshToken(token)) {
-            throw new BusinessException(ErrorCode.TOKEN_REFRESH_NOT_ALLOWED);
+        if (isTestToken(token)) {
+            // true 이면 테스트 토큰 처리
+            userId = Long.parseLong(token);
+            log.info(" 테스트 토큰 인증 | userId={}", userId);
+
+        } else {
+            // false이면 실제 JWT 검증
+            Claims claims =jwtTokenProvider.getClaimsFromToken(token);
+            userId = Long.valueOf(claims.getSubject());
+            log.info(" JWT 인증 | userId={}", userId);
         }
 
-        Claims claims = jwtTokenProvider.getClaimsFromToken(token);
-        Long userId = Long.valueOf(claims.getSubject());
-        String role = claims.get("role", String.class);
-
-        // 세션에 유저 정보 저장
         accessor.getSessionAttributes().put("userId", userId);
 
-        // SecurityContext와 연계되도록 인증 정보 설정
-        accessor.setUser(new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
-        ));
-
-        log.info("CONNECT 성공 | userId={} | role={}", userId, role);
     }
 
     /**
      * SUBSCRIBE 단계 처리 (구독 권한 검증)
      */
     private void handleSubscribe(StompHeaderAccessor accessor) {
-        // 실제 빈
-        ChatRoomService chatRoomService = chatRoomServiceProvider.getObject();
-
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
         Long roomId = extractRoomId(accessor.getDestination());
 
         if (userId == null) {
             throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
         }
+
+        // 테스트 모드에서는 방 참여 검증 스킵
+        if (testMode) {
+            log.info(" [TEST MODE] SUBSCRIBE 허용 | userId={} | roomId={}", userId, roomId);
+            return;
+        }
+
+        // 실제 빈
+        ChatRoomService chatRoomService = chatRoomServiceProvider.getObject();
 
         boolean isMember = chatRoomService.isUserInRoom(roomId, userId);
         if (!isMember) {
@@ -136,7 +136,7 @@ public class ChatPreHandler implements ChannelInterceptor {
      */
     private void handleSend(StompHeaderAccessor accessor) {
 
-        ChatMessageService chatMessageService = chatMessageServiceProvider.getObject();
+//        ChatMessageService chatMessageService = chatMessageServiceProvider.getObject();
 
         Long userId = (Long) accessor.getSessionAttributes().get("userId");
 
@@ -144,7 +144,11 @@ public class ChatPreHandler implements ChannelInterceptor {
             throw new BusinessException(ErrorCode.MESSAGE_INVALID_REQUEST);
         }
 
-        log.info("SEND 권한 확인 완료 | userId={}", userId);
+        // 테스트 모드에서는 추가 검증 스킵
+        if (testMode) {
+            log.debug(" [TEST MODE] SEND 허용 | userId={}", userId);
+        }
+
     }
 
     /**
@@ -157,6 +161,17 @@ public class ChatPreHandler implements ChannelInterceptor {
             return Long.parseLong(destination.substring(destination.lastIndexOf('/') + 1));
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private boolean isTestToken(String token) {
+        if (token == null || token.isEmpty()) return false;
+
+        try {
+            Long.parseLong(token);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 }

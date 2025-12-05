@@ -15,7 +15,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 
-
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -47,7 +46,7 @@ public class ChatController {
         );
 
         //  방 전체 구독자에게 메시지 전송
-        String destination = "/sub/chat/rooms/" + roomId;
+        String destination = "/topic/chat/rooms/" + roomId;
         messagingTemplate.convertAndSend(destination, message);
         log.info(" 메시지 전송 완 roomId={}, senderId={}, messageId={}",
                 roomId, senderId, savedMessage.messageId());
