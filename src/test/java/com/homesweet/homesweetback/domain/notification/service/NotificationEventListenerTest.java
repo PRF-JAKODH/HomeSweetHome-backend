@@ -25,7 +25,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,9 @@ public class NotificationEventListenerTest {
 
         @Autowired
         private UserNotificationRepository userNotificationRepository;
+
+        @MockitoBean
+        private NotificationPublisher notificationPublisher;
 
         private User testUser;
         private User testUser2;

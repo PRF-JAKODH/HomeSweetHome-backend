@@ -3,10 +3,6 @@ package com.homesweet.homesweetback.domain.notification.dto;
 import java.util.Map;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import com.homesweet.homesweetback.domain.notification.domain.NotificationCategoryType;
 
 import lombok.Builder;

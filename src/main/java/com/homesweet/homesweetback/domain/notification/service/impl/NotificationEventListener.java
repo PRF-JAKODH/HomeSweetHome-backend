@@ -10,7 +10,7 @@ import com.homesweet.homesweetback.domain.notification.domain.notification.Templ
 import com.homesweet.homesweetback.domain.notification.dto.PushNotificationDTO;
 import com.homesweet.homesweetback.domain.notification.entity.NotificationTemplate;
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
-import com.homesweet.homesweetback.domain.notification.service.SseService;
+import com.homesweet.homesweetback.domain.notification.service.NotificationPublisher;
 
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 
@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 알림 이벤트 리스너
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
 public class NotificationEventListener {
 
   private final UserNotificationService userNotificationService;
-  private final SseService sseService;
+  private final NotificationPublisher notificationPublisher;
   private final UserService userService;
 
   /**
@@ -75,12 +74,8 @@ public class NotificationEventListener {
     // 5. 사용자화 된 알림을 DTO로 변환
     Map<Long, PushNotificationDTO> pushNotificationDTOMap = convertToPushNotificationDTO(template, userNotifications);
 
-    // 6. SSE 전송
-    Map<Long, PushNotificationDTO> notificationMap = new HashMap<>(pushNotificationDTOMap.size());
-    for (Map.Entry<Long, PushNotificationDTO> entry : pushNotificationDTOMap.entrySet()) {
-      notificationMap.put(entry.getKey(), entry.getValue());
-    }
-    sseService.sendNotifications(notificationMap);
+    // 6. SSE 전송 (Redis Pub/Sub)
+    pushNotificationDTOMap.forEach(notificationPublisher::publish);
   }
 
   /**
@@ -113,12 +108,8 @@ public class NotificationEventListener {
     Map<Long, PushNotificationDTO> pushNotificationDTOMap = convertToPushNotificationDTO(template,
         userNotifications);
 
-    // 6. SSE 전송
-    Map<Long, PushNotificationDTO> notificationMap = new HashMap<>(pushNotificationDTOMap.size());
-    for (Map.Entry<Long, PushNotificationDTO> entry : pushNotificationDTOMap.entrySet()) {
-      notificationMap.put(entry.getKey(), entry.getValue());
-    }
-    sseService.sendNotifications(notificationMap);
+    // 6. SSE 전송 (Redis Pub/Sub)
+    pushNotificationDTOMap.forEach(notificationPublisher::publish);
   }
 
   // 내부 메서드
