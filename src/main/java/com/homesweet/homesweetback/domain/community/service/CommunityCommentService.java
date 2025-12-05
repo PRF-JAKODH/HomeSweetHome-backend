@@ -73,13 +73,18 @@ public class CommunityCommentService {
     }
 
     /**
-     * 해당 게시글의 모든 댓글 조회
+     * 해당 게시글의 모든 댓글 조회 - Cache-Aside 패턴 적용
      */
     public List<CommunityCommentResponse> getCommentsByPostId(Long postId) {
         List<CommunityCommentEntity> comments =
                 commentRepository.findByPost_PostIdAndIsDeletedFalse(postId);
+
         return comments.stream()
-                .map(CommunityCommentResponse::from)
+                .map(comment -> {
+                    // Redis에서 실시간 좋아요 수 조회 (Cache-Aside)
+                    Integer likeCount = communityCountService.getCommentLikeCountFromCache(comment.getCommentId());
+                    return CommunityCommentResponse.fromWithCachedLikeCount(comment, likeCount);
+                })
                 .toList();
     }
 

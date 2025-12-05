@@ -10,7 +10,6 @@ import com.homesweet.homesweetback.domain.search.community.event.CommunityEventP
 import com.homesweet.homesweetback.domain.community.repository.*;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +33,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled("CI 환경 Redis 없어 테스트 오류 -> 다른 브랜치에서 고치겠음 일단 비활성화")
 class CommunityServiceTest {
 
         @Mock
@@ -57,6 +55,12 @@ class CommunityServiceTest {
 
         @Mock
         private CommunityCountService communityCountService;
+
+        @Mock
+        private CommunityRedisService communityRedisService;
+
+        @Mock
+        private CommunityEventPublisher communityEventPublisher;
 
         @InjectMocks
         private CommunityPostService communityPostService;
@@ -122,6 +126,11 @@ class CommunityServiceTest {
                 when(imageRepository.findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class)))
                                 .thenReturn(Collections.emptyList());
 
+                // Redis 캐시에서 카운트 조회를 Mock 처리
+                when(communityCountService.getViewCountFromCache(postId)).thenReturn(5);
+                when(communityCountService.getLikeCountFromCache(postId)).thenReturn(3);
+                when(communityCountService.getCommentCountFromCache(postId)).thenReturn(2);
+
                 // when
                 CommunityPostResponse response = communityPostService.getPost(postId);
 
@@ -131,8 +140,14 @@ class CommunityServiceTest {
                 assertThat(response.title()).isEqualTo("Test Title");
                 assertThat(response.content()).isEqualTo("Test Content");
                 assertThat(response.category()).isEqualTo("Test Category");
+                assertThat(response.viewCount()).isEqualTo(5);
+                assertThat(response.likeCount()).isEqualTo(3);
+                assertThat(response.commentCount()).isEqualTo(2);
 
                 verify(imageRepository).findByPostOrderByImageOrderAsc(any(CommunityPostEntity.class));
+                verify(communityCountService).getViewCountFromCache(postId);
+                verify(communityCountService).getLikeCountFromCache(postId);
+                verify(communityCountService).getCommentCountFromCache(postId);
         }
 
         @DisplayName("게시물 수정 테스트")
@@ -235,6 +250,15 @@ class CommunityServiceTest {
                 when(imageRepository.findAllByPostInOrderByPostPostIdAscImageOrderAsc(anyList()))
                                 .thenReturn(Collections.emptyList());
 
+                // Redis 캐시에서 카운트 조회를 Mock 처리 (각 게시글마다)
+                when(communityCountService.getViewCountFromCache(1L)).thenReturn(10);
+                when(communityCountService.getLikeCountFromCache(1L)).thenReturn(5);
+                when(communityCountService.getCommentCountFromCache(1L)).thenReturn(3);
+
+                when(communityCountService.getViewCountFromCache(2L)).thenReturn(20);
+                when(communityCountService.getLikeCountFromCache(2L)).thenReturn(8);
+                when(communityCountService.getCommentCountFromCache(2L)).thenReturn(6);
+
                 // when
                 Page<CommunityPostResponse> result = communityPostService.getPosts(pageable);
 
@@ -243,7 +267,11 @@ class CommunityServiceTest {
                 assertThat(result.getContent()).hasSize(2);
                 assertThat(result.getTotalElements()).isEqualTo(2);
                 assertThat(result.getContent().get(0).title()).isEqualTo("첫 번째 게시물");
+                assertThat(result.getContent().get(0).viewCount()).isEqualTo(10);
+                assertThat(result.getContent().get(0).likeCount()).isEqualTo(5);
                 assertThat(result.getContent().get(1).title()).isEqualTo("두 번째 게시물");
+                assertThat(result.getContent().get(1).viewCount()).isEqualTo(20);
+                assertThat(result.getContent().get(1).likeCount()).isEqualTo(8);
 
                 verify(postRepository).findByIsDeletedFalse(pageable);
         }
