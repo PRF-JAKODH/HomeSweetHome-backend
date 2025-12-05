@@ -95,6 +95,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/user/**").authenticated()
                         .requestMatchers("/api/chat/**").authenticated()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws-stomp/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

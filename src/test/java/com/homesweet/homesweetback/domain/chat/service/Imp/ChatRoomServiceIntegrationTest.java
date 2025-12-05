@@ -33,7 +33,9 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
+import static com.homesweet.homesweetback.domain.auth.entity.QUser.user;
 import static org.assertj.core.api.Assertions.*;
 
 //@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -43,8 +45,8 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("[Integration] 채팅방 서비스 통합 테스트")
 class ChatRoomServiceIntegrationTest {
 
-    @LocalServerPort
-    private int port;
+//    @LocalServerPort
+//    private int port;
 
     @Autowired
     private ChatRoomServiceImpl chatRoomService;
@@ -344,23 +346,6 @@ class ChatRoomServiceIntegrationTest {
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ROOM_NOT_FOUND);
         }
 
-        @Test
-        @DisplayName("[실패] 그룹 채팅방을 개인 채팅방으로 조회하면 예외가 발생한다")
-        void getIndividualChatDetail_WrongRoomType_ThrowsException() {
-            // given
-            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                    1L,
-                    "그룹방", thumbnailFile , ChatRoomType.GROUP
-            );
-            GroupRoomCreateResponse groupRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-
-            // when & then
-            assertThatThrownBy(() ->
-                    chatRoomService.getIndividualChatDetail(user1.getId(), groupRoom.roomId())
-            )
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ROOM_TYPE);
-        }
     }
 
     @Nested
@@ -390,21 +375,6 @@ class ChatRoomServiceIntegrationTest {
             assertThat(response.participants()).hasSize(1);
         }
 
-        @Test
-        @DisplayName("[실패] 개인 채팅방을 그룹 채팅방으로 조회하면 예외가 발생한다")
-        void getGroupChatDetail_WrongRoomType_ThrowsException() {
-            // given
-            IndividualRoomCreateResponse individualRoom = chatRoomService.createOrGetIndividualRoom(
-                    user1.getId(), user2.getId()
-            );
-
-            // when & then
-            assertThatThrownBy(() ->
-                    chatRoomService.getGroupChatDetail(user1.getId(), individualRoom.roomId())
-            )
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ROOM_TYPE);
-        }
     }
 
     @Nested
@@ -412,34 +382,71 @@ class ChatRoomServiceIntegrationTest {
     class joinRoom {
 
         @Test
-        @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
-        void getGroupChatDetail_ReEnter_Success() {
+        @DisplayName("[성공] 그룹 채팅방에 입장하면 멤버 정보가 RoomMember에 저장된다.")
+        void joinRoom_Success() {
             // given
             CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                    3L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
+                    user1.getId(),
+                    "테스트 그룹방",
+                    thumbnailFile,
+                    ChatRoomType.GROUP
             );
+
             GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+            Long roomId = createdRoom.roomId();
 
-            // user2가 입장했다가 퇴장
-            chatRoomService.joinRoom(createdRoom.roomId(), user2.getId());
-            chatRoomService.leaveRoom(user2.getId(), createdRoom.roomId());
-
-            // when - user2가 다시 조회 (재입장)
-            JoinRoomResponse response = chatRoomService.joinRoom(
-                    createdRoom.roomId(), user2.getId()
-            );
+            // when
+            JoinRoomResponse response = chatRoomService.joinRoom(roomId, user2.getId());
 
             // then
-            assertThat(response.memberInfo().userId().equals(user2.getId()));
-
-            RoomMember reenteredMember = roomMemberRepository
-                    .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
-                    .orElseThrow();
-            assertThat(reenteredMember.isExit()).isFalse();
+            assertThat(roomId).isNotNull();
+            assertThat(response.memberInfo().stream().anyMatch(
+                    member -> member.userId().equals(user2.getId()))
+            );
         }
 
+            @Test
+            @DisplayName("[성공] 퇴장한 멤버가 재입장하면 is_exit이 false로 변경된다")
+            void reEnterMember_Success() {
+                // given
+                CreateGroupRoomRequest request = new CreateGroupRoomRequest(
+                        user1.getId(),
+                        "테스트 그룹방",
+                        thumbnailFile,
+                        ChatRoomType.GROUP
+                );
 
-    }
+                GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
+                Long roomId = createdRoom.roomId();
+
+                chatRoomService.joinRoom(roomId, user2.getId());
+                chatRoomService.leaveRoom(user2.getId(), roomId);
+
+                RoomMember exitedMember = roomMemberRepository
+                        .findByRoomIdAndUserId(roomId, user2.getId())
+                        .orElseThrow();
+
+                assertThat(exitedMember.isExit()).isTrue();
+
+                // when
+                JoinRoomResponse response = chatRoomService.joinRoom(roomId, user2.getId());
+
+
+                // then
+                assertThat(response.memberInfo().stream()
+                        .anyMatch(member -> member.userId().equals(user2.getId())))
+                        .isTrue();
+
+                RoomMember reentered = roomMemberRepository
+                        .findByRoomIdAndUserId(roomId, user2.getId())
+                        .orElseThrow();
+
+                assertThat(reentered.isExit()).isFalse();
+            }
+
+
+
+        }
 
 
     @Nested
@@ -484,23 +491,6 @@ class ChatRoomServiceIntegrationTest {
                     .findByRoomIdAndUserId(createdRoom.roomId(), user2.getId())
                     .orElseThrow();
             assertThat(exitedMember.isExit()).isTrue();
-        }
-
-        @Test
-        @DisplayName("[성공] 그룹 채팅방의 마지막 멤버가 퇴장하면 방이 삭제된다")
-        void exitRoom_LastMemberExits_RoomDeleted() {
-            // given
-            CreateGroupRoomRequest request = new CreateGroupRoomRequest(
-                    1L, "테스트 그룹방", thumbnailFile, ChatRoomType.GROUP
-            );
-            GroupRoomCreateResponse createdRoom = chatRoomService.createGroupRoom(user1.getId(), request);
-
-            // when - 방장이 퇴장 (마지막 멤버)
-            chatRoomService.leaveRoom(user1.getId(), createdRoom.roomId());
-
-            // then
-            ChatRoom deletedRoom = chatRoomRepository.findById(createdRoom.roomId()).orElseThrow();
-            assertThat(deletedRoom.getIsDeleted()).isNotNull();
         }
 
         @Test

@@ -30,7 +30,6 @@ public class RoomController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
-    private final RoomMemberService roomMemberService;
 
     /**
      * 1:1 채팅방 생성 또는 재사용

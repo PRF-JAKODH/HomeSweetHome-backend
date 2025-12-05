@@ -1,3 +1,6 @@
+test:
+  mode: true  # 부하 테스트 시 true, 프로덕션에서는 false
+
 spring:
   application:
     name: homesweet-back
@@ -44,9 +47,12 @@ spring:
 server:
   tomcat:
     threads:
-      max: 200
-      min-spare: 50
-    accept-count: 200
+      max: 350                    # 워커 스레드 수(실제 요청 처리)
+      min-spare: 50               # 최소 유지 스레드
+    accept-count: 200             # acceptQueue 크기, 연결대기큐 / sommaxconn : 128
+    max-connections: 10000        # 동시 연결 가능한 소켓 수
+    connection-timeout: 30000
+
 
 resilience4j:
   circuitbreaker:
