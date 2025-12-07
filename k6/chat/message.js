@@ -42,10 +42,11 @@ const CHAT_MESSAGES = [
 
 export const options = {
     stages: [
-        { duration: '30s', target: 100 },
-        { duration: '30s', target: 200 },
-        { duration: '1m', target: 500 },
-        { duration: '30s', target: 0 }
+        { duration: '1m', target: 100 },
+        { duration: '1m', target: 200 },
+        { duration: '1m', target: 300 },
+        // { duration: '3m', target: 800 },
+        { duration: '1m', target: 0 }
     ],
     thresholds: {
         'ws_connection_success_rate': ['rate>0.90'],
@@ -57,7 +58,7 @@ export default function () {
     const url = 'ws://localhost:8080/ws-stomp';
 
     // JWT를 1~20000 정수로 사용
-    const userId = ((__VU - 1) % 20000) + 1;
+    const userId = __VU;
     const roomId = 1;  // 모든 VU를 Room 1에 집중 (브로드캐스트 테스트)
 
     let connectStart = new Date();
@@ -100,7 +101,7 @@ export default function () {
                 roomMessagesSent[roomId].add(1);  // 방별 전송 카운트
                 messagesSent++;
 
-                console.log(`[VU ${__VU}] 메시지 ${messagesSent}/${messagesToSend} 전송: "${message}" (Room ${roomId})`);
+                // console.log(`[VU ${__VU}] 메시지 ${messagesSent}/${messagesToSend} 전송: "${message}" (Room ${roomId})`);
             }
 
             socket.on('open', function() {
@@ -126,7 +127,7 @@ export default function () {
                     wsConnectionSuccessRate.add(true);
                     activeConnections.add(1);
 
-                    console.log(`[VU ${__VU}] CONNECTED → Room ${roomId} 구독`);
+                    // console.log(`[VU ${__VU}] CONNECTED → Room ${roomId} 구독`);
 
                     // 채팅방 구독
                     const subscribeFrame =
@@ -180,7 +181,7 @@ export default function () {
                                 roomMessagesReceived[payload.roomId].add(1);
                             }
 
-                            console.log(`[VU ${__VU}] 수신 "${payload.content}" (User ${payload.senderId} → Room ${payload.roomId})`);
+                            // console.log(`[VU ${__VU}] 수신 "${payload.content}" (User ${payload.senderId} → Room ${payload.roomId})`);
 
                         } catch (e) {
                             // 파싱 실패는 무시
