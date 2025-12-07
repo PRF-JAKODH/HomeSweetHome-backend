@@ -12,7 +12,6 @@ import com.homesweet.homesweetback.domain.notification.entity.NotificationTempla
 import com.homesweet.homesweetback.domain.notification.entity.UserNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationPublisher;
 
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +49,6 @@ public class NotificationEventListener {
    * 단일 사용자 또는 다수 사용자 모두 처리합니다.
    * TemplateNotification을 통해 DB에서 템플릿을 조회하고, Payload와 함께 알림을 전송합니다.
    */
-  @WithSpan
   @Async("notificationTaskExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void handleTemplateNotificationEvent(TemplateNotificationEvent event) {
@@ -81,7 +79,6 @@ public class NotificationEventListener {
   /**
    * 커스텀 알림 이벤트 처리
    */
-  @WithSpan
   @Async("notificationTaskExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void handleCustomNotificationEvent(CustomNotificationEvent event) {

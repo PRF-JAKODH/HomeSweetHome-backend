@@ -19,8 +19,6 @@ import com.homesweet.homesweetback.domain.notification.repository.NotificationCa
 import com.homesweet.homesweetback.domain.notification.repository.NotificationTemplateRepository;
 import com.homesweet.homesweetback.domain.notification.repository.UserNotificationJdbcRepository;
 
-import io.opentelemetry.instrumentation.annotations.WithSpan;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +44,6 @@ public class UserNotificationService {
      * @throws IllegalArgumentException 알림 리스트가 null인 경우
      */
     @Transactional
-    @WithSpan
     public void bulkInsertUserNotifications(List<UserNotification> userNotifications) {
         if (userNotifications == null) {
             throw new IllegalArgumentException("사용자 알림 리스트는 null일 수 없습니다.");
@@ -69,7 +66,6 @@ public class UserNotificationService {
      * @return 생성된 사용자 알림
      * @throws IllegalArgumentException userId나 template이 null인 경우
      */
-    @WithSpan
     public UserNotification createUserNotification(
             User user,
             NotificationTemplate template,
@@ -100,7 +96,6 @@ public class UserNotificationService {
      * @throws IllegalArgumentException title이나 content가 null이거나 빈 문자열인 경우
      */
     @Transactional
-    @WithSpan
     public NotificationTemplate createAndSaveCustomNotificationTemplate(
             String title,
             String content,
@@ -133,7 +128,6 @@ public class UserNotificationService {
      */
     @Transactional(readOnly = true)
     @Cacheable(value = "notificationTemplateCache", key = "#eventType", cacheManager = "localCacheManager")
-    @WithSpan
     public NotificationTemplate getNotificationTemplate(NotificationTemplateType eventType) {
         return notificationTemplateRepository
                 .findByTemplateType(eventType)

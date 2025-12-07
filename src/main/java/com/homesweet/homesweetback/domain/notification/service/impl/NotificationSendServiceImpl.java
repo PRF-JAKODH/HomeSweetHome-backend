@@ -6,7 +6,6 @@ import com.homesweet.homesweetback.domain.notification.domain.notification.Custo
 import com.homesweet.homesweetback.domain.notification.domain.notification.TemplateNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,6 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * 이벤트를 발행하여 비동기로 알림을 처리합니다.
      */
     @Override
-    @WithSpan
     public void sendTemplateNotificationToSingleUser(Long userId, TemplateNotification notification) {
         log.debug("템플릿 알림 이벤트 발행: userId={}, eventType={}", userId, notification.getEventType());
         eventPublisher.publishEvent(new TemplateNotificationEvent(userId, notification));
@@ -48,7 +46,6 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * 이벤트를 발행하여 비동기로 알림을 처리합니다.
      */
     @Override
-    @WithSpan
     public void sendTemplateNotificationToMultipleUsers(List<Long> userIds, TemplateNotification notification) {
         log.debug("다수 사용자 템플릿 알림 이벤트 발행: userIds={}", userIds);
         eventPublisher.publishEvent(new TemplateNotificationEvent(userIds, notification));
@@ -60,7 +57,6 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * 이벤트를 발행하여 비동기로 알림을 처리합니다.
      */
     @Override
-    @WithSpan
     public void sendCustomNotificationToSingleUser(Long userId, CustomNotification notification) {
         log.debug("커스텀 알림 이벤트 발행: userId={}, title={}", userId, notification.getTitle());
         CustomNotificationEvent event = new CustomNotificationEvent(userId, notification);
@@ -73,7 +69,6 @@ public class NotificationSendServiceImpl implements NotificationSendService {
      * 이벤트를 발행하여 비동기로 알림을 처리합니다.
      */
     @Override
-    @WithSpan
     public void sendCustomNotificationToMultipleUsers(List<Long> userIds, CustomNotification notification) {
         log.debug("다수 사용자 커스텀 알림 이벤트 발행: userIds={}, title={}", userIds, notification.getTitle());
         CustomNotificationEvent event = new CustomNotificationEvent(userIds, notification);
