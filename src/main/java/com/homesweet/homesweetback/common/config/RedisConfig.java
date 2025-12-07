@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
@@ -66,23 +67,6 @@ public class RedisConfig {
     public org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate(
             RedisConnectionFactory connectionFactory) {
         return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
-    }
-
-
-    /**
-     * @author 주아현
-     * @since 2025-12-05
-     */
-    @Bean(name = "chatRoomRedisTemplate")
-    public RedisTemplate<String, Object> chatRoomRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        template.afterPropertiesSet();
-
-        return template;
     }
 
 }
