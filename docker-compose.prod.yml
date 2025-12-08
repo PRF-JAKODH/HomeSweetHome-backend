@@ -18,6 +18,8 @@ services:
     restart: always
     ports:
       - "9100:9100"
+    networks:
+      - homesweet-network
 
   mysqld_exporter:
     image: prom/mysqld-exporter:latest
