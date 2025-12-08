@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.domain.community.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -13,17 +16,21 @@ import com.homesweet.homesweetback.domain.search.community.event.CommunityEventP
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -35,6 +42,13 @@ public class CommunityPostService {
     private final UserRepository userRepository;
     private final CommunityImageUploader imageUploader;
     private final CommunityCountService communityCountService;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private static final String POST_CACHE_PREFIX = "communityPost::";
+    private static final String POST_LIST_CACHE_PREFIX = "communityPostList::";
+    private static final Duration POST_CACHE_TTL = Duration.ofHours(1);
+    private static final Duration POST_LIST_CACHE_TTL = Duration.ofMinutes(1); // 목록은 짧게
 
     /**
      * 게시글 작성
@@ -76,24 +90,61 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 단건 조회 - Cache-Aside 패턴 적용
+     * 게시글 단건 조회 - Cache-Aside 패턴 적용 (게시물 본문 + 카운터)
      */
     public CommunityPostResponse getPost(Long postId) {
+        String cacheKey = POST_CACHE_PREFIX + postId;
+
+        // 1. 캐시 조회
+        String cachedJson = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (cachedJson != null) {
+            try {
+                CommunityPostResponse cached = objectMapper.readValue(cachedJson, CommunityPostResponse.class);
+                // 카운터는 항상 Redis에서 최신값 조회
+                Integer viewCount = communityCountService.getViewCountFromCache(postId);
+                Integer likeCount = communityCountService.getLikeCountFromCache(postId);
+                Integer commentCount = communityCountService.getCommentCountFromCache(postId);
+                
+                return new CommunityPostResponse(
+                        cached.postId(), cached.authorId(), cached.authorName(),
+                        cached.title(), cached.content(), cached.category(),
+                        viewCount, likeCount, commentCount,
+                        cached.isModified(), cached.createdAt(), cached.modifiedAt(),
+                        cached.imagesUrl()
+                );
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to deserialize cached post, fetching from DB: {}", postId, e);
+                stringRedisTemplate.delete(cacheKey);
+            }
+        }
+
+        // 2. Cache Miss - DB 조회
         CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
 
-        // 이미지 조회
         List<String> imageUrls = imageRepository.findByPostOrderByImageOrderAsc(post)
                 .stream()
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        // Redis에서 실시간 카운터 조회 (Cache-Aside)
+        // Redis에서 실시간 카운터 조회
         Integer viewCount = communityCountService.getViewCountFromCache(postId);
         Integer likeCount = communityCountService.getLikeCountFromCache(postId);
         Integer commentCount = communityCountService.getCommentCountFromCache(postId);
 
-        return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
+        CommunityPostResponse response = CommunityPostResponse.fromWithCachedCounts(
+                post, imageUrls, viewCount, likeCount, commentCount);
+
+        // 3. 캐시 저장
+        try {
+            String json = objectMapper.writeValueAsString(response);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, POST_CACHE_TTL);
+            log.debug("Cached post: {}", postId);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to cache post: {}", postId, e);
+        }
+
+        return response;
     }
 
     /**
@@ -121,6 +172,11 @@ public class CommunityPostService {
 
         communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
 
+
+        // 캐시 무효화
+        stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
+        log.debug("Cache invalidated for updated post: {}", postId);
+
         return CommunityPostResponse.from(post, imageUrls);
     }
 
@@ -142,18 +198,55 @@ public class CommunityPostService {
         post.deletePost();
 
         communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
+
+        // 캐시 무효화
+        stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
+        log.debug("Cache invalidated for deleted post: {}", postId);
     }
 
     /**
      * 게시글 목록 조회 (페이지네이션) - Cache-Aside 패턴 적용
      */
     public Page<CommunityPostResponse> getPosts(Pageable pageable) {
+        String cacheKey = POST_LIST_CACHE_PREFIX + pageable.getPageNumber() + ":" + pageable.getPageSize();
+
+        // 1. 캐시 조회
+        String cachedJson = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (cachedJson != null) {
+            try {
+                List<CommunityPostResponse> cached = objectMapper.readValue(
+                        cachedJson, new TypeReference<List<CommunityPostResponse>>() {});
+                
+                // 카운터는 항상 최신값으로 조회
+                List<CommunityPostResponse> withLatestCounts = cached.stream()
+                        .map(post -> new CommunityPostResponse(
+                                post.postId(), post.authorId(), post.authorName(),
+                                post.title(), post.content(), post.category(),
+                                communityCountService.getViewCountFromCache(post.postId()),
+                                communityCountService.getLikeCountFromCache(post.postId()),
+                                communityCountService.getCommentCountFromCache(post.postId()),
+                                post.isModified(), post.createdAt(), post.modifiedAt(),
+                                post.imagesUrl()
+                        ))
+                        .toList();
+                
+                long totalCount = postRepository.countByIsDeletedFalse();
+                log.debug("Cache hit for post list: page={}", pageable.getPageNumber());
+                return new org.springframework.data.domain.PageImpl<>(withLatestCounts, pageable, totalCount);
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to deserialize cached post list", e);
+                stringRedisTemplate.delete(cacheKey);
+            }
+        }
+
+        // 2. Cache Miss - DB 조회
         Page<CommunityPostEntity> postsPage = postRepository.findByIsDeletedFalse(pageable);
         List<CommunityPostEntity> posts = postsPage.getContent();
 
         if (posts.isEmpty()) {
             return postsPage.map(post -> CommunityPostResponse.from(post, null));
         }
+        
         List<CommunityImageEntity> allImages = imageRepository.findAllByPostInOrderByPostPostIdAscImageOrderAsc(posts);
 
         Map<Long, List<String>> postImagesMap = allImages.stream()
@@ -162,15 +255,26 @@ public class CommunityPostService {
                         Collectors.mapping(CommunityImageEntity::getImageUrl, Collectors.toList())
                 ));
 
-        return postsPage.map(post -> {
-            List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());
+        List<CommunityPostResponse> responses = posts.stream()
+                .map(post -> {
+                    List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());
+                    Integer viewCount = communityCountService.getViewCountFromCache(post.getPostId());
+                    Integer likeCount = communityCountService.getLikeCountFromCache(post.getPostId());
+                    Integer commentCount = communityCountService.getCommentCountFromCache(post.getPostId());
 
-            // Redis에서 실시간 카운터 조회 (Cache-Aside)
-            Integer viewCount = communityCountService.getViewCountFromCache(post.getPostId());
-            Integer likeCount = communityCountService.getLikeCountFromCache(post.getPostId());
-            Integer commentCount = communityCountService.getCommentCountFromCache(post.getPostId());
+                    return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
+                })
+                .toList();
 
-            return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
-        });
+        // 3. 캐시 저장
+        try {
+            String json = objectMapper.writeValueAsString(responses);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, POST_LIST_CACHE_TTL);
+            log.debug("Cached post list: page={}", pageable.getPageNumber());
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to cache post list", e);
+        }
+
+        return new org.springframework.data.domain.PageImpl<>(responses, pageable, postsPage.getTotalElements());
     }
 }

@@ -1,5 +1,8 @@
 package com.homesweet.homesweetback.domain.community.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
@@ -12,12 +15,16 @@ import com.homesweet.homesweetback.domain.community.repository.CommunityCommentR
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,6 +34,11 @@ public class CommunityCommentService {
     private final UserRepository userRepository;
     private final NotificationSendService notificationSendService;
     private final CommunityCountService communityCountService;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private static final String COMMENTS_CACHE_PREFIX = "comments::post::";
+    private static final Duration COMMENTS_CACHE_TTL = Duration.ofMinutes(30);
 
     /**
      * 댓글 작성
@@ -69,6 +81,10 @@ public class CommunityCommentService {
         //                 .build());
 
 
+        // 캐시 무효화
+        stringRedisTemplate.delete(COMMENTS_CACHE_PREFIX + postId);
+        log.debug("Cache invalidated for comments of post: {}", postId);
+
         return CommunityCommentResponse.from(savedComment);
     }
 
@@ -76,16 +92,52 @@ public class CommunityCommentService {
      * 해당 게시글의 모든 댓글 조회 - Cache-Aside 패턴 적용
      */
     public List<CommunityCommentResponse> getCommentsByPostId(Long postId) {
+        String cacheKey = COMMENTS_CACHE_PREFIX + postId;
+
+        // 1. 캐시 조회
+        String cachedJson = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (cachedJson != null) {
+            try {
+                List<CommunityCommentResponse> cached = objectMapper.readValue(
+                        cachedJson, new TypeReference<List<CommunityCommentResponse>>() {});
+                
+                // 좋아요 수는 항상 최신값으로 조회
+                return cached.stream()
+                        .map(comment -> new CommunityCommentResponse(
+                                comment.commentId(), comment.postId(), comment.authorId(),
+                                comment.authorName(), comment.content(),
+                                comment.parentCommentId(),
+                                communityCountService.getCommentLikeCountFromCache(comment.commentId()),
+                                comment.isModified(), comment.createdAt(), comment.modifiedAt()
+                        ))
+                        .toList();
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to deserialize cached comments for post: {}", postId, e);
+                stringRedisTemplate.delete(cacheKey);
+            }
+        }
+
+        // 2. Cache Miss - DB 조회
         List<CommunityCommentEntity> comments =
                 commentRepository.findByPost_PostIdAndIsDeletedFalse(postId);
 
-        return comments.stream()
+        List<CommunityCommentResponse> responses = comments.stream()
                 .map(comment -> {
-                    // Redis에서 실시간 좋아요 수 조회 (Cache-Aside)
                     Integer likeCount = communityCountService.getCommentLikeCountFromCache(comment.getCommentId());
                     return CommunityCommentResponse.fromWithCachedLikeCount(comment, likeCount);
                 })
                 .toList();
+
+        // 3. 캐시 저장
+        try {
+            String json = objectMapper.writeValueAsString(responses);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, COMMENTS_CACHE_TTL);
+            log.debug("Cached comments for post: {}", postId);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to cache comments for post: {}", postId, e);
+        }
+
+        return responses;
     }
 
     /**
@@ -104,6 +156,10 @@ public class CommunityCommentService {
 
         // 댓글 수정
         comment.updateComment(request.content());
+
+        // 캐시 무효화
+        stringRedisTemplate.delete(COMMENTS_CACHE_PREFIX + comment.getPost().getPostId());
+        log.debug("Cache invalidated for comments of post: {}", comment.getPost().getPostId());
 
         return CommunityCommentResponse.from(comment);
     }
@@ -127,5 +183,9 @@ public class CommunityCommentService {
 
         // 게시글의 댓글 수 감소
         communityCountService.decreaseCommentCount(postId);
+
+        // 캐시 무효화
+        stringRedisTemplate.delete(COMMENTS_CACHE_PREFIX + postId);
+        log.debug("Cache invalidated for comments of post: {}", postId);
     }
 }

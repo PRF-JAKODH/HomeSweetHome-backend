@@ -20,6 +20,9 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     @EntityGraph(attributePaths = {"author", "author.grade"})
     Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 
+    // 전체 게시글 수 조회 (캐싱용)
+    long countByIsDeletedFalse();
+
     @Modifying
     @Query("UPDATE CommunityPostEntity p SET p.viewCount = :viewCount WHERE p.postId = :postId AND p.isDeleted = false")
     int updateViewCount(@Param("postId") Long postId, @Param("viewCount") Integer viewCount);
