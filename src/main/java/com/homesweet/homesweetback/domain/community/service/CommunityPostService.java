@@ -11,8 +11,6 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +26,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommunityPostService {
 
-    private final CommunityEventPublisher communityEventPublisher;
     private final CommunityPostRepository postRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
@@ -49,6 +47,33 @@ public class CommunityPostService {
     private static final String POST_LIST_CACHE_PREFIX = "communityPostList::";
     private static final Duration POST_CACHE_TTL = Duration.ofHours(1);
     private static final Duration POST_LIST_CACHE_TTL = Duration.ofMinutes(1); // 목록은 짧게
+
+    /**
+     * 게시글 목록 캐시 무효화 (SCAN 사용 - 프로덕션 안전, 논블로킹)
+     */
+    private void invalidatePostListCache() {
+        try {
+            var scanOptions = org.springframework.data.redis.core.ScanOptions.scanOptions()
+                    .match(POST_LIST_CACHE_PREFIX + "*")
+                    .count(100)
+                    .build();
+            
+            int deletedCount = 0;
+            try (var cursor = stringRedisTemplate.scan(scanOptions)) {
+                while (cursor.hasNext()) {
+                    String key = cursor.next();
+                    stringRedisTemplate.delete(key);
+                    deletedCount++;
+                }
+            }
+            
+            if (deletedCount > 0) {
+                log.debug("Invalidated {} post list cache entries", deletedCount);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to invalidate post list cache", e);
+        }
+    }
 
     /**
      * 게시글 작성
@@ -84,7 +109,8 @@ public class CommunityPostService {
             }
         }
 
-        communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
+        // 목록 캐시 무효화
+        invalidatePostListCache();
 
         return CommunityPostResponse.from(savedPost, imageUrls);
     }
@@ -170,11 +196,9 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
-
-
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
+        invalidatePostListCache();
         log.debug("Cache invalidated for updated post: {}", postId);
 
         return CommunityPostResponse.from(post, imageUrls);
@@ -197,10 +221,9 @@ public class CommunityPostService {
         // 게시글 소프트 삭제
         post.deletePost();
 
-        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
-
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
+        invalidatePostListCache();
         log.debug("Cache invalidated for deleted post: {}", postId);
     }
 
@@ -217,14 +240,19 @@ public class CommunityPostService {
                 List<CommunityPostResponse> cached = objectMapper.readValue(
                         cachedJson, new TypeReference<List<CommunityPostResponse>>() {});
                 
-                // 카운터는 항상 최신값으로 조회
+                // 카운터는 항상 최신값으로 조회 (Bulk MGET - 30번 → 3번 최적화)
+                List<Long> postIds = cached.stream().map(CommunityPostResponse::postId).toList();
+                Map<Long, Integer> viewCounts = communityCountService.getBulkViewCountsFromCache(postIds);
+                Map<Long, Integer> likeCounts = communityCountService.getBulkLikeCountsFromCache(postIds);
+                Map<Long, Integer> commentCounts = communityCountService.getBulkCommentCountsFromCache(postIds);
+
                 List<CommunityPostResponse> withLatestCounts = cached.stream()
                         .map(post -> new CommunityPostResponse(
                                 post.postId(), post.authorId(), post.authorName(),
                                 post.title(), post.content(), post.category(),
-                                communityCountService.getViewCountFromCache(post.postId()),
-                                communityCountService.getLikeCountFromCache(post.postId()),
-                                communityCountService.getCommentCountFromCache(post.postId()),
+                                viewCounts.getOrDefault(post.postId(), 0),
+                                likeCounts.getOrDefault(post.postId(), 0),
+                                commentCounts.getOrDefault(post.postId(), 0),
                                 post.isModified(), post.createdAt(), post.modifiedAt(),
                                 post.imagesUrl()
                         ))
@@ -255,14 +283,21 @@ public class CommunityPostService {
                         Collectors.mapping(CommunityImageEntity::getImageUrl, Collectors.toList())
                 ));
 
+        // Bulk 카운터 조회 (MGET - 30번 → 3번 최적화)
+        List<Long> postIds = posts.stream().map(CommunityPostEntity::getPostId).toList();
+        Map<Long, Integer> viewCounts = communityCountService.getBulkViewCountsFromCache(postIds);
+        Map<Long, Integer> likeCounts = communityCountService.getBulkLikeCountsFromCache(postIds);
+        Map<Long, Integer> commentCounts = communityCountService.getBulkCommentCountsFromCache(postIds);
+
         List<CommunityPostResponse> responses = posts.stream()
                 .map(post -> {
                     List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());
-                    Integer viewCount = communityCountService.getViewCountFromCache(post.getPostId());
-                    Integer likeCount = communityCountService.getLikeCountFromCache(post.getPostId());
-                    Integer commentCount = communityCountService.getCommentCountFromCache(post.getPostId());
-
-                    return CommunityPostResponse.fromWithCachedCounts(post, imageUrls, viewCount, likeCount, commentCount);
+                    return CommunityPostResponse.fromWithCachedCounts(
+                            post, imageUrls,
+                            viewCounts.getOrDefault(post.getPostId(), 0),
+                            likeCounts.getOrDefault(post.getPostId(), 0),
+                            commentCounts.getOrDefault(post.getPostId(), 0)
+                    );
                 })
                 .toList();
 
