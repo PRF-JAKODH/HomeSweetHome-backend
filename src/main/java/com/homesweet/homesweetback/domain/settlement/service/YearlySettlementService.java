@@ -1,20 +1,12 @@
 package com.homesweet.homesweetback.domain.settlement.service;
 
-import com.homesweet.homesweetback.domain.settlement.aggregate.SettlementAggregator;
 import com.homesweet.homesweetback.domain.settlement.dto.response.YearlySettlementResponse;
-import com.homesweet.homesweetback.domain.settlement.entity.MonthlySettlement;
 import com.homesweet.homesweetback.domain.settlement.entity.YearlySettlement;
-import com.homesweet.homesweetback.domain.settlement.mapper.SettlementMapper;
-import com.homesweet.homesweetback.domain.settlement.repository.MonthlySettlementRepository;
-import com.homesweet.homesweetback.domain.settlement.repository.SettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.YearlySettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.dto.response.EmptyResponse;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.YearlyDateRangeCalculator;
-import com.homesweet.homesweetback.domain.settlement.util.saver.SettlementSaver;
-import com.homesweet.homesweetback.domain.settlement.util.vo.SettlementTotals;
-import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -23,81 +15,39 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class YearlySettlementService {
     private final YearlySettlementRepository yearlySettlementRepository;
-    private final MonthlySettlementRepository monthlySettlementRepository;
-    private final YearlyDateRangeCalculator yearlyDateRangeCalculator;
+    private final YearlyDateRangeCalculator yearlyCalc;
     private final EmptyResponse emptyResponse;
-    private final SettlementValidator settlementValidator;
-    private final SettlementAggregator settlementAggregator;
-    private final SettlementSaver settlementSaver;
     private final SettlementCacheService settlementCacheService;
-
-    // redis cache 적용
 
     // 연별 데이터 조회
     @Transactional(readOnly = true)
     public Page<YearlySettlementResponse> getYearlySummary(Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        short fromYear = (short) startDate.getYear();
-        short toYear = (short) endDate.getYear();
-        //1. 연도 계산
-        YearlyDateRangeCalculator.YearlyDateRange range =
-                yearlyDateRangeCalculator.calculate(startDate, endDate);
+        // 1) 캐시에서 content 가져오기
+        List<YearlySettlementResponse> content =
+                settlementCacheService.getYearlyContentCache(userId, startDate, endDate, pageable);
 
-        // 2. 페이지로 정산일시 기준 연별 정산목록 조회
-//        Page<YearlySettlement> yearlySettlements = getYearlySettlements(userId, range.fromYear(), range.toYearExclusive(), pageable);
-        Page<YearlySettlement> pageInfo =
-                yearlySettlementRepository.findByYearlySettlementByRange(
-                        userId, fromYear, toYear, pageable
-                );
-        long totalCount = pageInfo.getTotalElements();
-        List<YearlySettlementResponse> yearlySettlements =
-        settlementCacheService.getYearlyContentCache(userId, startDate, endDate, pageable);
-        // 3. 기간 전체의 총 주문 건수
-//        long totalCount = settlementRepository.countAllByOrderedAt(userId, range.fromDateTime(),
-//                range.toDateTimeExclusive());
-
-        // 4. 데이터가 존재하지 않으면 0 반환
-        if (yearlySettlements.isEmpty()) {
-            return emptyResponse.createEmptyYearly(range.fromYearMonth(), pageable);
+        if (content.isEmpty()) {
+            int year = startDate.getYear();
+            return emptyResponse.createEmptyYearly((short) year, pageable);
         }
 
-        // 5. 응답 반환
-//        List<YearlySettlementResponse> yearlySettlement =
-//                settlementMapper.toYearlyResponses(yearlySettlements, totalCount);
+        // 2) count 조회
+        YearlyDateRangeCalculator.YearlyDateRange range =
+                yearlyCalc.calculate(startDate, endDate);
 
-        // 6. 페이지 반환
-        return new PageImpl<>(yearlySettlements, pageable, totalCount);
-    }
-    private Page<YearlySettlement> getYearlySettlements(Long userId, short fromYear,short toYearExclusive, Pageable pageable) {
-        return yearlySettlementRepository.findByYearlySettlementByRange(userId, fromYear, toYearExclusive, pageable);
-    }
-    // 연별 집계
-    public void getYearlySettlement(Long userId) {
-        Short prevYear = null;
-        List<MonthlySettlement> settlements = monthlySettlementRepository.findByMonthlySettlement(userId);
-        // 2. 검증
-        settlementValidator.validateYearly(settlements);
-        // 3. 공통 연별 집계 처리
-        Map<Short, SettlementTotals> yearlyTotalsMap =
-                settlementAggregator.aggregate(
-                        settlements,
-                        m -> m.getYear(),   // grouping key
-                        m -> new SettlementTotals(
-                                m.getTotalSales(),
-                                m.getTotalFee(),
-                                m.getTotalVat(),
-                                m.getTotalRefund(),
-                                m.getTotalSettlement()
-                        )
-                );
-        // 4. upsert
-        yearlyTotalsMap.forEach((year, totals) ->
-                settlementSaver.saveYearly(userId, year, totals)
+        long totalCount = yearlySettlementRepository.countByRange(
+                userId,
+                range.fromYear(),
+                range.toYearExclusive()
         );
+
+        // 3) Page 반환
+        return new PageImpl<>(content, pageable, totalCount);
     }
 }
