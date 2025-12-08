@@ -13,7 +13,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface CommunityPostRepository extends JpaRepository<CommunityPostEntity, Long> {
-    // 특정 게시글 조회
+    // 특정 게시글 조회 - N+1 문제 해결
+    @EntityGraph(attributePaths = {"author", "author.grade"})
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
     // 페이지네이션 쿼리 메서드 / N+1문제 해결위해 EntityGraph 추가
