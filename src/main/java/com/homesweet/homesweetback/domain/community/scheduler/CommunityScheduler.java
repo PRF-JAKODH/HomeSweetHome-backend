@@ -4,10 +4,13 @@ import com.homesweet.homesweetback.domain.community.repository.CommunityCommentL
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostLikeRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
+import com.homesweet.homesweetback.domain.community.service.CommunityCountService;
 import com.homesweet.homesweetback.domain.community.service.CommunityRedisService;
 import com.homesweet.homesweetback.domain.community.service.CommunityRedisService.LikeEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -27,6 +30,46 @@ public class CommunityScheduler {
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final CommunityCommentRepository commentRepository;
     private final TransactionTemplate transactionTemplate;
+    private final CommunityCountService communityCountService;
+
+    /**
+     * 인기 게시글 캐시 워밍업 - 서버 시작 시 및 1시간마다 실행
+     * 최근 게시글 상위 100개의 좋아요/조회수 데이터를 Redis에 미리 로딩
+     */
+    @Scheduled(initialDelay = 5000, fixedDelay = 3600000)  // 5초 후 시작, 1시간마다
+    public void warmupPopularPostsCache() {
+        log.info("Starting cache warmup for popular posts...");
+
+        try {
+            // 최근 게시글 100개 조회 (가장 많이 조회될 가능성 높음)
+            var recentPosts = communityPostRepository.findByIsDeletedFalse(
+                    PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "postId"))
+            );
+
+            int warmupCount = 0;
+            for (var post : recentPosts.getContent()) {
+                Long postId = post.getPostId();
+
+                // 좋아요 데이터 워밍업 (Cache Miss 방지)
+                if (!redisService.hasPostLikeKey(postId)) {
+                    List<Long> userIds = postLikeRepository.findUserIdsByPostId(postId);
+                    redisService.setPostLikes(postId, userIds);
+                    warmupCount++;
+                }
+
+                // 조회수/댓글수/좋아요수 워밍업
+                communityCountService.getViewCountFromCache(postId);
+                communityCountService.getLikeCountFromCache(postId);
+                communityCountService.getCommentCountFromCache(postId);
+            }
+
+            log.info("Cache warmup completed - posts processed: {}, likes warmed up: {}",
+                    recentPosts.getContent().size(), warmupCount);
+
+        } catch (Exception e) {
+            log.error("Failed to warmup cache", e);
+        }
+    }
 
     @Scheduled(initialDelay = 100000, fixedDelay = 110000)
     public void updateCountData() {
