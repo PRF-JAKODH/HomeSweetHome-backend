@@ -260,6 +260,66 @@ public class CommunityRedisService {
     }
 
     // ============================================================
+    // Bulk Operations (for Post List - MGET)
+    // ============================================================
+
+    /**
+     * 여러 게시글의 조회수를 한 번에 조회 (MGET)
+     * @param postIds 게시글 ID 목록
+     * @return postId -> viewCount 맵
+     */
+    public Map<Long, Integer> getBulkViewCounts(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> keys = postIds.stream().map(this::getPostViewKey).toList();
+        List<Object> values = redisTemplate.opsForValue().multiGet(keys);
+        
+        Map<Long, Integer> result = new HashMap<>();
+        for (int i = 0; i < postIds.size(); i++) {
+            Object value = values != null ? values.get(i) : null;
+            result.put(postIds.get(i), value != null ? (Integer) value : null);
+        }
+        return result;
+    }
+
+    /**
+     * 여러 게시글의 좋아요수를 한 번에 조회 (MGET)
+     */
+    public Map<Long, Integer> getBulkLikeCounts(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> keys = postIds.stream().map(this::getPostLikeCountKey).toList();
+        List<Object> values = redisTemplate.opsForValue().multiGet(keys);
+        
+        Map<Long, Integer> result = new HashMap<>();
+        for (int i = 0; i < postIds.size(); i++) {
+            Object value = values != null ? values.get(i) : null;
+            result.put(postIds.get(i), value != null ? (Integer) value : null);
+        }
+        return result;
+    }
+
+    /**
+     * 여러 게시글의 댓글수를 한 번에 조회 (MGET)
+     */
+    public Map<Long, Integer> getBulkCommentCounts(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> keys = postIds.stream().map(this::getPostCommentCountKey).toList();
+        List<Object> values = redisTemplate.opsForValue().multiGet(keys);
+        
+        Map<Long, Integer> result = new HashMap<>();
+        for (int i = 0; i < postIds.size(); i++) {
+            Object value = values != null ? values.get(i) : null;
+            result.put(postIds.get(i), value != null ? (Integer) value : null);
+        }
+        return result;
+    }
+
+    // ============================================================
     // Batch Operations (for Scheduler)
     // ============================================================
 
