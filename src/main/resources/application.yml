@@ -6,7 +6,7 @@ spring:
     name: homesweet-back
   profiles:
     active:
-      - prod
+      - dev
   flyway:
     enabled: true
     baseline-on-migrate: true
