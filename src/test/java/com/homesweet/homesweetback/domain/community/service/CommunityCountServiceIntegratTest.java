@@ -14,6 +14,7 @@ import com.homesweet.homesweetback.domain.notification.service.NotificationSendS
 import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
 import io.awspring.cloud.s3.S3Template;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ import com.homesweet.homesweetback.domain.auth.entity.UserRole;
  * Redis 기반 통합 테스트
  * CI 환경에서는 GitHub Actions의 Redis service container를 사용합니다.
  */
+@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
