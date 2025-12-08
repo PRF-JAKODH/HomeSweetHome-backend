@@ -1,17 +1,14 @@
 package com.homesweet.homesweetback.domain.chat.service;
 
-import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomCreateResponse;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
-import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
-import jakarta.transaction.Transactional;
 
 import java.util.List;
 
 public interface ChatRoomService {
 
-    RoomDto createOrGetIndividualRoom(Long meId, Long targetId);
+    IndividualRoomCreateResponse createOrGetIndividualRoom(Long meId, Long targetId);
 
     GroupRoomCreateResponse createGroupRoom(Long ownerId, CreateGroupRoomRequest request);
 

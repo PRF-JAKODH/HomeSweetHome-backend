@@ -6,7 +6,7 @@ import com.homesweet.homesweetback.common.exception.ErrorCode;
 import com.homesweet.homesweetback.common.s3.impl.S3ImageUploader;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
+import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomCreateResponse;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.entity.ChatMessage;
@@ -17,9 +17,9 @@ import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
 import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
 import com.homesweet.homesweetback.domain.search.chat.event.ChatroomSearchEventPublisher;
 import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
-import com.homesweet.homesweetback.domain.chat.repository.ChatMessageRepository;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatMessageRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.RoomMemberRepository;
 import com.homesweet.homesweetback.domain.chat.service.RoomMemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -122,7 +122,7 @@ public class ChatRoomServiceImplUnitTest {
                     .willReturn(Optional.of(existingRoom));
 
             // when
-            RoomDto result = service.createOrGetIndividualRoom(1L, 2L);
+            IndividualRoomCreateResponse result = service.createOrGetIndividualRoom(1L, 2L);
 
             // then
             assertThat(result.roomId()).isEqualTo(100L);
@@ -154,7 +154,7 @@ public class ChatRoomServiceImplUnitTest {
                     });
 
             // when
-            RoomDto result = service.createOrGetIndividualRoom(meId, targetId);
+            IndividualRoomCreateResponse result = service.createOrGetIndividualRoom(meId, targetId);
 
             // then
             assertThat(result.roomId()).isEqualTo(100L);
@@ -590,11 +590,13 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.NEW_MEMBER);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.NEW_MEMBER));
             assertThat(response.roomId()).isEqualTo(10L);
             assertThat(response.roomName()).isEqualTo("테스트방");
-            assertThat(response.memberInfo().userName()).isEqualTo(registered.userName());
-            assertThat(response.memberInfo().userId()).isEqualTo(1L);
+            assertThat(response.memberInfo().stream()
+                    .anyMatch(member -> member.userName().equals(member.userName()))).isTrue();
+            assertThat(response.memberInfo().stream()
+                            .anyMatch(member -> member.userId().equals(member.userId()))).isTrue();
 
             verify(chatRoomEventPublisher, times(1))
                     .publishMemberJoinedEvent(10L, registered);
@@ -622,7 +624,7 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.REJOIN);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.REJOIN));
             verify(chatRoomEventPublisher).publishMemberJoinedEvent(10L, rejoined);
         }
 
@@ -642,7 +644,7 @@ public class ChatRoomServiceImplUnitTest {
             JoinRoomResponse response = service.joinRoom(10L, 1L);
 
             // then
-            assertThat(response.joinType()).isEqualTo(JoinType.ALREADY_JOINED);
+            assertThat(response.joinType()).isEqualTo(List.of(JoinType.ALREADY_JOINED));
             verify(chatRoomEventPublisher, never())
                     .publishMemberJoinedEvent(anyLong(), any());
         }

@@ -1,9 +1,8 @@
-package com.homesweet.homesweetback.domain.chat.repository;
+package com.homesweet.homesweetback.domain.chat.repository.jpa;
 
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.chat.dto.response.GroupRoomListResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomListResponse;
-import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

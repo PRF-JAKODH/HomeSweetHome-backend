@@ -1,8 +1,12 @@
 package com.homesweet.homesweetback.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
@@ -22,19 +26,26 @@ public class RedisConfig {
     @Bean
     @Primary
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(mapper);
+
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
         template.setKeySerializer(new StringRedisSerializer());
-
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-
+        template.setValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashValueSerializer(serializer);
 
         template.afterPropertiesSet();
         return template;
     }
+
 
     @Bean(name = "stockRedisTemplate")
     public RedisTemplate<String, String> stockRedisTemplate(RedisConnectionFactory connectionFactory) {
@@ -57,4 +68,5 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory) {
         return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
     }
+
 }

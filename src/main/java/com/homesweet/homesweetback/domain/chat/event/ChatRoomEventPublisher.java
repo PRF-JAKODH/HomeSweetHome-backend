@@ -1,6 +1,8 @@
 package com.homesweet.homesweetback.domain.chat.event;
 
+import com.homesweet.homesweetback.domain.chat.dto.response.JoinRoomResponse;
 import com.homesweet.homesweetback.domain.chat.dto.response.RoomMemberResponse;
+import jakarta.persistence.criteria.Join;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -21,9 +23,10 @@ public class ChatRoomEventPublisher {
                 new ChatRoomDataUpdateEvent(
                         roomId,
                         UpdateType.MEMBER_JOINED,
-                        memberResponse
+                        JoinRoomResponse.builder()
                 )
         );
+
     }
 
     /**

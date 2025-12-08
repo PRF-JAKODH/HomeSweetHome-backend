@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.time.format.DateTimeFormatter;
+
 
 @Component
 @RequiredArgsConstructor
@@ -15,6 +17,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ChatRoomEventListener {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
      * 멤버 변경 이벤트 처리
@@ -25,13 +28,20 @@ public class ChatRoomEventListener {
     public void handleMemberUpdate(ChatRoomDataUpdateEvent event) {
 
         // WebSocket 목적지 (채팅방별 구독 경로)
-        String destination = "/sub/chat/rooms/" + event.roomId() + "/members";
+        String destination = "/sub/chat/rooms/" + event.roomId();
 
-        // 브로드캐스트 메시지 생성
-        WebSocketMessage message = new WebSocketMessage(
+        // ChatRoomUpdateData로 래핑
+        ChatRoomUpdateData updateData = new ChatRoomUpdateData(
+                event.roomId(),
                 event.updateType().name(),  // "MEMBER_JOINED" or "MEMBER_LEFT"
                 event.data(),
-                event.occurredAt()
+                event.occurredAt().format(FORMATTER)
+        );
+
+        // WebSocketMessage로 한 번 더 래핑
+        WebSocketMessage message = new WebSocketMessage(
+                "CHAT_ROOM_UPDATE",  // type
+                updateData // data
         );
 
         // 모든 구독자에게 전송

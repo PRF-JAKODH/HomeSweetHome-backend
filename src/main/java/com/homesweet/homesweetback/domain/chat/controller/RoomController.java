@@ -1,9 +1,9 @@
 package com.homesweet.homesweetback.domain.chat.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.chat.dto.response.IndividualRoomCreateResponse;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateGroupRoomRequest;
 import com.homesweet.homesweetback.domain.chat.dto.request.CreateIndividualRoomRequest;
-import com.homesweet.homesweetback.domain.chat.dto.RoomDto;
 import com.homesweet.homesweetback.domain.chat.dto.response.*;
 import com.homesweet.homesweetback.domain.chat.service.ChatMessageService;
 import com.homesweet.homesweetback.domain.chat.service.ChatRoomService;
@@ -30,14 +30,13 @@ public class RoomController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
-    private final RoomMemberService roomMemberService;
 
     /**
      * 1:1 채팅방 생성 또는 재사용
      * POST /api/v1/chat/rooms/individual
      */
     @PostMapping("/individual")
-    public ResponseEntity<RoomDto> createOrGetIndividual(
+    public ResponseEntity<IndividualRoomCreateResponse> createOrGetIndividual(
             @AuthenticationPrincipal OAuth2UserPrincipal principal,
             @Valid @RequestBody CreateIndividualRoomRequest request) {
 
@@ -48,7 +47,7 @@ public class RoomController {
             throw new ResponseStatusException(BAD_REQUEST, "자기 자신과는 1:1 채팅을 만들 수 없습니다.");
         }
 
-        RoomDto response = chatRoomService.createOrGetIndividualRoom(meId, targetId);
+        IndividualRoomCreateResponse response = chatRoomService.createOrGetIndividualRoom(meId, targetId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

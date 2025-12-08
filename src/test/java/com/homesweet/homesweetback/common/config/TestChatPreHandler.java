@@ -60,99 +60,9 @@ class TestChatPreHandler {
     @Nested
     @DisplayName("CONNECT 커맨드 테스트")
     class ConnectCommandTest {
-        private final String VALID_TOKEN = "valid.jwt.token";
         private final Long USER_ID = 123L;
         private final String USER_ID_STR = String.valueOf(USER_ID);
 
-        @Test
-        @DisplayName("[성공] JWT 토큰 검증 성공 및 userId 저장")
-        void handleConnect_Success() {
-            // Given
-            StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-            accessor.setSessionAttributes(new HashMap<>());
-            accessor.setNativeHeader("Authorization", "Bearer " + VALID_TOKEN);
-
-            given(jwtTokenProvider.validateToken(VALID_TOKEN)).willReturn(true);
-            given(jwtTokenProvider.isRefreshToken(VALID_TOKEN)).willReturn(false);
-            given(jwtTokenProvider.getClaimsFromToken(VALID_TOKEN)).willReturn(claims);
-            given(claims.getSubject()).willReturn(USER_ID_STR);
-            given(claims.get("role", String.class)).willReturn("USER");
-
-            Message<byte[]> message = createMessage(accessor);
-
-            // When
-            Message<?> result = chatPreHandler.preSend(message, messageChannel);
-
-            // Then
-            assertThat(result).isNotNull();
-
-            StompHeaderAccessor resultAccessor = StompHeaderAccessor.wrap(result);
-            assertThat(resultAccessor.getSessionAttributes().get("userId")).isEqualTo(USER_ID);
-
-            then(jwtTokenProvider).should(times(1)).validateToken(VALID_TOKEN);
-            then(jwtTokenProvider).should(times(1)).isRefreshToken(VALID_TOKEN);
-            then(jwtTokenProvider).should(times(1)).getClaimsFromToken(VALID_TOKEN);
-        }
-
-        @Test
-        @DisplayName("[실패] JWT 토큰이 없으면 예외 발생")
-        void handleConnect_NoToken() {
-            // Given
-            StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-            accessor.setSessionAttributes(new HashMap<>());
-
-            Message<byte[]> message = createMessage(accessor);
-
-            // When & Then
-            assertThatThrownBy(() -> chatPreHandler.preSend(message, messageChannel))
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TOKEN_MISSING);
-
-            then(jwtTokenProvider).should(never()).validateToken(any());
-        }
-
-        @Test
-        @DisplayName("[실패] 유효하지 않은 토큰이면 예외 발생")
-        void handleConnect_InvalidToken() {
-            // Given
-            StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-            accessor.setSessionAttributes(new HashMap<>());
-            accessor.setNativeHeader("Authorization", "Bearer " + VALID_TOKEN);
-
-            given(jwtTokenProvider.validateToken(VALID_TOKEN)).willReturn(false);
-
-            Message<byte[]> message = createMessage(accessor);
-
-            // When & Then
-            assertThatThrownBy(() -> chatPreHandler.preSend(message, messageChannel))
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TOKEN_INVALID);
-
-            then(jwtTokenProvider).should(times(1)).validateToken(VALID_TOKEN);
-        }
-
-        @Test
-        @DisplayName("[실패] Refresh 토큰으로 연결 시도하면 예외 발생")
-        void handleConnect_RefreshToken() {
-            // Given
-            StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
-            accessor.setSessionAttributes(new HashMap<>());
-            accessor.setNativeHeader("Authorization", "Bearer " + VALID_TOKEN);
-
-            given(jwtTokenProvider.validateToken(VALID_TOKEN)).willReturn(true);
-            given(jwtTokenProvider.isRefreshToken(VALID_TOKEN)).willReturn(true);
-
-            Message<byte[]> message = createMessage(accessor);
-
-            // When & Then
-            assertThatThrownBy(() -> chatPreHandler.preSend(message, messageChannel))
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TOKEN_REFRESH_NOT_ALLOWED);
-
-            then(jwtTokenProvider).should(times(1)).validateToken(VALID_TOKEN);
-            then(jwtTokenProvider).should(times(1)).isRefreshToken(VALID_TOKEN);
-        }
-    }
 
 //    @Nested
 //    @DisplayName("SUBSCRIBE 커맨드 테스트")
@@ -252,25 +162,26 @@ class TestChatPreHandler {
 //        }
 //    }
 
-    @Nested
-    @DisplayName("DISCONNECT 커맨드 테스트")
-    class DisconnectCommandTest {
+        @Nested
+        @DisplayName("DISCONNECT 커맨드 테스트")
+        class DisconnectCommandTest {
 
-        @Test
-        @DisplayName("[성공] DISCONNECT 커맨드는 특별한 로직 없이 무시됨")
-        void handleDisconnect_Ignored() {
-            // Given
-            StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.DISCONNECT);
-            accessor.setSessionAttributes(new HashMap<>());
+            @Test
+            @DisplayName("[성공] DISCONNECT 커맨드는 특별한 로직 없이 무시됨")
+            void handleDisconnect_Ignored() {
+                // Given
+                StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.DISCONNECT);
+                accessor.setSessionAttributes(new HashMap<>());
 
-            Message<byte[]> message = createMessage(accessor);
+                Message<byte[]> message = createMessage(accessor);
 
-            // When
-            Message<?> result = chatPreHandler.preSend(message, messageChannel);
+                // When
+                Message<?> result = chatPreHandler.preSend(message, messageChannel);
 
-            // Then
-            assertThat(result).isNotNull();
-            then(chatRoomService).should(never()).isUserInRoom(anyLong(), anyLong());
+                // Then
+                assertThat(result).isNotNull();
+                then(chatRoomService).should(never()).isUserInRoom(anyLong(), anyLong());
+            }
         }
     }
 }

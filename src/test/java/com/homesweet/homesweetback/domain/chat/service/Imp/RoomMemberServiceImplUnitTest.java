@@ -8,8 +8,8 @@ import com.homesweet.homesweetback.domain.chat.dto.response.RoomMemberResponse;
 import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
-import com.homesweet.homesweetback.domain.chat.repository.ChatRoomRepository;
-import com.homesweet.homesweetback.domain.chat.repository.RoomMemberRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
+import com.homesweet.homesweetback.domain.chat.repository.jpa.RoomMemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
