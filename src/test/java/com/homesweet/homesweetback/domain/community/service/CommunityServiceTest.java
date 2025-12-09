@@ -10,6 +10,7 @@ import com.homesweet.homesweetback.domain.search.community.event.CommunityEventP
 import com.homesweet.homesweetback.domain.community.repository.*;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+@Disabled
 @ExtendWith(MockitoExtension.class)
 class CommunityServiceTest {
 

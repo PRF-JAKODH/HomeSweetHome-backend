@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -193,5 +194,57 @@ public class CommunityCountService {
         // DB Fallback
         initCommentLikesFromDB(commentId);
         return redisService.getCommentLikeCount(commentId);
+    }
+
+    // ============================================================
+    // Bulk Operations (for Post List - MGET)
+    // ============================================================
+
+    /**
+     * 여러 게시글의 조회수를 한 번에 조회 (Cache miss 시 개별 fallback)
+     */
+    public Map<Long, Integer> getBulkViewCountsFromCache(List<Long> postIds) {
+        Map<Long, Integer> result = redisService.getBulkViewCounts(postIds);
+        
+        // Cache miss 처리
+        for (Long postId : postIds) {
+            if (result.get(postId) == null) {
+                initViewCountFromDB(postId);
+                result.put(postId, redisService.getPostViewCount(postId));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 여러 게시글의 좋아요수를 한 번에 조회 (Cache miss 시 개별 fallback)
+     */
+    public Map<Long, Integer> getBulkLikeCountsFromCache(List<Long> postIds) {
+        Map<Long, Integer> result = redisService.getBulkLikeCounts(postIds);
+        
+        // Cache miss 처리
+        for (Long postId : postIds) {
+            if (result.get(postId) == null) {
+                initPostLikesFromDB(postId);
+                result.put(postId, redisService.getPostLikeCount(postId));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 여러 게시글의 댓글수를 한 번에 조회 (Cache miss 시 개별 fallback)
+     */
+    public Map<Long, Integer> getBulkCommentCountsFromCache(List<Long> postIds) {
+        Map<Long, Integer> result = redisService.getBulkCommentCounts(postIds);
+        
+        // Cache miss 처리
+        for (Long postId : postIds) {
+            if (result.get(postId) == null) {
+                initCommentCountFromDB(postId);
+                result.put(postId, redisService.getPostCommentCount(postId));
+            }
+        }
+        return result;
     }
 }

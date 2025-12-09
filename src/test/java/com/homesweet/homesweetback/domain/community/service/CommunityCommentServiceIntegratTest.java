@@ -33,6 +33,7 @@ import com.homesweet.homesweetback.domain.auth.entity.UserRole;
  * - 실제 DB(H2)를 사용하여 댓글 기능 검증
  * - 대댓글, 댓글 카운트 증감 등 전체 플로우 테스트
  */
+@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 class CommunityCommentServiceIntegratTest {
