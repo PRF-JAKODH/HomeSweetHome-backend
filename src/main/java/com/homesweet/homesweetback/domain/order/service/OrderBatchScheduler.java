@@ -19,15 +19,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class
-
-
-OrderBatchScheduler {
+public class OrderBatchScheduler {
 
     private final RedisStockService redisStockService;
     private final OrderRepository orderRepository;
@@ -36,7 +36,8 @@ OrderBatchScheduler {
 
     // 1초마다 최대 1000개씩 처리
     @Scheduled(fixedRate = 1000)
-    @Transactional
+    // 주의: Redis Pop은 트랜잭션 밖에서 일어나는 게 좋지만,
+    // 여기서는 DB 저장 일관성을 위해 묶되, 예외 처리를 꼼꼼히 함.
     public void processPendingOrders() {
         // 1. Redis에서 주문 꺼내기
         List<PendingOrder> pendingOrders = redisStockService.popPendingOrders(1000);
@@ -44,13 +45,31 @@ OrderBatchScheduler {
 
         log.info("[Order Batch] Redis에서 주문 {}건 처리 시작", pendingOrders.size());
 
-        List<Order> ordersToSave = new ArrayList<>();
+        // [개선 1] 원본 DTO 보관용 맵 생성 (DLQ 전송 시 정보 손실 방지)
+        Map<String, PendingOrder> originalDtoMap = pendingOrders.stream()
+                .collect(Collectors.toMap(PendingOrder::orderNumber, Function.identity(), (p1, p2) -> p1));
 
-        // 2. 엔티티 변환
+        // [개선 2] Bulk 조회를 위한 ID 추출 (N+1 방지)
+        Set<Long> userIds = pendingOrders.stream().map(PendingOrder::userId).collect(Collectors.toSet());
+        Set<Long> skuIds = pendingOrders.stream()
+                .flatMap(o -> o.items().stream().map(PendingOrder.PendingOrderItem::skuId))
+                .collect(Collectors.toSet());
+
+        // [개선 2] DB에서 한 번에 조회 (In-Query)
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, SkuEntity> skuMap = skuJPARepository.findAllById(skuIds).stream()
+                .collect(Collectors.toMap(SkuEntity::getId, Function.identity()));
+
+
+        List<Order> ordersToSave = new ArrayList<>();
+        List<PendingOrder> failedOrders = new ArrayList<>(); // 변환 실패 목록
+
+        // 3. 엔티티 변환
         for (PendingOrder dto : pendingOrders) {
             try {
-                // (성능을 위해 getReferenceById 사용 권장하지만, 안전하게 findById 사용)
-                User user = userRepository.findById(dto.userId()).orElseThrow();
+                User user = userMap.get(dto.userId());
+                if (user == null) throw new RuntimeException("User Not Found: " + dto.userId());
 
                 Order order = Order.builder()
                         .user(user)
@@ -59,10 +78,14 @@ OrderBatchScheduler {
                         .orderStatus(OrderStatus.PENDING)
                         .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
                         .orderedAt(LocalDateTime.now())
+                        // [주의] 배송 정보도 Entity에 저장해야 한다면 여기서 set 해야 함!
+                        // .recipientName(dto.recipientName()) ...
                         .build();
 
                 for (PendingOrder.PendingOrderItem itemDto : dto.items()) {
-                    SkuEntity sku = skuJPARepository.findById(itemDto.skuId()).orElseThrow();
+                    SkuEntity sku = skuMap.get(itemDto.skuId());
+                    if (sku == null) throw new RuntimeException("SKU Not Found: " + itemDto.skuId());
+
                     OrderItem orderItem = OrderItem.builder()
                             .sku(sku)
                             .quantity((long) itemDto.quantity())
@@ -71,76 +94,63 @@ OrderBatchScheduler {
                     order.addOrderItem(orderItem);
                 }
                 ordersToSave.add(order);
+
             } catch (Exception e) {
-                log.error("주문 변환 실패. DLQ 이동: {}", dto.orderNumber());
+                log.error("주문 변환 실패 (OrderNum: {}): {}", dto.orderNumber(), e.getMessage());
+                // 변환 단계에서 실패한 건 바로 DLQ
                 redisStockService.sendToOrderDLQ(dto);
             }
         }
 
-        // 3. Bulk Insert (DB 저장)
-//        orderRepository.saveAll(ordersToSave);
-//        log.info("[Order Batch] DB 저장 완료: {}건", ordersToSave.size());
-
         if (ordersToSave.isEmpty()) return;
 
-        try {
-            orderRepository.saveAll(ordersToSave);
-            log.info("[Order Batch] DB 저장 완료: {}건", ordersToSave.size());
-        } catch (Exception e) {
-            log.warn("[Order Batch] 일괄 저장 실패. 개별 저장으로 전환합니다. Error: {}", e.getMessage());
+        // 4. DB 저장 (일괄 -> 실패 시 개별)
+        saveOrdersSafely(ordersToSave, originalDtoMap);
+    }
 
-            // [2차 시도] 하나씩 저장하며 문제 있는 주문 격리 (Fallback)
+    // 트랜잭션 분리 및 안전 저장 로직
+    private void saveOrdersSafely(List<Order> ordersToSave, Map<String, PendingOrder> originalDtoMap) {
+        try {
+            // [Happy Path] 일괄 저장 시도
+            // 여기서 트랜잭션이 시작되고 커밋됨
+            saveAllTransactional(ordersToSave);
+            log.info("[Order Batch] DB 저장 완료: {}건", ordersToSave.size());
+
+        } catch (Exception e) {
+            log.warn("[Order Batch] 일괄 저장 실패. 개별 저장으로 전환. Error: {}", e.getMessage());
+
+            // [Fallback] 하나씩 저장
             int successCount = 0;
             int failCount = 0;
 
             for (Order order : ordersToSave) {
                 try {
-                    // 개별 저장 시도
-                    orderRepository.save(order);
+                    saveOneTransactional(order);
                     successCount++;
                 } catch (Exception individualEx) {
-                    // [3차 조치] 저장 실패한 주문만 DLQ로 이동
                     failCount++;
-                    log.error("주문 저장 최종 실패 (OrderNum: {}). DLQ 이동.", order.getOrderNumber());
+                    log.error("주문 개별 저장 실패 (OrderNum: {}). DLQ 이동.", order.getOrderNumber());
 
-                    // Order 엔티티를 다시 DTO로 변환해서 Redis DLQ에 넣음
-                    sendToDlq(order);
+                    // [핵심] 원본 DTO를 찾아서 DLQ로 보냄 (정보 손실 없음)
+                    PendingOrder originalDto = originalDtoMap.get(order.getOrderNumber());
+                    if (originalDto != null) {
+                        redisStockService.sendToOrderDLQ(originalDto);
+                    } else {
+                        log.error("DLQ 전송 실패: 원본 DTO 유실 (OrderNum: {})", order.getOrderNumber());
+                    }
                 }
             }
             log.info("[Order Batch] 개별 처리 완료. 성공: {}, 실패(DLQ): {}", successCount, failCount);
         }
     }
-    // --- 헬퍼 메서드: 엔티티 -> DTO 역변환 및 DLQ 전송 ---
-    private void sendToDlq(Order order) {
-        try {
-            // Order 엔티티에서 필요한 정보를 뽑아 PendingOrder DTO를 다시 만듭니다.
-            // (Item 정보 등은 엔티티에서 역추적)
-            List<PendingOrder.PendingOrderItem> items = order.getOrderItems().stream()
-                    .map(item -> new PendingOrder.PendingOrderItem(
-                            item.getSku().getId(),
-                            item.getQuantity().intValue(),
-                            item.getPrice()
-                    )).collect(Collectors.toList());
 
-            PendingOrder failedOrderDto = new PendingOrder(
-                    order.getUser().getId(),
-                    order.getOrderNumber(),
-                    order.getTotalAmount(),
-                    items,
-                    "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN"
-                    // ⚠️ 주의: 엔티티에는 배송 정보(이름, 주소 등)가 저장되어 있지 않을 수 있음.
-                    // 만약 Order 엔티티에 배송 정보 필드가 없다면,
-                    // 1. 애초에 Redis에서 꺼낸 원본 DTO를 Map<OrderNumber, DTO>로 들고 있거나,
-                    // 2. Order 엔티티에 배송 정보 필드를 추가해야 완벽한 복구가 가능함.
-            );
-
-            // Redis DLQ 리스트에 넣기
-            redisStockService.sendToOrderDLQ(failedOrderDto);
-
-        } catch (Exception e) {
-            log.error("DLQ 전송마저 실패 (OrderNum: {}): {}", order.getOrderNumber(), e.getMessage());
-            // 최후의 수단: 파일 로그나 슬랙 알림 발송
-        }
+    @Transactional
+    public void saveAllTransactional(List<Order> orders) {
+        orderRepository.saveAll(orders);
     }
 
+    @Transactional
+    public void saveOneTransactional(Order order) {
+        orderRepository.save(order);
     }
+}

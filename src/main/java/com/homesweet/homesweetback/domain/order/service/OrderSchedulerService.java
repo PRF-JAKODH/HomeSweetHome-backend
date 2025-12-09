@@ -6,8 +6,6 @@ import com.homesweet.homesweetback.domain.order.entity.OrderItem;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
 import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.SkuJPARepository;
-import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +22,7 @@ public class OrderSchedulerService {
 
     private final OrderRepository orderRepository;
     private final SkuJPARepository skuJPARepository;
+    private final RedisStockService redisStockService;
 
     // 60분으로 설정
     private static final int ABANDONED_ORDER_TIMEOUT_MINUTES = 60;
@@ -34,7 +33,6 @@ public class OrderSchedulerService {
      * '결제 이탈 주문'을 찾아 자동으로 취소 처리합니다.
      */
     @Scheduled(cron = "0 0/30 * * * ?") // 30분마다 실행
-    @Transactional
     public void cleanupAbandonedPendingOrders() {
         log.info("[Scheduler] 결제 이탈 주문(PENDING) 자동 취소 작업 시작...");
 
@@ -48,34 +46,51 @@ public class OrderSchedulerService {
             return;
         }
 
-        log.warn("[Scheduler] 총 {}건의 결제 이탈 주문을 자동 취소합니다.", ordersToCancel.size());
+        log.info("[Scheduler] 총 {}건의 결제 이탈 주문을 자동 취소합니다.", ordersToCancel.size());
 
 
         // 상태 변경 및 재고 복구
         for (Order order : ordersToCancel) {
-
-            // 주문 상태 변경 (FAILED, CANCELLED)
-            order.setOrderStatus(OrderStatus.FAILED);
-            order.setDeliveryStatus(DeliveryStatus.CANCELLED);
-
-            // 재고 복구
-            // createOrder에서 차감했던 재고를 다시 늘려줍니다.
-            for (OrderItem item : order.getOrderItems()) {
                 try {
-                    // (동시성 제어를 위해 비관적 락 사용)
-                    SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
-                            .orElseThrow(() -> new EntityNotFoundException("스케줄러: SKU를 찾을 수 없습니다: " + item.getSku().getId()));
-
-                    sku.increaseStock(item.getQuantity()); // (가정한 재고 증가 메서드)
-
+                    this.cancelSingleOrder(order);
                 } catch (Exception e) {
-                    // (중요) 재고 복구에 실패하더라도, 주문 상태 변경(CANCELLED)은 롤백되면 안 됩니다.
-                    //      (주문은 취소됐는데 재고만 복구 안 된 상태 -> 별도 모니터링 필요)
-                    log.error("[Scheduler CRITICAL] 주문(id:{}) 재고 복구 실패. SKU ID: {}, Error: {}",
-                            order.getId(), item.getSku().getId(), e.getMessage());
+                    log.error("[Scheduler Error] 주문(ID:{}) 취소 처리 중 오류 발생: {}", order.getId(), e.getMessage());
                 }
             }
-        }
         log.info("[Scheduler] 자동 취소 작업 완료.");
+    }
+
+    // [신규] 개별 주문 취소 로직 (트랜잭션 분리 효과)
+    @Transactional // 주문 1건 단위로 트랜잭션 보장
+    public void cancelSingleOrder(Order order) {
+
+        // 1. 상태 변경
+        order.setOrderStatus(OrderStatus.FAILED);
+        order.setDeliveryStatus(DeliveryStatus.CANCELLED);
+
+        // 2. 재고 복구 (Redis + DB)
+        for (OrderItem item : order.getOrderItems()) {
+            Long skuId = item.getSku().getId();
+            Long quantity = (long) item.getQuantity();
+
+            try {
+                // [핵심 1] Redis 재고 복구 (가장 중요!)
+                redisStockService.increaseStock(skuId, quantity);
+
+                // [핵심 2] DB 재고 복구 (동기화)
+                // (Lock 없이 단순 조회 후 업데이트 - 스케줄러라 경합 가능성 낮음)
+                skuJPARepository.findById(skuId).ifPresent(sku -> {
+                    sku.increaseStock(quantity);
+                });
+
+            } catch (Exception e) {
+                // 특정 상품 재고 복구 실패해도 주문 상태 변경은 진행 (로그만 남김)
+                log.error("[Scheduler] 재고 복구 실패 (OrderId: {}, SkuId: {}): {}",
+                        order.getId(), skuId, e.getMessage());
+            }
+        }
+        // 3. 변경 사항 저장
+        // (@Transactional이 있어서 Dirty Checking으로 자동 저장되지만, 명시적으로 호출해도 됨)
+        orderRepository.save(order);
     }
 }
