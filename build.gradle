@@ -90,6 +90,7 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.apache.commons:commons-pool2'  // Redis 연결 풀 필수!
 
     // 날짜 format
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'

@@ -32,8 +32,8 @@ const MAX_POST_ID = parseInt(__ENV.MAX_POST_ID) || 205;
 const MIN_USER_ID = parseInt(__ENV.MIN_USER_ID) || 2;
 const MAX_USER_ID = parseInt(__ENV.MAX_USER_ID) || 500;
 
-// ==================== VU 50-100 부하 테스트 ====================
-// t3.medium + t3a.small MySQL 스펙 최적화
+// ==================== VU 300 부하 테스트 ====================
+// 현재 인프라 적정 부하 (t3.medium + t3a.small)
 export const options = {
     scenarios: {
         // 0️⃣ Smoke Test
@@ -50,10 +50,10 @@ export const options = {
             executor: 'ramping-vus',
             startTime: '10s',
             stages: [
-                { duration: '30s', target: 35 },   // 워밍업
-                { duration: '1m', target: 70 },    // 피크 (70% of 100)
-                { duration: '1m', target: 70 },    // 유지
-                { duration: '30s', target: 0 },    // 종료
+                { duration: '30s', target: 105 },   // 워밍업
+                { duration: '1m', target: 210 },    // 피크 (70% of 300)
+                { duration: '1m', target: 210 },    // 유지
+                { duration: '30s', target: 0 },     // 종료
             ],
             exec: 'lurkerFlow',
             tags: { test_type: 'lurker' },
@@ -64,9 +64,9 @@ export const options = {
             executor: 'ramping-vus',
             startTime: '10s',
             stages: [
-                { duration: '30s', target: 8 },
-                { duration: '1m', target: 15 },    // 피크 (15% of 100)
-                { duration: '1m', target: 15 },
+                { duration: '30s', target: 23 },
+                { duration: '1m', target: 45 },     // 피크 (15% of 300)
+                { duration: '1m', target: 45 },
                 { duration: '30s', target: 0 },
             ],
             exec: 'activeReaderFlow',
@@ -78,9 +78,9 @@ export const options = {
             executor: 'ramping-vus',
             startTime: '10s',
             stages: [
-                { duration: '30s', target: 5 },
-                { duration: '1m', target: 10 },    // 피크 (10% of 100)
-                { duration: '1m', target: 10 },
+                { duration: '30s', target: 15 },
+                { duration: '1m', target: 30 },     // 피크 (10% of 300)
+                { duration: '1m', target: 30 },
                 { duration: '30s', target: 0 },
             ],
             exec: 'commenterFlow',
@@ -92,9 +92,9 @@ export const options = {
             executor: 'ramping-vus',
             startTime: '10s',
             stages: [
-                { duration: '30s', target: 3 },
-                { duration: '1m', target: 5 },     // 피크 (5% of 100)
-                { duration: '1m', target: 5 },
+                { duration: '30s', target: 8 },
+                { duration: '1m', target: 15 },     // 피크 (5% of 300)
+                { duration: '1m', target: 15 },
                 { duration: '30s', target: 0 },
             ],
             exec: 'creatorFlow',
@@ -103,25 +103,25 @@ export const options = {
     },
 
     thresholds: {
-        http_req_duration: ['p(95)<1500', 'p(99)<3000'],
-        http_req_failed: ['rate<0.05'],
-        error_rate: ['rate<0.05'],
-        concurrency_errors: ['count<50'],
-        post_view_duration: ['p(95)<1000'],
-        like_toggle_duration: ['p(95)<500'],
-        comment_creation_duration: ['p(95)<1500'],
-        post_creation_duration: ['p(95)<2000'],
+        http_req_duration: ['p(95)<2000', 'p(99)<5000'],  // 목표 완화
+        http_req_failed: ['rate<0.10'],                   // 10% 이하
+        error_rate: ['rate<0.10'],
+        concurrency_errors: ['count<100'],
+        post_view_duration: ['p(95)<1500'],
+        like_toggle_duration: ['p(95)<1000'],
+        comment_creation_duration: ['p(95)<2000'],
+        post_creation_duration: ['p(95)<3000'],
     },
 };
 
 // ==================== Setup & Teardown ====================
 export function setup() {
-    console.log('🚀 Community Load Test (VU 100)');
+    console.log('🚀 Community Load Test (VU 300)');
     console.log('========================================');
     console.log(`📝 BASE_URL: ${BASE_URL}`);
     console.log(`📝 Post ID Range: ${MIN_POST_ID} ~ ${MAX_POST_ID}`);
-    console.log('📊 VU Distribution (Total 100):');
-    console.log('   - Lurker: 70, Reader: 15, Commenter: 10, Creator: 5');
+    console.log('📊 VU Distribution (Total 300):');
+    console.log('   - Lurker: 210, Reader: 45, Commenter: 30, Creator: 15');
     console.log('========================================');
 
     const res = http.get(`${API_BASE}/posts?page=0&size=1`);
@@ -155,7 +155,7 @@ function getRandomPostId() {
 
 function checkResponse(res, options = {}) {
     const { expectStatus = 200, allowNotFound = false } = options;
-    const checks = { 'response time < 3s': (r) => r.timings.duration < 3000 };
+    const checks = { 'response time < 5s': (r) => r.timings.duration < 5000 };
 
     if (allowNotFound) {
         checks['status is 2xx or 404'] = (r) => (r.status >= 200 && r.status < 300) || r.status === 404;

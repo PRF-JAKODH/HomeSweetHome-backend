@@ -8,6 +8,7 @@ import com.homesweet.homesweetback.domain.community.repository.CommunityPostLike
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class CommunityCountService {
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final CommunityRedisService redisService;
 
+    @Async("communityTaskExecutor")
     @Transactional
     public void increaseViewCount(Long postId) {
         Long result = redisService.incrementPostViewCount(postId);
@@ -72,6 +74,7 @@ public class CommunityCountService {
         redisService.setPostCommentCount(postId, post.getCommentCount());
     }
 
+    @Async("communityTaskExecutor")
     @Transactional
     public void togglePostLike(Long postId, Long userId) {
         Long result = redisService.togglePostLike(postId, userId);
@@ -117,6 +120,7 @@ public class CommunityCountService {
         log.info("Loaded post likes from DB - postId: {}, count: {}", postId, userIds.size());
     }
 
+    @Async("communityTaskExecutor")
     @Transactional
     public void toggleCommentLike(Long commentId, Long userId) {
         Long result = redisService.toggleCommentLike(commentId, userId);
@@ -205,7 +209,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkViewCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkViewCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {
@@ -221,7 +225,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkLikeCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkLikeCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {
@@ -237,7 +241,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkCommentCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkCommentCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {

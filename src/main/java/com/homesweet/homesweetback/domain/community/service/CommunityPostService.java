@@ -48,8 +48,10 @@ public class CommunityPostService {
 
     private static final String POST_CACHE_PREFIX = "communityPost::";
     private static final String POST_LIST_CACHE_PREFIX = "communityPostList::";
+    private static final String TOTAL_COUNT_CACHE_KEY = "communityPost::totalCount";
     private static final Duration POST_CACHE_TTL = Duration.ofHours(1);
-    private static final Duration POST_LIST_CACHE_TTL = Duration.ofMinutes(1); // 목록은 짧게
+    private static final Duration POST_LIST_CACHE_TTL = Duration.ofMinutes(1);
+    private static final Duration TOTAL_COUNT_TTL = Duration.ofMinutes(5); // totalCount는 5분
 
     /**
      * 게시글 목록 캐시 무효화 (SCAN 사용 - 프로덕션 안전, 논블로킹)
@@ -111,11 +113,11 @@ public class CommunityPostService {
                 );
             }
         }
-
         communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
 
         // 목록 캐시 무효화
         invalidatePostListCache();
+        stringRedisTemplate.delete(TOTAL_COUNT_CACHE_KEY); // totalCount도 무효화
 
         return CommunityPostResponse.from(savedPost, imageUrls);
     }
@@ -227,11 +229,13 @@ public class CommunityPostService {
 
         // 게시글 소프트 삭제
         post.deletePost();
+ 
         communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
 
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
         invalidatePostListCache();
+        stringRedisTemplate.delete(TOTAL_COUNT_CACHE_KEY); // totalCount도 무효화
         log.debug("Cache invalidated for deleted post: {}", postId);
     }
 
@@ -266,7 +270,8 @@ public class CommunityPostService {
                         ))
                         .toList();
                 
-                long totalCount = postRepository.countByIsDeletedFalse();
+                // totalCount도 캐시에서 조회 (DB 연결 0개!)
+                long totalCount = getTotalCountFromCache();
                 log.debug("Cache hit for post list: page={}", pageable.getPageNumber());
                 return new org.springframework.data.domain.PageImpl<>(withLatestCounts, pageable, totalCount);
             } catch (JsonProcessingException e) {
@@ -318,6 +323,33 @@ public class CommunityPostService {
             log.warn("Failed to cache post list", e);
         }
 
-        return new org.springframework.data.domain.PageImpl<>(responses, pageable, postsPage.getTotalElements());
+        // totalCount 캐시 저장
+        long totalCount = postsPage.getTotalElements();
+        stringRedisTemplate.opsForValue().set(
+            TOTAL_COUNT_CACHE_KEY,
+            String.valueOf(totalCount),
+            TOTAL_COUNT_TTL
+        );
+
+        return new org.springframework.data.domain.PageImpl<>(responses, pageable, totalCount);
+    }
+
+    /**
+     * totalCount를 캐시에서 조회 (DB 연결 최소화)
+     */
+    private long getTotalCountFromCache() {
+        String cachedCount = stringRedisTemplate.opsForValue().get(TOTAL_COUNT_CACHE_KEY);
+        if (cachedCount != null) {
+            return Long.parseLong(cachedCount);
+        }
+        
+        // Cache miss - DB 조회 후 캐싱
+        long totalCount = postRepository.countByIsDeletedFalse();
+        stringRedisTemplate.opsForValue().set(
+            TOTAL_COUNT_CACHE_KEY,
+            String.valueOf(totalCount),
+            TOTAL_COUNT_TTL
+        );
+        return totalCount;
     }
 }

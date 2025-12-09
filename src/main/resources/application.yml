@@ -28,20 +28,25 @@ spring:
 
   datasource:
     hikari:
-      maximum-pool-size: 80
-      minimum-idle: 20
+      maximum-pool-size: 30       # 100 → 30 (MySQL 2 vCPU 고려)
+      minimum-idle: 10            # 50 → 10
       idle-timeout: 300000
-      max-lifetime: 1800000
-      connection-timeout: 30000
+      max-lifetime: 1200000       # 20분 (30분 → 20분)
+      connection-timeout: 10000   # 20초 → 10초 (빠른 실패)
+      leak-detection-threshold: 60000
 
 server:
   tomcat:
     threads:
-      max: 350                    # 워커 스레드 수(실제 요청 처리)
-      min-spare: 50               # 최소 유지 스레드
-    accept-count: 200             # acceptQueue 크기, 연결대기큐 / sommaxconn : 128
-    max-connections: 10000        # 동시 연결 가능한 소켓 수
-    connection-timeout: 30000
+      max: 400                    # 350 → 400 워커 스레드 증가
+      min-spare: 100              # 50 → 100 웜업 시간 단축
+    accept-count: 300             # 200 → 300 연결 대기큐 증가
+    max-connections: 10000
+    connection-timeout: 20000     # 30000 → 20000
+  compression:
+    enabled: true                 # Gzip 압축 활성화
+    mime-types: application/json,text/html,text/plain
+    min-response-size: 1024       # 1KB 이상만 압축
 
 
 resilience4j:

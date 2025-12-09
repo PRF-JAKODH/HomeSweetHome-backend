@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+
+import java.util.List;
 import java.util.Optional;
 
 public interface CommunityPostRepository extends JpaRepository<CommunityPostEntity, Long> {
@@ -23,6 +25,16 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
 
     // 전체 게시글 수 조회 (캐싱용)
     long countByIsDeletedFalse();
+
+    // 캐시 워밍업용: 인기 게시글 상위 100개
+    @EntityGraph(attributePaths = {"author", "author.grade"})
+    @Query("SELECT p FROM CommunityPostEntity p WHERE p.isDeleted = false ORDER BY p.viewCount DESC LIMIT 100")
+    List<CommunityPostEntity> findTop100ByIsDeletedFalseOrderByViewCountDesc();
+
+    // 캐시 워밍업용: 최신 게시글 50개
+    @EntityGraph(attributePaths = {"author", "author.grade"})
+    @Query("SELECT p FROM CommunityPostEntity p WHERE p.isDeleted = false ORDER BY p.createdAt DESC LIMIT 50")
+    List<CommunityPostEntity> findTop50ByIsDeletedFalseOrderByCreatedAtDesc();
 
     @Modifying
     @Query("UPDATE CommunityPostEntity p SET p.viewCount = :viewCount WHERE p.postId = :postId AND p.isDeleted = false")
