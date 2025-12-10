@@ -1,5 +1,7 @@
 package com.homesweet.homesweetback.domain.chat.event;
 
+import com.homesweet.homesweetback.domain.chat.dto.response.JoinRoomResponse;
+
 import java.time.LocalDateTime;
 
 /**
