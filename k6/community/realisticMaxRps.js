@@ -29,95 +29,110 @@ const MIN_USER_ID = parseInt(__ENV.MIN_USER_ID) || 2;
 const MAX_USER_ID = parseInt(__ENV.MAX_USER_ID) || 500;
 
 // ==================== 실제 트래픽 비율 ====================
-// 실제 게시판 트래픽: 읽기 90% / 쓰기 10%
-// 읽기: 목록 30%, 상세 60%
-// 쓰기: 좋아요 60%, 댓글 30%, 게시글 10%
+// 부하 테스트용: 읽기 80% / 쓰기 20%
+// 읽기: 목록 조회 50%, 게시글 조회 50% (조회수 증가 API 포함)
+// 쓰기: 좋아요 50%, 댓글 작성 30%, 게시글 작성 20%
 const TRAFFIC_WEIGHTS = {
-    // 읽기 (90%)
-    POST_LIST: 27,      // 30% of 90%
-    POST_VIEW: 54,      // 60% of 90%
-    VIEW_COUNT: 9,      // 조회수 증가 (조회와 함께)
+    // 읽기 (80%)
+    POST_LIST: 40,      // 50% of 80%
+    POST_VIEW: 40,      // 50% of 80% (상세 조회 시 조회수 증가도 함께 호출)
 
-    // 쓰기 (10%)
-    LIKE_TOGGLE: 6,     // 60% of 10%
-    COMMENT_CREATE: 3,  // 30% of 10%
-    POST_CREATE: 1,     // 10% of 10%
+    // 쓰기 (20%)
+    LIKE_TOGGLE: 10,    // 50% of 20%
+    COMMENT_CREATE: 6,  // 30% of 20%
+    POST_CREATE: 4,     // 20% of 20%
 };
 
 const TOTAL_WEIGHT = Object.values(TRAFFIC_WEIGHTS).reduce((a, b) => a + b, 0);
 
 // ==================== Test Options ====================
+// 🎯 DAU 30만 기준 (t3.xlarge WAS, t3.xlarge DB, r6g.medium Redis)
+// - Peak 1000 RPS 달성 (1600 VUs), Spike 2000 RPS 목표
+// - 목표: p(95) < 500ms, Error rate < 1%
 export const options = {
     scenarios: {
-        // 1️⃣ Warm-up: 시스템 예열
+        // 1️⃣ Warm-up: 시스템 예열 (캐시 워밍, 커넥션 풀 준비)
         warmup: {
             executor: 'constant-arrival-rate',
             rate: 50,
             timeUnit: '1s',
             duration: '30s',
-            preAllocatedVUs: 30,
+            preAllocatedVUs: 100,
             maxVUs: 100,
             exec: 'realisticTraffic',
             tags: { phase: 'warmup' },
         },
 
-        // 2️⃣ Ramp-up: 점진적 부하 증가
+        // 2️⃣ Ramp-up: 점진적 부하 증가 (50 → 800 RPS)
         rampup: {
             executor: 'ramping-arrival-rate',
             startTime: '30s',
             startRate: 50,
             timeUnit: '1s',
             stages: [
-                { duration: '30s', target: 100 },
-                { duration: '30s', target: 200 },
-                { duration: '30s', target: 300 },
-                { duration: '30s', target: 400 },
-                { duration: '30s', target: 500 },
+                { duration: '30s', target: 300 },   // 일반 트래픽
+                { duration: '30s', target: 600 },   // 피크 시간대 진입
+                { duration: '30s', target: 800 },   // 피크 트래픽
+                { duration: '30s', target: 100 },   // 쿨다운
             ],
-            preAllocatedVUs: 100,
-            maxVUs: 600,
+            preAllocatedVUs: 300,
+            maxVUs: 800,
             exec: 'realisticTraffic',
             tags: { phase: 'rampup' },
         },
 
-        // 3️⃣ Peak: 최대 부하 유지
+        // 3️⃣ Peak: 안정 부하 유지 (500 RPS × 3분)
         peak: {
             executor: 'constant-arrival-rate',
-            startTime: '3m',
+            startTime: '2m30s',
             rate: 500,
             timeUnit: '1s',
-            duration: '2m',
+            duration: '3m',
             preAllocatedVUs: 200,
-            maxVUs: 800,
+            maxVUs: 1000,
             exec: 'realisticTraffic',
             tags: { phase: 'peak' },
         },
 
-        // 4️⃣ Spike: 순간 스파이크 테스트
+        // 4️⃣ Spike: 이벤트/푸시 알림 시나리오 (최대 2400 RPS 목표)
         spike: {
             executor: 'ramping-arrival-rate',
-            startTime: '5m',
+            startTime: '5m30s',
             startRate: 500,
             timeUnit: '1s',
             stages: [
-                { duration: '10s', target: 1000 },  // 스파이크!
-                { duration: '20s', target: 1000 },  // 유지
-                { duration: '10s', target: 500 },   // 복구
+                { duration: '15s', target: 2000 },  // 급격한 스파이크 (실제 ~1000 RPS 달성)
+                { duration: '30s', target: 2400 },  // 최대 버스트 목표 (VU 한계로 ~1000 RPS)
+                { duration: '15s', target: 1000 },   // 정상 복구
             ],
-            preAllocatedVUs: 300,
-            maxVUs: 1200,
+            preAllocatedVUs: 800,
+            maxVUs: 1600,
             exec: 'realisticTraffic',
             tags: { phase: 'spike' },
         },
 
-        // 5️⃣ Cooldown: 부하 감소
+        // 5️⃣ Stabilize: 스파이크 후 안정화 확인
+        stabilize: {
+            executor: 'constant-arrival-rate',
+            startTime: '6m30s',
+            rate: 1000,
+            timeUnit: '1s',
+            duration: '1m',
+            preAllocatedVUs: 400,
+            maxVUs: 800,
+            exec: 'realisticTraffic',
+            tags: { phase: 'stabilize' },
+        },
+
+        // 6️⃣ Cooldown: 부하 감소
         cooldown: {
             executor: 'ramping-arrival-rate',
-            startTime: '5m40s',
+            startTime: '7m30s',
             startRate: 500,
             timeUnit: '1s',
             stages: [
-                { duration: '20s', target: 100 },
+                { duration: '15s', target: 400 },
+                { duration: '15s', target: 100 },
             ],
             preAllocatedVUs: 50,
             maxVUs: 200,
@@ -127,42 +142,47 @@ export const options = {
     },
 
     thresholds: {
-        // 전체 성능 기준
-        http_req_duration: ['p(50)<500', 'p(95)<2000', 'p(99)<5000'],
-        http_req_failed: ['rate<0.05'],
-        error_rate: ['rate<0.05'],
-        success_rate: ['rate>0.95'],
+        // 전체 성능 기준 (DAU 30만 서비스 수준)
+        http_req_duration: ['p(50)<200', 'p(95)<500', 'p(99)<1000'],
+        http_req_failed: ['rate<0.01'],      // 에러율 1% 미만
+        error_rate: ['rate<0.01'],
+        success_rate: ['rate>0.99'],
 
-        // 읽기 작업 (엄격)
-        post_view_duration: ['p(95)<1000'],
-        post_list_duration: ['p(95)<1500'],
+        // 읽기 작업 (엄격 - 사용자 체감 중요)
+        post_view_duration: ['p(95)<300'],   // 상세 조회 300ms 이내
+        post_list_duration: ['p(95)<400'],   // 목록 조회 400ms 이내
 
-        // 쓰기 작업 (관대)
-        like_toggle_duration: ['p(95)<1500'],
-        comment_create_duration: ['p(95)<3000'],
-        post_create_duration: ['p(95)<5000'],
+        // 쓰기 작업 (상대적으로 관대)
+        like_toggle_duration: ['p(95)<500'],     // 좋아요 500ms 이내
+        comment_create_duration: ['p(95)<800'],  // 댓글 800ms 이내
+        post_create_duration: ['p(95)<1500'],    // 게시글 작성 1.5초 이내
     },
 };
 
 // ==================== Setup ====================
 export function setup() {
-    console.log('🚀 Realistic Max RPS Test');
-    console.log('═══════════════════════════════════════════');
+    console.log('🚀 DAU 30만 기준 부하 테스트');
+    console.log('═══════════════════════════════════════════════════');
+    console.log('🖥️  인프라: WAS t3.xlarge | DB t3.xlarge | Redis r6g.medium');
     console.log(`📍 BASE_URL: ${BASE_URL}`);
     console.log(`📊 Post ID Range: ${MIN_POST_ID} ~ ${MAX_POST_ID}`);
     console.log(`👥 User ID Range: ${MIN_USER_ID} ~ ${MAX_USER_ID}`);
     console.log('');
     console.log('📈 Traffic Distribution:');
-    console.log(`   읽기 90%: 목록(${TRAFFIC_WEIGHTS.POST_LIST}%) + 상세(${TRAFFIC_WEIGHTS.POST_VIEW}%) + 조회수(${TRAFFIC_WEIGHTS.VIEW_COUNT}%)`);
-    console.log(`   쓰기 10%: 좋아요(${TRAFFIC_WEIGHTS.LIKE_TOGGLE}%) + 댓글(${TRAFFIC_WEIGHTS.COMMENT_CREATE}%) + 게시글(${TRAFFIC_WEIGHTS.POST_CREATE}%)`);
+    console.log(`   읽기 80%: 목록 조회(${TRAFFIC_WEIGHTS.POST_LIST}%) + 게시글 조회(${TRAFFIC_WEIGHTS.POST_VIEW}%)`);
+    console.log(`   쓰기 20%: 좋아요(${TRAFFIC_WEIGHTS.LIKE_TOGGLE}%) + 댓글(${TRAFFIC_WEIGHTS.COMMENT_CREATE}%) + 게시글(${TRAFFIC_WEIGHTS.POST_CREATE}%)`);
     console.log('');
-    console.log('⏱️ Test Phases:');
-    console.log('   0:00-0:30  Warmup (50 RPS)');
-    console.log('   0:30-3:00  Ramp-up (50→500 RPS)');
-    console.log('   3:00-5:00  Peak (500 RPS)');
-    console.log('   5:00-5:40  Spike (1000 RPS)');
-    console.log('   5:40-6:00  Cooldown');
-    console.log('═══════════════════════════════════════════');
+    console.log('⏱️ Test Phases (총 8분):');
+    console.log('   0:00-0:30  ① Warmup (50 RPS)');
+    console.log('   0:30-2:30  ② Ramp-up (50→800 RPS)');
+    console.log('   2:30-5:30  ③ Peak (500 RPS 유지)');
+    console.log('   5:30-6:30  ④ Spike (2000→2400 RPS 목표, 실제 ~1000 RPS)');
+    console.log('   6:30-7:30  ⑤ Stabilize (1000 RPS 복구 확인)');
+    console.log('   7:30-8:00  ⑥ Cooldown (500→100 RPS)');
+    console.log('');
+    console.log('🎯 Success Criteria:');
+    console.log('   p(95) < 500ms | Error rate < 1% | Peak 1000 RPS 달성');
+    console.log('═══════════════════════════════════════════════════');
 
     // Health check
     const res = http.get(`${API_BASE}/posts?page=0&size=1`);
@@ -229,24 +249,25 @@ function getPostList() {
     recordResult(res, postListTrend);
 }
 
-// 📖 게시글 상세 조회
+// 📖 게시글 상세 조회 + 조회수 증가
+// 조회수를 별도 API로 분리하면 캐싱 전략이 유연해짐
+// (게시글 내용은 캐시, 조회수는 비동기/배치 처리 가능)
 function getPost() {
     const postId = getRandomPostId();
-    const res = http.get(`${API_BASE}/posts/${postId}`, {
+
+    // 1. 상세 조회
+    const detailRes = http.get(`${API_BASE}/posts/${postId}`, {
         headers: getHeaders(),
         tags: { name: 'GET /posts/:id' },
     });
-    recordResult(res, postViewTrend);
-}
+    recordResult(detailRes, postViewTrend);
 
-// 📖 조회수 증가
-function increaseViewCount() {
-    const postId = getRandomPostId();
-    const res = http.post(`${API_BASE}/posts/${postId}/views`, null, {
+    // 2. 조회수 증가 (실제 사용자 행동: 상세 페이지 진입 시 조회수 +1)
+    const viewRes = http.post(`${API_BASE}/posts/${postId}/views`, null, {
         headers: getHeaders(),
         tags: { name: 'POST /posts/:id/views' },
     });
-    recordResult(res, viewCountTrend);
+    recordResult(viewRes, viewCountTrend);
 }
 
 // ✏️ 좋아요 토글
@@ -308,9 +329,6 @@ function selectOperation() {
     cumulative += TRAFFIC_WEIGHTS.POST_VIEW;
     if (rand < cumulative) return 'POST_VIEW';
 
-    cumulative += TRAFFIC_WEIGHTS.VIEW_COUNT;
-    if (rand < cumulative) return 'VIEW_COUNT';
-
     cumulative += TRAFFIC_WEIGHTS.LIKE_TOGGLE;
     if (rand < cumulative) return 'LIKE_TOGGLE';
 
@@ -329,10 +347,7 @@ export function realisticTraffic() {
             getPostList();
             break;
         case 'POST_VIEW':
-            getPost();
-            break;
-        case 'VIEW_COUNT':
-            increaseViewCount();
+            getPost();  // 상세 조회 + 조회수 증가
             break;
         case 'LIKE_TOGGLE':
             toggleLike();
@@ -350,11 +365,9 @@ export function realisticTraffic() {
 export function readOnlyTraffic() {
     const rand = Math.random();
 
-    if (rand < 0.3) {
-        getPostList();
-    } else if (rand < 0.9) {
-        getPost();
+    if (rand < 0.5) {
+        getPostList();      // 목록 조회 50%
     } else {
-        increaseViewCount();
+        getPost();          // 게시글 조회 50% (조회수 증가 포함)
     }
 }
