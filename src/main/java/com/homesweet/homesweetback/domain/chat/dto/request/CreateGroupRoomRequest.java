@@ -18,6 +18,7 @@ public record CreateGroupRoomRequest (
     @NotBlank(message = "방 이름은 필수입니다.")
     String roomName,
 
+    @NotBlank(message = "방 이미지는  필수입니다.")
     MultipartFile roomThumbnailUrl,
 
     ChatRoomType roomType
