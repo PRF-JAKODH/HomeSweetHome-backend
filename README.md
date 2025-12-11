@@ -102,7 +102,7 @@
 ### 📑 기획서  
 
 ### 🚧 시스템 아키텍쳐
-<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/34832fc0-69f8-47eb-aea6-66e1f96f82d6" />
+<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/8e170bc5-7d8f-483c-9d74-f77cc84a1f07" />
 
 ### 🌊 플로우차트  
 
