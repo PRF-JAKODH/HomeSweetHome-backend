@@ -20,6 +20,7 @@ import com.homesweet.homesweetback.domain.product.product.command.repository.Pro
 import com.homesweet.homesweetback.domain.product.product.command.repository.SkuRepository;
 import com.homesweet.homesweetback.domain.product.product.command.repository.util.ProductImageUploader;
 import com.homesweet.homesweetback.domain.product.product.command.service.ProductService;
+import com.homesweet.homesweetback.domain.product.product.query.controller.response.ProductPreviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;

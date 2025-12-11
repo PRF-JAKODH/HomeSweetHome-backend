@@ -1,4 +1,5 @@
 <<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/search/product/controller/response/ProductPreviewResponse.java
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/search/product/controller/response/ProductPreviewResponse.java
 package com.homesweet.homesweetback.domain.search.product.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
@@ -6,6 +7,9 @@ import com.homesweet.homesweetback.domain.product.product.command.domain.Product
 import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
 ========
 package com.homesweet.homesweetback.domain.product.product.command.controller.response;
+========
+package com.homesweet.homesweetback.domain.product.product.query.controller.response;
+>>>>>>>> 665b8da (refactor: 엘라스틱 검색 API 작성 완료):src/main/java/com/homesweet/homesweetback/domain/product/product/query/controller/response/ProductPreviewResponse.java
 
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
