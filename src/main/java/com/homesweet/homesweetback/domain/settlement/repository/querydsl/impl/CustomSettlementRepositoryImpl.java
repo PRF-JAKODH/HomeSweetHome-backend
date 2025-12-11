@@ -62,18 +62,32 @@ public class CustomSettlementRepositoryImpl implements CustomSettlementRepositor
             Long lastId,
             int limit
     ) {
+//        return jpaQueryFactory
+//                .select(order.id)
+//                .from(order)
+//                .where(
+//                        order.settlementProcessed.isFalse(),
+//                        order.orderStatus.eq(status),
+//                        order.orderedAt.loe(cutoff),
+//                        order.id.gt(lastId)
+//                )
+//                .orderBy(order.id.asc())
+//                .limit(limit)
+//                .fetch();
         return jpaQueryFactory
                 .select(order.id)
                 .from(order)
+                .from(order).setHint("FORCE_INDEX", "idx_settlement_reader_v2") // 커스텀 힌트
                 .where(
+                        order.settlementProcessed.isFalse(),
                         order.orderStatus.eq(status),
-                        order.settlementProcessed.eq(false),
                         order.orderedAt.loe(cutoff),
                         order.id.gt(lastId)
                 )
                 .orderBy(order.id.asc())
                 .limit(limit)
                 .fetch();
+
     }
     public List<SettlementCreateDto> findOrdersByIds(List<Long> ids) {
         QOrder o = QOrder.order;

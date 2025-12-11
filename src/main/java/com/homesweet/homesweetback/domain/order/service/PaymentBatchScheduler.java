@@ -26,7 +26,7 @@ public class PaymentBatchScheduler {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
 
-    @Scheduled(fixedRate = 1000)
+//    @Scheduled(fixedRate = 1000)
     @Transactional
     public void processPendingPayments() {
         List<PendingPayment> payments = redisStockService.popPendingPayments(1000);

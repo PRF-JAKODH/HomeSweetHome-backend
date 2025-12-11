@@ -4,6 +4,8 @@ import com.homesweet.homesweetback.domain.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,8 +26,8 @@ public class Settlement {
 
     // batch insert를 하기 위해
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "settlement_id", columnDefinition = "BINARY(16)")
     private UUID settlementId;
 

@@ -44,9 +44,11 @@ spring:
 
 logging:
   level:
-    com.homesweet.homesweetback: INFO
+    com.homesweet.homesweetback.domain.settlement: INFO
     org.springframework.security: WARN
     org.springframework.batch: INFO
+    org.springframework.retry: INFO
+    root: WARN
 
 # 프로덕션 환경 애플리케이션 설정
 app:

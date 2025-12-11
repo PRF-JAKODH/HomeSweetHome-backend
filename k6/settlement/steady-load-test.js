@@ -1,11 +1,13 @@
-import http from "k6/http";      // 중요: k6/http 말고 mock.js 사용
-// import "./toss-mock.js";           // Toss API mock 자동 등록
+import http from "k6/http";
 import { check, sleep } from "k6";
 
-// 토스 api mock 처리
+// String key = "sku:" + skuId + ":stock";
 
 // JWT token
-const TOKEN = "11";
+const SELLER_TOKEN = __ENV.SELLER_TOKEN;
+const BASE_URL = __ENV.BASE_URL;
+const USER_TOKEN = __ENV.USER_TOKEN; // 테스트할 사용자 ID (토큰의 사용자 ID와 일치해야 함)
+
 
 export const options = {
     discardResponseBodies: false,
@@ -21,17 +23,6 @@ export const options = {
             exec: "orderFlow",
         },
 
-        // 2) 10초 단위 배치 실행 테스트
-        // batch_runner: {
-        //     executor: "per-vu-iterations",
-        //     rate: 1,               // 10초에 1번 실행
-        //     startTime: "5s",
-        //     timeUnit: "10s",
-        //     duration: "10m",
-        //     preAllocatedVUs: 1,
-        //     maxVUs: 1,
-        //     exec: "runBatch",
-        // },
         batch_runner: {
             executor: "per-vu-iterations",
             vus: 1,
@@ -62,18 +53,22 @@ function safeJson(res) {
 
 // 주문 생성 (steady inflow)
 function createOrder() {
-    const url = "http://localhost:8080/api/v1/orders";
+    const productSkuId = 300001;  // 테스트할 SKU ID (DB에 존재해야 함)
+    const url = `${BASE_URL}/api/v1/orders`;
     const payload = JSON.stringify({
         orderItems: [{
-            skuId: 2,
-            quantity: 1,
-            price: 480000,
-        }]
+            skuId: productSkuId,
+            quantity: 1
+        }],
+        recipientName: "Test Name",
+        recipientPhone: "010-1234-5678",
+        shippingAddress: "Test Address",
+        shippingRequest: "",
     });
 
     const params = {
         headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${USER_TOKEN}`,
             "Content-Type": "application/json",
         },
     };
@@ -115,10 +110,10 @@ function confirmPayment(order) {
         method: "CARD"
     });
 
-    const url = "http://localhost:8080/api/v1/orders/payments/confirm";
+    const url = `${BASE_URL}/api/v1/orders/payments/confirm`;
     const params = {
         headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${USER_TOKEN}`,
             "Content-Type": "application/json",
         },
     };
@@ -133,11 +128,11 @@ function confirmPayment(order) {
 
 // 배치 실행
 export function runBatch() {
-    const url = "http://localhost:8080/api/v1/settlement/batch/run";
+    const url = `${BASE_URL}/api/v1/settlement/batch/run`;
 
     const params = {
         headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${SELLER_TOKEN}`,
         },
     };
 

@@ -49,7 +49,7 @@ public class SettlementSaver {
     }
 
     // 주별
-    public void saveWeekly(Long userId, Short year, Byte month, LocalDate weekStartDate, LocalDate weekEndDate, SettlementTotals totals) {
+    public void saveWeekly(Long userId, LocalDate weekStartDate, SettlementTotals totals) {
         if (weekStartDate == null) {
             throw new NullPointerException("weekStartDate cannot be null");
         }
@@ -63,7 +63,7 @@ public class SettlementSaver {
 //        );
         Short yearValue = (short) weekStartDate.getYear();
         Byte monthValue = (byte) weekStartDate.getMonthValue();
-        weekEndDate = weekStartDate.plusDays(6);
+        LocalDate weekEndDate = weekStartDate.plusDays(6);
         customWeeklySettlementRepository.upsertWeekly(
                 userId,
                 yearValue,

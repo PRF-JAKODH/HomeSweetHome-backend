@@ -1,0 +1,43 @@
+services:
+  spring:
+    image: ssooyya/homesweet:6-6
+    container_name: homesweet-backend
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod#- JVM_OPTS=-XX:+UseZGC -XX:+ZGenerational -Xlog:gc*
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      '--path.rootfs=/host'     # Docker 환경에서도 실제 호스트 자원 수집 가능하게 설정
+    volumes:
+      - /:/host:ro
+
+  mysqld_exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysqld_exporter
+    restart: always
+    command:
+      - "--mysqld.username=user:password"
+      - "--mysqld.address=10.0.6.32:3306"
+    ports:
+      - "9104:9104"
+    networks:
+      - homesweet-network
+
+networks:
+  homesweet-network:
+    driver: bridge
+    name: homesweet-network

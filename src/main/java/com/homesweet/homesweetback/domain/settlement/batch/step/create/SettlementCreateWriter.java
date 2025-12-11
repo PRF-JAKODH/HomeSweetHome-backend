@@ -5,6 +5,7 @@ import com.homesweet.homesweetback.domain.settlement.repository.SettlementReposi
 import com.homesweet.homesweetback.domain.settlement.repository.TempSettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.repository.bulk.SettlementBulkRepository;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.commons.collections4.ListUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * SettlementCreateWriter
@@ -34,6 +36,7 @@ import java.util.List;
 public class SettlementCreateWriter implements ItemWriter<Settlement> {
     private final SettlementRepository settlementRepository;
     private final SettlementValidator settlementValidator;
+    private final MeterRegistry meterRegistry;
 
 
     // 모든 orderId를 모아두기 위한 buffer
@@ -47,8 +50,10 @@ public class SettlementCreateWriter implements ItemWriter<Settlement> {
 
     @Override
     public void write(Chunk<? extends Settlement> chunk) {
+        long startTime = System.currentTimeMillis();
         // 1. writer가 chunk 단위로 호출, settlements는 1000개 묶음으로 전달됨
         List<? extends Settlement> settlements = chunk.getItems();
+        int size = settlements.size();
         log.info("chunk 단위로 호출: {}", settlements);
         try {
             // 2. 저장할 값이 있는지 검증
@@ -73,11 +78,19 @@ public class SettlementCreateWriter implements ItemWriter<Settlement> {
 //                settlementRepository.markUpdateFlag(part);
 //            }
 //            settlements.forEach(s -> orderIdBuffer.add(s.getOrderId()));
+            meterRegistry.counter("batch_writer_chunk_size").increment(size);
 
             // 5. chunk 단위 DB에 저장
+            long insertStart = System.currentTimeMillis();
             settlementBulkRepository.bulkInsert(settlements);
+            long insertDuration = System.currentTimeMillis() - insertStart;
+            meterRegistry.timer("batch_writer_bulk_insert_duration")
+                    .record(insertDuration, TimeUnit.MILLISECONDS);
+
+
             log.info("[정산 생성 writer] {}건 정산 저장 완료", settlements.size());
         } catch (Exception e) {
+            meterRegistry.counter("batch_writer_error_count").increment();
             log.error("[Writer] 예외 발생! message={}", e.getMessage(), e);
 
             // ➤ 문제 발생한 settlement 들 상세히 찍기
@@ -93,6 +106,12 @@ public class SettlementCreateWriter implements ItemWriter<Settlement> {
                 }
             });
             throw e; // 반드시 다시 던져야 Batch 가 실패 상태로 종료됨
+        } finally {
+            long duration = System.currentTimeMillis() - startTime;
+            meterRegistry.timer("batch_writer_total_duration")
+                    .record(duration, TimeUnit.MILLISECONDS);
+
+            log.info("[Writer] chunk 처리 완료 - size={} total={}ms", size, duration);
         }
     }
 
@@ -105,19 +124,34 @@ public class SettlementCreateWriter implements ItemWriter<Settlement> {
         if (orderIdBuffer.isEmpty()) {
             return stepExecution.getExitStatus();
         }
+        long start = System.currentTimeMillis();
 
-        // 1) temp table 생성
-        tempSettlementRepository.createTempTable();
+        try {
+            tempSettlementRepository.createTempTable();
+            tempSettlementRepository.insertOrderIds(orderIdBuffer);
 
-        // 2) orderIds bulk insert
-        tempSettlementRepository.insertOrderIds(orderIdBuffer);
+            long updateStart = System.currentTimeMillis();
+            int updated = tempSettlementRepository.updateOrders();
+            long updateDuration = System.currentTimeMillis() - updateStart;
 
-        // 3) UPDATE 1번 실행
-        int updated = tempSettlementRepository.updateOrders();
-        log.info("[Writer] Bulk updated {} orders", updated);
+            meterRegistry.timer("batch_writer_update_orders_duration")
+                    .record(updateDuration, TimeUnit.MILLISECONDS);
 
-        // 4) temp table 삭제
-        tempSettlementRepository.dropTempTable();
+            log.info("[Writer AfterStep] Bulk updated {} orders ({}ms)", updated, updateDuration);
+
+        } finally {
+            tempSettlementRepository.dropTempTable();
+
+            long total = System.currentTimeMillis() - start;
+
+            meterRegistry.timer("batch_writer_afterstep_total_duration")
+                    .record(total, TimeUnit.MILLISECONDS);
+
+            meterRegistry.counter("batch_writer_afterstep_update_count")
+                    .increment(orderIdBuffer.size());
+
+            log.info("[Writer AfterStep] 처리 완료 total={}ms", total);
+        }
 
         return stepExecution.getExitStatus();
     }

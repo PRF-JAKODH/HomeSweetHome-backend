@@ -11,11 +11,14 @@ import com.homesweet.homesweetback.domain.settlement.repository.SettlementReposi
 import com.homesweet.homesweetback.domain.settlement.util.ExtractedSeller;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,18 +36,49 @@ import java.util.UUID;
 public class SettlementCreateProcessor implements ItemProcessor<SettlementCreateDto, Settlement> {
     private final SettlementCalculator settlementCalculator;
     private final SettlementValidator settlementValidator;
-    private final Map<Long, User> sellerCache;
+    private final SettlementRepository settlementRepository;
+    private Map<Long, User> sellerCache;
+    private final MeterRegistry meterRegistry;
+    private boolean cacheLoaded = false;
+
+    @PostConstruct
+    public void init() {
+        long start = System.currentTimeMillis();
+        sellerCache = new HashMap<>();
+        try {
+            settlementRepository.findAllBySellerRole().forEach(seller ->
+                    sellerCache.put(seller.getId(), seller)
+            );
+        log.info("SellerCache 초기화 완료 size: {}", sellerCache.size());
+        } catch (Exception e) {
+            log.error("SellerCache 로딩 실패: {}", e.getMessage());
+            throw e;
+        }finally {
+            long duration = System.currentTimeMillis() - start;
+
+            meterRegistry.timer("batch_processor_seller_cache_load_duration")
+                    .record(duration, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+    }
 
     @Override
     public Settlement process(SettlementCreateDto dto) {
-        Long sellerId = dto.sellerId();
+//        init();
+        long start = System.currentTimeMillis();
+        try {
+
+        User seller = sellerCache.get(dto.sellerId());
         log.info("Processor called for order = {}", dto.orderId());
+        if (seller == null) {
+            meterRegistry.counter("batch_processor_missing_seller_count").increment();
+            log.error("[Processor] Seller not found for ID={}", dto.sellerId());
+            throw new BusinessException(ErrorCode.SELLER_NOT_FOUND);
+        }
         // 1. 판매자 추출
 //        User seller = extractedSeller.extractSeller(order);
         // 100만번 부르는 중-> map 처리
 //        User seller = settlementRepository.findBySellerId(sellerId).orElseThrow(() -> new BusinessException(ErrorCode.SELLER_NOT_FOUND));
 
-        User seller = sellerCache.get(dto.sellerId());
 
 //        settlementValidator.validateSeller(dto.sellerId());
         // Order은 영속성 객체로 가져오기
@@ -54,11 +88,13 @@ public class SettlementCreateProcessor implements ItemProcessor<SettlementCreate
         SettlementCalculator.Result result = settlementCalculator.getResult(dto, seller);
         settlementValidator.validateResultNotNull(result);
 
+        meterRegistry.counter("batch_processor_success_count").increment();
+
         // 3. Settlement 엔티티 생성
         return Settlement.builder()
                 .settlementId(UUID.randomUUID())
                 .orderId(dto.orderId())
-                .userId(sellerId)
+                .userId(dto.sellerId())
                 .salesAmount(result.totalAmount())
                 .fee(result.fee())
                 .vat(result.vat())
@@ -67,5 +103,16 @@ public class SettlementCreateProcessor implements ItemProcessor<SettlementCreate
                 .settlementStatus("PENDING")
                 .settlementDate(LocalDateTime.now())
                 .build();
+        } catch (Exception e) {
+            meterRegistry.counter("batch_processor_error_count").increment();
+            throw e;
+
+        } finally {
+
+            long duration = System.currentTimeMillis() - start;
+
+            meterRegistry.timer("batch_processor_process_duration")
+                    .record(duration, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
     }
 }

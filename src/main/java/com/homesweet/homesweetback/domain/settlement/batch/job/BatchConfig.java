@@ -19,6 +19,7 @@ import com.homesweet.homesweetback.domain.settlement.repository.SettlementReposi
 import com.homesweet.homesweetback.domain.settlement.repository.querydsl.CustomSettlementRepository;
 import com.homesweet.homesweetback.domain.settlement.util.calculator.SettlementCalculator;
 import com.homesweet.homesweetback.domain.settlement.validation.SettlementValidator;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.LazyInitializationException;
 import org.springframework.batch.core.Job;
@@ -92,7 +93,6 @@ public class BatchConfig {
                 .listener(settlementStepFailListener)
                 .listener(settlementSLAMonitorListener)
                 .listener(settlementChunkListener)
-//                .taskExecutor(taskExecutor())   // 병렬처리
                 .faultTolerant()
                 .retry(Exception.class) //
                 .retryLimit(3)
@@ -101,7 +101,7 @@ public class BatchConfig {
     }
     // step2 -> 주문 취소건 정산 취소
     @Bean
-    public Step settlementCancelStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, SettlementCancelReader settlementCancelReader) {
+    public Step settlementCancelStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, SettlementCancelReader settlementCancelReader, BatchJobMetricsListener batchJobMetricsListener, BatchStepMetricsListener batchStepMetricsListener) {
         return new StepBuilder("settlementCancelStep", jobRepository)
                 .<Order, Settlement>chunk(1000, transactionManager)
                 .reader(settlementCancelReader)
@@ -112,6 +112,8 @@ public class BatchConfig {
                 .listener(settlementStepFailListener)
                 .listener(settlementSLAMonitorListener)
                 .listener(settlementChunkListener)
+                .listener(batchJobMetricsListener)
+                .listener(batchStepMetricsListener)
                 .faultTolerant()
                 .retry(Exception.class)
                 .retryLimit(3)
@@ -163,9 +165,10 @@ public class BatchConfig {
     @StepScope
     public ZeroOffsetItemReader zeroOffsetItemReader(
             @Value("#{jobParameters['cutoff']}") String cutoff,
-            CustomSettlementRepository customSettlementRepository
+            CustomSettlementRepository customSettlementRepository,
+            MeterRegistry meterRegistry
     ) {
-        return new ZeroOffsetItemReader(cutoff, customSettlementRepository);
+        return new ZeroOffsetItemReader(cutoff, customSettlementRepository, meterRegistry);
     }
 
     //
@@ -173,20 +176,11 @@ public class BatchConfig {
     @StepScope
     public SettlementCreateProcessor settlementCreateProcessor(
             SettlementRepository settlementRepository,
-            SettlementCalculator settlementCalculator, SettlementValidator settlementValidator){
+            SettlementCalculator settlementCalculator,
+            SettlementValidator settlementValidator,
+            MeterRegistry meterRegistry
+    ){
 
-        Map<Long, User> sellerCache = new HashMap<>();
-        settlementRepository.findAllBySellerRole().forEach(seller ->
-                sellerCache.put(seller.getId(), seller)
-        );
-
-        return new SettlementCreateProcessor(settlementCalculator, settlementValidator, sellerCache);
+        return new SettlementCreateProcessor(settlementCalculator, settlementValidator, settlementRepository, meterRegistry);
     }
-//    @Bean
-//    public TaskExecutor taskExecutor() {
-//        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("batch-worker-");
-//        executor.setConcurrencyLimit(8);
-//        return executor;
-//    }
-
 }

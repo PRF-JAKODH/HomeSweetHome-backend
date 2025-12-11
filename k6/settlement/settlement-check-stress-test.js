@@ -8,7 +8,7 @@ const USER_ID = 11;
 export const options = {
     scenarios: {
         spike_test: {
-            executor: "ramping-arrival-rate",
+            executor: "ramping-arrival-rate",   // 초당 요청 수(TPS)를 점진적으로 증가
             startRate: 0,
             timeUnit: "1s",
             preAllocatedVUs: 300,

@@ -6,23 +6,28 @@ const TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMSIsImVtYWlsIjoiaHNrd29vbjdAZ21h
 
 export const options = {
     discardResponseBodies: false,
-    scenarios: {
-        // 1) 주문 유입 시뮬레이션 (steady load)
-        order_inflow: {
-            executor: "constant-arrival-rate",
-            rate: 833,              // 분당 5만건
+        peak_load: {
+            executor: "ramping-arrival-rate",
+            startRate: 100,     // 워밍업
             timeUnit: "1s",
-            duration: "10m",         // 10분 동안 테스트
-            preAllocatedVUs: 2000,
-            maxVUs: 10000,
+            preAllocatedVUs: 5000,
+            maxVUs: 15000,
+
+            stages: [
+                { target: 500, duration: "30s" },   // 안정 구간
+                { target: 1000, duration: "20s" },  // 꾸준히 증가
+                { target: 2000, duration: "10s" },  // 🔥 피크 순간
+                { target: 0, duration: "10s" },     // 급락 → 회복 여부 확인
+            ],
+
             exec: "orderFlow",
         },
 
         batch_runner: {
             executor: "per-vu-iterations",
             vus: 1,
-            iterations: 60,     // 10초 × 60 = 10분
-            maxDuration: "20m",
+            iterations: 30,
+            maxDuration: "10m",
             exec: "runBatch",
         }
     },

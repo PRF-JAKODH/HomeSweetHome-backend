@@ -71,7 +71,7 @@ public class CommunityScheduler {
         }
     }
 
-    @Scheduled(initialDelay = 100000, fixedDelay = 110000)
+//    @Scheduled(initialDelay = 100000, fixedDelay = 110000)
     public void updateCountData() {
         // 1. Redis에서 조회수 데이터 수집
         Map<Long, Integer> viewCounts = redisService.scanAndCollectViewCounts();
@@ -103,7 +103,7 @@ public class CommunityScheduler {
     }
 
     // 댓글 수정
-    @Scheduled(initialDelay = 200000, fixedDelay = 210000)
+//    @Scheduled(initialDelay = 200000, fixedDelay = 210000)
     public void updateCommentData() {
         // 1. Redis에서 댓글수 데이터 수집
         Map<Long, Integer> commentCounts = redisService.scanAndCollectCommentCounts();
@@ -138,7 +138,7 @@ public class CommunityScheduler {
      * 게시글 좋아요 Event Queue 배치 동기화 (관계 + 개수)
      * 5분마다 실행
      */
-    @Scheduled(fixedDelay = 300000)  // 5분
+//    @Scheduled(fixedDelay = 300000)  // 5분
     public void syncPostLikeEvents() {
         // 1. Redis Queue에서 이벤트 가져오기
         List<LikeEvent> events = redisService.pollPostLikeEvents(1000);
@@ -184,7 +184,7 @@ public class CommunityScheduler {
      * 게시글 좋아요 개수 배치 동기화 (Redis → DB)
      * 5분마다 실행 (좋아요 이벤트 동기화 직후)
      */
-    @Scheduled(fixedDelay = 300000, initialDelay = 310000)  // 5분, 초기 지연 5분 10초
+//    @Scheduled(fixedDelay = 300000, initialDelay = 310000)  // 5분, 초기 지연 5분 10초
     public void syncPostLikeCount() {
         // 1. Redis에서 좋아요수 데이터 수집
         Map<Long, Integer> likeCounts = redisService.scanAndCollectPostLikeCounts();
@@ -219,7 +219,7 @@ public class CommunityScheduler {
      * 댓글 좋아요 Event Queue 배치 동기화 (관계)
      * 5분마다 실행
      */
-    @Scheduled(fixedDelay = 300000)  // 5분
+//    @Scheduled(fixedDelay = 300000)  // 5분
     public void syncCommentLikeEvents() {
         // 1. Redis Queue에서 이벤트 가져오기
         List<LikeEvent> events = redisService.pollCommentLikeEvents(1000);
@@ -265,7 +265,7 @@ public class CommunityScheduler {
      * 댓글 좋아요 개수 배치 동기화 (Redis → DB)
      * 5분마다 실행 (댓글 좋아요 이벤트 동기화 직후)
      */
-    @Scheduled(fixedDelay = 300000, initialDelay = 320000)  // 5분, 초기 지연 5분 20초
+//    @Scheduled(fixedDelay = 300000, initialDelay = 320000)  // 5분, 초기 지연 5분 20초
     public void syncCommentLikeCount() {
         // 1. Redis에서 댓글 좋아요수 데이터 수집
         Map<Long, Integer> likeCounts = redisService.scanAndCollectCommentLikeCounts();

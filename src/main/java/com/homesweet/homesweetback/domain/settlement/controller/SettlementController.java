@@ -76,29 +76,30 @@ public class SettlementController {
         return ResponseEntity.ok(yearSummary);
     }
 
-    //    @PostMapping("/daily/{userId}/generate")
-//    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime endDate) {
-//        dailySettlementService.getSettlement(userId, startDate, endDate);
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    @PostMapping("/weekly/{userId}/generate")
-//    public ResponseEntity<Void> getWeeklySettlement(@PathVariable Long userId, @RequestParam LocalDate weekStart, @RequestParam LocalDate weekEnd) {
-//        weeklySettlementService.getWeeklySettlement(userId, weekStart, weekEnd);
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    @PostMapping("/monthly/{userId}/generate")
-//    public ResponseEntity<Void> generateMonthly(@PathVariable Long userId) {
-//        monthlySettlementService.getMonthlySettlement(userId);
-//        return ResponseEntity.ok().build();
-//    }
-//
-//    @PostMapping("/yearly/{userId}/generate")
-//    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId) {
-//        yearlySettlementService.getYearlySettlement(userId);
-//        return ResponseEntity.ok().build();
-//    }
+
+    @PostMapping("/daily/{userId}/generate")
+    public ResponseEntity<Void> getDailySettlement(@PathVariable Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime startDate, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime endDate) {
+        dailySettlementService.getSettlement(userId, startDate, endDate);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/weekly/{userId}/generate")
+    public ResponseEntity<Void> getWeeklySettlement(@PathVariable Long userId, @RequestParam LocalDate weekStart, @RequestParam LocalDate weekEnd) {
+        weeklySettlementService.getWeeklySettlement(userId, weekStart, weekEnd);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/monthly/{userId}/generate")
+    public ResponseEntity<Void> generateMonthly(@PathVariable Long userId) {
+        monthlySettlementService.getMonthlySettlement(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/yearly/{userId}/generate")
+    public ResponseEntity<Void> getYearlySettlement(@PathVariable Long userId) {
+        yearlySettlementService.getYearlySettlement(userId);
+        return ResponseEntity.ok().build();
+    }
     // 부하테스트용
     @PostMapping("/batch/run")
     public ResponseEntity<String> runJob() {

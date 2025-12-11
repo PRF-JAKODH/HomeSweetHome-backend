@@ -35,7 +35,7 @@ OrderBatchScheduler {
     private final SkuJPARepository skuJPARepository;
 
     // 1초마다 최대 1000개씩 처리
-    @Scheduled(fixedRate = 1000)
+//    @Scheduled(fixedRate = 1000)
     @Transactional
     public void processPendingOrders() {
         // 1. Redis에서 주문 꺼내기

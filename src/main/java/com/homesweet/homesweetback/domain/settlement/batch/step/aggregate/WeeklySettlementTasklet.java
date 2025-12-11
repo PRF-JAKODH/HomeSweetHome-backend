@@ -51,7 +51,7 @@ public class WeeklySettlementTasklet implements Tasklet {
             // 4. 검증
             settlementValidator.validateTotals(totals);
             // 5. 저장
-            settlementSaver.saveWeekly(userId, year, month, weekStart, weekEnd, totals);
+            settlementSaver.saveWeekly(userId,weekStart, totals);
             log.info("[주별 집계] userId={} 날짜={} 총 정산금액={}", userId, cutoff, totals.getTotalSettlement());
         }
         log.info("WeeklySettlementTasklet 성공");
