@@ -1,6 +1,10 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/controller/response/RecentViewPreviewResponse.java
 package com.homesweet.homesweetback.domain.product.recent.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+========
+package com.homesweet.homesweetback.domain.product.product.command.controller.response;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/controller/response/RecentViewPreviewResponse.java
 
 import java.math.BigDecimal;
 

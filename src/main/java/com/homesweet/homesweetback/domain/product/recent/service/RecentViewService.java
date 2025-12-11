@@ -1,7 +1,14 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/service/RecentViewService.java
 package com.homesweet.homesweetback.domain.product.recent.service;
 
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
+========
+package com.homesweet.homesweetback.domain.product.product.command.service;
+
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/service/RecentViewService.java
 
 import java.util.List;
 

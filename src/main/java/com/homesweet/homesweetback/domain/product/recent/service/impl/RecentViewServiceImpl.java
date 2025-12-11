@@ -1,9 +1,18 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/service/impl/RecentViewServiceImpl.java
 package com.homesweet.homesweetback.domain.product.recent.service.impl;
 
 import com.homesweet.homesweetback.common.util.JsonUtil;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
+========
+package com.homesweet.homesweetback.domain.product.product.command.service.impl;
+
+import com.homesweet.homesweetback.common.util.JsonUtil;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.command.service.RecentViewService;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/service/impl/RecentViewServiceImpl.java
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.internal.util.JsonUtils;
 import org.springframework.data.redis.core.RedisTemplate;

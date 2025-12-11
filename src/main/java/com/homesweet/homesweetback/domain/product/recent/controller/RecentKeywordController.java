@@ -1,7 +1,14 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/controller/RecentKeywordController.java
 package com.homesweet.homesweetback.domain.product.recent.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
+========
+package com.homesweet.homesweetback.domain.product.product.command.controller;
+
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.product.product.command.service.RecentSearchService;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/controller/RecentKeywordController.java
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

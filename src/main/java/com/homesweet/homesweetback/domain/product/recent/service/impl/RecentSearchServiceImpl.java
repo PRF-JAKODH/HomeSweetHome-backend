@@ -1,6 +1,12 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/service/impl/RecentSearchServiceImpl.java
 package com.homesweet.homesweetback.domain.product.recent.service.impl;
 
 import com.homesweet.homesweetback.domain.product.recent.service.RecentSearchService;
+========
+package com.homesweet.homesweetback.domain.product.product.command.service.impl;
+
+import com.homesweet.homesweetback.domain.product.product.command.service.RecentSearchService;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/service/impl/RecentSearchServiceImpl.java
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

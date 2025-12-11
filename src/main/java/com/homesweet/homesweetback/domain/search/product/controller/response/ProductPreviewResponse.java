@@ -1,8 +1,15 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/search/product/controller/response/ProductPreviewResponse.java
 package com.homesweet.homesweetback.domain.search.product.controller.response;
 
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
 import com.homesweet.homesweetback.domain.search.product.repository.document.ProductDocument;
+========
+package com.homesweet.homesweetback.domain.product.product.command.controller.response;
+
+import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
+import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/controller/response/ProductPreviewResponse.java
 import com.homesweet.homesweetback.domain.product.review.domain.ProductReviewStatistics;
 import lombok.Builder;
 

@@ -1,8 +1,16 @@
+<<<<<<<< HEAD:src/main/java/com/homesweet/homesweetback/domain/product/recent/controller/RecentViewController.java
 package com.homesweet.homesweetback.domain.product.recent.controller;
 
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import com.homesweet.homesweetback.domain.product.recent.controller.response.RecentViewPreviewResponse;
 import com.homesweet.homesweetback.domain.product.recent.service.RecentViewService;
+========
+package com.homesweet.homesweetback.domain.product.product.command.controller;
+
+import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
+import com.homesweet.homesweetback.domain.product.product.command.controller.response.RecentViewPreviewResponse;
+import com.homesweet.homesweetback.domain.product.product.command.service.RecentViewService;
+>>>>>>>> 9de1dca (feat: CQRS에 맞는 폴더 구조 설정):src/main/java/com/homesweet/homesweetback/domain/product/product/command/controller/RecentViewController.java
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
