@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Prometheus 자체 메트릭
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # EC2 Spring Boot 애플리케이션 메트릭
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['54.180.140.140:8080']
+        labels:
+          application: 'homesweet-backend'
+          environment: 'ec2'
+
+  # K6 메트릭은 remote_write로 수신되므로 별도 scrape 불필요

@@ -13,8 +13,6 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: false
         default_batch_fetch_size: 30
-  elasticsearch:
-    uris: ${ELASTIC_SEARCH_URL}
   security:
     oauth2:
       client:
@@ -41,9 +39,9 @@ spring:
       lettuce:
         pool:
           enabled: true
-          max-active: 50      # 동시 연결 수 (기본 8 → 50)
-          max-idle: 20
-          min-idle: 5
+          max-active: 100     # 동시 연결 수 (기본 8 → 50)
+          max-idle: 50
+          min-idle: 10
           max-wait: 1000ms  
   cache:
     type: redis
@@ -53,9 +51,17 @@ spring:
 
 logging:
   level:
+    root: WARN
     com.homesweet.homesweetback: INFO
-    org.springframework.security: WARN
-    org.springframework.batch: INFO
+    com.homesweet.homesweetback.domain.community.scheduler: INFO
+    org.springframework.security: ERROR
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.hibernate.stat: WARN    
+    org.springframework.batch: ERROR
+    org.springframework.data.elasticsearch: ERROR 
+    org.elasticsearch.client: ERROR
+    com.zaxxer.hikari: DEBUG
 
 # 프로덕션 환경 애플리케이션 설정
 app:

@@ -59,6 +59,28 @@ public class CommunityRedisService {
 
     private static final String POST_LIKE_EVENT_QUEUE = "post:like:events";
     private static final String COMMENT_LIKE_EVENT_QUEUE = "comment:like:events";
+    private static final String TOTAL_POST_COUNT_KEY = "community:total_post_count";
+
+    // --- Total Post Count Logic (페이지네이션용) ---
+    public Long getTotalPostCount() {
+        String value = stringRedisTemplate.opsForValue().get(TOTAL_POST_COUNT_KEY);
+        return value != null ? Long.parseLong(value) : null;
+    }
+
+    public void setTotalPostCount(long count) {
+        stringRedisTemplate.opsForValue().set(TOTAL_POST_COUNT_KEY, String.valueOf(count));
+    }
+
+    public void incrementTotalPostCount() {
+        stringRedisTemplate.opsForValue().increment(TOTAL_POST_COUNT_KEY);
+        log.debug("Total post count incremented");
+    }
+
+    public void decrementTotalPostCount() {
+        stringRedisTemplate.opsForValue().decrement(TOTAL_POST_COUNT_KEY);
+        log.debug("Total post count decremented");
+    }
+
 
     // --- View Count Logic ---
     public Long incrementPostViewCount(Long postId) {

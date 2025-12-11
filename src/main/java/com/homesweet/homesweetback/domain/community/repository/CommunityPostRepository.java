@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 
 import java.util.Optional;
 
@@ -18,8 +19,9 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPostEnti
     Optional<CommunityPostEntity> findByPostIdAndIsDeletedFalse(Long postId);
 
     // 페이지네이션 쿼리 메서드 / N+1문제 해결위해 EntityGraph 추가
+    // Slice 사용 - COUNT 쿼리 자동 실행 방지 (totalCount는 Redis에서 별도 관리)
     @EntityGraph(attributePaths = {"author", "author.grade"})
-    Page<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
+    Slice<CommunityPostEntity> findByIsDeletedFalse(Pageable pageable);
 
     // 전체 게시글 수 조회 (캐싱용)
     long countByIsDeletedFalse();

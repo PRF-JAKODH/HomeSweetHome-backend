@@ -25,7 +25,44 @@ public class CommunityCountService {
     private final CommunityCommentLikeRepository commentLikeRepository;
     private final CommunityRedisService redisService;
 
-    @Transactional
+    private static final String TOTAL_POST_COUNT_KEY = "community:total_post_count";
+
+    // ============================================================
+    // Total Post Count (페이지네이션용)
+    // ============================================================
+
+    /**
+     * 게시글 총 개수 조회 (Redis 캐시 우선, Cache Miss 시 DB 조회 후 캐싱)
+     */
+    public long getTotalPostCount() {
+        Long cached = redisService.getTotalPostCount();
+        if (cached != null) {
+            return cached;
+        }
+        
+        // Cache Miss - DB에서 조회 후 Redis에 저장
+        long count = postRepository.countByIsDeletedFalse();
+        redisService.setTotalPostCount(count);
+        log.info("Loaded total post count from DB: {}", count);
+        return count;
+    }
+
+    /**
+     * 게시글 생성 시 총 개수 증가
+     */
+    public void incrementTotalPostCount() {
+        redisService.incrementTotalPostCount();
+    }
+
+    /**
+     * 게시글 삭제 시 총 개수 감소
+     */
+    public void decrementTotalPostCount() {
+        redisService.decrementTotalPostCount();
+    }
+
+
+    // @Transactional -> 제거 (Redis만 사용)
     public void increaseViewCount(Long postId) {
         Long result = redisService.incrementPostViewCount(postId);
 
@@ -44,7 +81,7 @@ public class CommunityCountService {
         redisService.setPostViewCount(postId, post.getViewCount());
     }
 
-    @Transactional
+    // @Transactional -> 제거 
     public void increaseCommentCount(Long postId) {
         Long result = redisService.incrementPostCommentCount(postId);
 
@@ -55,7 +92,7 @@ public class CommunityCountService {
         log.debug("Comment count increased - postId: {}", postId);
     }
 
-    @Transactional
+    // @Transactional -> 제거 (Redis만 사용)
     public void decreaseCommentCount(Long postId) {
         Long result = redisService.decreasePostCommentCount(postId);
 
@@ -72,7 +109,7 @@ public class CommunityCountService {
         redisService.setPostCommentCount(postId, post.getCommentCount());
     }
 
-    @Transactional
+    // @Transactional -> 제거 (Redis만 사용)
     public void togglePostLike(Long postId, Long userId) {
         Long result = redisService.togglePostLike(postId, userId);
 
@@ -117,7 +154,7 @@ public class CommunityCountService {
         log.info("Loaded post likes from DB - postId: {}, count: {}", postId, userIds.size());
     }
 
-    @Transactional
+    // @Transactional -> 제거 (Redis만 사용)
     public void toggleCommentLike(Long commentId, Long userId) {
         Long result = redisService.toggleCommentLike(commentId, userId);
 

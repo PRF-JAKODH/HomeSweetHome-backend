@@ -11,14 +11,14 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommunityPostService {
 
-    private final CommunityEventPublisher communityEventPublisher;
     private final CommunityPostRepository postRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
@@ -112,10 +111,11 @@ public class CommunityPostService {
             }
         }
 
-        communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
-
         // 목록 캐시 무효화
         invalidatePostListCache();
+
+        // 게시글 총 개수 증가 (Redis)
+        communityCountService.incrementTotalPostCount();
 
         return CommunityPostResponse.from(savedPost, imageUrls);
     }
@@ -201,8 +201,6 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
-
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
         invalidatePostListCache();
@@ -227,7 +225,9 @@ public class CommunityPostService {
 
         // 게시글 소프트 삭제
         post.deletePost();
-        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
+
+        // 게시글 총 개수 감소 (Redis)
+        communityCountService.decrementTotalPostCount();
 
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
@@ -266,7 +266,8 @@ public class CommunityPostService {
                         ))
                         .toList();
                 
-                long totalCount = postRepository.countByIsDeletedFalse();
+                // Redis에서 캐싱된 totalCount 사용 (DB COUNT 쿼리 제거)
+                long totalCount = communityCountService.getTotalPostCount();
                 log.debug("Cache hit for post list: page={}", pageable.getPageNumber());
                 return new org.springframework.data.domain.PageImpl<>(withLatestCounts, pageable, totalCount);
             } catch (JsonProcessingException e) {
@@ -275,12 +276,12 @@ public class CommunityPostService {
             }
         }
 
-        // 2. Cache Miss - DB 조회
-        Page<CommunityPostEntity> postsPage = postRepository.findByIsDeletedFalse(pageable);
-        List<CommunityPostEntity> posts = postsPage.getContent();
+        // 2. Cache Miss - DB 조회 (Slice 사용 - COUNT 쿼리 방지)
+        Slice<CommunityPostEntity> postsSlice = postRepository.findByIsDeletedFalse(pageable);
+        List<CommunityPostEntity> posts = postsSlice.getContent();
 
         if (posts.isEmpty()) {
-            return postsPage.map(post -> CommunityPostResponse.from(post, null));
+            return new PageImpl<>(List.of(), pageable, 0);
         }
         
         List<CommunityImageEntity> allImages = imageRepository.findAllByPostInOrderByPostPostIdAscImageOrderAsc(posts);
@@ -318,6 +319,6 @@ public class CommunityPostService {
             log.warn("Failed to cache post list", e);
         }
 
-        return new org.springframework.data.domain.PageImpl<>(responses, pageable, postsPage.getTotalElements());
+        return new org.springframework.data.domain.PageImpl<>(responses, pageable, communityCountService.getTotalPostCount());
     }
 }
