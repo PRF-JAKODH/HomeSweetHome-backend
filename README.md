@@ -102,6 +102,8 @@
 ### 📑 기획서  
 
 ### 🚧 시스템 아키텍쳐
+<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/9d60b2c3-c8aa-4152-aa0a-353e74ad2666" />
+
 
 ### 🌊 플로우차트  
 
