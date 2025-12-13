@@ -1,136 +1,52 @@
 # HomeSweetHome
 
-<img width="2400" height="800" alt="image" src="https://github.com/user-attachments/assets/b69af827-4640-434a-9ab3-bfd8cb8e1775" />
-
----
-
-## Team **JAKODH**
-
-<table align="center">
-  <tr>
-     <td align="center">
-      <img src="https://avatars.githubusercontent.com/ohhalim" width="100" height="100" style="object-fit:cover;"/>
-      <br/>오하림<br/>
-      <a href="https://github.com/ohhalim">@ohhalim</a>
-    </td>
-     <td align="center">
-      <img src="https://avatars.githubusercontent.com/chaeho5" width="100" height="100" style="object-fit:cover;"/>
-      <br/>안채호<br/>
-      <a href="https://github.com/chaeho5">@chaeho5</a>
-    </td>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/dogyungkim" width="100" height="100" style="object-fit:cover;"/>
-      <br/>김도경<br/>
-      <a href="https://github.com/dogyungkim">@dogyungkim</a>
-    </td>
-     <td align="center">
-      <img src="https://avatars.githubusercontent.com/Jooahyeon" width="100" height="100" style="object-fit:cover;"/>
-      <br/>주아현<br/>
-      <a href="https://github.com/Jooahyeon">@Jooahyeon</a>
-    </td>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/normaldeve" width="100" height="100" style="object-fit:cover;"/>
-      <br/>김준우<br/>
-      <a href="https://github.com/normaldeve">@normaldeve</a>
-    </td>
-     <td align="center">
-      <img src="https://avatars.githubusercontent.com/ssooyya" width="100" height="100" style="object-fit:cover;"/>
-      <br/>권희수<br/>
-      <a href="https://github.com/ssooyya">@ssooyya</a>
-    </td>
-  </tr>
-</table>
-
----
-
 ## 📍 프로젝트 소개
 
-- '오늘의 집'의 핵심 기능을 재현
-- 실서비스 수준의 백엔드 고도화를 통해 확장성과 안정성을 갖춘 전자상거래·커뮤니티 백엔드를 구축
+- 국내 이커머스와 커뮤니티 플랫폼 '오늘의 집'의 핵심 기능을 분석하고 대규모 트래픽에서 안정적으로 동작하는 것을 목표로 진행했습니다.
+- 이를 위해 아래 3단계의 고도화 과정을 통해 점진적으로 개발하였습니다.
 
-### 📍 프로젝트 링크
+**1. 기획 및 MVP 구축**
+  - 핵심 기능에 집중하고, AI를 활용한 Frontend 개발을 통해 MVP를 빠르게 개발했습니다.
+    
+**2. 단위/통합 테스트, 성능 테스트 및 1차 성능 개선**
+  - 구현한 기능에 대해 단위/통합 테스트를 진행하였습니다.
+  - 구현된 각 기능에 대해 로컬 환경에서 성능 테스트를 진행하였습니다.
+  - 성능 테스트 측정을 기반으로 병목 구간을 찾고, 단위/통합 테스트 기반으로 안전한 리팩토링을 진행했습니다.
+    
+**3. 배포 환경에서의 부하 테스트 및 2차 성능 개선**
+  - AWS 환경에 배포 한 뒤, 단일 인스턴스에서 부하테스트를 진행하였습니다.
+  - 부하테스트 기반으로 성능을 개선하였습니다.
+  - 목표 한 MAU (300만)에 맞는 아키텍처를 구축하였습니다.
+
+
+## 📍 프로젝트 링크
 | Frontend | Backend |
 |------------|------------|
 | [FE Github](https://github.com/PRF-JAKODH/HomeSweetHome-front) | [BE Github](https://github.com/PRF-JAKODH/HomeSweetHome-backend) |
 
 ---
 
-<details>
-  <summary>기술 스택</summary>
-
-### Backend  
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white) 
-![SpringBoot](https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![SpringSecurity](https://img.shields.io/badge/SpringSecurity-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-
-### Frontend  
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
-![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
-
-### Database  
-![AmazonRDS](https://img.shields.io/badge/AmazonRDS-4285F4?style=for-the-badge)
-![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-ECD53F?style=for-the-badge)
-
-### Infrastructure  
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
-
-### Design & Modeling  
-![Figma](https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white)
-
-### Tools  
-![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
-![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
-
-</details>
-
+## 📌 주요 기능
+- 알림: 다양한 실시간 알림(구매, 커뮤니티, 채팅 ...) 기능, 알림 조회, 읽음 처리, 삭제
 ---
 
-<details>
-  <summary>담당 기능</summary>
-
-
-</details>
+## 🚧 시스템 아키텍쳐
+<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/8e170bc5-7d8f-483c-9d74-f77cc84a1f07" />
 
 ---
-
-<details>
-  <summary>설계 문서</summary>
-
-### 📑 기획서  
-
-### 🚧 시스템 아키텍쳐
-<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/8e170bc5-7d8f-483c-9d74-f77cc84a1f07" />
-
-### 🌊 플로우차트  
-
-### 📋 요구사항 명세서  
-
-### 📘 논리 모델링  
-
-### 📕 물리 모델링  
-
-### 🖌️ 화면 설계서  
-
-### 🧪 테스트 케이스  
-
-</details>
+## 📈 단위 테스트 및 통합 테스트
+- Repository 및 Service 계층을 중심으로 단위 테스트를 작성했습니다.
+- 테스트 커버리지 80% 이상을 유지하는 것을 목표로 진행하였습니다.
+- Github Action을 활용해 자동 테스트 및 빌드 파이프라인을 구축하였습니다.
 
 ---
-
-<details>
-  <summary>트러블 슈팅</summary>
+## 🚀 개선 사항 및 트러블 슈팅
 
 - [트러블 슈팅 바로가기](wiki Link)
 
-</details>
-
 ---
-
-## 회고
+## 📖 Wiki 및 참고 자료
 
 
 ---
-
+## 📼 시연 영상
