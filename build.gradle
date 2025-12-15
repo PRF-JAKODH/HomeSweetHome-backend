@@ -102,12 +102,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.batch:spring-batch-core'
 
-
     // ElasticSearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
     // Spring Retry
     implementation 'org.springframework.retry:spring-retry'
+
+    // Spring Kafk
+    implementation 'org.springframework.kafka:spring-kafka'
 
 }
 

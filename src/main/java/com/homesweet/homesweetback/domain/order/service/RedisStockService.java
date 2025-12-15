@@ -6,6 +6,7 @@ import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
 import com.homesweet.homesweetback.domain.order.dto.internal.PendingPayment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class RedisStockService {
 
+    @Qualifier("stockRedisTemplate")
     private final RedisTemplate<String, String> stockRedisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -49,13 +51,12 @@ public class RedisStockService {
         String key = "sku:" + skuId + ":stock";
 
         // Lua Script: "현재 재고가 요청 수량보다 크거나 같으면 차감(DECRBY)하고 남은 재고 리턴, 아니면 -1 리턴"
-        String script =
-                "if (redis.call('get', KEYS[1]) == false) then return -1 end; " +
-                        "if (tonumber(redis.call('get', KEYS[1])) >= tonumber(ARGV[1])) then " +
-                        "return redis.call('decrby', KEYS[1], ARGV[1]); " +
-                        "else " +
-                        "return -1;" +
-                        "end";
+        String script = "if (redis.call('get', KEYS[1]) == false) then return -1 end; " +
+                "if (tonumber(redis.call('get', KEYS[1])) >= tonumber(ARGV[1])) then " +
+                "return redis.call('decrby', KEYS[1], ARGV[1]); " +
+                "else " +
+                "return -1;" +
+                "end";
 
         // 스크립트 실행 객체 생성 (반환 타입: Long)
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
@@ -92,7 +93,8 @@ public class RedisStockService {
         for (int i = 0; i < count; i++) {
             // 오른쪽에서 하나씩 꺼냄 (RPOP) - 꺼내면 Redis에서 사라짐
             String json = stockRedisTemplate.opsForList().rightPop("orders:pending");
-            if (json == null) break; // 데이터가 없으면 중단
+            if (json == null)
+                break; // 데이터가 없으면 중단
 
             try {
                 orders.add(objectMapper.readValue(json, PendingOrder.class));
@@ -125,7 +127,8 @@ public class RedisStockService {
     public PendingOrder getCachedOrder(String orderNumber) {
         String key = "order:" + orderNumber;
         String json = stockRedisTemplate.opsForValue().get(key);
-        if (json == null) return null;
+        if (json == null)
+            return null;
 
         try {
             return objectMapper.readValue(json, PendingOrder.class);
@@ -159,7 +162,8 @@ public class RedisStockService {
         List<PendingPayment> payments = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             String json = stockRedisTemplate.opsForList().rightPop("payments:pending");
-            if (json == null) break;
+            if (json == null)
+                break;
             try {
                 payments.add(objectMapper.readValue(json, PendingPayment.class));
             } catch (JsonProcessingException e) {

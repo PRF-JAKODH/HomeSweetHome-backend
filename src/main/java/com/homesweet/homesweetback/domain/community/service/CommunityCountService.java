@@ -89,19 +89,6 @@ public class CommunityCountService {
 
         log.debug("Post like toggled - postId: {}, userId: {}, action: {}",
                 postId, userId, isAdded ? "ADDED" : "REMOVED");
-
-        // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
-        // User user = userRepository.findById(userId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-        // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-        // notificationSendService.sendTemplateNotificationToSingleUser(
-        //         post.getAuthor().getId(),
-        //         CommunityNotification.NewLike.builder()
-        //                 .userName(user.getName())
-        //                 .postId(post.getPostId())
-        //                 .postTitle(post.getTitle())
-        //                 .build());
     }
 
     public boolean isPostLiked(Long postId, Long userId) {
@@ -131,19 +118,6 @@ public class CommunityCountService {
 
         log.debug("Comment like toggled - commentId: {}, userId: {}, action: {}",
                 commentId, userId, isAdded ? "ADDED" : "REMOVED");
-
-        // TODO: 알림 전송 - 트랜잭션 롤백 이슈로 인해 임시 주석 처리
-        // User user = userRepository.findById(userId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.USER_NOT_FOUND));
-        // CommunityPostEntity post = postRepository.findByPostIdAndIsDeletedFalse(postId)
-        //         .orElseThrow(() -> new CommunityException(ErrorCode.COMMUNITY_POST_NOT_FOUND));
-        // notificationSendService.sendTemplateNotificationToSingleUser(
-        //         post.getAuthor().getId(),
-        //         CommunityNotification.NewLike.builder()
-        //                 .userName(user.getName())
-        //                 .postId(post.getPostId())
-        //                 .postTitle(post.getTitle())
-        //                 .build());
     }
 
     public boolean isCommentLiked(Long commentId, Long userId) {
@@ -161,17 +135,18 @@ public class CommunityCountService {
 
     public Integer getViewCountFromCache(Long postId) {
         Integer viewCount = redisService.getPostViewCount(postId);
-        if (viewCount != null) return viewCount;
+        if (viewCount != null)
+            return viewCount;
 
         // DB Fallback
         initViewCountFromDB(postId);
         return redisService.getPostViewCount(postId);
     }
 
-
     public Integer getLikeCountFromCache(Long postId) {
         Integer likeCount = redisService.getPostLikeCount(postId);
-        if (likeCount != null) return likeCount;
+        if (likeCount != null)
+            return likeCount;
 
         // DB Fallback
         initPostLikesFromDB(postId);
@@ -180,7 +155,8 @@ public class CommunityCountService {
 
     public Integer getCommentCountFromCache(Long postId) {
         Integer commentCount = redisService.getPostCommentCount(postId);
-        if (commentCount != null) return commentCount;
+        if (commentCount != null)
+            return commentCount;
 
         // DB Fallback
         initCommentCountFromDB(postId);
@@ -189,7 +165,8 @@ public class CommunityCountService {
 
     public Integer getCommentLikeCountFromCache(Long commentId) {
         Integer likeCount = redisService.getCommentLikeCount(commentId);
-        if (likeCount != null) return likeCount;
+        if (likeCount != null)
+            return likeCount;
 
         // DB Fallback
         initCommentLikesFromDB(commentId);
@@ -205,7 +182,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkViewCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkViewCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {
@@ -221,7 +198,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkLikeCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkLikeCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {
@@ -237,7 +214,7 @@ public class CommunityCountService {
      */
     public Map<Long, Integer> getBulkCommentCountsFromCache(List<Long> postIds) {
         Map<Long, Integer> result = redisService.getBulkCommentCounts(postIds);
-        
+
         // Cache miss 처리
         for (Long postId : postIds) {
             if (result.get(postId) == null) {
