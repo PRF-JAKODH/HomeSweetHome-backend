@@ -46,9 +46,7 @@ spring:
 
 logging:
   level:
-    com.homesweet.homesweetback: INFO
-    org.springframework.security: WARN
-    org.springframework.batch: INFO
+    com.homesweet.homesweetback: ERROR
 
 # 알림 비동기
 notification:

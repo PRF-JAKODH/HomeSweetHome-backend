@@ -8,8 +8,6 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +26,6 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CommunityPostService {
-
-    private final CommunityEventPublisher communityEventPublisher;
     private final CommunityPostRepository postRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
@@ -51,8 +47,7 @@ public class CommunityPostService {
                         .title(request.title())
                         .content(request.content())
                         .category(request.category())
-                        .build()
-        );
+                        .build());
 
         // 이미지 업로드 및 저장
         List<String> imageUrls = new ArrayList<>();
@@ -65,12 +60,9 @@ public class CommunityPostService {
                                 .post(savedPost)
                                 .imageUrl(imageUrls.get(i))
                                 .imageOrder(i + 1) // 0이 아닌 1부터 시작하도록 수정
-                                .build()
-                );
+                                .build());
             }
         }
-
-        communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
 
         return CommunityPostResponse.from(savedPost, imageUrls);
     }
@@ -119,8 +111,6 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
-
         return CommunityPostResponse.from(post, imageUrls);
     }
 
@@ -141,7 +131,6 @@ public class CommunityPostService {
         // 게시글 소프트 삭제
         post.deletePost();
 
-        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
     }
 
     /**
@@ -159,8 +148,7 @@ public class CommunityPostService {
         Map<Long, List<String>> postImagesMap = allImages.stream()
                 .collect(Collectors.groupingBy(
                         image -> image.getPost().getPostId(),
-                        Collectors.mapping(CommunityImageEntity::getImageUrl, Collectors.toList())
-                ));
+                        Collectors.mapping(CommunityImageEntity::getImageUrl, Collectors.toList())));
 
         return postsPage.map(post -> {
             List<String> imageUrls = postImagesMap.getOrDefault(post.getPostId(), List.of());

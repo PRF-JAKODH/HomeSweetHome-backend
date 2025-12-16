@@ -5,8 +5,6 @@ import com.homesweet.homesweetback.common.valid.ProductValidator;
 import com.homesweet.homesweetback.domain.product.category.domain.ProductCategory;
 import com.homesweet.homesweetback.domain.product.category.domain.exception.ProductCategoryException;
 import com.homesweet.homesweetback.domain.product.category.repository.ProductCategoryRepository;
-import com.homesweet.homesweetback.domain.search.product.event.ProductEvent;
-import com.homesweet.homesweetback.domain.search.product.event.ProductEventPublisher;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductBasicInfoUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.create.ProductCreateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductImageUpdateRequest;
@@ -36,8 +34,6 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
-
-    private final ProductEventPublisher eventPublisher;
     private final ProductValidator productValidator;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
@@ -45,7 +41,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageUploader productImageUploader;
 
     @Override
-    public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage, List<MultipartFile> detailImages) {
+    public ProductResponse registerProduct(Long sellerId, ProductCreateRequest request, MultipartFile mainImage,
+            List<MultipartFile> detailImages) {
 
         // 판매자는 중복된 이름의 상품을 등록할 수 없다
         productValidator.validateDuplicateProductName(sellerId, request.name());
@@ -74,12 +71,9 @@ public class ProductServiceImpl implements ProductService {
                 request.shippingPrice(),
                 detailImage,
                 optionGroups,
-                skus
-        );
+                skus);
 
         Product save = productRepository.save(product);
-
-        eventPublisher.publish(ProductEvent.created(save.getId()));
 
         return ProductResponse.from(save);
     }
@@ -123,7 +117,6 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.update(productId, update);
 
-        eventPublisher.publish(ProductEvent.updated(productId));
     }
 
     @Override
@@ -148,7 +141,6 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.updateStatus(domain.getId(), request.status());
 
-        eventPublisher.publish(ProductEvent.statusChanged(productId));
     }
 
     @Override
@@ -184,6 +176,5 @@ public class ProductServiceImpl implements ProductService {
             productRepository.addDetailImages(productId, newDetailImageUrls);
         }
 
-        eventPublisher.publish(ProductEvent.updated(productId));
     }
 }
