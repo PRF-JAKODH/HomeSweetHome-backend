@@ -32,9 +32,7 @@ spring:
 
 logging:
   level:
-    com.homesweet.homesweetback: INFO
-    org.springframework.security: WARN
-
+    com.homesweet.homesweetback: ERROR
 # 프로덕션 환경 애플리케이션 설정
 app:
   cors:

@@ -1,6 +1,5 @@
 package com.homesweet.homesweetback.common.security.jwt;
 
-
 import com.homesweet.homesweetback.domain.auth.entity.OAuth2UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -37,12 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, 
-                                  @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         var path = request.getRequestURI();
-        log.debug("{}",path);
-        if("/ws".equals(path)) {
-            log.debug("passed {}",path);
+        log.debug("{}", path);
+        if ("/ws".equals(path)) {
+            log.debug("passed {}", path);
             filterChain.doFilter(request, response);
             return;
         }
@@ -56,45 +55,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 테스트용: 1~10의 토큰으로 해당 user_id의 사용자를 인증
                 if (isTestToken(accessToken)) {
                     Long userId = Long.parseLong(accessToken);
-                    if (userId >= 1 && userId <= 10) {
+                    if (userId >= 1 && userId <= 20011) {
                         User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("Test user not found with id: " + userId));
+                                .orElseThrow(() -> new RuntimeException("Test user not found with id: " + userId));
 
                         OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
 
                         Collection<GrantedAuthority> authorities = List.of(
-                            new SimpleGrantedAuthority(user.getRole().getAuthority())
-                        );
-                        
-                        UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                                new SimpleGrantedAuthority(user.getRole().getAuthority()));
+
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                principal, null, authorities);
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        
+
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        
-                        log.info("TEST MODE: Authenticated user with test token. User ID: {}, Email: {}", userId, user.getEmail());
+
+                        log.info("TEST MODE: Authenticated user with test token. User ID: {}, Email: {}", userId,
+                                user.getEmail());
                     }
                 } else if (jwtTokenProvider.validateToken(accessToken)) {
                     // Access Token인지 확인 (Refresh Token이 아닌지)
                     if (!jwtTokenProvider.isRefreshToken(accessToken)) {
                         Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-                        
+
                         User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
                         OAuth2UserPrincipal principal = new OAuth2UserPrincipal(user, null);
 
                         // 사용자의 Role을 authorities로 설정
                         Collection<GrantedAuthority> authorities = List.of(
-                            new SimpleGrantedAuthority(user.getRole().getAuthority())
-                        );
-                        
-                        UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                                new SimpleGrantedAuthority(user.getRole().getAuthority()));
+
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                principal, null, authorities);
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        
+
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        
+
                         log.debug("JWT authentication successful for user: {}", user.getEmail());
                     } else {
                         log.warn("Access token required, but refresh token provided in Authorization header");
@@ -104,7 +102,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
         }
-        
+
         filterChain.doFilter(request, response);
     }
 
@@ -114,11 +112,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        
+
         return null;
     }
 
@@ -132,7 +130,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token == null || token.isEmpty()) {
             return false;
         }
-        
+
         try {
             // 숫자인지 확인하고 1~10 범위인지 체크
             Long.parseLong(token);
