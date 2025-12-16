@@ -1,12 +1,16 @@
 package com.homesweet.homesweetback.domain.notification.controller;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,13 +41,26 @@ public class NotificationController {
      * SSE 알림 테스트
      * 
      **/
-    @GetMapping("/test")
-    public void testMessage(){
+    @GetMapping("/test/{id}")
+    public void testMessage(@PathVariable Long id) {
         var notification = OrderNotification.OrderCompleted.builder()
-            .userName("test")
-            .orderId(12345L)
-            .build();
-        notificationSendService.sendTemplateNotificationToSingleUser(3L, notification);
+                .userName("test")
+                .orderId(12345L)
+                .build();
+        Long userId = ThreadLocalRandom.current().nextLong(1, id);
+        notificationSendService.sendTemplateNotificationToSingleUser(userId, notification);
+    }
+
+    @GetMapping("/test/multiple/{range}")
+    public void testMessageMulti(@PathVariable Long range) {
+        var notification = OrderNotification.OrderCompleted.builder()
+                .userName("test")
+                .orderId(12345L)
+                .build();
+        List<Long> userIds = LongStream.rangeClosed(1, range)
+                .boxed()
+                .collect(Collectors.toList());
+        notificationSendService.sendTemplateNotificationToMultipleUsers(userIds, notification);
     }
 
     @GetMapping(value = "/subscribe", produces = "text/event-stream")
@@ -51,17 +68,18 @@ public class NotificationController {
         log.info("SSE 연결 요청: userId={}", principal.getUserId());
         return sseService.subscribe(principal.getUserId());
     }
-    
+
     /**
      * 사용자의 알림 목록 조회 (최대 20개)
      */
     @GetMapping
-    public ResponseEntity<List<PushNotificationDTO>> getNotifications(@AuthenticationPrincipal OAuth2UserPrincipal principal) {
+    public ResponseEntity<List<PushNotificationDTO>> getNotifications(
+            @AuthenticationPrincipal OAuth2UserPrincipal principal) {
         log.info("알림 목록 조회: userId={}", principal.getUserId());
         List<PushNotificationDTO> notifications = notificationAPIService.getAllNotifications(principal.getUserId());
         return ResponseEntity.ok(notifications);
     }
-    
+
     /**
      * 알림 읽음 처리 (단일 및 여러 개 모두 처리)
      * 
@@ -77,7 +95,7 @@ public class NotificationController {
         notificationAPIService.markAsRead(principal.getUserId(), notificationIds);
         return ResponseEntity.ok().build();
     }
-    
+
     /**
      * 알림 삭제 처리 (단일 및 여러 개 모두 처리)
      * 
