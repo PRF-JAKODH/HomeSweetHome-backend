@@ -58,6 +58,8 @@
   2. **테스트 체계화를 통한 서비스 안정성 강화**
      - 테스트 코드 설계 및 구현
      - 테스트 커버리지 측정 및 분석 (커버리지 80% 달성)
+     - <img width="840" height="139" alt="image" src="https://github.com/user-attachments/assets/86359f9e-baae-4b3f-be85-89160af4c4e3" />
+
 
   3. **프로덕션 레벨을 향한 성능 최적화 및 E2E 테스트**
      - 성능 부하 테스트
