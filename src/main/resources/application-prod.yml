@@ -4,6 +4,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DATABASE_USERNAME:homesweet}
     password: ${DATABASE_PASSWORD:homesweet}
+    hikari:
+      # 커넥션 풀 크기 설정
+      minimum-idle: ${DATABASE_MINIMUM_IDLE:5}              # 최소 유휴 커넥션 수
+      maximum-pool-size: ${DATABASE_MAXIMUM_POOL_SIZE:10}   # 최대 커넥션 풀 크기
+      # 타임아웃 설정
+      connection-timeout: ${DATABASE_CONNECTION_TIMEOUT:30000}  # 커넥션 획득 대기 시간 (30초)
+      idle-timeout: ${DATABASE_IDLE_TIMEOUT:60000}              # 유휴 커넥션 유지 시간 (60초)
+      max-lifetime: ${DATABASE_MAX_LIFETIME:1800000}            # 커넥션 최대 수명 (30분)                       # 자동 커밋 활성화
   jpa:
     hibernate:
       ddl-auto: none

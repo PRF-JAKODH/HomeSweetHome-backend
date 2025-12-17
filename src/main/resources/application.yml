@@ -23,21 +23,6 @@ spring:
     jdbc:
       initialize-schema: always
 
-  datasource:
-    hikari:
-      maximum-pool-size: 80
-      minimum-idle: 20
-      idle-timeout: 300000
-      max-lifetime: 1800000
-      connection-timeout: 30000
-
-server:
-  tomcat:
-    threads:
-      max: 200
-      min-spare: 50
-    accept-count: 200
-
 resilience4j:
   circuitbreaker:
     instances:

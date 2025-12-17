@@ -15,8 +15,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Service
 @RequiredArgsConstructor
-public class InMemorySseService implements SseService{
-    private final Map<Long,SseEmitter> sseEmitters = new HashMap<>();
+public class InMemorySseService implements SseService {
+    private final Map<Long, SseEmitter> sseEmitters = new HashMap<>();
 
     @Override
     public SseEmitter subscribe(Long userId) {
@@ -25,6 +25,7 @@ public class InMemorySseService implements SseService{
 
         emitter.onCompletion(() -> sseEmitters.remove(userId));
         emitter.onTimeout(() -> sseEmitters.remove(userId));
+        emitter.onError((e) -> sseEmitters.remove(userId));
 
         try {
             emitter.send(SseEmitter.event().name("connect").data("connected"));
@@ -45,7 +46,8 @@ public class InMemorySseService implements SseService{
             } catch (Exception e) {
                 sseEmitters.remove(userId);
                 emitter.completeWithError(e);
-                throw new NotificationException(ErrorCode.SSE_CONNECTION_ERROR, "SSE 연결 중 오류가 발생했습니다. userId: " + userId);
+                throw new NotificationException(ErrorCode.SSE_CONNECTION_ERROR,
+                        "SSE 연결 중 오류가 발생했습니다. userId: " + userId);
             }
         } else {
             throw new NotificationException(ErrorCode.SSE_CONNECTION_NOT_FOUND, "SSE 연결을 찾을 수 없습니다. userId: " + userId);
