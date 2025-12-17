@@ -72,40 +72,36 @@
 
 ---
 
-<summary>기술 스택</summary>
+### 기술 스택
 
 <img width="978" height="549" alt="image" src="https://github.com/user-attachments/assets/fa89b43e-d17e-4614-ae33-c17db0bda066" />
 
 ---
 
-  <summary>담당 기능</summary>
+### 담당 기능
 
 <img width="978" height="494" alt="image" src="https://github.com/user-attachments/assets/a5f4086d-b776-474e-b70e-63734db71c1f" />
 
 ---
 
-  <summary>설계 문서</summary>
+ ### 설계 문서
 
-### 📼 시연 영상
+<surmary> 📼 시연 영상 </surmary> 
 
 [[YOUTUBE] HomeSweetHome 기능 별 시연 영상](https://youtu.be/tDZQVn2-uPs?si=hE2dqdOiXLe87Cf)
 
-### 📑 기획서  
-
-### 🚧 시스템 아키텍쳐
+<surmary> 🚧 시스템 아키텍쳐 </surmary> 
 <img width="978" height="582" alt="image" src="https://github.com/user-attachments/assets/8dbba002-28ad-4461-be66-2e56a626f891" />
 
-### 🌊 플로우차트  
+<surmary> 📋 요구사항 명세서 </surmary> 
+<img width="1053" height="638" alt="image" src="https://github.com/user-attachments/assets/e4d5ce02-bd90-4db9-a9f1-2faa2c7fc4ff" />
+<img width="1052" height="499" alt="image" src="https://github.com/user-attachments/assets/2f6d5f13-900d-4a26-9bb1-d76dc88bef64" />
 
-### 📋 요구사항 명세서  
 
-### 📘 ERD
+<surmary> 📘 ERD </surmary> 
 
 <img width="3800" height="2592" alt="오늘의집-ERD" src="https://github.com/user-attachments/assets/6a42c739-687f-4fb9-9924-4afe488fdc38" />
 
-### 🖌️ 화면 설계서  
-
-### 🧪 테스트 케이스  
 
 ---
 
