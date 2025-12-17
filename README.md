@@ -88,7 +88,7 @@
 
 ### 📼 시연 영상
 
-[[YOUTUBE] HomeSweetHome 기능 별 시연 영상](https://youtu.be/tDZQVn2-uPs?si=hE2dqdOiXLe87Cf
+[[YOUTUBE] HomeSweetHome 기능 별 시연 영상](https://youtu.be/tDZQVn2-uPs?si=hE2dqdOiXLe87Cf)
 
 ### 📑 기획서  
 
