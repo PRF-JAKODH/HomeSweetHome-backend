@@ -95,9 +95,9 @@
 
 ### 📋 요구사항 명세서  
 
-### 📘 논리 모델링  
+### 📘 ERD
 
-### 📕 물리 모델링  
+<img width="3800" height="2592" alt="오늘의집-ERD" src="https://github.com/user-attachments/assets/6a42c739-687f-4fb9-9924-4afe488fdc38" />
 
 ### 🖌️ 화면 설계서  
 
