@@ -58,7 +58,7 @@
 
 <summary>기술 스택</summary>
 
-<img width="1956" height="1104" alt="image" src="https://github.com/user-attachments/assets/736c30e1-1b6b-4730-a687-945096c0326a" />
+<img width="978" height="549" alt="image" src="https://github.com/user-attachments/assets/fa89b43e-d17e-4614-ae33-c17db0bda066" />
 
 ---
 
