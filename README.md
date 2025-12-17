@@ -79,11 +79,10 @@
 
 ---
 
-<details>
   <summary>담당 기능</summary>
 
+<img width="1050" height="589" alt="image" src="https://github.com/user-attachments/assets/a5d7f22f-9e60-4a15-bd4c-ef77d44b15ab" />
 
-</details>
 
 ---
 
