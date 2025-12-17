@@ -80,7 +80,7 @@
 
   <summary>담당 기능</summary>
 
-<img width="1041" height="494" alt="image" src="https://github.com/user-attachments/assets/a5f4086d-b776-474e-b70e-63734db71c1f" />
+<img width="978" height="494" alt="image" src="https://github.com/user-attachments/assets/a5f4086d-b776-474e-b70e-63734db71c1f" />
 
 ---
 
@@ -89,7 +89,7 @@
 ### 📑 기획서  
 
 ### 🚧 시스템 아키텍쳐
-<img width="1045" height="582" alt="image" src="https://github.com/user-attachments/assets/8dbba002-28ad-4461-be66-2e56a626f891" />
+<img width="978" height="582" alt="image" src="https://github.com/user-attachments/assets/8dbba002-28ad-4461-be66-2e56a626f891" />
 
 ### 🌊 플로우차트  
 
