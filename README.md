@@ -81,8 +81,7 @@
 
   <summary>담당 기능</summary>
 
-<img width="1050" height="589" alt="image" src="https://github.com/user-attachments/assets/a5d7f22f-9e60-4a15-bd4c-ef77d44b15ab" />
-
+<img width="1041" height="494" alt="image" src="https://github.com/user-attachments/assets/a5f4086d-b776-474e-b70e-63734db71c1f" />
 
 ---
 
