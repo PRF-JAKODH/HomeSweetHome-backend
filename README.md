@@ -85,7 +85,6 @@
 
 ---
 
-<details>
   <summary>설계 문서</summary>
 
 ### 📑 기획서  
@@ -104,17 +103,6 @@
 ### 🖌️ 화면 설계서  
 
 ### 🧪 테스트 케이스  
-
-</details>
-
----
-
-<details>
-  <summary>트러블 슈팅</summary>
-
-- [트러블 슈팅 바로가기](wiki Link)
-
-</details>
 
 ---
 
