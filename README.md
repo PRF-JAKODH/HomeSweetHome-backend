@@ -90,7 +90,7 @@
 ### 📑 기획서  
 
 ### 🚧 시스템 아키텍쳐
-<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/8e170bc5-7d8f-483c-9d74-f77cc84a1f07" />
+<img width="1045" height="582" alt="image" src="https://github.com/user-attachments/assets/8dbba002-28ad-4461-be66-2e56a626f891" />
 
 ### 🌊 플로우차트  
 
