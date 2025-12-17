@@ -108,6 +108,8 @@
 ## 📖 고도화 작업 및 성능 개선
 고도화 작업 및 성능 개선에 대한 내용을 아래 WIKI 페이지에 상세히 작성하였습니다.
 
+[HomeSweetHome 성능 고도화 및 트러블 슈팅](https://github.com/PRF-JAKODH/HomeSweetHome-backend/wiki)
+
 ## 회고
 
 
