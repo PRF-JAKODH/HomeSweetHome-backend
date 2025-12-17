@@ -1,6 +1,6 @@
 # HomeSweetHome
 
-<img width="2400" height="800" alt="image" src="https://github.com/user-attachments/assets/b69af827-4640-434a-9ab3-bfd8cb8e1775" />
+<img width="975" height="549" alt="image" src="https://github.com/user-attachments/assets/57f5dfbf-a606-4bf6-b4f6-c4938a7e3598" />
 
 ---
 
@@ -43,9 +43,10 @@
 
 ---
 
+
 ## 📍 프로젝트 소개
 
-- '오늘의 집'의 핵심 기능을 재현
+- 해당 프로젝트는  '오늘의 집' 핵심 요구사항을 분석하여, 대규모 트래픽에서 안정적인 성능 확보를 목표로 하였습니다.
 - 실서비스 수준의 백엔드 고도화를 통해 확장성과 안정성을 갖춘 전자상거래·커뮤니티 백엔드를 구축
 
 ### 📍 프로젝트 링크
