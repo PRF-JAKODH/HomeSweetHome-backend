@@ -110,8 +110,6 @@
 
 [HomeSweetHome 성능 고도화 및 트러블 슈팅](https://github.com/PRF-JAKODH/HomeSweetHome-backend/wiki)
 
-## 회고
-
 
 ---
 
