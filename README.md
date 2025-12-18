@@ -74,7 +74,7 @@
 
 ### 기술 스택
 
-<img width="978" height="549" alt="image" src="https://github.com/user-attachments/assets/fa89b43e-d17e-4614-ae33-c17db0bda066" />
+<img width="1046" height="590" alt="image" src="https://github.com/user-attachments/assets/1d9897c2-2858-4e1b-aaee-341de7c62f0a" />
 
 ---
 
