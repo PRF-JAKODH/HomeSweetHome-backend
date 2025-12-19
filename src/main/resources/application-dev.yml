@@ -66,12 +66,12 @@ spring:
 
 logging:
   level:
-    com.homesweet.homesweetback: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.batch: DEBUG
-    org.springframework.data.elasticsearch: DEBUG
-    org.elasticsearch.client: DEBUG
+    com.homesweet.homesweetback: ERROR
+    org.springframework.security: ERROR
+    org.hibernate.SQL: ERROR
+    org.springframework.batch: ERROR
+    org.springframework.data.elasticsearch: ERROR
+    org.elasticsearch.client: ERROR
 
 # JWT 개발 환경 설정
 jwt:
@@ -102,7 +102,7 @@ log:
 # 토스페이먼츠 설정
 payments:
   toss:
-    secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
+    secretKey: ${TOSS_PAYMENTS_SECRET_KEY}
 
 management:
   endpoints:
