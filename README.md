@@ -79,8 +79,7 @@
 ---
 
 ### 담당 기능
-
-<img width="978" height="494" alt="image" src="https://github.com/user-attachments/assets/a5f4086d-b776-474e-b70e-63734db71c1f" />
+<img width="1488" height="704" alt="TeamMember" src="https://github.com/user-attachments/assets/9a331c6c-cd23-4934-801d-7ef5ba0cee87" />
 
 ---
 
