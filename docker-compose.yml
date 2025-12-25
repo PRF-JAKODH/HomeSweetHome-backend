@@ -1,11 +1,11 @@
 services:
   spring:
-    image: ohhalim/homesweet-commu:9858
+    image: ohhalim/homesweet-commu:2.1
     container_name: homesweet-backend
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=prod#- JVM_OPTS=-XX:+UseZGC -XX:+ZGenerational -Xlog:gc*
+      - SPRING_PROFILES_ACTIVE=prod
     network_mode: host
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
