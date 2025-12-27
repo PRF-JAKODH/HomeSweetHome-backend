@@ -1,6 +1,6 @@
 services:
   spring:
-    image: ohhalim/homesweet-commu:2.2
+    image: ohhalim/homeseet-commu:2.2
     container_name: homesweet-backend
     env_file:
       - .env
@@ -30,8 +30,8 @@ services:
     container_name: mysqld_exporter
     restart: always
     command:
-    - "--mysqld.username=user:password"
-    - "--mysqld.address=172.31.39.254:3306"   
+    - "--mysqld.username=homesweet:homesweet123"
+    - "--mysqld.address=172.31.39.254:3306"
     ports:
       - "9104:9104"
     networks:
