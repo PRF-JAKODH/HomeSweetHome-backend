@@ -46,129 +46,129 @@ const TRAFFIC_WEIGHTS = {
 const TOTAL_WEIGHT = Object.values(TRAFFIC_WEIGHTS).reduce((a, b) => a + b, 0);
 
 // ==================== Test Options ====================
-// 🎯 t3.micro EC2 (2 vCPU, 1GB RAM) 테스트용
-// - Peak 15 RPS, Spike 30 RPS 목표
-// - t3.micro 제한된 리소스에 맞춘 부하
-// - 목표: p(95) < 2000ms, Error rate < 10%
+// m7i-flex.large EC2 (2 vCPU, 8GB RAM) 테스트용
+// - Peak 100 RPS, Spike 200 RPS 목표
+// - m7i-flex.large의 고성능 메모리 활용
+// - 목표: p(95) < 500ms, Error rate < 5%
 export const options = {
     scenarios: {
-        // 1️⃣ Warm-up: 시스템 예열 (캐시 워밍, 커넥션 풀 준비)
+        // 1) Warm-up: 시스템 예열 (캐시 워밍, 커넥션 풀 준비)
         warmup: {
             executor: 'constant-arrival-rate',
-            rate: 2,
+            rate: 10,
             timeUnit: '1s',
-            duration: '20s',
-            preAllocatedVUs: 5,
-            maxVUs: 10,
+            duration: '30s',
+            preAllocatedVUs: 20,
+            maxVUs: 50,
             exec: 'realisticTraffic',
             tags: { phase: 'warmup' },
         },
 
-        // 2️⃣ Ramp-up: 점진적 부하 증가 (2 → 15 RPS)
+        // 2) Ramp-up: 점진적 부하 증가 (10 → 100 RPS)
         rampup: {
             executor: 'ramping-arrival-rate',
-            startTime: '20s',
-            startRate: 2,
+            startTime: '30s',
+            startRate: 10,
             timeUnit: '1s',
             stages: [
-                { duration: '20s', target: 5 },    // 일반 트래픽
-                { duration: '20s', target: 10 },   // 피크 시간대 진입
-                { duration: '20s', target: 15 },   // 피크 트래픽
+                { duration: '30s', target: 30 },   // 일반 트래픽
+                { duration: '30s', target: 60 },   // 피크 시간대 진입
+                { duration: '30s', target: 100 },  // 피크 트래픽
             ],
-            preAllocatedVUs: 10,
-            maxVUs: 25,
+            preAllocatedVUs: 50,
+            maxVUs: 150,
             exec: 'realisticTraffic',
             tags: { phase: 'rampup' },
         },
 
-        // 3️⃣ Peak: 안정 부하 유지 (15 RPS × 1분)
+        // 3) Peak: 안정 부하 유지 (100 RPS x 2분)
         peak: {
             executor: 'constant-arrival-rate',
-            startTime: '1m20s',
-            rate: 15,
+            startTime: '2m',
+            rate: 100,
             timeUnit: '1s',
-            duration: '1m',
-            preAllocatedVUs: 15,
-            maxVUs: 30,
+            duration: '2m',
+            preAllocatedVUs: 100,
+            maxVUs: 200,
             exec: 'realisticTraffic',
             tags: { phase: 'peak' },
         },
 
-        // 4️⃣ Spike: 스파이크 시나리오 (최대 30 RPS)
+        // 4) Spike: 스파이크 시나리오 (최대 200 RPS)
         spike: {
             executor: 'ramping-arrival-rate',
-            startTime: '2m20s',
-            startRate: 15,
+            startTime: '4m',
+            startRate: 100,
             timeUnit: '1s',
             stages: [
-                { duration: '15s', target: 20 },   // 급격한 스파이크
-                { duration: '20s', target: 30 },   // 최대 부하
-                { duration: '15s', target: 15 },   // 정상 복구
+                { duration: '20s', target: 150 },  // 급격한 스파이크
+                { duration: '30s', target: 200 },  // 최대 부하
+                { duration: '20s', target: 100 },  // 정상 복구
             ],
-            preAllocatedVUs: 25,
-            maxVUs: 40,
+            preAllocatedVUs: 150,
+            maxVUs: 300,
             exec: 'realisticTraffic',
             tags: { phase: 'spike' },
         },
 
-        // 5️⃣ Cooldown: 부하 감소
+        // 5) Cooldown: 부하 감소
         cooldown: {
             executor: 'ramping-arrival-rate',
-            startTime: '3m10s',
-            startRate: 15,
+            startTime: '5m10s',
+            startRate: 100,
             timeUnit: '1s',
             stages: [
-                { duration: '15s', target: 5 },
-                { duration: '15s', target: 2 },
+                { duration: '20s', target: 30 },
+                { duration: '20s', target: 10 },
             ],
-            preAllocatedVUs: 10,
-            maxVUs: 20,
+            preAllocatedVUs: 50,
+            maxVUs: 100,
             exec: 'realisticTraffic',
             tags: { phase: 'cooldown' },
         },
     },
 
     thresholds: {
-        // 전체 성능 기준 (t3.micro - 관대한 기준)
-        http_req_duration: ['p(50)<1000', 'p(95)<2000', 'p(99)<3000'],
-        http_req_failed: ['rate<0.10'],      // 에러율 10% 미만 (t3.micro)
-        error_rate: ['rate<0.10'],
-        success_rate: ['rate>0.90'],
+        // 전체 성능 기준 (m7i-flex.large - 엄격한 기준)
+        http_req_duration: ['p(50)<200', 'p(95)<500', 'p(99)<1000'],
+        http_req_failed: ['rate<0.05'],      // 에러율 5% 미만
+        error_rate: ['rate<0.05'],
+        success_rate: ['rate>0.95'],
 
-        // 읽기 작업 (t3.micro 기준)
-        post_view_duration: ['p(95)<1500'],   // 상세 조회 1.5초 이내
-        post_list_duration: ['p(95)<2000'],   // 목록 조회 2초 이내
+        // 읽기 작업 (m7i-flex.large 기준)
+        post_view_duration: ['p(95)<300'],    // 상세 조회 300ms 이내
+        post_list_duration: ['p(95)<500'],    // 목록 조회 500ms 이내
 
-        // 쓰기 작업 (관대)
-        like_toggle_duration: ['p(95)<2000'],    // 좋아요 2초 이내
-        comment_create_duration: ['p(95)<2500'], // 댓글 2.5초 이내
-        post_create_duration: ['p(95)<3000'],    // 게시글 작성 3초 이내
+        // 쓰기 작업 (엄격)
+        like_toggle_duration: ['p(95)<500'],     // 좋아요 500ms 이내
+        comment_create_duration: ['p(95)<800'],  // 댓글 800ms 이내
+        post_create_duration: ['p(95)<1000'],    // 게시글 작성 1초 이내
     },
 };
 
 // ==================== Setup ====================
 export function setup() {
-    console.log('🚀 t3.micro EC2 부하 테스트');
-    console.log('═══════════════════════════════════════════════════');
-    console.log('🖥️  환경: t3.micro (2 vCPU, 1GB RAM) | EC2');
-    console.log(`📍 BASE_URL: ${BASE_URL}`);
-    console.log(`📊 Post ID Range: ${MIN_POST_ID} ~ ${MAX_POST_ID}`);
-    console.log(`👥 User ID Range: ${MIN_USER_ID} ~ ${MAX_USER_ID}`);
+    console.log('m7i-flex.large EC2 부하 테스트');
+    console.log('===============================================');
+    console.log('환경: m7i-flex.large (2 vCPU, 8GB RAM) | EC2');
+    console.log(`BASE_URL: ${BASE_URL}`);
+    console.log(`Post ID Range: ${MIN_POST_ID} ~ ${MAX_POST_ID}`);
+    console.log(`User ID Range: ${MIN_USER_ID} ~ ${MAX_USER_ID}`);
     console.log('');
-    console.log('📈 Traffic Distribution:');
-    console.log(`   읽기 80%: 목록 조회(${TRAFFIC_WEIGHTS.POST_LIST}%) + 게시글 조회(${TRAFFIC_WEIGHTS.POST_VIEW}%)`);
-    console.log(`   쓰기 20%: 좋아요(${TRAFFIC_WEIGHTS.LIKE_TOGGLE}%) + 댓글(${TRAFFIC_WEIGHTS.COMMENT_CREATE}%) + 게시글(${TRAFFIC_WEIGHTS.POST_CREATE}%)`);
+    console.log('Traffic Distribution:');
+    console.log(`  읽기 80%: 목록 조회(${TRAFFIC_WEIGHTS.POST_LIST}%) + 게시글 조회(${TRAFFIC_WEIGHTS.POST_VIEW}%)`);
+    console.log(`  쓰기 20%: 좋아요(${TRAFFIC_WEIGHTS.LIKE_TOGGLE}%) + 댓글(${TRAFFIC_WEIGHTS.COMMENT_CREATE}%) + 게시글(${TRAFFIC_WEIGHTS.POST_CREATE}%)`);
     console.log('');
-    console.log('⏱️ Test Phases (총 약 4분):');
-    console.log('   0:00-0:20  ① Warmup (2 RPS)');
-    console.log('   0:20-1:20  ② Ramp-up (2→15 RPS)');
-    console.log('   1:20-2:20  ③ Peak (15 RPS 유지)');
-    console.log('   2:20-3:10  ④ Spike (15→30 RPS)');
-    console.log('   3:10-3:40  ⑤ Cooldown (15→2 RPS)');
+    console.log('Test Phases (약 6분):');
+    console.log('  0:00-0:30  Warmup (10 RPS)');
+    console.log('  0:30-2:00  Ramp-up (10->100 RPS)');
+    console.log('  2:00-4:00  Peak (100 RPS 유지)');
+    console.log('  4:00-5:10  Spike (100->200 RPS)');
+    console.log('  5:10-5:50  Cooldown (100->10 RPS)');
     console.log('');
-    console.log('🎯 Success Criteria (t3.micro):');
-    console.log('   p(95) < 2000ms | Error rate < 10% | Peak 30 RPS');
-    console.log('═══════════════════════════════════════════════════');
+    console.log('Success Criteria (m7i-flex.large):');
+    console.log('  p(95) < 500ms | Error rate < 5% | Peak 200 RPS');
+    console.log('===============================================');
 
     // Health check
     const res = http.get(`${API_BASE}/posts?page=0&size=1`);
