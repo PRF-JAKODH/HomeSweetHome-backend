@@ -52,13 +52,7 @@ public class PaymentService {
         // 1. Order ID (PK)로 DB에서 Order 조회
         Order order = orderRepository.findByOrderNumberWithItems(dto.orderId()).orElse(null);
 
-        //                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId()));
-//        log.debug(order.toString());
-//        log.debug(order.getOrderStatus().toString());
-//        log.debug(order.getTotalAmount().toString());
-//        log.debug(dto.amount().toString());
-
-        // 2. [신규] DB에 없으면 Redis 캐시에서 조회 (Fallback)
+        // 2. DB에 없으면 Redis 캐시에서 조회 (Fallback)
         if (order == null) {
             PendingOrder cachedOrder = redisStockService.getCachedOrder(dto.orderId());
 
@@ -78,9 +72,6 @@ public class PaymentService {
                 throw new OrderNotFoundException("주문을 찾을 수 없습니다: " + dto.orderId());
             }
         }
-
-        // (로그 출력 위치 이동: order가 null이 아닐 때 찍어야 안전함)
-        log.debug("Order Found: {}, Status: {}", order.getOrderNumber(), order.getOrderStatus());
 
         //TODO: 현재 아키텍쳐 잘 짜셧는데, 도메인에 핏한 기능들이 결제쪽에서 처리하는게 맞을까? v
         order.validateOwner(userId);
@@ -134,7 +125,7 @@ public class PaymentService {
 
         } catch (Exception e) {
             log.error("토스페이먼츠 취소 API 호출 실패: {}", e.getMessage());
-            // (정책 필요) API 호출 실패 시 DB 롤백을 할 필요가 없으므로,
+            // API 호출 실패 시 DB 롤백을 할 필요가 없으므로,
             // DB 상태를 변경하지 않고 예외만 던집니다.
             throw new RuntimeException("결제 취소 API 호출에 실패했습니다. " + e.getMessage());
         }

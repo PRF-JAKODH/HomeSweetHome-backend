@@ -37,29 +37,35 @@ public class PaymentProcessor {
 
     /**
      * 결제 실패 시 DB 처리 (API 호출 실패 시)
+     * 주의: Redis 재고 롤백은 PaymentService에서 이미 수행됨.
+     * 여기서는 DB 상태 동기화만 수행함.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processPaymentFailDB(Order order) {
-        // 1. 재고 복구
+
+        // DB 재고 동기화
+        // Redis가 Master이므로 굳이 여기서 DB Lock을 걸고 업데이트할 필요는 없음.
+        // 다만, 관리자 페이지 등에서 보기 위해 '락 없이' 단순 증가만 수행하거나, 아예 생략하고 스케줄러에 맡겨도 됨.
+        // 여기서는 안전하게 락 제거하고 로직만 유지함.
         for (OrderItem item : order.getOrderItems()) {
             try {
-                SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
-                        .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
-                sku.increaseStock(item.getQuantity());
+                skuJPARepository.findById(item.getSku().getId()).ifPresent(sku -> {
+                    sku.increaseStock(item.getQuantity());
+                });
             } catch (Exception e) {
-                log.error("[Payment Fail - Stock Restore Failed] 재고 복구 오류. (OrderId: {}): {}", order.getId(), e.getMessage());
+                log.error("[Payment Fail] DB 재고 복구 실패 (Redis는 롤백됨): {}", e.getMessage());
             }
         }
 
         // 2. Order 상태 변경 (FAILED)
         order.setOrderStatus(OrderStatus.FAILED);
 
-        // 3. 변경 사항 저장 (실패 처리는 DB에 바로 반영해도 무방함)
+        // 3. 변경 사항 저장
         orderRepository.save(order);
     }
 
     /**
-     * [핵심 수정] 결제 성공 시 DB 저장 대신 Redis에 Push (Write-Behind)
+     * [핵심] 결제 성공 시 DB 저장 대신 Redis에 Push (Write-Behind)
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processPaymentSuccessDB(Order order, Map<String, Object> tossResponse, Long userId) {
@@ -69,9 +75,9 @@ public class PaymentProcessor {
         String method = (String) tossResponse.get("method");
         String status = (String) tossResponse.get("status");
         String paidAtString = (String) tossResponse.get("paidAt");
-        LocalDateTime paidAt = (paidAtString != null) ? LocalDateTime.parse(paidAtString) : null;
+        LocalDateTime paidAt = (paidAtString != null) ? LocalDateTime.parse(paidAtString) : null; // ISO 파싱 주의 (필요시 포맷터 사용)
 
-        // JSON 변환 (예외 처리 포함)
+        // JSON 변환
         String pgRawData = "";
         try {
             pgRawData = objectMapper.writeValueAsString(tossResponse);
@@ -81,7 +87,7 @@ public class PaymentProcessor {
 
         // 2. [Redis 저장] PendingPayment DTO 생성 및 Push
         PendingPayment pendingPayment = new PendingPayment(
-                order.getOrderNumber(), // Order ID 대신 Number 사용
+                order.getOrderNumber(),
                 tossPaymentKey,
                 order.getTotalAmount(),
                 method,
@@ -90,26 +96,21 @@ public class PaymentProcessor {
                 pgRawData
         );
 
-        // DB 저장(save) 코드는 삭제하고 Redis에 넣습니다.
         redisStockService.pushPendingPayment(pendingPayment);
 
-
-        // 3. 장바구니 삭제 (이건 여기서 수행)
+        // 3. 장바구니 삭제 (최적화)
         try {
             List<Long> purchasedSkuIds = order.getOrderItems().stream()
                     .map(orderItem -> orderItem.getSku().getId())
                     .collect(Collectors.toList());
 
             if (!purchasedSkuIds.isEmpty()) {
-                for (Long skuId : purchasedSkuIds) {
-                    // (CartRepository에 deleteByUserIdAndSkuId 메서드가 필요함)
-                    // 만약 없다면 JPARepository에 "void deleteByUserIdAndSkuId(Long userId, Long skuId);" 추가 필요
-                    cartRepository.deleteByUserIdAndSkuIdIn(userId, List.of(skuId));
-                }
+                // [수정] 반복문 제거 -> 한 방 쿼리로 삭제
+                cartRepository.deleteByUserIdAndSkuIdIn(userId, purchasedSkuIds);
                 log.info("[Payment Success] 장바구니 삭제 완료 (UserId: {})", userId);
             }
         } catch (Exception e) {
-            log.error("[Payment Success - Cart Clear Failed] 장바구니 삭제 오류. (UserId: {}): {}", userId, e.getMessage());
+            log.error("[Payment Success] 장바구니 삭제 오류: {}", e.getMessage());
         }
     }
 
@@ -119,26 +120,24 @@ public class PaymentProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processPaymentCancelDB(Order order, Payment payment, Map<String, Object> tossResponse) {
 
-        // 재고 복구
+        // 1. DB 재고 복구 (락 제거)
         for (OrderItem item : order.getOrderItems()) {
             try {
-                SkuEntity sku = skuJPARepository.findByIdWithPessimisticLock(item.getSku().getId())
-                        .orElseThrow(() -> new EntityNotFoundException("SKU를 찾을 수 없습니다: " + item.getSku().getId()));
-
-                sku.increaseStock(item.getQuantity());
+                // [수정] 락 제거
+                skuJPARepository.findById(item.getSku().getId()).ifPresent(sku -> {
+                    sku.increaseStock(item.getQuantity());
+                });
             } catch (Exception e) {
-                log.error("[Payment Cancel - Stock Restore Failed] 재고 복구 오류. (OrderId: {}): {}", order.getId(), e.getMessage());
+                log.error("[Payment Cancel] DB 재고 복구 실패: {}", e.getMessage());
             }
         }
 
-        // DB 상태 업데이트
-        order.setOrderStatus(OrderStatus.FAILED);
+        // 2. DB 상태 업데이트
+        order.setOrderStatus(OrderStatus.FAILED); // 또는 CANCELLED
         order.setDeliveryStatus(DeliveryStatus.CANCELLED);
         payment.setPaymentStatus("CANCELED");
 
         orderRepository.save(order);
-
-        // 👇 [추가] Payment 변경 사항을 DB에 강제로 저장 (UPDATE)
         paymentRepository.save(payment);
 
         log.info("주문 취소 DB 처리 완료: orderId={}", order.getId());

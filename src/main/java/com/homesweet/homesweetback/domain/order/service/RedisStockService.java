@@ -73,6 +73,17 @@ public class RedisStockService {
     }
 
     /**
+     * [보상 트랜잭션용] 재고를 다시 증가시킵니다.
+     * (주문 생성 중 예외 발생 시 롤백 용도)
+     * Redis Atomic Operation: INCRBY
+     */
+    public void increaseStock(Long skuId, Long quantity) {
+        String key = "sku:" + skuId + ":stock";
+        // increment 메서드는 Redis의 INCRBY 명령어를 실행 (원자성 보장됨)
+        stockRedisTemplate.opsForValue().increment(key, quantity.longValue());
+    }
+
+    /**
      * [신규] 주문 정보를 Redis 리스트에 저장 (비동기 처리를 위함)
      */
     public void pushPendingOrder(PendingOrder order) {

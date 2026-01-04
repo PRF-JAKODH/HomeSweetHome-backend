@@ -74,8 +74,7 @@ public class OrderService {
                 .map(CreateOrderRequest.OrderItemRequest::skuId)
                 .toList();
 
-        // (DB에서 한 번에서 가져옴 - findAllById 사용)
-        List<SkuEntity> skus = skuJPARepository.findAllById(skuIds);
+        List<SkuEntity> skus = skuJPARepository.findAllByIdWithProduct(skuIds);
 
         // 검증: 요청한 개수와 조회된 개수가 맞는지
         if (skus.size() != skuIds.size()) {
@@ -91,6 +90,8 @@ public class OrderService {
         long totalAmount = 0L;
         int totalShippingPrice = 0;
         Set<Long> processedProductIds = new HashSet<>();
+
+        String newOrderNumber = this.generateOrderNumber();
 
         for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()){
             // 메모리에 올려둔 Map에서 꺼냄 (DB 조회 X)
@@ -112,9 +113,6 @@ public class OrderService {
                 processedProductIds.add(product.getId());
             }
 
-            // Redis 재고 차감 (네트워크 I/O) -> 트랜잭션 밖이라 안전 -> 이 부분에서 시간이 걸려도 DB 커넥션은 안 잡고 있음
-            redisStockService.decreaseStock(itemDto.skuId(), itemDto.quantity());
-
             // DTO 생성
             pendingItems.add(new PendingOrder.PendingOrderItem(
                     sku.getId(),
@@ -123,25 +121,43 @@ public class OrderService {
             ));
         }
 
-        // 총액 합산
-        totalAmount += totalShippingPrice;
-        String newOrderNumber = this.generateOrderNumber();
+        //사가사가-----------------
+        List<Long> decreasedSkuIds = new ArrayList<>(); // 롤백용 기록
 
-        //------[3]Redis 저장------
+        try {
+            for (CreateOrderRequest.OrderItemRequest itemDto : dto.orderItems()) {
+                // Lua Script 실행
+                redisStockService.decreaseStock(itemDto.skuId(), itemDto.quantity());
+                decreasedSkuIds.add(itemDto.skuId());
+            }
 
-        PendingOrder pendingOrder = new PendingOrder(
-                userId,
-                newOrderNumber,
-                totalAmount,
-                pendingItems,
-                dto.recipientName(),
-                dto.recipientPhone(),
-                dto.shippingAddress(),
-                dto.shippingRequest()
-        );
+            // 총액 합산
+            totalAmount += totalShippingPrice;
+            //------[3]Redis 저장------
 
-        redisStockService.pushPendingOrder(pendingOrder);
-        redisStockService.cacheOrder(pendingOrder);
+            PendingOrder pendingOrder = new PendingOrder(
+                    userId,
+                    newOrderNumber,
+                    totalAmount,
+                    pendingItems,
+                    dto.recipientName(),
+                    dto.recipientPhone(),
+                    dto.shippingAddress(),
+                    dto.shippingRequest()
+            );
+
+            redisStockService.pushPendingOrder(pendingOrder);
+            redisStockService.cacheOrder(pendingOrder);
+
+        } catch (Exception e) {
+            // [롤백] 실패 시 지금까지 깐 거 다시 채워넣기
+            for (int i = 0; i < decreasedSkuIds.size(); i++) {
+                Long skuId = decreasedSkuIds.get(i);
+                Long qty = dto.orderItems().get(i).quantity();
+                redisStockService.increaseStock(skuId, qty);
+            }
+            throw new RuntimeException("재고 차감 중 오류 발생, 롤백 완료");
+        }
 
         // 응답 반환
         return new OrderReadyResponse(
@@ -189,7 +205,7 @@ public class OrderService {
                         }
                     }
 
-                    // 3-3. (수정) 가격: 주문의 '최종 결제 금액' 사용
+                    // 3-3. 가격: 주문의 '최종 결제 금액' 사용
                     Long price = order.getTotalAmount(); // (결정 3)
 
                     // 3-4. DTO 생성

@@ -4,14 +4,13 @@ package com.homesweet.homesweetback.domain.order.repository;
 
 import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
 import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +39,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdWithDetails(@Param("orderId") Long orderId);
 
     Optional<Order> findByOrderNumber(String orderNumber);
+
+    /**
+     * 여러 주문 번호로 한 번에 조회 (N+1 방지용 Bulk 조회)
+     * SQL: SELECT * FROM orders WHERE order_number IN ('ORD-A', 'ORD-B', ...)
+     * Scheduler에서 Set<String>을 넘길 수 있도록 Collection으로 받음.
+     */
+    List<Order> findAllByOrderNumberIn(Collection<String> orderNumbers);
 
     /**
      * 특정 상태(status)이면서, 특정 시간(cutoffTime) 이전에 생성된 모든 주문을 조회합니다.
