@@ -11,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
  * @date 25. 11. 28.
  */
 @ActiveProfiles("test")
-@Import(ElasticSearchTestContainer.class)
+//@Import(ElasticSearchTestContainer.class)
 @SpringBootTest
 public abstract class IntegrationTestSupport {
 }
