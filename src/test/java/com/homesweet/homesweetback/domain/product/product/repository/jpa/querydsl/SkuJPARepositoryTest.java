@@ -96,15 +96,15 @@ class SkuJPARepositoryTest {
     }
 
     @Test
-    @DisplayName("findByIdWithPessimisticLock 쿼리가 정상적으로 SKU를 조회한다.")
-    void findByIdWithPessimisticLock_Success() {
+    @DisplayName("findById 쿼리가 정상적으로 SKU를 조회한다.")
+    void findById_Success() {
 
         // --- GIVEN ---
         // (@BeforeEach에서 이미 'savedSku'를 H2 DB에 저장함)
 
         // --- WHEN ---
         // [핵심] @Lock 및 @Query 어노테이션이 붙은 쿼리를 "진짜" 호출
-        Optional<SkuEntity> foundSkuOptional = skuJPARepository.findByIdWithPessimisticLock(savedSkuId);
+        Optional<SkuEntity> foundSkuOptional = skuJPARepository.findById(savedSkuId);
 
         // --- THEN ---
         // 1. 조회가 성공했는지?

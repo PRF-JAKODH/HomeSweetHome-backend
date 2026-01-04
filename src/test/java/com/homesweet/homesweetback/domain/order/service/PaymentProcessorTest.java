@@ -114,7 +114,7 @@ class PaymentProcessorTest {
     @DisplayName("시나리오 B2: processPaymentCancelDB가 재고 복구, Order/Payment 상태 변경을 수행한다.")
     void processPaymentCancelDB_Success() {
         // (취소 로직은 기존 DB 롤백 방식을 유지한다고 가정하므로 변경 없음)
-        // 단, Lock 메서드 이름 변경(findById -> findByIdWithPessimisticLock) 주의
+        // 단, Lock 메서드 이름 변경(findById -> findById) 주의
 
         // --- GIVEN ---
         Long skuId = 100L;
@@ -140,14 +140,14 @@ class PaymentProcessorTest {
         given(spiedFakeOrder.getOrderItems()).willReturn(fakeItemsList);
 
         // [수정] 락을 사용하는 조회 메서드로 Stubbing
-        given(skuJPARepository.findByIdWithPessimisticLock(skuId)).willReturn(Optional.of(fakeSku));
+        given(skuJPARepository.findById(skuId)).willReturn(Optional.of(fakeSku));
 
         // --- WHEN ---
         paymentProcessor.processPaymentCancelDB(spiedFakeOrder, fakePayment, tossResponse);
 
         // --- THEN ---
         // 1. 재고 복구 로직 호출 확인 (락 조회)
-        verify(skuJPARepository, times(1)).findByIdWithPessimisticLock(skuId);
+        verify(skuJPARepository, times(1)).findById(skuId);
 
         // 2. Order 상태 변경 확인
         assertThat(spiedFakeOrder.getOrderStatus()).isEqualTo(OrderStatus.FAILED);

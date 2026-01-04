@@ -391,7 +391,7 @@ class OrderServiceTest{
         // 3. (가장 중요) '행위' 검증
         // [핵심] UserService는 첫 단계에서 실패했으므로,
         //      'sku' 조회나 'order' 저장은 '절대' 호출되면 안 됨.
-        verify(skuJPARepository, never()).findByIdWithPessimisticLock(anyLong());
+        verify(skuJPARepository, never()).findById(anyLong());
         verify(orderRepository, never()).save(any(Order.class));
         verify(redisStockService, never()).pushPendingOrder(any(PendingOrder.class));
         verify(redisStockService, never()).cacheOrder(any(PendingOrder.class));
