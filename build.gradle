@@ -104,6 +104,9 @@ dependencies {
     // Spring Retry
     implementation 'org.springframework.retry:spring-retry'
 
+    // Spring Kafk
+    implementation 'org.springframework.kafka:spring-kafka'
+
 }
 
 tasks.test {
