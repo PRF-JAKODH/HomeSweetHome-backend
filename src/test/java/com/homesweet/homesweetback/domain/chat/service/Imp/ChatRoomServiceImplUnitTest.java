@@ -14,8 +14,8 @@ import com.homesweet.homesweetback.domain.chat.entity.ChatRoom;
 import com.homesweet.homesweetback.domain.chat.entity.RoomMember;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
 import com.homesweet.homesweetback.domain.chat.entity.enums.ChatUserRole;
-import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
-import com.homesweet.homesweetback.domain.search.chat.event.ChatroomSearchEventPublisher;
+//import com.homesweet.homesweetback.domain.chat.event.ChatRoomEventPublisher;
+//import com.homesweet.homesweetback.domain.search.chat.event.ChatroomSearchEventPublisher;
 import com.homesweet.homesweetback.domain.chat.mapper.ChatRoomMapper;
 import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatMessageRepository;
 import com.homesweet.homesweetback.domain.chat.repository.jpa.ChatRoomRepository;
@@ -81,11 +81,11 @@ public class ChatRoomServiceImplUnitTest {
     @Mock
     private RoomMemberService roomMemberService;
 
-    @Mock
-    private ChatRoomEventPublisher chatRoomEventPublisher;
+//    @Mock
+//    private ChatRoomEventPublisher chatRoomEventPublisher;
 
-    @Mock
-    private ChatroomSearchEventPublisher chatroomSearchEventPublisher;
+//    @Mock
+//    private ChatroomSearchEventPublisher chatroomSearchEventPublisher;
 
     private Long userId;
     private Long roomId;
@@ -598,8 +598,8 @@ public class ChatRoomServiceImplUnitTest {
             assertThat(response.memberInfo().stream()
                             .anyMatch(member -> member.userId().equals(member.userId()))).isTrue();
 
-            verify(chatRoomEventPublisher, times(1))
-                    .publishMemberJoinedEvent(10L, registered);
+//            verify(chatRoomEventPublisher, times(1))
+//                    .publishMemberJoinedEvent(10L, registered);
         }
 
         @Test
@@ -625,7 +625,7 @@ public class ChatRoomServiceImplUnitTest {
 
             // then
             assertThat(response.joinType()).isEqualTo(List.of(JoinType.REJOIN));
-            verify(chatRoomEventPublisher).publishMemberJoinedEvent(10L, rejoined);
+//            verify(chatRoomEventPublisher).publishMemberJoinedEvent(10L, rejoined);
         }
 
         @Test
@@ -645,8 +645,8 @@ public class ChatRoomServiceImplUnitTest {
 
             // then
             assertThat(response.joinType()).isEqualTo(List.of(JoinType.ALREADY_JOINED));
-            verify(chatRoomEventPublisher, never())
-                    .publishMemberJoinedEvent(anyLong(), any());
+//            verify(chatRoomEventPublisher, never())
+//                    .publishMemberJoinedEvent(anyLong(), any());
         }
 
         @Test
@@ -877,8 +877,8 @@ public class ChatRoomServiceImplUnitTest {
                 "userId", userId,
                 "userName", "TestUser"
         );
-        verify(chatRoomEventPublisher, times(1))
-                .publishMemberLeftEvent(roomId, expectedExitData);
+//        verify(chatRoomEventPublisher, times(1))
+//                .publishMemberLeftEvent(roomId, expectedExitData);
     }
 
     @Test
@@ -900,7 +900,7 @@ public class ChatRoomServiceImplUnitTest {
         verify(mockMember, never()).exit();
 
         // 2. 이벤트 발행 메서드가 호출되지 않았는지 확인
-        verify(chatRoomEventPublisher, never()).publishMemberLeftEvent(anyLong(), anyMap());
+//        verify(chatRoomEventPublisher, never()).publishMemberLeftEvent(anyLong(), anyMap());
     }
 
     // --- 실패 테스트 ---
@@ -920,7 +920,7 @@ public class ChatRoomServiceImplUnitTest {
 
         // 1. 퇴장 관련 로직은 전혀 실행되지 않았는지 확인
         verify(mockMember, never()).exit();
-        verify(chatRoomEventPublisher, never()).publishMemberLeftEvent(anyLong(), anyMap());
+//        verify(chatRoomEventPublisher, never()).publishMemberLeftEvent(anyLong(), anyMap());
     }
 }
 

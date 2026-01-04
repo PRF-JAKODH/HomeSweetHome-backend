@@ -6,7 +6,7 @@ import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
 import com.homesweet.homesweetback.domain.community.dto.*;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.*;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
+//import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.*;
 import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
@@ -61,8 +61,8 @@ class CommunityServiceTest {
         @Mock
         private CommunityRedisService communityRedisService;
 
-        @Mock
-        private CommunityEventPublisher communityEventPublisher;
+//        @Mock
+//        private CommunityEventPublisher communityEventPublisher;
 
         @InjectMocks
         private CommunityPostService communityPostService;

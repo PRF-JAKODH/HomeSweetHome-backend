@@ -3,7 +3,7 @@ package com.homesweet.homesweetback.domain.product.data;
 import com.homesweet.homesweetback.domain.product.product.command.controller.request.update.ProductSkuUpdateRequest;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductDetailResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.ProductManageResponse;
-import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
+//import com.homesweet.homesweetback.domain.search.product.controller.response.ProductPreviewResponse;
 import com.homesweet.homesweetback.domain.product.product.command.controller.response.SkuStockResponse;
 import com.homesweet.homesweetback.domain.product.product.command.domain.Product;
 import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
@@ -23,23 +23,23 @@ import java.util.List;
 public class ProductMockData {
 
     // [제품 프리뷰 조회] 제품 응답 DTO
-    public static ProductPreviewResponse createProductPreviewResponse(Long id, String name, String brand, Integer price) {
-        return new ProductPreviewResponse(
-                id,
-                1L,
-                1L,
-                name,
-                "https://s3.aws/" + name + ".jpg",
-                brand,
-                price,
-                new BigDecimal("10.0"),
-                3000,
-                ProductStatus.ON_SALE,
-                4.5,
-                20L,
-                LocalDateTime.now().minusDays(2),
-                LocalDateTime.now()
-        );
+//    public static ProductPreviewResponse createProductPreviewResponse(Long id, String name, String brand, Integer price) {
+//        return new ProductPreviewResponse(
+//                id,
+//                1L,
+//                1L,
+//                name,
+//                "https://s3.aws/" + name + ".jpg",
+//                brand,
+//                price,
+//                new BigDecimal("10.0"),
+//                3000,
+//                ProductStatus.ON_SALE,
+//                4.5,
+//                20L,
+//                LocalDateTime.now().minusDays(2),
+//                LocalDateTime.now()
+//        );
     }
 
     // [상품 도메인 생성] 상품명과 함께 상품 생성
