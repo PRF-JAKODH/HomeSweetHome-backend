@@ -40,7 +40,7 @@ public class ProductMockData {
 //                LocalDateTime.now().minusDays(2),
 //                LocalDateTime.now()
 //        );
-    }
+//    }
 
     // [상품 도메인 생성] 상품명과 함께 상품 생성
     public static Product createMockProduct(Long id, Long sellerId, String name) {
