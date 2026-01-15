@@ -46,67 +46,66 @@ const TRAFFIC_WEIGHTS = {
 const TOTAL_WEIGHT = Object.values(TRAFFIC_WEIGHTS).reduce((a, b) => a + b, 0);
 
 // ==================== Test Options ====================
-// m7i-flex.large EC2 (2 vCPU, 8GB RAM) 테스트용
-// - Peak 100 RPS, Spike 200 RPS 목표
-// - m7i-flex.large의 고성능 메모리 활용
-// - 목표: p(95) < 500ms, Error rate < 5%
+// m7i-flex.large 풀스택 - 극한 한계 테스트
+// - Peak 1000 RPS, Spike 2000 RPS 목표
+// - 서버가 터지는 지점 확인
 export const options = {
     scenarios: {
-        // 1) Warm-up: 시스템 예열 (캐시 워밍, 커넥션 풀 준비)
+        // 1) Warm-up: 시스템 예열
         warmup: {
             executor: 'constant-arrival-rate',
-            rate: 10,
+            rate: 100,
             timeUnit: '1s',
             duration: '30s',
-            preAllocatedVUs: 20,
-            maxVUs: 50,
+            preAllocatedVUs: 100,
+            maxVUs: 300,
             exec: 'realisticTraffic',
             tags: { phase: 'warmup' },
         },
 
-        // 2) Ramp-up: 점진적 부하 증가 (10 → 100 RPS)
+        // 2) Ramp-up: 점진적 부하 증가 (100 → 1000 RPS)
         rampup: {
             executor: 'ramping-arrival-rate',
             startTime: '30s',
-            startRate: 10,
+            startRate: 100,
             timeUnit: '1s',
             stages: [
-                { duration: '30s', target: 30 },   // 일반 트래픽
-                { duration: '30s', target: 60 },   // 피크 시간대 진입
-                { duration: '30s', target: 100 },  // 피크 트래픽
+                { duration: '30s', target: 300 },
+                { duration: '30s', target: 600 },
+                { duration: '30s', target: 1000 },
             ],
-            preAllocatedVUs: 50,
-            maxVUs: 150,
+            preAllocatedVUs: 400,
+            maxVUs: 1200,
             exec: 'realisticTraffic',
             tags: { phase: 'rampup' },
         },
 
-        // 3) Peak: 안정 부하 유지 (100 RPS x 2분)
+        // 3) Peak: 극고부하 유지 (1000 RPS x 2분)
         peak: {
             executor: 'constant-arrival-rate',
             startTime: '2m',
-            rate: 100,
+            rate: 1000,
             timeUnit: '1s',
             duration: '2m',
-            preAllocatedVUs: 100,
-            maxVUs: 200,
+            preAllocatedVUs: 800,
+            maxVUs: 1600,
             exec: 'realisticTraffic',
             tags: { phase: 'peak' },
         },
 
-        // 4) Spike: 스파이크 시나리오 (최대 200 RPS)
+        // 4) Spike: 극한 스파이크 (최대 2000 RPS)
         spike: {
             executor: 'ramping-arrival-rate',
             startTime: '4m',
-            startRate: 100,
+            startRate: 1000,
             timeUnit: '1s',
             stages: [
-                { duration: '20s', target: 150 },  // 급격한 스파이크
-                { duration: '30s', target: 200 },  // 최대 부하
-                { duration: '20s', target: 100 },  // 정상 복구
+                { duration: '30s', target: 1500 },
+                { duration: '30s', target: 2000 },
+                { duration: '30s', target: 1000 },
             ],
-            preAllocatedVUs: 150,
-            maxVUs: 300,
+            preAllocatedVUs: 1200,
+            maxVUs: 2500,
             exec: 'realisticTraffic',
             tags: { phase: 'spike' },
         },
@@ -114,43 +113,42 @@ export const options = {
         // 5) Cooldown: 부하 감소
         cooldown: {
             executor: 'ramping-arrival-rate',
-            startTime: '5m10s',
-            startRate: 100,
+            startTime: '5m30s',
+            startRate: 1000,
             timeUnit: '1s',
             stages: [
-                { duration: '20s', target: 30 },
-                { duration: '20s', target: 10 },
+                { duration: '30s', target: 200 },
+                { duration: '30s', target: 10 },
             ],
-            preAllocatedVUs: 50,
-            maxVUs: 100,
+            preAllocatedVUs: 400,
+            maxVUs: 800,
             exec: 'realisticTraffic',
             tags: { phase: 'cooldown' },
         },
     },
 
     thresholds: {
-        // 전체 성능 기준 (m7i-flex.large - 엄격한 기준)
-        http_req_duration: ['p(50)<200', 'p(95)<500', 'p(99)<1000'],
-        http_req_failed: ['rate<0.05'],      // 에러율 5% 미만
-        error_rate: ['rate<0.05'],
-        success_rate: ['rate>0.95'],
+        // 극한 테스트 - 매우 느슨한 기준
+        http_req_duration: ['p(50)<2000', 'p(95)<10000', 'p(99)<30000'],
+        http_req_failed: ['rate<0.30'],      // 에러율 30% 미만
+        error_rate: ['rate<0.30'],
+        success_rate: ['rate>0.70'],
 
-        // 읽기 작업 (m7i-flex.large 기준)
-        post_view_duration: ['p(95)<300'],    // 상세 조회 300ms 이내
-        post_list_duration: ['p(95)<500'],    // 목록 조회 500ms 이내
-
-        // 쓰기 작업 (엄격)
-        like_toggle_duration: ['p(95)<500'],     // 좋아요 500ms 이내
-        comment_create_duration: ['p(95)<800'],  // 댓글 800ms 이내
-        post_create_duration: ['p(95)<1000'],    // 게시글 작성 1초 이내
+        // 작업별 (매우 느슨)
+        post_view_duration: ['p(95)<5000'],
+        post_list_duration: ['p(95)<5000'],
+        like_toggle_duration: ['p(95)<5000'],
+        comment_create_duration: ['p(95)<10000'],
+        post_create_duration: ['p(95)<10000'],
     },
 };
 
+
 // ==================== Setup ====================
 export function setup() {
-    console.log('m7i-flex.large EC2 부하 테스트');
+    console.log('m7i-flex.large 극한 테스트');
     console.log('===============================================');
-    console.log('환경: m7i-flex.large (2 vCPU, 8GB RAM) | EC2');
+    console.log('환경: WAS + DB + Redis 모두 m7i-flex.large (2 vCPU, 8GB RAM)');
     console.log(`BASE_URL: ${BASE_URL}`);
     console.log(`Post ID Range: ${MIN_POST_ID} ~ ${MAX_POST_ID}`);
     console.log(`User ID Range: ${MIN_USER_ID} ~ ${MAX_USER_ID}`);
@@ -159,15 +157,15 @@ export function setup() {
     console.log(`  읽기 80%: 목록 조회(${TRAFFIC_WEIGHTS.POST_LIST}%) + 게시글 조회(${TRAFFIC_WEIGHTS.POST_VIEW}%)`);
     console.log(`  쓰기 20%: 좋아요(${TRAFFIC_WEIGHTS.LIKE_TOGGLE}%) + 댓글(${TRAFFIC_WEIGHTS.COMMENT_CREATE}%) + 게시글(${TRAFFIC_WEIGHTS.POST_CREATE}%)`);
     console.log('');
-    console.log('Test Phases (약 6분):');
-    console.log('  0:00-0:30  Warmup (10 RPS)');
-    console.log('  0:30-2:00  Ramp-up (10->100 RPS)');
-    console.log('  2:00-4:00  Peak (100 RPS 유지)');
-    console.log('  4:00-5:10  Spike (100->200 RPS)');
-    console.log('  5:10-5:50  Cooldown (100->10 RPS)');
+    console.log('Test Phases (약 7분) - 극한 테스트:');
+    console.log('  0:00-0:30  Warmup (100 RPS)');
+    console.log('  0:30-2:00  Ramp-up (100->1000 RPS)');
+    console.log('  2:00-4:00  Peak (1000 RPS 유지)');
+    console.log('  4:00-5:30  Spike (1000->2000 RPS)');
+    console.log('  5:30-6:30  Cooldown (1000->10 RPS)');
     console.log('');
-    console.log('Success Criteria (m7i-flex.large):');
-    console.log('  p(95) < 500ms | Error rate < 5% | Peak 200 RPS');
+    console.log('Success Criteria (극한 테스트):');
+    console.log('  에러율 < 30% | Peak 2000 RPS');
     console.log('===============================================');
 
     // Health check
@@ -179,6 +177,9 @@ export function setup() {
 
     return { startTime: new Date().toISOString() };
 }
+
+
+
 
 export function teardown(data) {
     console.log(`\n🏁 Test completed. Started at: ${data.startTime}`);
