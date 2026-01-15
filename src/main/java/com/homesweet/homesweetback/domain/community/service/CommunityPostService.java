@@ -11,8 +11,8 @@ import com.homesweet.homesweetback.domain.community.dto.CommunityPostResponse;
 import com.homesweet.homesweetback.domain.community.exception.CommunityException;
 import com.homesweet.homesweetback.domain.community.entity.CommunityImageEntity;
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
-import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
+//import com.homesweet.homesweetback.domain.search.community.event.CommunityEvent;
+//import com.homesweet.homesweetback.domain.search.community.event.CommunityEventPublisher;
 import com.homesweet.homesweetback.domain.community.repository.CommunityImageRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommunityPostService {
 
-    private final CommunityEventPublisher communityEventPublisher;
+//    private final CommunityEventPublisher communityEventPublisher;
     private final CommunityPostRepository postRepository;
     private final CommunityImageRepository imageRepository;
     private final UserRepository userRepository;
@@ -60,7 +60,7 @@ public class CommunityPostService {
                     .match(POST_LIST_CACHE_PREFIX + "*")
                     .count(100)
                     .build();
-            
+
             int deletedCount = 0;
             try (var cursor = stringRedisTemplate.scan(scanOptions)) {
                 while (cursor.hasNext()) {
@@ -69,7 +69,7 @@ public class CommunityPostService {
                     deletedCount++;
                 }
             }
-            
+
             if (deletedCount > 0) {
                 log.debug("Invalidated {} post list cache entries", deletedCount);
             }
@@ -112,7 +112,6 @@ public class CommunityPostService {
             }
         }
 
-        communityEventPublisher.publish(CommunityEvent.created(savedPost.getPostId()));
 
         // 목록 캐시 무효화
         invalidatePostListCache();
@@ -121,7 +120,7 @@ public class CommunityPostService {
     }
 
     /**
-     * 게시글 단건 조회 - Cache-Aside 패턴 적용 (게시물 본문 + 카운터)
+     * 게시글 단건 조회
      */
     public CommunityPostResponse getPost(Long postId) {
         String cacheKey = POST_CACHE_PREFIX + postId;
@@ -135,7 +134,7 @@ public class CommunityPostService {
                 Integer viewCount = communityCountService.getViewCountFromCache(postId);
                 Integer likeCount = communityCountService.getLikeCountFromCache(postId);
                 Integer commentCount = communityCountService.getCommentCountFromCache(postId);
-                
+
                 return new CommunityPostResponse(
                         cached.postId(), cached.authorId(), cached.authorName(),
                         cached.title(), cached.content(), cached.category(),
@@ -201,7 +200,7 @@ public class CommunityPostService {
                 .map(CommunityImageEntity::getImageUrl)
                 .toList();
 
-        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
+//        communityEventPublisher.publish(CommunityEvent.updated(post.getPostId()));
 
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
@@ -227,7 +226,7 @@ public class CommunityPostService {
 
         // 게시글 소프트 삭제
         post.deletePost();
-        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
+//        communityEventPublisher.publish(CommunityEvent.deleted(post.getPostId()));
 
         // 캐시 무효화
         stringRedisTemplate.delete(POST_CACHE_PREFIX + postId);
@@ -247,7 +246,7 @@ public class CommunityPostService {
             try {
                 List<CommunityPostResponse> cached = objectMapper.readValue(
                         cachedJson, new TypeReference<List<CommunityPostResponse>>() {});
-                
+
                 // 카운터는 항상 최신값으로 조회 (Bulk MGET - 30번 → 3번 최적화)
                 List<Long> postIds = cached.stream().map(CommunityPostResponse::postId).toList();
                 Map<Long, Integer> viewCounts = communityCountService.getBulkViewCountsFromCache(postIds);
@@ -265,7 +264,7 @@ public class CommunityPostService {
                                 post.imagesUrl()
                         ))
                         .toList();
-                
+
                 long totalCount = postRepository.countByIsDeletedFalse();
                 log.debug("Cache hit for post list: page={}", pageable.getPageNumber());
                 return new org.springframework.data.domain.PageImpl<>(withLatestCounts, pageable, totalCount);
@@ -282,7 +281,7 @@ public class CommunityPostService {
         if (posts.isEmpty()) {
             return postsPage.map(post -> CommunityPostResponse.from(post, null));
         }
-        
+
         List<CommunityImageEntity> allImages = imageRepository.findAllByPostInOrderByPostPostIdAscImageOrderAsc(posts);
 
         Map<Long, List<String>> postImagesMap = allImages.stream()
