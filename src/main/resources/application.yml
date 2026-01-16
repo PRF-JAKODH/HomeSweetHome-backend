@@ -11,12 +11,12 @@ spring:
   cloud:
     aws:
       credentials:
-        access-key: ${AWS_ACCESS_KEY}
-        secret-key: ${AWS_SECRET_KEY}
+        access-key: ${AWS_ACCESS_KEY:local-dummy-access-key}
+        secret-key: ${AWS_SECRET_KEY:local-dummy-secret-key}
       region:
         static: ap-northeast-2
       s3:
-        bucket: ${AWS_S3_BUCKET}
+        bucket: ${AWS_S3_BUCKET:local-dummy-bucket}
   batch:
     job:
       enabled: false
