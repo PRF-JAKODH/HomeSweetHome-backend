@@ -6,12 +6,12 @@ import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 export const options = {
 
     stages: [
-        { duration: '1m', target: 100 }
+        { duration: '1m', target: 1500 },
+        { duration: '3m', target: 1500 },
+        { duration: '1m', target: 0 }
     ],
 
-    // vus: 500,
-    // duration: '60s', // N초 동안 테스트
-    // 임계값(Thresholds): 95%의 응답 시간이 5초를 넘기면 테스트를 실패로 간주
+
     thresholds: {
         http_req_duration: ['p(95) < 5000'],
         'checks': ['rate==1'], // 성공률 100%
@@ -39,7 +39,7 @@ export default function () {
         shippingRequest: "",
     });
 
-    const createRes = http.post('http://43.201.52.249:8080/api/v1/orders', orderCreationPayload, { headers: headers });
+    const createRes = http.post('http://3.34.43.109:8080/api/v1/orders', orderCreationPayload, { headers: headers });
 
     // 💡 검증: 주문 생성이 200/201로 성공했는지 확인
     check(createRes, {
@@ -56,6 +56,8 @@ export default function () {
     const orderNumber = orderData.orderNumber;
     const totalAmount = orderData.totalAmount;
 
+    // 주문 버튼 누르고 결제창 뜨는 시간
+    sleep(0.5);
 
     // --- 2단계: 결제 승인 (CONFIRM) ---
     const confirmPayload = JSON.stringify({
@@ -64,12 +66,42 @@ export default function () {
         amount: totalAmount,  // 1단계에서 계산된 최종 금액 사용
     });
 
-    const confirmRes = http.post('http://43.201.52.249:8080/api/v1/orders/payments/confirm', confirmPayload, { headers: headers });
+    const confirmRes = http.post('http://3.34.43.109:8080/api/v1/orders/payments/confirm', confirmPayload, { headers: headers });
 
     //  검증: 결제 승인이 200/201로 성공했는지 확인
     check(confirmRes, {
         '02. CONFIRM Status 200/201': (r) => r.status === 200 || r.status === 201,
     });
 
-    sleep(0.1);
+    // 결제 완료 페이지를 보고 마이페이지 들어가서 주문 목록까지 확인하는 시간
+    // sleep(1.5);
+
+    // // --- 3단계: 내 주문 목록 조회 : 결제 완료 후 마이페이지에서 목록을 확인한 상황 ---
+    // // Controller: @GetMapping ("") -> /api/v1/orders
+    // const listRes = http.get('http://43.201.52.249:8080/api/v1/orders', { headers: headers });
+    //
+    // check(listRes, {
+    //     '04. GET LIST Status 200': (r) => r.status === 200,
+    //     // (선택) 목록이 비어있지 않은지 확인 (방금 주문했으니까 최소 1개는 있어야 함)
+    //     '04. List Not Empty': (r) => {
+    //         const list = r.json();
+    //         return list.length > 0;
+    //     }
+    // });
+    //
+    // // 주문 목록을 찾고 상세보기까지 가는 시간
+    // sleep(0.5);
+    //
+    // // --- 4단계: 주문 상세 조회 (GET) : 결제 목록에서 주문 상세 보기로 주문이 잘 됬는지 확인하는 상황 ---
+    // // Controller: @GetMapping("/{orderId}")
+    // const detailRes = http.get(`http://43.201.52.249:8080/api/v1/orders/${orderNumber}`, { headers: headers });
+    //
+    // check(detailRes, {
+    //     '03. GET DETAIL Status 200': (r) => r.status === 200,
+    //     // 검증: 조회된 데이터의 ID가 요청한 ID와 같은지 확인
+    //     '03. Verify ID': (r) => r.json('orderId') == orderNumber
+    // });
+
+    //Think Time
+    sleep(2);
 }

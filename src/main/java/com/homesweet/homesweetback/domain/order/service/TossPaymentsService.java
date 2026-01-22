@@ -55,9 +55,10 @@ public class TossPaymentsService {
                     httpEntity);
             log.info("결제 승인 성공: paymentKey={}", request.getPaymentKey());
             return response;
-        } catch (HttpClientErrorException e) {
-            log.error("결제 승인 실패: {}", e.getResponseBodyAsString());
-            throw new TossApiFailedException("결제 승인 실패: " + e.getMessage(), e);
+        } catch (org.springframework.web.client.RestClientResponseException e) { // 4xx, 5xx 에러 모두 포착
+            log.error("결제 승인 실패: Code={}, Message={}, Body={}", e.getStatusCode(), e.getMessage(),
+                    e.getResponseBodyAsString());
+            throw new TossApiFailedException("결제 승인 실패: " + e.getResponseBodyAsString(), e);
         }
     }
 

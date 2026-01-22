@@ -112,8 +112,6 @@ public class ChatRoomServiceImpl implements ChatRoomService {
         RoomMember roomOwner = RoomMember.createMember(chatRoom, owner, ChatUserRole.OWNER);
         roomMemberRepository.save(roomOwner);
 
-        // 엘라스틱 동기화
-
         // 저장된 정보 응답
         return chatRoomMapper.toDto(chatRoom, ownerId);
     }

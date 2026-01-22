@@ -1,8 +1,12 @@
 package com.homesweet.homesweetback.domain.order.controller;
 
+import com.homesweet.homesweetback.domain.order.dto.PaymentResponse;
 import com.homesweet.homesweetback.domain.order.dto.TossPaymentCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.TossPaymentConfirmRequest;
+import com.homesweet.homesweetback.domain.order.service.PaymentService;
 import com.homesweet.homesweetback.domain.order.service.TossPaymentsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -12,80 +16,90 @@ import java.util.Map;
 
 /**
  * 토스페이먼츠 결제 API 컨트롤러
- * 
- * 결제 흐름:
- * 1. 클라이언트에서 토스 결제 위젯으로 결제 요청
- * 2. 결제 완료 후 successUrl로 리다이렉트되면서 paymentKey, orderId, amount 전달
- * 3. POST /api/v1/payments/confirm 호출하여 결제 승인
+ *
+ * 결제 흐름 (토스페이먼츠 문서 기준):
+ * 1. POST /api/v1/orders - 주문 생성 (OrderController)
+ * 2. 클라이언트에서 토스 결제위젯으로 결제 요청 (orderNumber, totalAmount 사용)
+ * 3. 결제 완료 후 successUrl로 리다이렉트 (paymentKey, orderId, amount 전달)
+ * 4. POST /api/v1/payments/confirm 호출하여 결제 승인
+ *
+ * TODO: 테스트 완료 후 인증 로직 원복 필요
  */
+@Tag(name = "Payment", description = "결제 API")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
 public class PaymentController {
 
+    private final PaymentService paymentService;
     private final TossPaymentsService tossPaymentsService;
+
+    // TODO: 테스트 완료 후 원복 - 테스트용 하드코딩 userId
+    private static final Long TEST_USER_ID = 1L;
 
     /**
      * 결제 승인 API
-     * 프론트엔드에서 토스 결제창 완료 후 받은 paymentKey, orderId, amount로 최종 결제 승인
-     * 
-     * @param request 결제 승인 요청 (paymentKey, orderId, amount)
-     * @return 토스페이먼츠 결제 승인 응답
+     * 토스 결제창 완료 후 successUrl에서 받은 paymentKey, orderId, amount로 결제 승인
+     *
+     * 토스페이먼츠 문서에 따라:
+     * - amount 검증 (클라이언트 금액 조작 방지)
+     * - paymentKey, amount, orderId 저장
+     * - 결제 승인 API 호출
      */
+    @Operation(summary = "결제 승인", description = "토스페이먼츠 결제창 완료 후 최종 결제 승인")
     @PostMapping("/confirm")
-    public ResponseEntity<Map<String, Object>> confirmPayment(
+    public ResponseEntity<PaymentResponse> confirmPayment(
             @RequestBody TossPaymentConfirmRequest request) {
-        log.info("결제 승인 API 호출: orderId={}, amount={}", request.getOrderId(), request.getAmount());
 
-        Map<String, Object> response = tossPaymentsService.confirmPayment(request);
+        log.info("결제 승인 API 호출: userId={}, orderId={}, amount={}",
+                TEST_USER_ID, request.getOrderId(), request.getAmount());
+
+        PaymentResponse response = paymentService.confirmPayment(TEST_USER_ID, request);
         return ResponseEntity.ok(response);
     }
 
     /**
      * 결제 취소 API
-     * 
-     * @param paymentKey 취소할 결제의 paymentKey
-     * @param request    취소 사유 및 부분 취소 금액 (선택)
-     * @return 토스페이먼츠 결제 취소 응답
      */
+    @Operation(summary = "결제 취소", description = "결제 완료된 주문의 결제 취소")
     @PostMapping("/{paymentKey}/cancel")
-    public ResponseEntity<Map<String, Object>> cancelPayment(
+    public ResponseEntity<PaymentResponse> cancelPayment(
             @PathVariable String paymentKey,
             @RequestBody TossPaymentCancelRequest request) {
-        log.info("결제 취소 API 호출: paymentKey={}, reason={}", paymentKey, request.getCancelReason());
 
-        Map<String, Object> response = tossPaymentsService.cancelPayment(paymentKey, request);
+        log.info("결제 취소 API 호출: userId={}, paymentKey={}", TEST_USER_ID, paymentKey);
+
+        PaymentResponse response = paymentService.cancelPayment(TEST_USER_ID, paymentKey, request);
         return ResponseEntity.ok(response);
     }
 
     /**
      * paymentKey로 결제 조회 API
-     * 
-     * @param paymentKey 조회할 결제의 paymentKey
-     * @return 토스페이먼츠 결제 정보
      */
+    @Operation(summary = "결제 조회", description = "paymentKey로 결제 정보 조회")
     @GetMapping("/{paymentKey}")
-    public ResponseEntity<Map<String, Object>> getPaymentByPaymentKey(
+    public ResponseEntity<PaymentResponse> getPayment(
             @PathVariable String paymentKey) {
-        log.info("결제 조회 API 호출: paymentKey={}", paymentKey);
 
-        Map<String, Object> response = tossPaymentsService.getPaymentByPaymentKey(paymentKey);
+        log.info("결제 조회 API 호출: userId={}, paymentKey={}", TEST_USER_ID, paymentKey);
+
+        PaymentResponse response = paymentService.getPayment(TEST_USER_ID, paymentKey);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * orderId로 결제 조회 API
-     * 
-     * @param orderId 조회할 주문의 orderId
-     * @return 토스페이먼츠 결제 정보
+     * orderId로 토스페이먼츠 결제 조회 API (외부 API 직접 조회)
      */
-    @GetMapping("/orders/{orderId}")
-    public ResponseEntity<Map<String, Object>> getPaymentByOrderId(
+    @Operation(summary = "토스 결제 조회", description = "orderId로 토스페이먼츠 API 직접 조회")
+    @GetMapping("/toss/orders/{orderId}")
+    public ResponseEntity<Map<String, Object>> getTossPaymentByOrderId(
             @PathVariable String orderId) {
-        log.info("주문ID로 결제 조회 API 호출: orderId={}", orderId);
+
+        log.info("토스 결제 조회 API 호출: orderId={}", orderId);
 
         Map<String, Object> response = tossPaymentsService.getPaymentByOrderId(orderId);
         return ResponseEntity.ok(response);
     }
 }
+

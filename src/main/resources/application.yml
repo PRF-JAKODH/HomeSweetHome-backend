@@ -1,6 +1,3 @@
-test:
-  mode: true  # 부하 테스트 시 true, 프로덕션에서는 false
-
 spring:
   application:
     name: homesweet-back
@@ -14,35 +11,43 @@ spring:
   cloud:
     aws:
       credentials:
-        access-key: ${AWS_ACCESS_KEY}
-        secret-key: ${AWS_SECRET_KEY}
+        access-key: ${AWS_ACCESS_KEY:local-dummy-access-key}
+        secret-key: ${AWS_SECRET_KEY:local-dummy-secret-key}
       region:
         static: ap-northeast-2
       s3:
-        bucket: ${AWS_S3_BUCKET}
+        bucket: ${AWS_S3_BUCKET:local-dummy-bucket}
   batch:
     job:
       enabled: false
     jdbc:
       initialize-schema: always
-
   datasource:
     hikari:
-      maximum-pool-size: 80
+      maximum-pool-size: 30
       minimum-idle: 20
       idle-timeout: 300000
       max-lifetime: 1800000
       connection-timeout: 30000
+  data:
+    redis:
+      host: 43.202.161.79
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 100 # 동시에 사용할 수 있는 최대 연결 수
+          max-idle: 50 # 유휴 상태로 유지할 연결 수
+          min-idle: 10 # 최소 유지 연결 수
+          max-wait: 3000ms # 연결을 얻기 위해 기다리는 최대 시간 3초
 
 server:
   tomcat:
     threads:
-      max: 350                    # 워커 스레드 수(실제 요청 처리)
-      min-spare: 50               # 최소 유지 스레드
-    accept-count: 200             # acceptQueue 크기, 연결대기큐 / sommaxconn : 128
-    max-connections: 10000        # 동시 연결 가능한 소켓 수
-    connection-timeout: 30000
-
+      max: 200
+      min-spare: 50
+    accept-count: 5000
+    max-connections: 10000
+    connection-timeout: 20000
 
 resilience4j:
   circuitbreaker:
@@ -76,7 +81,6 @@ retry:
         - java.io.IOException    # 네트워크 연결 오류
         - org.springframework.web.client.ResourceAccessException # 타임아웃 등
         - java.net.ConnectException
-      # (옵션) 400 Bad Request 같은 건 재시도해도 소용없으니 제외
       ignoreExceptions:
         - org.springframework.web.client.HttpClientErrorException
 

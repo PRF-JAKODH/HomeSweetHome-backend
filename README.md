@@ -1,10 +1,10 @@
 # HomeSweetHome
 
-<img width="2400" height="800" alt="image" src="https://github.com/user-attachments/assets/b69af827-4640-434a-9ab3-bfd8cb8e1775" />
+<img width="975" height="549" alt="image" src="https://github.com/user-attachments/assets/57f5dfbf-a606-4bf6-b4f6-c4938a7e3598" />
 
 ---
 
-## Team **JAKODH**
+## Team Member Github
 
 <table align="center">
   <tr>
@@ -43,10 +43,27 @@
 
 ---
 
+
 ## 📍 프로젝트 소개
 
-- '오늘의 집'의 핵심 기능을 재현
-- 실서비스 수준의 백엔드 고도화를 통해 확장성과 안정성을 갖춘 전자상거래·커뮤니티 백엔드를 구축
+- **해당 프로젝트는** `'오늘의 집'` 핵심 요구사항을 분석하여, 대규모 트래픽에서 안정적인 성능 확보를 목표로 하였습니다.
+
+- **이를 위해 체계적인 3단계 과정을 통해 성능 최적화 및 테스트 진행했습니다**
+  
+  1. **기획 및 설계를 통한 빠른 MVP 구현**
+     - 요구사항 분석 및 구체화
+     - 핵심 API 설계 및 프론트 프로토타이핑
+
+  2. **테스트 체계화를 통한 서비스 안정성 강화**
+     - 테스트 코드 설계 및 구현
+     - 테스트 커버리지 측정 및 분석 (커버리지 80% 달성)
+     - <img width="840" height="139" alt="image" src="https://github.com/user-attachments/assets/86359f9e-baae-4b3f-be85-89160af4c4e3" />
+
+
+  3. **프로덕션 레벨을 향한 성능 최적화 및 E2E 테스트**
+     - 성능 부하 테스트
+     - 성능 병목 지점 분석 및 최적화
+     - 전문 기술 문서화
 
 ### 📍 프로젝트 링크
 | Frontend | Backend |
@@ -55,81 +72,42 @@
 
 ---
 
-<details>
-  <summary>기술 스택</summary>
+### 기술 스택
 
-### Backend  
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white) 
-![SpringBoot](https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![SpringSecurity](https://img.shields.io/badge/SpringSecurity-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-
-### Frontend  
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
-![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
-
-### Database  
-![AmazonRDS](https://img.shields.io/badge/AmazonRDS-4285F4?style=for-the-badge)
-![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-ECD53F?style=for-the-badge)
-
-### Infrastructure  
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
-
-### Design & Modeling  
-![Figma](https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white)
-
-### Tools  
-![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
-![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
-
-</details>
+<img width="1046" height="590" alt="image" src="https://github.com/user-attachments/assets/1d9897c2-2858-4e1b-aaee-341de7c62f0a" />
 
 ---
 
-<details>
-  <summary>담당 기능</summary>
-
-
-</details>
+### 담당 기능
+<img width="1488" height="704" alt="TeamMember" src="https://github.com/user-attachments/assets/9a331c6c-cd23-4934-801d-7ef5ba0cee87" />
 
 ---
 
-<details>
-  <summary>설계 문서</summary>
+ ### 설계 문서
 
-### 📑 기획서  
+<surmary> 📼 시연 영상 </surmary> 
 
-### 🚧 시스템 아키텍쳐
-<img width="1121" height="966" alt="홈스윗홈 배포 아키텍처 drawio" src="https://github.com/user-attachments/assets/8e170bc5-7d8f-483c-9d74-f77cc84a1f07" />
+[[YOUTUBE] HomeSweetHome 기능 별 시연 영상](https://youtu.be/tDZQVn2-uPs?si=hE2dqdOiXLe87Cf)
 
-### 🌊 플로우차트  
+<surmary> 🚧 시스템 아키텍쳐 </surmary> 
+<img width="978" height="582" alt="image" src="https://github.com/user-attachments/assets/8dbba002-28ad-4461-be66-2e56a626f891" />
 
-### 📋 요구사항 명세서  
+<surmary> 📋 요구사항 명세서 </surmary> 
+<img width="1053" height="638" alt="image" src="https://github.com/user-attachments/assets/e4d5ce02-bd90-4db9-a9f1-2faa2c7fc4ff" />
+<img width="1052" height="499" alt="image" src="https://github.com/user-attachments/assets/2f6d5f13-900d-4a26-9bb1-d76dc88bef64" />
 
-### 📘 논리 모델링  
 
-### 📕 물리 모델링  
+<surmary> 📘 ERD </surmary> 
 
-### 🖌️ 화면 설계서  
+<img width="3800" height="2592" alt="오늘의집-ERD" src="https://github.com/user-attachments/assets/6a42c739-687f-4fb9-9924-4afe488fdc38" />
 
-### 🧪 테스트 케이스  
-
-</details>
 
 ---
 
-<details>
-  <summary>트러블 슈팅</summary>
+## 📖 고도화 작업 및 성능 개선
+고도화 작업 및 성능 개선에 대한 내용을 아래 WIKI 페이지에 상세히 작성하였습니다.
 
-- [트러블 슈팅 바로가기](wiki Link)
-
-</details>
-
----
-
-## 회고
+[HomeSweetHome 성능 고도화 및 트러블 슈팅](https://github.com/PRF-JAKODH/HomeSweetHome-backend/wiki)
 
 
 ---

@@ -247,6 +247,8 @@ public class CommunityCountService {
         Integer viewCount = redisService.getPostViewCount(postId);
         if (viewCount != null)
             return viewCount;
+        if (viewCount != null)
+            return viewCount;
 
         // Cache Miss -> DB에서 로드
         initViewCountFromDB(postId);
@@ -261,6 +263,8 @@ public class CommunityCountService {
         Integer likeCount = redisService.getPostLikeCount(postId);
         if (likeCount != null)
             return likeCount;
+        if (likeCount != null)
+            return likeCount;
 
         initPostLikesFromDB(postId);
         return redisService.getPostLikeCount(postId);
@@ -273,6 +277,8 @@ public class CommunityCountService {
         Integer commentCount = redisService.getPostCommentCount(postId);
         if (commentCount != null)
             return commentCount;
+        if (commentCount != null)
+            return commentCount;
 
         initCommentCountFromDB(postId);
         return redisService.getPostCommentCount(postId);
@@ -283,6 +289,8 @@ public class CommunityCountService {
      */
     public Integer getCommentLikeCountFromCache(Long commentId) {
         Integer likeCount = redisService.getCommentLikeCount(commentId);
+        if (likeCount != null)
+            return likeCount;
         if (likeCount != null)
             return likeCount;
 

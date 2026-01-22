@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -57,7 +58,11 @@ public class SecurityConfig {
                 return source;
         }
 
+        /**
+         * 프로덕션 환경 - OAuth2 로그인 활성화
+         */
         @Bean
+        @Profile("!local")
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 return http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -88,7 +93,8 @@ public class SecurityConfig {
                                                                 "/api/v1/products/{productId}",
                                                                 "/api/v1/products/previews",
                                                                 "/ws",
-                                                                "/api/v1/community/**"
+                                                                "/api/v1/community/posts",
+                                                                "/api/v1/payments/**"
 
                                                 ).permitAll()
                                                 .requestMatchers("/api/v1/seller/**").hasRole("SELLER")
@@ -104,6 +110,26 @@ public class SecurityConfig {
                                                 .failureHandler(oAuth2AuthenticationFailureHandler))
                                 .exceptionHandling(exception -> exception
                                                 .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                .build();
+        }
+
+        /**
+         * 로컬 환경 - OAuth2 로그인 비활성화 (결제 API 테스트용)
+         */
+        @Bean
+        @Profile("local")
+        public SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
+                return http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(csrf -> csrf.disable())
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .anyRequest().permitAll() // 로컬에서는 모든 요청 허용
+                                )
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .build();
         }
