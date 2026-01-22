@@ -13,8 +13,6 @@ import com.homesweet.homesweetback.domain.community.entity.CommunityCommentEntit
 import com.homesweet.homesweetback.domain.community.entity.CommunityPostEntity;
 import com.homesweet.homesweetback.domain.community.repository.CommunityCommentRepository;
 import com.homesweet.homesweetback.domain.community.repository.CommunityPostRepository;
-import com.homesweet.homesweetback.domain.notification.domain.notification.CommunityNotification;
-import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,6 @@ public class CommunityCommentService {
     private final CommunityCommentRepository commentRepository;
     private final CommunityPostRepository postRepository;
     private final UserRepository userRepository;
-    private final NotificationSendService notificationSendService;
     private final CommunityCountService communityCountService;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
