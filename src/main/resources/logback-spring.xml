@@ -84,4 +84,11 @@
         </root>
     </springProfile>
 
+    <!-- local 환경: 콘솔에 DEBUG 출력 -->
+    <springProfile name="local">
+        <root level="DEBUG">
+            <appender-ref ref="STDOUT"/>
+        </root>
+    </springProfile>
+
 </configuration>
