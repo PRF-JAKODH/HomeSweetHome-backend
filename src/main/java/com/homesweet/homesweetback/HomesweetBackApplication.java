@@ -2,17 +2,10 @@ package com.homesweet.homesweetback;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.EnableScheduling;   // Scheduler드래곤
 
-@SpringBootApplication(exclude = {
-        ElasticsearchDataAutoConfiguration.class,
-        ElasticsearchRestClientAutoConfiguration.class
-})
+@SpringBootApplication
 @EnableScheduling
-@ConfigurationPropertiesScan
 public class HomesweetBackApplication {
     public static void main(String[] args) {
         SpringApplication.run(HomesweetBackApplication.class, args);

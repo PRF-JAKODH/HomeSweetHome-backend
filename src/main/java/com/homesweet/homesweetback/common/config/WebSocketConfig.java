@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.common.config;
 
+import com.homesweet.homesweetback.common.config.interceptor.ChatPreHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -18,17 +19,21 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final ChatPreHandler chatPreHandler;
+
     // 엔드포인트 등록 설정
     @Override
     public void registerStompEndpoints(StompEndpointRegistry config) {
 
         config.addEndpoint("/ws")
                 .setAllowedOriginPatterns("http://localhost:3000")
+//                .addInterceptors(authHandshakeInterceptor)
                 .withSockJS();
 
 
         // 부하테스트용 (순수 WebSocket)
         config.addEndpoint("/ws-stomp")
+//                .addInterceptors(authHandshakeInterceptor)
                 .setAllowedOriginPatterns("*");
     }
 
@@ -49,6 +54,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(chatPreHandler);
+
         int cores = Runtime.getRuntime().availableProcessors();
 
         registration.taskExecutor()
@@ -67,4 +74,3 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
 }
-

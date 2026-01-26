@@ -77,6 +77,8 @@ public class AuthService {
                 if (existingUser.getProfileImageUrl() == null) {
                     existingUser.setProfileImageUrl(user.getProfileImageUrl());
                 }
+                // Grade는 Optional 패턴으로 안전하게 처리
+                user.getGradeOptional().ifPresent(existingUser::setGrade);
                 // Role은 기존 사용자의 것을 유지 (변경하지 않음)
                 
                 log.info("OAuth2 user updated: {}", existingUser.getEmail());

@@ -72,7 +72,7 @@ logging:
 
 # JWT 개발 환경 설정
 jwt:
-  secret: ${JWT_SECRET:homesweet-backend-super-secret-jwt-key-that-is-at-least-32-bytes-long-for-hs256}
+  secret: ${JWT_SECRET:homesweet-back-jwt-secret-key-for-test-only}
   access-token-expiration: 18000000   # 5시간
   refresh-token-expiration: 604800000 # 7일 
 
@@ -87,7 +87,7 @@ app:
   # 토스 페이먼츠 시크릿 키
 payments:
   toss:
-    secretKey: ${TOSS_PAYMENTS_SECRET_KEY}
+   secretKey: test-secret-key-for-test-only
 
 search:
   elasticsearch:

@@ -13,20 +13,13 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: false
         default_batch_fetch_size: 30
-  elasticsearch:
-    uris: ${ELASTIC_SEARCH_URL:http://localhost:9200}
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:dummy-google-client-id}
-            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-google-client-secret}
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
@@ -39,20 +32,15 @@ spring:
             user-name-attribute: id
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
       timeout: ${REDIS_TIMEOUT:2000ms}
   cache:
     type: redis
   batch:
     jdbc:
       initialize-schema: never
-
-# Elasticsearch 검색 기능 비활성화 (로컬 테스트용)
-search:
-  elasticsearch:
-    enabled: false
 
 logging:
   level:
@@ -73,13 +61,13 @@ cookie:
   
 # JWT 프로덕션 설정 (보안 강화)
 jwt:
-  secret: ${JWT_SECRET:homesweet-backend-super-secret-jwt-key-that-is-at-least-32-bytes-long-for-hs256}
+  secret: ${JWT_SECRET}  # 필수 환경 변수
   access-token-expiration: 1800000   # 30분 (프로덕션에서는 짧게)
   refresh-token-expiration: 604800000 # 7일
 
 payments:
   toss:
-    secretKey: ${TOSS_PAYMENTS_SECRET_KEY}
+    secretKey: ${TOSS_PAYMENTS_SECRET_KEY:example-secret-key}
 
 management:
   endpoints:

@@ -1,0 +1,25 @@
+package com.homesweet.homesweetback.domain.chat.dto.request;
+
+
+import com.homesweet.homesweetback.domain.chat.entity.enums.ChatRoomType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+public record CreateGroupRoomRequest (
+
+    @NotNull(message = "방 생성자는 필수입니다.")
+    Long ownerId,
+
+    @NotBlank(message = "방 이름은 필수입니다.")
+    String roomName,
+
+    @NotBlank(message = "방 이미지는  필수입니다.")
+    MultipartFile roomThumbnailUrl,
+
+    ChatRoomType roomType
+) {}

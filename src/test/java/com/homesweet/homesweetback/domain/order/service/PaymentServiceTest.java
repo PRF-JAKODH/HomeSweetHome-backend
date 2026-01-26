@@ -1,64 +1,33 @@
 package com.homesweet.homesweetback.domain.order.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
+import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
+import com.homesweet.homesweetback.domain.order.dto.request.OrderCancelRequest;
+import com.homesweet.homesweetback.domain.order.dto.request.PaymentConfirmRequest;
+import com.homesweet.homesweetback.domain.order.dto.response.PaymentConfirmResponse;
+import com.homesweet.homesweetback.domain.order.entity.*;
+import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
+import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
+import com.homesweet.homesweetback.domain.order.adapter.TossPaymentsAdapter;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 
-import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
-import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
-import com.homesweet.homesweetback.domain.auth.entity.User;
-import com.homesweet.homesweetback.domain.auth.entity.UserRole;
-import com.homesweet.homesweetback.domain.order.dto.PaymentResponse;
-import com.homesweet.homesweetback.domain.order.dto.TossPaymentCancelRequest;
-import com.homesweet.homesweetback.domain.order.dto.TossPaymentConfirmRequest;
-import com.homesweet.homesweetback.domain.order.entity.Order;
-import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
-import com.homesweet.homesweetback.domain.order.entity.Payment;
-import com.homesweet.homesweetback.domain.order.entity.PaymentStatus;
-import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
-import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
-import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARepository;
-import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-/**
- * PaymentService 단위 테스트
- * 
- * 테스트 케이스:
- * 1. 결제 승인 - 성공
- * 2. 결제 승인 - 실패 (주문 없음)
- * 3. 결제 승인 - 실패 (금액 불일치)
- * 4. 결제 승인 - 실패 (권한 없음)
- * 5. 결제 취소 - 성공
- * 6. 결제 취소 - 실패 (권한 없음)
- * 7. 결제 조회 - 성공
- * 8. 결제 조회 - 실패 (결제 없음)
- */
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
+
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("PaymentService 테스트")
 class PaymentServiceTest {
-
-    @Mock
-    private TossPaymentsService tossPaymentsService;
 
     @Mock
     private PaymentRepository paymentRepository;
@@ -67,277 +36,451 @@ class PaymentServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private CartJPARepository cartJPARepository;
+    private TossPaymentsAdapter tossPaymentsAdapter;
+
+    @Mock
+    private PaymentProcessor paymentProcessor;
+
+    @Mock
+    private RedisStockService redisStockService;
 
     @InjectMocks
-    private PaymentServiceImpl paymentService;
+    private PaymentService paymentService;
 
-    // ===== 테스트 데이터 생성 헬퍼 메서드 =====
+    @Test
+    @DisplayName("시나리오 1: 결제 성공")
+    void confirmPayment() {
+        //Given
+        Long userId = 1L;
+        String orderNumber = "ORD-UUID-12345";
+        Long amount = 23000L;
+        Long orderDbId = 1L;
 
-    private User createTestUser(Long userId) {
-        User user = User.builder()
-                .email("test@test.com")
-                .name("테스트유저")
-                .role(UserRole.USER)
+        PaymentConfirmRequest dto = new PaymentConfirmRequest("pk_test_12345", orderNumber, amount);
+
+        User fakeUser = User.builder().id(userId).build();
+        Order order = Order.builder()
+                .id(orderDbId)
+                .user(fakeUser)
+                .totalAmount(amount)
+                .orderStatus(OrderStatus.PENDING)
                 .build();
-        user.setId(userId);
-        return user;
+        doReturn(Optional.of(order)).when(orderRepository).findByOrderNumberWithItems(orderNumber);
+
+        Map<String, Object> tossResponse = Map.of("status", "DONE", "paymentKey", "pk_test_12345");
+        doReturn(tossResponse).when(tossPaymentsAdapter).confirmPaymentToToss(dto);
+
+        // [추가] paymentProcessor는 void 메서드이므로 doNothing (선택사항이나 명시적으로 좋음)
+        doNothing().when(paymentProcessor).processPaymentSuccessDB(any(Order.class), any(Map.class), eq(userId));
+
+        //When
+        PaymentConfirmResponse response = paymentService.confirmPayment(dto, userId);
+
+        //Then
+        //결과 검증
+        assertThat(response).isNotNull();
+        assertThat(response.orderId()).isEqualTo(orderDbId);
+
+        //행위 검증
+        verify(tossPaymentsAdapter, times(1)).confirmPaymentToToss(dto);
+        verify(paymentProcessor, times(1)).processPaymentSuccessDB(order, tossResponse, userId);
     }
 
-    private Order createTestOrder(Long orderId, User user, String orderNumber, Long amount) {
-        Order order = mock(Order.class);
-        given(order.getId()).willReturn(orderId);
-        given(order.getUser()).willReturn(user);
-        given(order.getOrderNumber()).willReturn(orderNumber);
-        given(order.getTotalAmount()).willReturn(amount);
-        given(order.isOwner(user.getId())).willReturn(true);
-        return order;
-    }
+    @Test
+    @DisplayName("시나리오 2: Toss API 결제 승인 실패 시, 실패 로직(processPaymentFailDB)을 호출한다.")
+    void confirmPayment_Fail_TossApiError() {
 
-    private Payment createTestPayment(Long paymentId, Order order, String paymentKey) {
-        return Payment.builder()
-                .id(paymentId)
-                .order(order)
-                .paymentKey(paymentKey)
-                .tossOrderId(order.getOrderNumber())
-                .status(PaymentStatus.DONE)
-                .amount(order.getTotalAmount())
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의 (시나리오 1과 유사)
+        Long userId = 1L;
+        String orderNumber = "ORD-UUID-12345";
+        Long amount = 23000L;
+        Long orderDbId = 1L;
+
+        // 2. 입력값 DTO 생성
+        PaymentConfirmRequest dto = new PaymentConfirmRequest("pk_test_12345", orderNumber, amount);
+
+        // 3. '가짜 엔티티' 생성
+        User fakeUser = User.builder().id(userId).build();
+        Order order = Order.builder()
+                .id(orderDbId)
+                .user(fakeUser)
+                .totalAmount(amount)
+                .orderStatus(OrderStatus.PENDING)
                 .build();
+
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
+        // (OrderRepository는 정상적으로 Order를 반환해야 함)
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
+
+        // 5. [핵심] Adapter가 RuntimeException을 "발생"시키도록 설정
+        // "tossPaymentsAdapter.confirmPaymentToToss(dto)가 호출되면,
+        //  RuntimeException을 발생(throw)시켜라."
+        given(tossPaymentsAdapter.confirmPaymentToToss(dto))
+                .willThrow(new RuntimeException("Toss API 통신 실패"));
+
+        // --- WHEN (실행) & THEN (결과) ---
+        // 1. "confirmPayment()를 실행할 때, RuntimeException이 발생하는 것을 기대한다."
+        assertThatThrownBy(() -> {
+            paymentService.confirmPayment(dto, userId);
+
+            // 2. '예외 타입' 검증
+        }).isInstanceOf(RuntimeException.class)
+                // 3. '예외 메시지' 검증
+                .hasMessageContaining("Toss API 통신 실패");
+
+
+        // 4. (가장 중요) '행위' 검증
+
+        // "tossPaymentsAdapter.confirmPaymentToToss는 '정확히 1번' 호출되었는가?"
+        verify(tossPaymentsAdapter, times(1)).confirmPaymentToToss(dto);
+
+        // "API가 실패했으니, processPaymentFailDB가 '정확히 1번' 호출되었는가?"
+        // (doNothing()으로 설정했기 때문에, 호출 여부만 검증 가능)
+        verify(paymentProcessor, times(1)).processPaymentFailDB(order);
+
+        // "API가 실패했으니, processPaymentSuccessDB는 '절대' 호출되지 않았는가?"
+        verify(paymentProcessor, never()).processPaymentSuccessDB(any(Order.class), any(Map.class), anyLong());
     }
 
-    // ===== 결제 승인 테스트 =====
+    @Test
+    @DisplayName("시나리오 3: DB의 주문 금액과 DTO의 결제 금액이 다르면 PaymentMismatchException이 발생한다.")
+    void confirmPayment_Fail_AmountMismatch() {
 
-    @Nested
-    @DisplayName("결제 승인 테스트")
-    class ConfirmPaymentTest {
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의
+        Long userId = 1L;
+        String orderNumber = "ORD-UUID-12345";
+        Long orderDbId = 1L;
 
-        @Test
-        @DisplayName("결제 승인 성공")
-        void confirmPayment_Success() {
-            // given
-            Long userId = 1L;
-            String orderNumber = "TEST-ORDER-001";
-            Long amount = 100000L;
-            String paymentKey = "test_payment_key_123";
+        // [핵심] DB에 저장된 금액과 DTO로 들어온 금액을 "다르게" 설정
+        Long dbAmount = 10000L; // DB에는 10000원으로 저장되어 있음
+        Long dtoAmount = 9000L;  // 해커가 9000원으로 위변조 시도
 
-            User user = createTestUser(userId);
-            Order order = createTestOrder(1L, user, orderNumber, amount);
+        // 2. 입력값 DTO 생성 (위변조된 '9000L' 사용)
+        PaymentConfirmRequest dto = new PaymentConfirmRequest("pk_test_12345", orderNumber, dtoAmount);
 
-            // OrderItem mock 설정
-            OrderItem orderItem = mock(OrderItem.class);
-            SkuEntity sku = mock(SkuEntity.class);
-            given(sku.getId()).willReturn(1L);
-            given(orderItem.getSku()).willReturn(sku);
-            given(order.getOrderItems()).willReturn(List.of(orderItem));
+        // 3. '가짜 엔티티' 생성 (DB 원본 '10000L' 사용)
+        User fakeUser = User.builder().id(userId).build();
+        Order order = Order.builder()
+                .id(orderDbId)
+                .user(fakeUser)
+                .totalAmount(dbAmount) // DB 원본 금액
+                .orderStatus(OrderStatus.PENDING)
+                .build();
 
-            TossPaymentConfirmRequest request = new TossPaymentConfirmRequest(paymentKey, orderNumber, amount);
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
+        // OrderRepository는 DB 원본(10000L)이 담긴 order를 정상 반환
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
 
-            // 토스 응답 mock
-            Map<String, Object> tossResponse = Map.of(
-                    "paymentKey", paymentKey,
-                    "orderId", orderNumber,
-                    "status", "DONE",
-                    "method", "카드",
-                    "requestedAt", "2026-01-21T10:00:00+09:00",
-                    "approvedAt", "2026-01-21T10:00:05+09:00"
-            );
+        // (이 테스트에서는 tossPaymentsAdapter나 다른 메서드가 호출되기 "전"에
+        //  실패해야 하므로, 다른 given() 대본은 필요 없습니다.)
 
-            given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
-            given(tossPaymentsService.confirmPayment(request)).willReturn(tossResponse);
-            given(paymentRepository.save(any(Payment.class))).willAnswer(inv -> inv.getArgument(0));
 
-            // when
-            PaymentResponse response = paymentService.confirmPayment(userId, request);
+        // --- WHEN (실행) & THEN (결과) ---
+        // 1. "confirmPayment()를 실행할 때 (금액이 다르므로),
+        //    PaymentMismatchException이 발생하는 것을 기대한다."
+        assertThatThrownBy(() -> {
+            paymentService.confirmPayment(dto, userId);
 
-            // then
-            assertThat(response).isNotNull();
-            verify(orderRepository, times(1)).findByOrderNumberWithItems(orderNumber);
-            verify(tossPaymentsService, times(1)).confirmPayment(request);
-            verify(paymentRepository, times(1)).save(any(Payment.class));
-            verify(order, times(1)).pay();
-        }
+            // 2. '예외 타입' 검증
+        }).isInstanceOf(PaymentMismatchException.class)
 
-        @Test
-        @DisplayName("결제 승인 실패 - 주문 없음")
-        void confirmPayment_Fail_OrderNotFound() {
-            // given
-            Long userId = 1L;
-            String orderNumber = "INVALID-ORDER";
-            TossPaymentConfirmRequest request = new TossPaymentConfirmRequest("key", orderNumber, 10000L);
+                // 3. '예외 메시지' 검증
+                .hasMessageContaining("결제 금액이 일치하지 않습니다");
 
-            given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.empty());
 
-            // when & then
-            assertThatThrownBy(() -> paymentService.confirmPayment(userId, request))
-                    .isInstanceOf(OrderNotFoundException.class)
-                    .hasMessageContaining("주문을 찾을 수 없습니다");
-        }
-
-        @Test
-        @DisplayName("결제 승인 실패 - 금액 불일치")
-        void confirmPayment_Fail_AmountMismatch() {
-            // given
-            Long userId = 1L;
-            String orderNumber = "TEST-ORDER-001";
-            User user = createTestUser(userId);
-            Order order = createTestOrder(1L, user, orderNumber, 100000L);
-
-            // 요청 금액이 주문 금액과 다름
-            TossPaymentConfirmRequest request = new TossPaymentConfirmRequest("key", orderNumber, 50000L);
-
-            given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
-
-            // when & then
-            assertThatThrownBy(() -> paymentService.confirmPayment(userId, request))
-                    .isInstanceOf(PaymentMismatchException.class)
-                    .hasMessageContaining("결제 금액이 주문 금액과 일치하지 않습니다");
-        }
-
-        @Test
-        @DisplayName("결제 승인 실패 - 권한 없음 (다른 사용자의 주문)")
-        void confirmPayment_Fail_NotOwner() {
-            // given
-            Long userId = 1L;
-            Long otherUserId = 2L;
-            String orderNumber = "TEST-ORDER-001";
-
-            User otherUser = createTestUser(otherUserId);
-            Order order = mock(Order.class);
-            given(order.getTotalAmount()).willReturn(100000L);
-            given(order.isOwner(userId)).willReturn(false);
-
-            TossPaymentConfirmRequest request = new TossPaymentConfirmRequest("key", orderNumber, 100000L);
-
-            given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.of(order));
-
-            // when & then
-            assertThatThrownBy(() -> paymentService.confirmPayment(userId, request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("본인의 주문만 결제할 수 있습니다");
-        }
+        // 4. (가장 중요) '행위' 검증
+        // [핵심] 검증(if) 단계에서 실패했으므로,
+        //      API 호출이나 DB 저장은 '절대' 호출되면 안 됨.
+        verify(tossPaymentsAdapter, never()).confirmPaymentToToss(any(PaymentConfirmRequest.class));
+        verify(paymentProcessor, never()).processPaymentSuccessDB(any(Order.class), any(Map.class), anyLong());
+        verify(paymentProcessor, never()).processPaymentFailDB(any(Order.class));
     }
 
-    // ===== 결제 취소 테스트 =====
+    @Test
+    @DisplayName("시나리오 B1: (환불) 완료된 주문 취소(cancelOrder)에 성공한다.")
+    void cancelOrder_Success() {
 
-    @Nested
-    @DisplayName("결제 취소 테스트")
-    class CancelPaymentTest {
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의
+        Long userId = 1L;
+        Long orderId = 1L;
+        String paymentKey = "pk_test_real_payment_key";
+        String cancelReason = "테스트 취소";
 
-        @Test
-        @DisplayName("결제 취소 성공")
-        void cancelPayment_Success() {
-            // given
-            Long userId = 1L;
-            String paymentKey = "test_payment_key_123";
+        // 2. DTO 생성
+        OrderCancelRequest dto = new OrderCancelRequest(cancelReason);
 
-            User user = createTestUser(userId);
-            Order order = createTestOrder(1L, user, "TEST-ORDER-001", 100000L);
-            Payment payment = createTestPayment(1L, order, paymentKey);
+        // 3. '가짜 엔티티' 생성
+        User fakeUser = User.builder().id(userId).build();
 
-            TossPaymentCancelRequest request = new TossPaymentCancelRequest("고객 요청", null);
+        // (조회될 '가짜' 결제 완료 건)
+        Payment fakePayment = Payment.builder()
+                .pgTransactionId(paymentKey) // 👈 [핵심] 토스 취소 API에 전달할 키
+                .build();
 
-            given(paymentRepository.findByPaymentKey(paymentKey)).willReturn(Optional.of(payment));
+        // (조회될 '가짜' 주문)
+        Order fakeOrder = Order.builder()
+                .id(orderId)
+                .user(fakeUser) // 👈 1L 유저 소유
+                .deliveryStatus(DeliveryStatus.DELIVERED) // 👈 "CANCELLED"가 아님 (검증 통과)
+                .build();
 
-            // when
-            PaymentResponse response = paymentService.cancelPayment(userId, paymentKey, request);
+        // (조회될 '가짜' 토스 응답)
+        Map<String, Object> tossCancelResponse = Map.of(
+                "status", "CANCELED"
+        );
 
-            // then
-            assertThat(response).isNotNull();
-            verify(tossPaymentsService, times(1)).cancelPayment(paymentKey, request);
-            verify(paymentRepository, times(1)).save(payment);
-        }
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
 
-        @Test
-        @DisplayName("결제 취소 실패 - 권한 없음")
-        void cancelPayment_Fail_NotOwner() {
-            // given
-            Long userId = 1L;
-            Long otherUserId = 2L;
-            String paymentKey = "test_payment_key_123";
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
 
-            User otherUser = createTestUser(otherUserId);
-            Order order = mock(Order.class);
-            given(order.isOwner(userId)).willReturn(false);
+        // "paymentRepository.findByOrder(fakeOrder)가 호출되면, fakePayment를 반환해라"
+        given(paymentRepository.findByOrder(fakeOrder)).willReturn(Optional.of(fakePayment));
 
-            Payment payment = Payment.builder()
-                    .order(order)
-                    .paymentKey(paymentKey)
-                    .build();
+        // [핵심] "tossPaymentsAdapter.cancelPaymentToToss가 호출되면, 가짜 취소 응답을 반환해라"
+        given(tossPaymentsAdapter.cancelPaymentToToss(paymentKey, cancelReason))
+                .willReturn(tossCancelResponse);
 
-            TossPaymentCancelRequest request = new TossPaymentCancelRequest("고객 요청", null);
+        // [핵심] "processPaymentCancelDB는 void 메서드이므로, 호출 시 아무것도 하지 않도록 설정"
+        doNothing().when(paymentProcessor).processPaymentCancelDB(any(Order.class), any(Payment.class), any(Map.class));
 
-            given(paymentRepository.findByPaymentKey(paymentKey)).willReturn(Optional.of(payment));
 
-            // when & then
-            assertThatThrownBy(() -> paymentService.cancelPayment(userId, paymentKey, request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("본인의 결제만 취소할 수 있습니다");
-        }
+        // --- WHEN (실행) ---
+        // '진짜' paymentService의 cancelOrder 메서드를 호출
+        paymentService.cancelOrder(orderId, userId, dto);
+
+
+        // --- THEN (결과) ---
+        // '행위(Behavior)' 검증
+
+        // "orderRepository.getByIdWithDetailsOrThrow가 '정확히 1번' 호출되었는가?"
+        verify(orderRepository, times(1)).getByIdWithDetailsOrThrow(orderId);
+
+        // "paymentRepository.findByOrder가 '정확히 1번' 호출되었는가?"
+        verify(paymentRepository, times(1)).findByOrder(fakeOrder);
+
+        // "tossPaymentsAdapter.cancelPaymentToToss가 '정확히 1번' 호출되었는가?"
+        verify(tossPaymentsAdapter, times(1)).cancelPaymentToToss(paymentKey, cancelReason);
+
+        // [핵심] "API 취소가 성공했으니, processPaymentCancelDB가 '정확히 1번' 호출되었는가?"
+        verify(paymentProcessor, times(1)).processPaymentCancelDB(fakeOrder, fakePayment, tossCancelResponse);
     }
 
-    // ===== 결제 조회 테스트 =====
+    @Test
+    @DisplayName("시나리오 B3: 타인의 주문을 취소하려고 하면 PaymentMismatchException이 발생한다.")
+    void cancelOrder_Fail_AccessDenied() {
 
-    @Nested
-    @DisplayName("결제 조회 테스트")
-    class GetPaymentTest {
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의
+        Long orderId = 1L;
+        Long orderOwnerUserId = 100L;
+        Long attackerUserId = 999L;
 
-        @Test
-        @DisplayName("결제 조회 성공")
-        void getPayment_Success() {
-            // given
-            Long userId = 1L;
-            String paymentKey = "test_payment_key_123";
+        // 2. DTO 생성 (내용은 이 테스트에서 중요하지 않음)
+        OrderCancelRequest dto = new OrderCancelRequest("타인 주문 취소 시도");
 
-            User user = createTestUser(userId);
-            Order order = createTestOrder(1L, user, "TEST-ORDER-001", 100000L);
-            Payment payment = createTestPayment(1L, order, paymentKey);
+        // 3. '가짜 엔티티' 생성
+        User fakeOrderOwner = User.builder().id(orderOwnerUserId).build(); // 100번 유저
 
-            given(paymentRepository.findByPaymentKey(paymentKey)).willReturn(Optional.of(payment));
+        Order fakeOrder = Order.builder()
+                .id(orderId)
+                .user(fakeOrderOwner) // 👈 주문은 100번 유저 소유
+                .deliveryStatus(DeliveryStatus.DELIVERED) // (중복 취소 검증은 통과하도록)
+                .build();
 
-            // when
-            PaymentResponse response = paymentService.getPayment(userId, paymentKey);
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
 
-            // then
-            assertThat(response).isNotNull();
-            verify(paymentRepository, times(1)).findByPaymentKey(paymentKey);
-        }
+        // "orderRepository.findByIdWithDetails(1L)가 호출되면,
+        //  '100번 유저'가 주인인 fakeOrder를 정상 반환해라."
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
 
-        @Test
-        @DisplayName("결제 조회 실패 - 결제 없음")
-        void getPayment_Fail_NotFound() {
-            // given
-            Long userId = 1L;
-            String paymentKey = "invalid_key";
 
-            given(paymentRepository.findByPaymentKey(paymentKey)).willReturn(Optional.empty());
+        // --- WHEN (실행) & THEN (결과) ---
+        // [핵심] "999번 유저(공격자)가 1번 주문(100번 유저 소유) 취소를 시도할 때,
+        //        PaymentMismatchException이 발생하는 것을 기대한다."
+        assertThatThrownBy(() -> {
+            // [WHEN] 999L (attackerUserId)로 메서드 호출
+            paymentService.cancelOrder(orderId, attackerUserId, dto);
 
-            // when & then
-            assertThatThrownBy(() -> paymentService.getPayment(userId, paymentKey))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("결제 정보를 찾을 수 없습니다");
-        }
+            // [THEN 1] '예외 타입' 검증
+        }).isInstanceOf(PaymentMismatchException.class)
 
-        @Test
-        @DisplayName("결제 조회 실패 - 권한 없음")
-        void getPayment_Fail_NotOwner() {
-            // given
-            Long userId = 1L;
-            String paymentKey = "test_payment_key_123";
+                // [THEN 2] (선택) '예외 메시지' 검증
+                .hasMessageContaining("주문자 정보가 일치하지 않습니다.");
 
-            Order order = mock(Order.class);
-            given(order.isOwner(userId)).willReturn(false);
 
-            Payment payment = Payment.builder()
-                    .order(order)
-                    .paymentKey(paymentKey)
-                    .build();
-
-            given(paymentRepository.findByPaymentKey(paymentKey)).willReturn(Optional.of(payment));
-
-            // when & then
-            assertThatThrownBy(() -> paymentService.getPayment(userId, paymentKey))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("본인의 결제만 조회할 수 있습니다");
-        }
+        // [THEN 3] (가장 중요) '행위' 검증
+        // [핵심] 보안 검증(if) 단계에서 실패했으므로,
+        //      API 호출이나 DB 저장은 '절대' 호출되면 안 됨.
+        verify(paymentRepository, never()).findByOrder(any(Order.class));
+        verify(tossPaymentsAdapter, never()).cancelPaymentToToss(anyString(), anyString());
+        verify(paymentProcessor, never()).processPaymentCancelDB(any(Order.class), any(Payment.class), any(Map.class));
     }
+
+    @Test
+    @DisplayName("시나리오 B4: 이미 취소된 주문을 중복 취소하면 RuntimeException이 발생한다.")
+    void cancelOrder_Fail_AlreadyCanceled() {
+
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의
+        Long orderId = 1L;
+        Long userId = 1L;
+
+        // 2. DTO 생성 (내용은 중요하지 않음)
+        OrderCancelRequest dto = new OrderCancelRequest("중복 취소 시도");
+
+        // 3. '가짜 엔티티' 생성
+        User fakeUser = User.builder().id(userId).build();
+
+        // [핵심] 'deliveryStatus'가 이미 CANCELLED 상태인 '가짜 주문'
+        Order fakeOrder = Order.builder()
+                .id(orderId)
+                .user(fakeUser) // 👈 1L 유저 소유 (사용자 검증은 통과)
+                .deliveryStatus(DeliveryStatus.CANCELLED) // 👈 [핵심] 이미 취소된 상태
+                .build();
+
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
+
+        // "orderRepository.findByIdWithDetails(1L)가 호출되면,
+        //  '이미 취소된' fakeOrder를 정상 반환해라."
+//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
+
+        // (이 테스트는 paymentRepository, tossPaymentsAdapter 등이 호출되기 "전"에
+        //  실패해야 하므로, 다른 GIVEN 대본은 필요 없습니다.)
+
+
+        // --- WHEN (실행) & THEN (결과) ---
+        // [핵심] "이미 취소된 주문(orderId=1L) 취소를 시도할 때,
+        //        RuntimeException이 발생하는 것을 기대한다."
+        assertThatThrownBy(() -> {
+            // [WHEN] 메서드 호출
+            paymentService.cancelOrder(orderId, userId, dto);
+
+            // [THEN 1] '예외 타입' 검증
+        }).isInstanceOf(RuntimeException.class) // (커스텀 예외가 있다면 그것으로 변경)
+
+                // [THEN 2] (선택) '예외 메시지' 검증
+                .hasMessageContaining("이미 취소된 주문입니다");
+
+
+        // [THEN 3] (가장 중요) '행위' 검증
+        // [핵심] 상태 검증(if) 단계에서 실패했으므로,
+        //      API 호출이나 DB 저장은 '절대' 호출되면 안 됨.
+        verify(paymentRepository, never()).findByOrder(any(Order.class));
+        verify(tossPaymentsAdapter, never()).cancelPaymentToToss(anyString(), anyString());
+        verify(paymentProcessor, never()).processPaymentCancelDB(any(Order.class), any(Payment.class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("시나리오 B5: Toss API 환불(취소) 실패 시, DB 작업을 롤백하고 예외를 던진다.")
+    void cancelOrder_Fail_TossApiError() {
+
+        // --- GIVEN (주어진 것) ---
+        // 1. 상수 정의
+        Long orderId = 1L;
+        Long userId = 1L;
+        String paymentKey = "pk_test_real_payment_key";
+        String cancelReason = "API 실패 테스트";
+
+        // 2. DTO 생성
+        OrderCancelRequest dto = new OrderCancelRequest(cancelReason);
+
+        // 3. '가짜 엔티티' 생성 (모두 정상)
+        User fakeUser = User.builder().id(userId).build();
+        Payment fakePayment = Payment.builder()
+                .pgTransactionId(paymentKey)
+                .build();
+        Order fakeOrder = Order.builder()
+                .id(orderId)
+                .user(fakeUser)
+                .deliveryStatus(DeliveryStatus.DELIVERED) // 👈 상태 검증 통과
+                .build();
+
+        // 4. 'Mock' Repository 행동 정의 (Stubbing)
+
+        // (정상) 주문 및 결제 정보 조회 성공
+//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
+        doReturn(fakeOrder).when(orderRepository).getByIdWithDetailsOrThrow(orderId);
+
+        given(paymentRepository.findByOrder(fakeOrder)).willReturn(Optional.of(fakePayment));
+
+        // [핵심] "tossPaymentsAdapter.cancelPaymentToToss가 호출되면,
+        //      RuntimeException을 강제로 발생(throw)시켜라."
+        given(tossPaymentsAdapter.cancelPaymentToToss(paymentKey, cancelReason))
+                .willThrow(new RuntimeException("Toss API 환불 실패"));
+
+        // (processPaymentCancelDB는 호출되지 않아야 하므로 GIVEN 대본이 필요 없음)
+
+
+        // --- WHEN (실행) & THEN (결과) ---
+        // 1. "cancelOrder()를 실행할 때 (Toss API가 실패하므로),
+        //    RuntimeException이 발생하는 것을 기대한다."
+        assertThatThrownBy(() -> {
+            // [WHEN] 메서드 호출
+            paymentService.cancelOrder(orderId, userId, dto);
+
+            // [THEN 1] '예외 타입' 검증
+        }).isInstanceOf(RuntimeException.class)
+
+                // [THEN 2] '예외 메시지' 검증
+          .hasMessageContaining("결제 취소 API 호출에 실패했습니다"); // 👈 PaymentService가 감싸서 던진 예외
+
+        // [THEN 3] (가장 중요) '행위' 검증
+
+        // "tossPaymentsAdapter는 '정확히 1번' 호출되었는가?" (호출 시도 자체는 했음)
+        verify(tossPaymentsAdapter, times(1)).cancelPaymentToToss(paymentKey, cancelReason);
+
+        // [핵심] "API가 실패했으니, DB 롤백(재고 복구) 로직은 '절대' 호출되면 안 됨."
+        verify(paymentProcessor, never()).processPaymentCancelDB(any(Order.class), any(Payment.class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("시나리오: DB에 주문이 없어도 Redis 캐시에서 조회하여 결제 승인을 진행한다.")
+    void confirmPayment_Success_FromRedisCache() {
+        // --- GIVEN ---
+        Long userId = 1L;
+        String orderNumber = "ORD-REDIS-TEST";
+        Long amount = 20000L;
+        PaymentConfirmRequest dto = new PaymentConfirmRequest("pk_test", orderNumber, amount);
+
+        // 1. DB 조회 실패 설정 (null 반환)
+        // (Service 코드가 .orElse(null)을 쓰므로 Optional.empty()를 리턴하면 null이 됨)
+        given(orderRepository.findByOrderNumberWithItems(orderNumber)).willReturn(Optional.empty());
+
+        // 2. Redis 캐시 조회 성공 설정
+        // (PendingOrder DTO 생성 -> Entity 변환 로직 검증)
+        PendingOrder cachedOrder = new PendingOrder(
+                userId, orderNumber, amount, List.of(),
+                "테스터", "010-1234-5678", "서울", "문앞"
+        );
+        given(redisStockService.getCachedOrder(orderNumber)).willReturn(cachedOrder);
+
+        // 3. Toss Adapter 성공 설정
+        Map<String, Object> tossResponse = Map.of("status", "DONE", "paymentKey", "pk_test");
+        given(tossPaymentsAdapter.confirmPaymentToToss(dto)).willReturn(tossResponse);
+
+        // 4. Processor 호출 설정
+        doNothing().when(paymentProcessor).processPaymentSuccessDB(any(Order.class), any(Map.class), eq(userId));
+
+
+        // --- WHEN ---
+        PaymentConfirmResponse response = paymentService.confirmPayment(dto, userId);
+
+
+        // --- THEN ---
+        assertThat(response).isNotNull();
+
+        // 1. DB 조회는 했으나 실패했음
+        verify(orderRepository, times(1)).findByOrderNumberWithItems(orderNumber);
+
+        // 2. [핵심] Redis 조회를 수행했음
+        verify(redisStockService, times(1)).getCachedOrder(orderNumber);
+
+        // 3. 정상적으로 결제 승인까지 이어짐
+        verify(paymentProcessor, times(1)).processPaymentSuccessDB(any(Order.class), eq(tossResponse), eq(userId));
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.homesweet.homesweetback.domain.auth.dto;
 
+import com.homesweet.homesweetback.domain.grade.entity.Grade;
 import com.homesweet.homesweetback.domain.auth.entity.User;
 import com.homesweet.homesweetback.domain.auth.entity.UserRole;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ public record UserResponse(
     String email,
     String name,
     String profileImageUrl,
+    Grade grade,
     UserRole role,
     String phoneNumber,
     LocalDate birthDate,
@@ -23,6 +25,7 @@ public record UserResponse(
             user.getEmail(),
             user.getName(),
             user.getProfileImageUrl(),
+            user.getGradeOptional().orElse(null), // Optional 패턴 활용
             user.getRole(),
             user.getPhoneNumber(),
             user.getBirthDate(),
