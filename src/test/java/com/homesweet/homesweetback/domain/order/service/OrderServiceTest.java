@@ -1,565 +1,316 @@
-//package com.homesweet.homesweetback.domain.order.service;
-//
-//import com.homesweet.homesweetback.common.exception.PaymentMismatchException;
-//import com.homesweet.homesweetback.domain.auth.entity.User;
-//import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
-//import com.homesweet.homesweetback.domain.order.dto.internal.PendingOrder;
-//import com.homesweet.homesweetback.domain.order.dto.request.CreateOrderRequest;
-//import com.homesweet.homesweetback.domain.order.dto.response.OrderDetailResponse;
-//import com.homesweet.homesweetback.domain.order.dto.response.OrderReadyResponse;
-//import com.homesweet.homesweetback.domain.order.entity.DeliveryStatus;
-//import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
-//import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
-//import com.homesweet.homesweetback.domain.order.repository.PaymentRepository;
-//import com.homesweet.homesweetback.domain.product.product.command.domain.ProductStatus;
-//import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.SkuJPARepository;
-//import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.ProductJPARepository;
-//import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
-//import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
-//import com.homesweet.homesweetback.domain.order.entity.Order;
-//import com.homesweet.homesweetback.domain.order.entity.OrderItem;
-//import jakarta.persistence.EntityNotFoundException;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import static org.assertj.core.api.Assertions.*;
-//
-//import java.math.BigDecimal;
-//import java.time.LocalDateTime;
-//import java.util.List;
-//import java.util.Optional;
-//
-//import static org.mockito.BDDMockito.*;
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.Mockito.times;
-//import static org.mockito.Mockito.verify;
-//import static org.mockito.Mockito.never;
-//
-//@ExtendWith(MockitoExtension.class)
-//class OrderServiceTest{
-//
-//    @Mock
-//    private OrderRepository orderRepository;
-//
-//    @Mock
-//    private UserRepository userRepository;
-//
-//    @Mock
-//    private SkuJPARepository skuJPARepository;
-//
-//    @Mock
-//    private PaymentRepository paymentRepository;
-//
-//    @Mock
-//    private ProductJPARepository productJPARepository;
-//
-//    @Mock
-//    private RedisStockService redisStockService;
-//
-//    @InjectMocks
-//    private OrderService orderService;
-//
-//    @Test
-//    @DisplayName("시나리오 1: 단일 상품(옵션가, 배송비 포함) 주문 생성에 성공한다.")
-//    void createOrder_Success_WithSingleItem() {
-//        //Given
-//        Long userId = 1L;
-//        Long skuId = 100L;
-//        int quantity = 2;
-//        long expectedDiscountedPrice = 10000L;
-//        long expectedShippingPrice = 3000L;
-//        long expectedTotalAmount = (expectedDiscountedPrice * quantity) + expectedShippingPrice;
-//
-//        CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, quantity);
-//
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest),
-//                "홍길동",         // recipientName
-//                "010-1234-5678",  // recipientPhone
-//                "서울시 강남구",    // shippingAddress
-//                "문 앞에 놔주세요"   // shippingRequest
-//        );
-//
-//        User fakeUser = User.builder()
-//                .id(userId)
-//                .name("테스트유저")
-//                .build();
-//
-//        ProductEntity fakeProduct = ProductEntity.builder()
-//                .id(10L)
-//                .basePrice(10000)
-//                .discountRate(new BigDecimal("10.00"))
-//                .shippingPrice(3000)
-//                .status(ProductStatus.ON_SALE)
-//                .build();
-//
-//        SkuEntity fakeSku = SkuEntity.builder()
-//                .id(skuId)
-//                .priceAdjustment(1000)
-//                .product(fakeProduct)
-//                .stockQuantity(100L)
-//                .build();
-//
-//        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-//        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku));
-//
-//        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
-//        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
-//        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
-//
-//        // WHEN
-//        OrderReadyResponse response = orderService.createOrder(dto, userId);
-//
-//        // THEN
-//        // 결과 검증
-//        assertThat(response).isNotNull();
-//        assertThat(response.totalShippingPrice()).isEqualTo(expectedShippingPrice);
-//        assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
-//
-//        //행위 검증(가짜 Repository 올바르게 호출했는지 검증)
-//        verify(orderRepository, never()).save(any(Order.class));
-//        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
-//        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 2: 동일 상품의 다른 옵션을 주문해도 배송비가 한 번만 부과된다.")
-//    void createOrder_Success_WithMultipleItems() {
-//        // Given
-//        Long userId = 1L;
-//        Long productId = 10L;
-//        Long skuId_S = 100L;
-//        Long skuId_M = 101L;
-//
-//        long expectedDiscountedPrice = 9000L;
-//        long expectedShippingPrice = 3000L;
-//
-//        long expectedTotalAmount = (expectedDiscountedPrice) + (expectedDiscountedPrice) + expectedShippingPrice;
-//
-//        CreateOrderRequest.OrderItemRequest itemRequest1 = new CreateOrderRequest.OrderItemRequest(skuId_S, 1);
-//        CreateOrderRequest.OrderItemRequest itemRequest2 = new CreateOrderRequest.OrderItemRequest(skuId_M, 1);
-//
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest1, itemRequest2),
-//                "홍길동",         // recipientName
-//                "010-1234-5678",  // recipientPhone
-//                "서울시 강남구",    // shippingAddress
-//                "문 앞에 놔주세요"   // shippingRequest
-//        );
-//
-//        User fakeUser = User.builder().id(userId).build();
-//
-//        ProductEntity fakeProduct = ProductEntity.builder()
-//                .id(productId)
-//                .basePrice(10000)
-//                .discountRate(new BigDecimal("10.00"))
-//                .shippingPrice(3000)
-//                .status(ProductStatus.ON_SALE)
-//                .build();
-//
-//        SkuEntity fakeSku_S = SkuEntity.builder()
-//                .id(skuId_S)
-//                .priceAdjustment(0)
-//                .product(fakeProduct)
-//                .stockQuantity(100L)
-//                .build();
-//
-//        SkuEntity fakeSku_M = SkuEntity.builder()
-//                .id(skuId_M)
-//                .priceAdjustment(0)
-//                .product(fakeProduct)
-//                .stockQuantity(100L)
-//                .build();
-//
-//        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-//        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku_S, fakeSku_M));
-//
-//        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong()); // 또는 decreaseStockWithStatusCheck
-//        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
-//        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
-//
-//        // WHEN
-//        OrderReadyResponse response = orderService.createOrder(dto, userId);
-//
-//        // THEN
-//        assertThat(response).isNotNull();
-//
-//        assertThat(response.totalShippingPrice()).isEqualTo(expectedShippingPrice);
-//
-//        assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
-//
-//        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
-//        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
-//        verify(skuJPARepository, times(1)).findAllById(any());
-//        verify(orderRepository, never()).save(any(Order.class));
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 3: 서로 다른 상품을 주문하면 배송비가 정상적으로 합산된다.")
-//    void createOrder_Success_ShippingFeeAddition(){
-//        // --- GIVEN (주어진 것) ---
-//        // 1. 상수 정의
-//        Long userId = 1L;
-//
-//        // 상품 A (배송비 3000원)
-//        Long skuId_A = 100L;
-//        Long productId_A = 10L;
-//        long price_A = 9000L; // (할인 적용됨)
-//        long shipping_A = 3000L;
-//
-//        // 상품 B (배송비 2500원)
-//        Long skuId_B = 200L;
-//        Long productId_B = 20L;
-//        long price_B = 5000L; // (할인 없음)
-//        long shipping_B = 2500L;
-//
-//        // [핵심] 기대 배송비 = 3000원 + 2500원 = 5500원
-//        long expectedShippingPrice = shipping_A + shipping_B;
-//
-//        // [핵심] 기대 총액 = 9000원 + 5000원 + 5500원
-//        long expectedTotalAmount = price_A + price_B + expectedShippingPrice; // 19,500L
-//
-//        // 2. '입력값' DTO 생성 (항목 2개)
-//        CreateOrderRequest.OrderItemRequest itemRequest1 = new CreateOrderRequest.OrderItemRequest(skuId_A, 1);
-//        CreateOrderRequest.OrderItemRequest itemRequest2 = new CreateOrderRequest.OrderItemRequest(skuId_B, 1);
-//
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest1, itemRequest2),
-//                "홍길동",         // recipientName
-//                "010-1234-5678",  // recipientPhone
-//                "서울시 강남구",    // shippingAddress
-//                "문 앞에 놔주세요"   // shippingRequest
-//        );
-//
-//        // 3. '가짜 엔티티' 생성
-//        User fakeUser = User.builder().id(userId).build();
-//
-//        // [핵심] 서로 다른 2개의 가짜 상품
-//        ProductEntity fakeProduct_A = ProductEntity.builder()
-//                .id(productId_A)
-//                .basePrice(10000)
-//                .discountRate(new BigDecimal("10.00")) // 10% 할인
-//                .shippingPrice((int)shipping_A) // 3000원
-//                .status(ProductStatus.ON_SALE)
-//                .build();
-//
-//        SkuEntity fakeSku_A = SkuEntity.builder()
-//                .id(skuId_A)
-//                .priceAdjustment(0)
-//                .stockQuantity(100L)
-//                .product(fakeProduct_A)
-//                .build();
-//
-//        ProductEntity fakeProduct_B = ProductEntity.builder()
-//                .id(productId_B)
-//                .basePrice(5000)
-//                .discountRate(BigDecimal.ZERO) // 할인 없음
-//                .shippingPrice((int)shipping_B) // 2500원
-//                .status(ProductStatus.ON_SALE)
-//                .build();
-//
-//        SkuEntity fakeSku_B = SkuEntity.builder()
-//                .id(skuId_B)
-//                .priceAdjustment(0)
-//                .stockQuantity(100L)
-//                .product(fakeProduct_B)
-//                .build();
-//
-//        // 4. 'Mock' Repository의 행동 정의 (Stubbing)
-//        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-//
-//        // [핵심] 2개의 SKU 조회에 각각 다른 상품/SKU를 반환
-//        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku_A, fakeSku_B));
-//
-//        doNothing().when(redisStockService).decreaseStock(anyLong(), anyLong());
-//        doNothing().when(redisStockService).pushPendingOrder(any(PendingOrder.class));
-//        doNothing().when(redisStockService).cacheOrder(any(PendingOrder.class));
-//
-//
-//        // --- WHEN (실행) ---
-//        OrderReadyResponse response = orderService.createOrder(dto, userId);
-//
-//
-//        // --- THEN (결과) ---
-//        // 1. '결과값' 검증
-//        assertThat(response).isNotNull();
-//
-//        // [핵심 검증] 총 배송비가 5,500원인지?
-//        assertThat(response.totalShippingPrice()).isEqualTo(expectedShippingPrice);
-//
-//        // 총 금액이 19,500원이 맞는지?
-//        assertThat(response.totalAmount()).isEqualTo(expectedTotalAmount);
-//
-//        // 2. '행위' 검증
-//        verify(skuJPARepository, times(1)).findAllById(any());
-//        verify(orderRepository, never()).save(any(Order.class));
-//        verify(redisStockService, times(1)).pushPendingOrder(any(PendingOrder.class));
-//        verify(redisStockService, times(1)).cacheOrder(any(PendingOrder.class));
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 4: 존재하지 않는 SKU ID로 주문하면 EntityNotFoundException이 발생한다.")
-//    void createOrder_Fail_SkuNotFound() {
-//
-//        // --- GIVEN (주어진 것) ---
-//        // 1. 상수 정의
-//        Long userId = 1L;
-//        Long nonExistingSkuId = 999L; // [핵심] 존재하지 않는 SKU ID
-//
-//        // 2. '입력값' DTO 생성
-//        CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(nonExistingSkuId, 1);
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest),
-//                "테스트수령인",
-//                "010-0000-0000",
-//                "테스트주소",
-//                "요청사항"
-//        );
-//
-//        // 3. '가짜 엔티티' 생성 (User는 필요함)
-//        User fakeUser = User.builder().id(userId).build();
-//
-//        // 4. 'Mock' Repository의 행동 정의 (Stubbing)
-//
-//        // userRepository는 정상적으로 User를 반환
-//        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-//
-//        given(skuJPARepository.findAllById(any())).willReturn(List.of());
-//
-//        // --- WHEN (실행) & THEN (결과) ---
-//        //  "orderService.createOrder()를 실행할 때, EntityNotFoundException이 발생하는 것을 기대(assert)한다."
-//        assertThatThrownBy(() -> {
-//            orderService.createOrder(dto, userId);
-//
-//            // 1. '예외 타입' 검증1
-//        }).isInstanceOf(EntityNotFoundException.class)
-//
-//                // 2. (선택) '예외 메시지' 검증
-//                .hasMessageContaining("일부 상품을 찾을 수 없습니다.");
-//
-//
-//        // 3. (가장 중요) '행위' 검증
-//        // [핵심] 예외가 발생했으므로, 'save'는 절대(never) 호출되면 안 됨.
-//        verify(orderRepository, never()).save(any(Order.class));
-//        verify(redisStockService, never()).pushPendingOrder(any(PendingOrder.class));
-//        verify(redisStockService, never()).cacheOrder(any(PendingOrder.class));
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 5: 존재하지 않는 User ID로 주문하면 EntityNotFoundException이 발생한다.")
-//    void createOrder_Fail_UserNotFound() {
-//
-//        // --- GIVEN (주어진 것) ---
-//        // 1. 상수 정의
-//        Long nonExistingUserId = 999L; // [핵심] 존재하지 않는 User ID
-//        Long skuId = 100L; // (어차피 이 SKU는 조회되기 전에 실패할 것임)
-//
-//        // 2. '입력값' DTO 생성
-//        CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, 1);
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest),
-//                "테스트수령인",
-//                "010-0000-0000",
-//                "테스트주소",
-//                "요청사항"
-//        );
-//
-//        // 3. '가짜 엔티티' 생성 (필요 없음)
-//
-//        // 4. 'Mock' Repository의 행동 정의 (Stubbing)
-//
-//        // [핵심] userRepository.findById(999L)가 호출되면 '빈 Optional'을 반환
-//        given(userRepository.findById(nonExistingUserId)).willReturn(Optional.empty());
-//
-//
-//        // --- WHEN (실행) & THEN (결과) ---
-//        // "orderService.createOrder()를 실행할 때,
-//        //  EntityNotFoundException이 발생하는 것을 기대(assert)한다."
-//        assertThatThrownBy(() -> {
-//            orderService.createOrder(dto, nonExistingUserId);
-//
-//            // 1. '예외 타입' 검증
-//        }).isInstanceOf(EntityNotFoundException.class)
-//
-//                // 2. (선택) '예외 메시지' 검증
-//                .hasMessageContaining("사용자를 찾을 수 없습니다");
-//
-//
-//        // 3. (가장 중요) '행위' 검증
-//        // [핵심] UserService는 첫 단계에서 실패했으므로,
-//        //      'sku' 조회나 'order' 저장은 '절대' 호출되면 안 됨.
-//        verify(skuJPARepository, never()).findById(anyLong());
-//        verify(orderRepository, never()).save(any(Order.class));
-//        verify(redisStockService, never()).pushPendingOrder(any(PendingOrder.class));
-//        verify(redisStockService, never()).cacheOrder(any(PendingOrder.class));
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 6: 타인의 주문 상세 정보를 조회하면 PaymentMismatchException이 발생한다.")
-//    void getOrderDetail_Fail_AccessDenied() {
-//
-//        // --- GIVEN (주어진 것) ---
-//        // 1. 상수 정의
-//        Long orderId = 1L;
-//        Long orderOwnerUserId = 100L; // 👈 주문의 실제 주인
-//        Long attackerUserId = 999L;   // 👈 [핵심] 주문 조회를 시도하는 사람 (해커)
-//
-//        // 2. '가짜 엔티티' 생성
-//        User fakeOrderOwner = User.builder().id(orderOwnerUserId).build();
-//
-//        Order fakeOrder = Order.builder()
-//                .id(orderId)
-//                .user(fakeOrderOwner) // 👈 이 주문은 100번 유저 소유
-//                .totalAmount(50000L) // (아무 값)
-//                // (다른 필드는 검증에 필요 없으므로 생략)
-//                .build();
-//
-//        // 3. 'Mock'
-//        // Repository의 행동 정의 (Stubbing)
-//
-//        // [핵심] orderRepository.findByIdWithDetails(1L)가 호출되면,
-//        //      '100번 유저'가 주인인 fakeOrder를 반환하도록 설정
-//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
-//
-//        // --- WHEN (실행) & THEN (결과) ---
-//        // [핵심] "999번 유저(해커)가 1번 주문(100번 유저 소유) 조회를 시도할 때,
-//        //        PaymentMismatchException이 발생하는 것을 기대한다."
-//        assertThatThrownBy(() -> {
-//            orderService.getOrderDetail(orderId, attackerUserId); // 👈 999L로 호출
-//
-//            // 1. '예외 타입' 검증
-//        }).isInstanceOf(PaymentMismatchException.class)
-//
-//                // 2. '예외 메시지' 검증
-//                .hasMessageContaining("주문자 정보가 일치하지 않습니다.");
-//
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 7: getOrderDetail 조회 시, 동일 상품의 여러 옵션 배송비가 한 번만 계산된다.")
-//    void getOrderDetail_Success_ShippingFeeDeduplication() {
-//
-//        // --- GIVEN (주어진 것) ---
-//        // 1. 상수 정의
-//        Long userId = 100L;
-//        Long orderId = 1L;
-//        Long productId = 10L; // [핵심] 동일한 상품 ID
-//
-//        long expectedShippingPrice = 3000L; // [핵심] 3000원 (6000원이 아님)
-//
-//        // 2. '가짜 엔티티' 생성
-//        User fakeUser = User.builder().id(userId).build();
-//
-//        User fakeSeller = User.builder().id(500L).name("테스트판매자").build();
-//
-//        // [핵심] 2개의 SKU가 공유할 '하나의' 가짜 상품
-//        ProductEntity fakeProduct = ProductEntity.builder()
-//                .id(productId)
-//                .shippingPrice(3000) // 배송비 3000원
-//                .seller(fakeSeller)
-//                .build();
-//
-//        SkuEntity fakeSku_S = SkuEntity.builder().id(100L).product(fakeProduct).build();
-//        SkuEntity fakeSku_M = SkuEntity.builder().id(101L).product(fakeProduct).build();
-//
-//        // [핵심] 2개의 OrderItem 생성
-//        OrderItem item1_S = OrderItem.builder().id(1L).sku(fakeSku_S).price(10000L).quantity(1L).build();
-//        OrderItem item2_M = OrderItem.builder().id(2L).sku(fakeSku_M).price(10000L).quantity(1L).build();
-//
-//        // [핵심] 2개의 OrderItem을 포함하는 '가짜 주문'
-//        Order fakeOrder = Order.builder()
-//                .id(orderId)
-//                .user(fakeUser) // 주문 주인
-//                .orderItems(List.of(item1_S, item2_M)) // 👈 [중요] S, M 옵션 2개 포함
-//                .orderedAt(LocalDateTime.now())
-//                .orderStatus(OrderStatus.PENDING)
-//                .deliveryStatus(DeliveryStatus.BEFORE_SHIPMENT)
-//                .build();
-//
-//        // (OrderItem의 양방향 연관관계 설정 - 실제 코드에서는 addOrderItem이 처리함)
-//        item1_S.setOrder(fakeOrder);
-//        item2_M.setOrder(fakeOrder);
-//
-//
-//        // 3. 'Mock' Repository의 행동 정의 (Stubbing)
-//
-//        // [핵심] orderRepository가 S, M 옵션이 포함된 fakeOrder를 반환
-//        given(orderRepository.findByIdWithDetails(orderId)).willReturn(Optional.of(fakeOrder));
-//
-//        // paymentRepository는 빈 값을 반환 (결제 전)
-//        given(paymentRepository.findByOrder(fakeOrder)).willReturn(Optional.empty());
-//
-//        // (OrderDetailResponse.of()는 static DTO 헬퍼이므로 Mocking하지 않고,
-//        //  실제 반환된 DTO의 값을 검증합니다.
-//        //  이 테스트를 위해 OrderDetailResponse.java에 'totalShippingPrice' 필드와 getter가 필요합니다.)
-//
-//
-//        // --- WHEN (실행) ---
-//        // '진짜' getOrderDetail 메서드를 호출
-//        OrderDetailResponse response = orderService.getOrderDetail(orderId, userId);
-//
-//
-//        // --- THEN (결과) ---
-//        // 1. '결과값(Response)' 검증
-//        assertThat(response).isNotNull();
-//
-//        // [가장 중요]
-//        // OrderService.getOrderDetail 내부의 stream().distinct() 로직이
-//        // 중복을 제거하여 3000원을 계산했는지 검증합니다.
-//        // (이 테스트를 위해 OrderDetailResponse에 totalShippingPrice 필드와 getter가 있다고 가정)
-//        assertThat(response.totalShippingPrice()).isEqualTo((int)expectedShippingPrice);
-//
-//        // 2. '행위' 검증
-//        verify(orderRepository, times(1)).findByIdWithDetails(orderId);
-//    }
-//
-//    @Test
-//    @DisplayName("시나리오 8: 판매 중인 상품(ON_SALE)이 아니면 주문 생성에 실패한다.")
-//    void createOrder_Fail_ProductNotOnSale() {
-//
-//        // --- GIVEN ---
-//        Long userId = 1L;
-//        Long skuId = 100L;
-//
-//        // DTO 생성
-//        CreateOrderRequest.OrderItemRequest itemRequest = new CreateOrderRequest.OrderItemRequest(skuId, 1);
-//        CreateOrderRequest dto = new CreateOrderRequest(
-//                List.of(itemRequest),
-//                "테스트수령인",
-//                "010-0000-0000",
-//                "테스트주소",
-//                "요청사항"
-//        );
-//
-//        // 가짜 엔티티 생성
-//        User fakeUser = User.builder().id(userId).build();
-//
-//        // [핵심] 상태가 'SUSPENDED' (판매 중지)인 상품
-//        ProductEntity fakeProduct = ProductEntity.builder()
-//                .id(10L)
-//                .status(ProductStatus.SUSPENDED) // 👈 판매 중지 상태
-//                .build();
-//
-//        SkuEntity fakeSku = SkuEntity.builder()
-//                .id(skuId)
-//                .product(fakeProduct)
-//                .build();
-//
-//        // Mock 행동 정의
-//        given(userRepository.findById(userId)).willReturn(Optional.of(fakeUser));
-//        given(skuJPARepository.findAllById(any())).willReturn(List.of(fakeSku));
-//
-//
-//        // --- WHEN & THEN ---
-//        // [검증] "판매 중지가 아니므로 예외가 발생해야 한다"
-//        assertThatThrownBy(() -> {
-//            orderService.createOrder(dto, userId);
-//        })
-//                // (적절한 예외 타입 사용. ProductException 또는 RuntimeException)
-//                .isInstanceOf(RuntimeException.class)
-//                .hasMessageContaining("판매 중인 상품이 아닙니다"); // (메시지는 나중에 구현할 것과 일치시킴)
-//    }
-//}
+package com.homesweet.homesweetback.domain.order.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.homesweet.homesweetback.common.exception.OrderNotFoundException;
+import com.homesweet.homesweetback.domain.auth.entity.User;
+import com.homesweet.homesweetback.domain.auth.entity.UserRole;
+import com.homesweet.homesweetback.domain.auth.repository.UserRepository;
+import com.homesweet.homesweetback.domain.order.dto.CreateOrderRequest;
+import com.homesweet.homesweetback.domain.order.dto.OrderResponse;
+import com.homesweet.homesweetback.domain.order.entity.Order;
+import com.homesweet.homesweetback.domain.order.entity.OrderStatus;
+import com.homesweet.homesweetback.domain.order.repository.OrderRepository;
+import com.homesweet.homesweetback.domain.product.cart.repository.jpa.CartJPARepository;
+import com.homesweet.homesweetback.domain.product.cart.repository.jpa.entity.CartEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.ProductEntity;
+import com.homesweet.homesweetback.domain.product.product.command.repository.jpa.entity.SkuEntity;
+
+/**
+ * OrderService 단위 테스트
+ * 
+ * 테스트 케이스:
+ * 1. 주문 생성 - 성공
+ * 2. 주문 생성 - 실패 (장바구니 없음)
+ * 3. 주문 생성 - 실패 (다른 사용자의 장바구니)
+ * 4. 주문 조회 - 성공
+ * 5. 주문 조회 - 실패 (주문 없음)
+ * 6. 주문 조회 - 실패 (권한 없음)
+ * 7. 주문 목록 조회 - 성공
+ * 8. 주문 취소 - 성공
+ * 9. 주문 취소 - 실패 (PENDING 상태 아님)
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("OrderService 테스트")
+class OrderServiceTest {
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private CartJPARepository cartJPARepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private OrderServiceImpl orderService;
+
+    // ===== 테스트 데이터 생성 헬퍼 메서드 =====
+
+    private User createTestUser(Long userId) {
+        User user = User.builder()
+                .email("test@test.com")
+                .name("테스트유저")
+                .role(UserRole.USER)
+                .build();
+        user.setId(userId);
+        return user;
+    }
+
+    private Order createTestOrder(Long orderId, User user, OrderStatus status) {
+        return Order.builder()
+                .id(orderId)
+                .user(user)
+                .orderNumber("TEST-ORDER-001")
+                .status(status)
+                .totalAmount(50000L)
+                .build();
+    }
+
+    private CartEntity createTestCart(Long cartId, User user, Long price, Long quantity) {
+        // Mock ProductEntity
+        ProductEntity product = mock(ProductEntity.class);
+        given(product.getName()).willReturn("테스트상품" + cartId);
+        
+        // Mock SkuEntity
+        SkuEntity sku = mock(SkuEntity.class);
+        given(sku.getId()).willReturn(cartId);
+        given(sku.getFinalPrice()).willReturn(price);
+        given(sku.getProduct()).willReturn(product);
+        
+        return CartEntity.builder()
+                .id(cartId)
+                .user(user)
+                .sku(sku)
+                .quantity(quantity.intValue())
+                .build();
+    }
+
+    // ===== 주문 생성 테스트 =====
+
+    @Nested
+    @DisplayName("주문 생성 테스트")
+    class CreateOrderTest {
+
+        @Test
+        @DisplayName("주문 생성 성공")
+        void createOrder_Success() {
+            // given
+            // 주문할 장바구니 목록 
+            Long userId = 1L; 
+            // 주문할 장바구니 목록 
+            List<Long> cartIds = List.of(1L, 2L); 
+            //api DTO 생성
+            CreateOrderRequest request = new CreateOrderRequest(cartIds); 
+
+            //테스트용 가짜 user 객체 생성
+            User user = createTestUser(userId);
+
+            // cart1: 가격 10000원 수량 2개
+            // cart2: ..
+            CartEntity cart1 = createTestCart(1L, user, 10000L, 2L);
+            CartEntity cart2 = createTestCart(2L, user, 15000L, 1L);
+
+            // userRepository.findById(1L) 호출되면 ->user 반환해라
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            // cartJPARepository.findAllById([1,2]) 호출되면 → cart1, cart2 반환해라
+            given(cartJPARepository.findAllById(cartIds)).willReturn(List.of(cart1, cart2));
+            // orderRepository.save() 호출되면 -> 전달받은 order 그대로 반환
+            given(orderRepository.save(any(Order.class))).willAnswer(invocation -> {
+                return invocation.getArgument(0);
+            });
+            // when
+            // 실제 테스트 대상 메서드 호출 - 주문 생성
+            OrderResponse response = orderService.createFromCart(userId, request);
+
+            // then
+            // 응답이 null이 아닌지 확인
+            assertThat(response).isNotNull();
+            assertThat(response.getTotalAmount()).isEqualTo(35000L);
+            verify(orderRepository, times(2)).save(any(Order.class));
+
+        }
+
+        @Test
+        @DisplayName("주문 생성 실패 - 장바구니 없음")
+        void createOrder_Fail_EmptyCart() {
+            // given
+            Long userId = 1L;
+            List<Long> emptyCartIds = List.of();  // 빈 리스트
+            CreateOrderRequest request = new CreateOrderRequest(emptyCartIds);
+            User user = createTestUser(userId);
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(cartJPARepository.findAllById(emptyCartIds)).willReturn(List.of());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.createFromCart(userId, request))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("장바구니에서 선택한 상품을 찾을 수 없습니다");
+        }
+    }
+
+    // ===== 주문 조회 테스트 =====
+
+    @Nested
+    @DisplayName("주문 조회 테스트")
+    class GetOrderTest {
+
+        @Test
+        @DisplayName("주문 조회 성공")
+        void getOrder_Success() {
+            // given
+            Long userId = 1L;
+            Long orderId = 100L;
+            User user = createTestUser(userId);
+            Order order = createTestOrder(orderId, user, OrderStatus.PENDING);
+
+            given(orderRepository.findByIdWithItems(orderId)).willReturn(Optional.of(order));
+
+            // when
+            OrderResponse response = orderService.getOrder(orderId, userId);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getOrderId()).isEqualTo(orderId);
+            verify(orderRepository, times(1)).findByIdWithItems(orderId);
+        }
+
+        @Test
+        @DisplayName("주문 조회 실패 - 주문 없음")
+        void getOrder_Fail_OrderNotFound() {
+            // given
+            Long userId = 1L;
+            Long orderId = 999L;
+
+            given(orderRepository.findByIdWithItems(orderId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.getOrder(orderId, userId))
+                    .isInstanceOf(OrderNotFoundException.class)
+                    .hasMessageContaining("주문을 찾을 수 없습니다");
+        }
+
+        @Test
+        @DisplayName("주문 조회 실패 - 권한 없음 (다른 사용자의 주문)")
+        void getOrder_Fail_NotOwner() {
+            // given
+            Long userId = 1L;
+            Long otherUserId = 2L;
+            Long orderId = 100L;
+            User otherUser = createTestUser(otherUserId);
+            Order order = createTestOrder(orderId, otherUser, OrderStatus.PENDING);
+
+            given(orderRepository.findByIdWithItems(orderId)).willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.getOrder(orderId, userId))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("본인의 주문만 조회할 수 있습니다");
+        }
+    }
+
+    // ===== 주문 목록 조회 테스트 =====
+
+    @Nested
+    @DisplayName("주문 목록 조회 테스트")
+    class GetMyOrdersTest {
+
+        @Test
+        @DisplayName("주문 목록 조회 성공")
+        void getMyOrders_Success() {
+            // given
+            Long userId = 1L;
+            User user = createTestUser(userId);
+            List<Order> orders = List.of(
+                    createTestOrder(1L, user, OrderStatus.PENDING),
+                    createTestOrder(2L, user, OrderStatus.PAID)
+            );
+
+            given(orderRepository.findByUserIdOrderByCreatedAtDesc(userId)).willReturn(orders);
+
+            // when
+            List<OrderResponse> responses = orderService.getMyOrders(userId);
+
+            // then
+            assertThat(responses).hasSize(2);
+            verify(orderRepository, times(1)).findByUserIdOrderByCreatedAtDesc(userId);
+        }
+
+        @Test
+        @DisplayName("주문 목록 조회 성공 - 빈 목록")
+        void getMyOrders_Success_EmptyList() {
+            // given
+            Long userId = 1L;
+
+            given(orderRepository.findByUserIdOrderByCreatedAtDesc(userId)).willReturn(List.of());
+
+            // when
+            List<OrderResponse> responses = orderService.getMyOrders(userId);
+
+            // then
+            assertThat(responses).isEmpty();
+        }
+    }
+
+    // ===== 주문 취소 테스트 =====
+
+    @Nested
+    @DisplayName("주문 취소 테스트")
+    class CancelOrderTest {
+
+        @Test
+        @DisplayName("주문 취소 성공")
+        void cancelOrder_Success() {
+            // given
+            Long userId = 1L;
+            Long orderId = 100L;
+            User user = createTestUser(userId);
+            Order order = createTestOrder(orderId, user, OrderStatus.PENDING);
+
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+            // when
+            orderService.cancelOrder(orderId, userId);
+
+            // then
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        }
+
+        @Test
+        @DisplayName("주문 취소 실패 - 이미 결제된 주문")
+        void cancelOrder_Fail_AlreadyPaid() {
+            // given
+            Long userId = 1L;
+            Long orderId = 100L;
+            User user = createTestUser(userId);
+            Order order = createTestOrder(orderId, user, OrderStatus.PAID);
+
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(orderId, userId))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("결제 대기 상태의 주문만 취소할 수 있습니다");
+        }
+    }
+}

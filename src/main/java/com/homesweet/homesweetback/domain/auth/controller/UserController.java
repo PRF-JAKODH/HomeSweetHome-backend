@@ -12,8 +12,6 @@ import jakarta.validation.Valid;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UpdateUserRoleRequest;
 import com.homesweet.homesweetback.domain.auth.dto.UserResponse;
-import com.homesweet.homesweetback.domain.notification.domain.notification.SystemNotification;
-import com.homesweet.homesweetback.domain.notification.service.NotificationSendService;
 
 import java.util.Optional;
 
@@ -33,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
-    private final NotificationSendService notificationSendService;
 
 
     /**
@@ -59,13 +56,6 @@ public class UserController {
     {
         Long userId = principal.getUserId();
         UserResponse userResponse = userService.updateUserRole(userId, request);
-
-        // 알림 전송
-        SystemNotification.SellerRegistrationComplete notification = SystemNotification.SellerRegistrationComplete.builder()
-            .userName(userResponse.name())
-            .build();
-
-        notificationSendService.sendTemplateNotificationToSingleUser(userId, notification);
 
         return ResponseEntity.ok(userResponse);
     }
