@@ -98,7 +98,7 @@ export default function () {
 
     const paymentStartTime = Date.now();
     const paymentRes = http.post(
-        'http://localhost:8080/api/v1/orders/payments/confirm',
+        'http://localhost:8080/api/v1/payments/confirm',
         paymentPayload,
         { headers: headers, tags: { name: 'ConfirmPayment' } }
     );

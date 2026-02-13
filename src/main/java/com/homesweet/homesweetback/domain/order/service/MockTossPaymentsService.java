@@ -4,7 +4,6 @@ import com.homesweet.homesweetback.common.config.TossPaymentsConfig;
 import com.homesweet.homesweetback.common.util.PaymentApiClient;
 import com.homesweet.homesweetback.domain.order.dto.TossPaymentCancelRequest;
 import com.homesweet.homesweetback.domain.order.dto.TossPaymentConfirmRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
@@ -20,7 +19,7 @@ import java.util.UUID;
  * 테스트 환경용 Mock Toss Payments Service
  * 
  * 실제 Toss Payments API를 호출하지 않고 Mock 응답을 반환합니다.
- * - Profile: test, dev (부하 테스트용)
+ * - Profile: test, dev, local (부하 테스트용)
  * - 실제 API 호출 없이 성공 응답 반환
  * - API 호출 제한 없이 무제한 테스트 가능
  * 
@@ -29,11 +28,10 @@ import java.util.UUID;
 @Slf4j
 @Service
 @Primary
-@Profile({"test", "dev"})
-@RequiredArgsConstructor
+@Profile({"test", "dev", "local"})
 public class MockTossPaymentsService extends TossPaymentsService {
 
-    // 부모 클래스의 필드를 주입받지만 사용하지 않음
+    // 부모 클래스의 필드를 주입받지만 Mock에서는 사용하지 않음
     public MockTossPaymentsService(TossPaymentsConfig tossPaymentsConfig, 
                                    PaymentApiClient paymentApiClient, 
                                    RestTemplate restTemplate) {
